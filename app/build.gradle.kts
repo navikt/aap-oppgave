@@ -1,6 +1,7 @@
 import java.io.ByteArrayOutputStream
 
 val ktorVersion = "2.3.12"
+val komponenterVersjon = "0.0.18"
 
 plugins {
     id("io.ktor.plugin")
@@ -14,7 +15,7 @@ tasks {
     val projectProps by registering(WriteProperties::class) {
         destinationFile = layout.buildDirectory.file("version.properties")
         // Define property.
-        // property("project.version", getCheckedOutGitCommitHash())
+        property("project.version", getCheckedOutGitCommitHash())
     }
 
     processResources {
@@ -41,6 +42,12 @@ fun getCheckedOutGitCommitHash(): String {
 }
 
 dependencies {
+    implementation("no.nav.aap.kelvin:httpklient:$komponenterVersjon")
+    implementation("no.nav.aap.kelvin:dbconnect:$komponenterVersjon")
+    implementation("no.nav.aap.kelvin:dbmigrering:$komponenterVersjon")
+    implementation("no.nav.aap.kelvin:dbtest:$komponenterVersjon")
+    implementation("no.nav:ktor-openapi-generator:1.0.10")
+
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
@@ -53,7 +60,6 @@ dependencies {
 
     implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
-    implementation("no.nav:ktor-openapi-generator:1.0.10")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2")
     implementation("io.micrometer:micrometer-registry-prometheus:1.13.3")
@@ -64,6 +70,7 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql:10.17.1")
     runtimeOnly("org.postgresql:postgresql:42.7.4")
 
+    testImplementation("com.nimbusds:nimbus-jose-jwt:9.40")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.0")
     testImplementation("org.assertj:assertj-core:3.26.3")
