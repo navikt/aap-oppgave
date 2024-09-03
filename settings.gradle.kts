@@ -5,5 +5,6 @@ plugins {
 rootProject.name = "aap-oppgave"
 
 include(
-    "app"
+    "app",
+    "dbflyway"
 )
