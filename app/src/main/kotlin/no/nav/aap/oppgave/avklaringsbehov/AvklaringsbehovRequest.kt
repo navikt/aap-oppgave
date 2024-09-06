@@ -1,14 +1,19 @@
 package no.nav.aap.oppgave.avklaringsbehov
 
 import java.time.LocalDateTime
+import java.util.UUID
 
 @JvmInline
-value class Saksnummer(val saksnummer: String)
+value class Saksnummer(val saksnummer: String) {
+    override fun toString(): String {
+        return saksnummer
+    }
+}
 
 @JvmInline
-value class BehandlingRef(val behandlingRef: String)
+value class BehandlingRef(val uuid: UUID)
 
-enum class Sakstype {
+enum class BehandlingType {
     FØRSTEGANGSBEHANDLING,
     REVURDERING,
     KLAGE,

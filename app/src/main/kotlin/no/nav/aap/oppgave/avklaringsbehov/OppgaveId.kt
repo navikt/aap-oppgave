@@ -1,3 +1,3 @@
 package no.nav.aap.oppgave.avklaringsbehov
 
-data class OppgaveId(val oppgaveId: Long)
+data class OppgaveId(val id: Long)
