@@ -58,7 +58,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filter.whereClause()} AND RESERVERT_AV IS NULL
+                ${filter.whereClause()} AND RESERVERT_AV IS NULL AND AVKLARINGSBEHOV_STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
             LIMIT 1
             FOR UPDATE
@@ -71,10 +71,6 @@ class OppgaveRepository(private val connection: DBConnection) {
            return reserverOppgave(connection, OppgaveId(oppgaveId), ident)
         }
         return null
-    }
-
-    fun reserverNesteOppgave(saksnummer: Saksnummer, behandlingRef: BehandlingRef): Oppgave {
-        TODO()
     }
 
     fun hentMineOppgaver(ident: String): List<Oppgave> {
