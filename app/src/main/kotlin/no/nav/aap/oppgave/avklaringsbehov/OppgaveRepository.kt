@@ -74,9 +74,57 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     fun hentMineOppgaver(ident: String): List<Oppgave> {
-        TODO()
+        val query = """
+            SELECT 
+                ID,
+                SAKSNUMMER,
+                BEHANDLING_REF,
+                BEHANDLING_TYPE,
+                BEHANDLING_OPPRETTET,
+                AVKLARINGSBEHOV_TYPE,
+                AVKLARINGSBEHOV_STATUS,
+                AVKLARES_AV,
+                NAVKONTOR,
+                RESERVERT_AV,
+                RESERVERT_TIDSPUNKT,
+                OPPRETTET_AV,
+                OPPRETTET_TIDSPUNKT,
+                ENDRET_AV,
+                ENDRET_TIDSPUNKT
+            FROM
+                OPPGAVE    
+            WHERE
+                RESERVERT_AV = ? AND
+                AVKLARINGSBEHOV_STATUS != 'AVSLUTTET'
+        """.trimIndent()
+
+        return connection.queryList<Oppgave>(query) {
+            setParams {
+                setString(1, ident)
+            }
+            setRowMapper { row ->
+                Oppgave (
+                    id = OppgaveId(row.getLong("ID")),
+                    saksnummer = Saksnummer(row.getString("SAKSNUMMER")),
+                    behandlingRef = BehandlingRef(row.getUUID("BEHANDLING_REF")),
+                    behandlingType = BehandlingType.valueOf(row.getString("BEHANDLING_TYPE")),
+                    behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
+                    avklaringsbehovType = AvklaringsbehovType.entries.first { row.getString("AVKLARINGSBEHOV_TYPE") == it.kode },
+                    avklaringsbehovStatus = AvklaringsbehovStatus.valueOf(row.getString("AVKLARINGSBEHOV_STATUS")),
+                    avklaresAv = AvklaresAv.valueOf(row.getString("AVKLARES_AV")),
+                    navKontor = tilNavkontor(row.getStringOrNull("NAVKONTOR")),
+                    reservertAv = row.getStringOrNull("RESERVERT_AV"),
+                    reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
+                    opprettetAv = row.getString("OPPRETTET_AV"),
+                    opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
+                    endretAv = row.getStringOrNull("ENDRET_AV"),
+                    endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT")
+                )
+            }
+        }
     }
 
+    private fun tilNavkontor(kode: String?) = if (kode != null) Navkontor(kode) else null
 
     private fun reserverOppgave(connection: DBConnection, oppgaveId: OppgaveId, ident: String): OppgaveId {
         val updaterOppgaveReservasjonQuery = """

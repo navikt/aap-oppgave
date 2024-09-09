@@ -12,7 +12,10 @@ class OppgaveRepositoryTest {
 
     @AfterTest
     fun tearDown() {
-        InitTestDatabase.dataSource.transaction { it.execute("DELETE FROM OPPGAVE") }
+        InitTestDatabase.dataSource.transaction {
+            @Suppress("SqlWithoutWhere")
+            it.execute("DELETE FROM OPPGAVE")
+        }
     }
 
     @Test
@@ -53,6 +56,37 @@ class OppgaveRepositoryTest {
         InitTestDatabase.dataSource.transaction { connection ->
             val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(Filter(BehandlingType.FØRSTEGANGSBEHANDLING, AvklaresAv.NAY), "test")
             assertThat(oppgaveId).isNull()
+        }
+    }
+
+    @Test
+    fun `Hent mine åpne oppgaver`() {
+        opprettOppgave()
+        opprettOppgave()
+        opprettOppgave()
+        opprettOppgave()
+
+        reserverOppgave("bruker1")
+        reserverOppgave("bruker2")
+        reserverOppgave("bruker1")
+        val oppgaveId = reserverOppgave("bruker1")
+        avsluttOppgave(oppgaveId)
+
+        InitTestDatabase.dataSource.transaction { connection ->
+            val oppgaver = OppgaveRepository(connection).hentMineOppgaver("bruker1")
+            assertThat(oppgaver.size).isEqualTo(2)
+        }
+    }
+
+    private fun avsluttOppgave(oppgaveId: OppgaveId) {
+        InitTestDatabase.dataSource.transaction { connection ->
+            OppgaveRepository(connection).avsluttOppgave(oppgaveId)
+        }
+    }
+
+    private fun reserverOppgave(ident: String): OppgaveId {
+        return InitTestDatabase.dataSource.transaction { connection ->
+            OppgaveRepository(connection).reserverNesteOppgave(Filter(behandlingType = BehandlingType.FØRSTEGANGSBEHANDLING, AvklaresAv.NAY), ident)!!
         }
     }
 
