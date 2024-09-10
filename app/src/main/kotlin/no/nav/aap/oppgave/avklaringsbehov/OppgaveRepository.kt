@@ -1,7 +1,6 @@
 package no.nav.aap.oppgave.avklaringsbehov
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
-import java.time.LocalDateTime
 
 class OppgaveRepository(private val connection: DBConnection) {
 
@@ -10,16 +9,13 @@ class OppgaveRepository(private val connection: DBConnection) {
             INSERT INTO OPPGAVE (
                 SAKSNUMMER,
                 BEHANDLING_REF,
-                BEHANDLING_TYPE,
                 BEHANDLING_OPPRETTET,
-                AVKLARINGSBEHOV_TYPE,
-                AVKLARINGSBEHOV_STATUS,
-                AVKLARES_AV,
-                NAVKONTOR,
+                AVKLARINGSBEHOV_KODE,
+                OPPGAVE_STATUS,
                 OPPRETTET_AV,
                 OPPRETTET_TIDSPUNKT
             ) VALUES (
-                ?, ?, ?, ?, ? ,? ,? ,?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -27,14 +23,11 @@ class OppgaveRepository(private val connection: DBConnection) {
             setParams {
                 setString(1, oppgave.saksnummer.toString())
                 setUUID(2, oppgave.behandlingRef.uuid)
-                setString(3, oppgave.behandlingType.name)
-                setLocalDateTime(4, oppgave.behandlingOpprettet)
-                setString(5, oppgave.avklaringsbehovType.kode)
-                setString(6, oppgave.avklaringsbehovStatus.name)
-                setString(7, oppgave.avklaresAv.name)
-                setString(8, oppgave.navKontor?.kommunenr)
-                setString(9, oppgave.opprettetAv)
-                setLocalDateTime(10, LocalDateTime.now())
+                setLocalDateTime(3, oppgave.behandlingOpprettet)
+                setString(4, oppgave.avklaringsbehovKode.kode)
+                setString(5, oppgave.oppgaveStatus.name)
+                setString(6, oppgave.opprettetAv)
+                setLocalDateTime(7, oppgave.opprettetTidspunkt)
             }
         }
         return OppgaveId(id)
@@ -42,7 +35,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun avsluttOppgave(oppgaveId: OppgaveId) {
         val query = """
-            UPDATE OPPGAVE SET AVKLARINGSBEHOV_STATUS = 'AVSLUTTET' WHERE ID = ?
+            UPDATE OPPGAVE SET OPPGAVE_STATUS = 'AVSLUTTET' WHERE ID = ?
         """.trimIndent()
         connection.execute(query) {
             setParams {
@@ -58,7 +51,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filter.whereClause()} AND RESERVERT_AV IS NULL AND AVKLARINGSBEHOV_STATUS != 'AVSLUTTET'
+                ${filter.whereClause()} RESERVERT_AV IS NULL AND OPPGAVE_STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
             LIMIT 1
             FOR UPDATE
@@ -79,12 +72,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ID,
                 SAKSNUMMER,
                 BEHANDLING_REF,
-                BEHANDLING_TYPE,
                 BEHANDLING_OPPRETTET,
-                AVKLARINGSBEHOV_TYPE,
-                AVKLARINGSBEHOV_STATUS,
-                AVKLARES_AV,
-                NAVKONTOR,
+                AVKLARINGSBEHOV_KODE,
+                OPPGAVE_STATUS,
                 RESERVERT_AV,
                 RESERVERT_TIDSPUNKT,
                 OPPRETTET_AV,
@@ -95,7 +85,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE    
             WHERE
                 RESERVERT_AV = ? AND
-                AVKLARINGSBEHOV_STATUS != 'AVSLUTTET'
+                OPPGAVE_STATUS != 'AVSLUTTET'
         """.trimIndent()
 
         return connection.queryList<Oppgave>(query) {
@@ -107,12 +97,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                     id = OppgaveId(row.getLong("ID")),
                     saksnummer = Saksnummer(row.getString("SAKSNUMMER")),
                     behandlingRef = BehandlingRef(row.getUUID("BEHANDLING_REF")),
-                    behandlingType = BehandlingType.valueOf(row.getString("BEHANDLING_TYPE")),
                     behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
-                    avklaringsbehovType = AvklaringsbehovType.entries.first { row.getString("AVKLARINGSBEHOV_TYPE") == it.kode },
-                    avklaringsbehovStatus = AvklaringsbehovStatus.valueOf(row.getString("AVKLARINGSBEHOV_STATUS")),
-                    avklaresAv = AvklaresAv.valueOf(row.getString("AVKLARES_AV")),
-                    navKontor = tilNavkontor(row.getStringOrNull("NAVKONTOR")),
+                    avklaringsbehovKode = AvklaringsbehovKode(row.getString("AVKLARINGSBEHOV_KODE")),
+                    oppgaveStatus = OppgaveStatus.valueOf(row.getString("OPPGAVE_STATUS")),
                     reservertAv = row.getStringOrNull("RESERVERT_AV"),
                     reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
                     opprettetAv = row.getString("OPPRETTET_AV"),
@@ -123,8 +110,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
     }
-
-    private fun tilNavkontor(kode: String?) = if (kode != null) Navkontor(kode) else null
 
     private fun reserverOppgave(connection: DBConnection, oppgaveId: OppgaveId, ident: String): OppgaveId {
         val updaterOppgaveReservasjonQuery = """
@@ -149,18 +134,13 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     private fun Filter.whereClause(): String {
-        val sb = StringBuilder()
-        sb.append("BEHANDLING_TYPE = '${behandlingType.name}' AND AVKLARES_AV = '${avklaresAv.name}'")
-        if (AvklaresAv.NAVKONTOR == avklaresAv) {
-            sb.append(" AND NAVKONTOR = '$navkontor'")
+        if (avklaringsbehovKoder.isNotEmpty()) {
+            return "AVKLARINGSBEHOV_KODE IN ${avklaringsbehovKoder.tilStringListe()} AND "
         }
-        if (avklaringsbehovTyper.isNotEmpty()) {
-            sb.append(" AND AVKLARINGSBEHOV_TYPE = '${avklaringsbehovTyper.tilStringListe()}'")
-        }
-        return " $sb "
+        return ""
     }
 
-    private fun Set<AvklaringsbehovType>.tilStringListe(): String {
+    private fun Set<AvklaringsbehovKode>.tilStringListe(): String {
         return map {"'${it.kode}'"}.joinToString(prefix = "(", postfix = ")", separator = ", ")
     }
 }

@@ -33,28 +33,28 @@ class OppgaveRepositoryTest {
 
     @Test
     fun `Reserver neste oppgave finner ingen oppgave fordi opprettet oppgave ikke matcher filter`() {
-        opprettOppgave(avklaresAv = AvklaresAv.NAVKONTOR)
+        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("1000"))
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(Filter(BehandlingType.FØRSTEGANGSBEHANDLING, AvklaresAv.NAY), "test")
+            val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(Filter(setOf(AvklaringsbehovKode("2000"))), "test")
             assertThat(oppgaveId).isNull()
         }
     }
 
     @Test
     fun `Reserver neste oppgave finner en oppgave fordi en av oppgavene matcher filter`() {
-        opprettOppgave(avklaresAv = AvklaresAv.NAVKONTOR)
-        opprettOppgave(avklaresAv = AvklaresAv.NAY)
+        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("2000"))
+        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("3000"))
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(Filter(BehandlingType.FØRSTEGANGSBEHANDLING, AvklaresAv.NAY), "test")
+            val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(Filter(setOf(AvklaringsbehovKode("3000"))), "test")
             assertThat(oppgaveId).isNotNull()
         }
     }
 
     @Test
     fun `Reserver neste oppgave finner ikke en oppgave fordi den er avsluttet`() {
-        opprettOppgave(avklaringsbehovStatus = AvklaringsbehovStatus.AVSLUTTET)
+        opprettOppgave(oppgaveStatus = OppgaveStatus.AVSLUTTET)
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(Filter(BehandlingType.FØRSTEGANGSBEHANDLING, AvklaresAv.NAY), "test")
+            val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(Filter(), "test")
             assertThat(oppgaveId).isNull()
         }
     }
@@ -86,26 +86,22 @@ class OppgaveRepositoryTest {
 
     private fun reserverOppgave(ident: String): OppgaveId {
         return InitTestDatabase.dataSource.transaction { connection ->
-            OppgaveRepository(connection).reserverNesteOppgave(Filter(behandlingType = BehandlingType.FØRSTEGANGSBEHANDLING, AvklaresAv.NAY), ident)!!
+            OppgaveRepository(connection).reserverNesteOppgave(Filter(), ident)!!
         }
     }
 
     private fun opprettOppgave(
         saksnummer: Saksnummer = Saksnummer("123"),
         behandlingRef: BehandlingRef = BehandlingRef((UUID.randomUUID())),
-        behandlingType: BehandlingType = BehandlingType.FØRSTEGANGSBEHANDLING,
-        avklaresAv: AvklaresAv = AvklaresAv.NAY,
-        avklaringsbehovStatus: AvklaringsbehovStatus = AvklaringsbehovStatus.OPPRETTET
+        oppgaveStatus: OppgaveStatus = OppgaveStatus.OPPRETTET,
+        avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000")
     ): OppgaveId {
         val oppgave = Oppgave(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
-            behandlingType = behandlingType,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
-            avklaringsbehovType = AvklaringsbehovType.AVKLAR_SYKDOM,
-            avklaringsbehovStatus = avklaringsbehovStatus,
-            avklaresAv = avklaresAv,
-            navKontor = if (avklaresAv == AvklaresAv.NAVKONTOR) Navkontor("0100") else null,
+            avklaringsbehovKode = avklaringsbehovKode,
+            oppgaveStatus = oppgaveStatus,
             opprettetAv = "bruker1",
             opprettetTidspunkt = LocalDateTime.now()
         )
