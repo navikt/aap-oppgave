@@ -1,7 +1,5 @@
-import java.io.ByteArrayOutputStream
-
 val ktorVersion = "2.3.12"
-val komponenterVersjon = "0.0.36"
+val komponenterVersjon = "0.0.46"
 
 plugins {
     id("io.ktor.plugin")
@@ -11,42 +9,12 @@ application {
     mainClass.set("no.nav.aap.oppgave.AppKt")
 }
 
-tasks {
-    val projectProps by registering(WriteProperties::class) {
-        destinationFile = layout.buildDirectory.file("version.properties")
-        // Define property.
-        property("project.version", getCheckedOutGitCommitHash())
-    }
-
-    processResources {
-        // Depend on output of the task to create properties,
-        // so the properties file will be part of the Java resources.
-        from(projectProps)
-    }
-}
-
-fun runCommand(command: String): String {
-    val byteOut = ByteArrayOutputStream()
-    project.exec {
-        commandLine = command.split("\\s".toRegex())
-        standardOutput = byteOut
-    }
-    return String(byteOut.toByteArray()).trim()
-}
-
-fun getCheckedOutGitCommitHash(): String {
-    if (System.getenv("GITHUB_ACTIONS") == "true") {
-        return System.getenv("GITHUB_SHA")
-    }
-    return runCommand("git rev-parse --verify HEAD")
-}
-
 dependencies {
     implementation("no.nav.aap.kelvin:httpklient:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbconnect:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbmigrering:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbtest:$komponenterVersjon")
-    implementation("no.nav:ktor-openapi-generator:1.0.10")
+    implementation("no.nav:ktor-openapi-generator:1.0.30")
 
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
