@@ -1,3 +1,5 @@
+package no.nav.aap.oppgave.metriker
+
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.Tag
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry

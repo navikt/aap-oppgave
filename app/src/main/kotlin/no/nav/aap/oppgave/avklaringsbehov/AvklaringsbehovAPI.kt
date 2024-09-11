@@ -4,12 +4,12 @@ import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
-import httpCallCounter
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.metriker.httpCallCounter
 import no.nav.aap.oppgave.opprett.AvklaringsbehovRequest
 import no.nav.aap.oppgave.server.authenticate.ident
 import java.time.LocalDateTime
