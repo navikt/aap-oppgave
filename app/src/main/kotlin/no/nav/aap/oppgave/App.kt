@@ -25,6 +25,7 @@ import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
 import no.nav.aap.komponenter.httpklient.json.DefaultJsonMapper
 import no.nav.aap.oppgave.avklaringsbehov.avklaringsbehovApi
+import no.nav.aap.oppgave.plukk.plukkApi
 import no.nav.aap.oppgave.server.authenticate.AZURE
 import no.nav.aap.oppgave.server.authenticate.authentication
 import org.slf4j.LoggerFactory
@@ -81,8 +82,8 @@ internal fun Application.server(dbConfig: DbConfig) {
     routing {
         authenticate(AZURE) {
             apiRouting {
-                avklaringsbehovApi(dataSource)
-
+                avklaringsbehovApi(dataSource, prometheus)
+                plukkApi(dataSource, prometheus)
             }
         }
         actuator(prometheus)

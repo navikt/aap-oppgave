@@ -1,11 +1,9 @@
-package no.nav.aap.oppgave.avklaringsbehov
+package no.nav.aap.oppgave
 
+import no.nav.aap.oppgave.opprett.AvklaringsbehovKode
+import no.nav.aap.oppgave.opprett.BehandlingRef
+import no.nav.aap.oppgave.opprett.Saksnummer
 import java.time.LocalDateTime
-
-enum class OppgaveStatus {
-    OPPRETTET,
-    AVSLUTTET
-}
 
 data class Oppgave(
     val id: OppgaveId? = null,
@@ -13,7 +11,7 @@ data class Oppgave(
     val behandlingRef: BehandlingRef,
     val behandlingOpprettet: LocalDateTime,
     val avklaringsbehovKode: AvklaringsbehovKode,
-    val oppgaveStatus: OppgaveStatus = OppgaveStatus.OPPRETTET,
+    val status: Status = Status.OPPRETTET,
     val reservertAv: String? = null,
     val reservertTidspunkt: LocalDateTime? = null,
     val opprettetAv: String,

@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.avklaringsbehov
+package no.nav.aap.oppgave.opprett
 
 import java.time.LocalDateTime
 import java.util.UUID

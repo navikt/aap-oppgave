@@ -6,5 +6,6 @@ rootProject.name = "aap-oppgave"
 
 include(
     "app",
-    "dbflyway"
+    "dbflyway",
+    "api-kontrakt"
 )

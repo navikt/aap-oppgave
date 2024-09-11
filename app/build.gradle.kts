@@ -67,6 +67,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:8.0")
 
     implementation(project(":dbflyway"))
+    implementation(project(":api-kontrakt"))
     implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("org.flywaydb:flyway-database-postgresql:10.17.1")
     runtimeOnly("org.postgresql:postgresql:42.7.4")

@@ -1,6 +1,13 @@
-package no.nav.aap.oppgave.avklaringsbehov
+package no.nav.aap.oppgave
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
+import no.nav.aap.oppgave.Oppgave
+import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.Status
+import no.nav.aap.oppgave.filter.Filter
+import no.nav.aap.oppgave.opprett.AvklaringsbehovKode
+import no.nav.aap.oppgave.opprett.BehandlingRef
+import no.nav.aap.oppgave.opprett.Saksnummer
 
 class OppgaveRepository(private val connection: DBConnection) {
 
@@ -11,7 +18,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 BEHANDLING_REF,
                 BEHANDLING_OPPRETTET,
                 AVKLARINGSBEHOV_KODE,
-                OPPGAVE_STATUS,
+                STATUS,
                 OPPRETTET_AV,
                 OPPRETTET_TIDSPUNKT
             ) VALUES (
@@ -25,7 +32,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setUUID(2, oppgave.behandlingRef.uuid)
                 setLocalDateTime(3, oppgave.behandlingOpprettet)
                 setString(4, oppgave.avklaringsbehovKode.kode)
-                setString(5, oppgave.oppgaveStatus.name)
+                setString(5, oppgave.status.name)
                 setString(6, oppgave.opprettetAv)
                 setLocalDateTime(7, oppgave.opprettetTidspunkt)
             }
@@ -35,7 +42,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun avsluttOppgave(oppgaveId: OppgaveId) {
         val query = """
-            UPDATE OPPGAVE SET OPPGAVE_STATUS = 'AVSLUTTET' WHERE ID = ?
+            UPDATE OPPGAVE SET STATUS = 'AVSLUTTET' WHERE ID = ?
         """.trimIndent()
         connection.execute(query) {
             setParams {
@@ -51,7 +58,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filter.whereClause()} RESERVERT_AV IS NULL AND OPPGAVE_STATUS != 'AVSLUTTET'
+                ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
             LIMIT 1
             FOR UPDATE
@@ -74,7 +81,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 BEHANDLING_REF,
                 BEHANDLING_OPPRETTET,
                 AVKLARINGSBEHOV_KODE,
-                OPPGAVE_STATUS,
+                STATUS,
                 RESERVERT_AV,
                 RESERVERT_TIDSPUNKT,
                 OPPRETTET_AV,
@@ -85,7 +92,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE    
             WHERE
                 RESERVERT_AV = ? AND
-                OPPGAVE_STATUS != 'AVSLUTTET'
+                STATUS != 'AVSLUTTET'
         """.trimIndent()
 
         return connection.queryList<Oppgave>(query) {
@@ -93,13 +100,13 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(1, ident)
             }
             setRowMapper { row ->
-                Oppgave (
+                Oppgave(
                     id = OppgaveId(row.getLong("ID")),
                     saksnummer = Saksnummer(row.getString("SAKSNUMMER")),
                     behandlingRef = BehandlingRef(row.getUUID("BEHANDLING_REF")),
                     behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
                     avklaringsbehovKode = AvklaringsbehovKode(row.getString("AVKLARINGSBEHOV_KODE")),
-                    oppgaveStatus = OppgaveStatus.valueOf(row.getString("OPPGAVE_STATUS")),
+                    status = Status.valueOf(row.getString("STATUS")),
                     reservertAv = row.getStringOrNull("RESERVERT_AV"),
                     reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
                     opprettetAv = row.getString("OPPRETTET_AV"),
