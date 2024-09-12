@@ -11,7 +11,7 @@ import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.filterApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
-    route("/filter").get<Unit, List<Filter>> { _ ->
+    route("/filter").get<Unit, List<FilterDto>> { _ ->
         prometheus.httpCallCounter("/filter").increment()
         val filterListe = dataSource.transaction(readOnly = true) { connection ->
             FilterRepository(connection).hentAlleFilter()

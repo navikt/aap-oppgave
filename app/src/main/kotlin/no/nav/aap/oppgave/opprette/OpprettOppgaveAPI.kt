@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.avklaringsbehov
+package no.nav.aap.oppgave.opprette
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
@@ -6,31 +6,29 @@ import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.oppgave.Oppgave
-import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.metriker.httpCallCounter
-import no.nav.aap.oppgave.opprett.AvklaringsbehovRequest
+import no.nav.aap.oppgave.opprett.OpprettOppgaveDto
 import no.nav.aap.oppgave.server.authenticate.ident
 import java.time.LocalDateTime
 import javax.sql.DataSource
 
-fun NormalOpenAPIRoute.avklaringsbehovApi(dataSource: DataSource,prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.opprettOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
-    route("/avklaringsbehov").post<Unit, OppgaveId, AvklaringsbehovRequest> { _, request ->
-        prometheus.httpCallCounter("/api/avklaringsbehov").increment()
+    route("/opprett-oppgave").post<Unit, OppgaveId, OpprettOppgaveDto> { _, request ->
+        prometheus.httpCallCounter("/opprett-oppgave").increment()
         val oppgaveId =  dataSource.transaction(readOnly = true) { connection ->
-            val ident = ident()
-
-            val oppgave = Oppgave(
+            val oppgaveDto = OppgaveDto(
                 saksnummer = request.saksnummer,
                 behandlingRef = request.behandlingRef,
                 behandlingOpprettet = request.behandlingOpprettet,
-                avklaringsbehovKode = request.avklaringsbehovKode,
-                opprettetAv = ident,
+                avklaringsbehovType = request.avklaringsbehovType,
+                opprettetAv = ident(),
                 opprettetTidspunkt = LocalDateTime.now()
             )
-            OppgaveRepository(connection).opprettOppgave(oppgave)
+            OppgaveRepository(connection).opprettOppgave(oppgaveDto)
         }
         respond(oppgaveId)
     }

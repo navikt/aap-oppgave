@@ -24,7 +24,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
 import no.nav.aap.komponenter.httpklient.json.DefaultJsonMapper
-import no.nav.aap.oppgave.avklaringsbehov.avklaringsbehovApi
+import no.nav.aap.oppgave.opprette.opprettOppgaveApi
 import no.nav.aap.oppgave.filter.filterApi
 import no.nav.aap.oppgave.plukk.plukkApi
 import no.nav.aap.oppgave.server.authenticate.AZURE
@@ -83,8 +83,10 @@ internal fun Application.server(dbConfig: DbConfig) {
     routing {
         authenticate(AZURE) {
             apiRouting {
-                avklaringsbehovApi(dataSource, prometheus)
+                opprettOppgaveApi(dataSource, prometheus)
                 plukkApi(dataSource, prometheus)
+                mineOppgaverApi(dataSource, prometheus)
+                avsluttOppgave(dataSource, prometheus)
                 filterApi(dataSource, prometheus)
             }
         }

@@ -1,22 +1,22 @@
 package no.nav.aap.oppgave.filter
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
-import no.nav.aap.oppgave.opprett.AvklaringsbehovKode
+import no.nav.aap.oppgave.verdityper.AvklaringsbehovType
 
 // Forløpig mock repository
 class FilterRepository(private val connection: DBConnection) {
 
-    private val filterMap = mapOf(
-        1L to Filter(1L, "Alle oppgaver"),
-        2L to Filter(2L, "Oppgaver av med avklaringsbehov 1000", setOf(AvklaringsbehovKode("1000"))),
+    private val filterDtoMap = mapOf(
+        1L to FilterDto(1L, "Alle oppgaver"),
+        2L to FilterDto(2L, "Oppgaver av med avklaringsbehov 1000", setOf(AvklaringsbehovType("1000"))),
     )
 
-    fun hentFilter(filterId: Long): Filter? {
-        return filterMap[filterId]
+    fun hentFilter(filterId: Long): FilterDto? {
+        return filterDtoMap[filterId]
     }
 
-    fun hentAlleFilter(): List<Filter> {
-        return filterMap.values.toList()
+    fun hentAlleFilter(): List<FilterDto> {
+        return filterDtoMap.values.toList()
     }
 
 }
