@@ -3,6 +3,7 @@ package no.nav.aap.oppgave
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovType
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
@@ -73,8 +74,8 @@ class OppgaveRepositoryTest {
         reserverOppgave("bruker1")
         reserverOppgave("bruker2")
         reserverOppgave("bruker1")
-        val oppgaveId = reserverOppgave("bruker1")
-        avsluttOppgave(oppgaveId)
+        val nesteOppgave = reserverOppgave("bruker1")
+        avsluttOppgave(nesteOppgave.oppgaveId)
 
         InitTestDatabase.dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection).hentMineOppgaver("bruker1")
@@ -92,7 +93,7 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun reserverOppgave(ident: String): OppgaveId {
+    private fun reserverOppgave(ident: String): NesteOppgaveDto {
         return InitTestDatabase.dataSource.transaction { connection ->
             OppgaveRepository(connection).reserverNesteOppgave(filter(), ident)!!
         }

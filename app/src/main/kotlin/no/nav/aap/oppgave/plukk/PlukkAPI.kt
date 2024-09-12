@@ -8,8 +8,6 @@ import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.oppgave.verdityper.Kilde
-import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.metriker.httpCallCounter
@@ -20,7 +18,7 @@ fun NormalOpenAPIRoute.plukkApi(dataSource: DataSource, prometheus: PrometheusMe
 
     route("/neste-oppgave").post<Unit, NesteOppgaveDto, FinnNesteOppgaveDto> { _, request ->
         prometheus.httpCallCounter("/neste-oppgave").increment()
-        val oppgaveId =  dataSource.transaction { connection ->
+        val nesteOppgave =  dataSource.transaction { connection ->
             val filter = FilterRepository(connection).hentFilter(request.filterId)
             if (filter != null) {
                 OppgaveRepository(connection).reserverNesteOppgave(filter, ident())
@@ -28,8 +26,8 @@ fun NormalOpenAPIRoute.plukkApi(dataSource: DataSource, prometheus: PrometheusMe
                 null
             }
         }
-        if (oppgaveId != null) {
-            respond(NesteOppgaveDto(OppgaveId(1), Kilde.MOTTAK, "123"))
+        if (nesteOppgave != null) {
+            respond(nesteOppgave)
         } else {
             respondWithStatus(HttpStatusCode.NotFound)
         }

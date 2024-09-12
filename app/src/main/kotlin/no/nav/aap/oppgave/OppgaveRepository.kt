@@ -2,6 +2,7 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovType
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
@@ -51,10 +52,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun reserverNesteOppgave(filterDto: FilterDto, ident: String): OppgaveId? {
+    fun reserverNesteOppgave(filterDto: FilterDto, ident: String): NesteOppgaveDto? {
         val hentNesteOppgaveQuery = """
             SELECT 
-                ID
+                ID, SAKSNUMMER, BEHANDLING_REF, JOURNALPOST_ID
             FROM 
                 OPPGAVE 
             WHERE 
@@ -65,12 +66,21 @@ class OppgaveRepository(private val connection: DBConnection) {
             SKIP LOCKED
         """.trimIndent()
 
-        val oppgaveId = connection.queryFirstOrNull(hentNesteOppgaveQuery) { setRowMapper { it.getLong("id") } }
-
-        if (oppgaveId != null) {
-           return reserverOppgave(connection, OppgaveId(oppgaveId), ident)
+        val nesteOppgave = connection.queryFirstOrNull(hentNesteOppgaveQuery) {
+            setRowMapper {
+                NesteOppgaveDto(
+                    oppgaveId = OppgaveId(it.getLong("ID")),
+                    saksnummer = it.getStringOrNull("SAKSNUMMER"),
+                    behandlingRef = it.getUUIDOrNull("BEHANDLING_REF"),
+                    journalpostId = it.getLongOrNull("JOURNALPOST_ID"),
+                )
+            }
         }
-        return null
+
+        if (nesteOppgave != null) {
+           reserverOppgave(connection, nesteOppgave.oppgaveId, ident)
+        }
+        return nesteOppgave
     }
 
     fun hentMineOppgaver(ident: String): List<OppgaveDto> {
@@ -145,7 +155,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    private fun reserverOppgave(connection: DBConnection, oppgaveId: OppgaveId, ident: String): OppgaveId {
+    private fun reserverOppgave(connection: DBConnection, oppgaveId: OppgaveId, ident: String) {
         val updaterOppgaveReservasjonQuery = """
             UPDATE 
                 OPPGAVE 
@@ -164,7 +174,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(3, oppgaveId.id)
             }
         }
-        return oppgaveId
     }
 
     private fun FilterDto.whereClause(): String {
