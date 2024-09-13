@@ -1,0 +1,66 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+
+metadata:
+    name: oppgave
+    namespace: aap
+    labels:
+        team: aap
+        sub: oppgave
+
+spec:
+    ingresses:
+        - https://aap-oppgave.intern.dev.nav.no
+    image: {{image}}
+    strategy:
+        type: Recreate
+    port: 8080
+    replicas:
+        max: 1
+        min: 1
+    resources:
+        limits:
+            memory: 512Mi
+        requests:
+            cpu: 500m
+            memory: 512Mi
+    observability:
+        autoInstrumentation:
+            enabled: true
+            runtime: "java"
+        logging:
+            destinations:
+                - id: elastic
+                - id: loki
+    prometheus:
+        enabled: true
+        path: /actuator/metrics
+    azure:
+        application:
+            enabled: true
+    liveness:
+        path: /actuator/live
+        initialDelay: 5
+        periodSeconds: 5
+        failureThreshold: 5
+    readiness:
+        path: /actuator/ready
+        initialDelay: 5
+        periodSeconds: 5
+        failureThreshold: 5
+    secureLogs:
+        enabled: true
+    accessPolicy:
+        inbound:
+            rules:
+                - application: behandlingsflyt
+                - application: mottak
+        outbound:
+            rules:
+                - application: tilgang
+    gcp:
+        sqlInstances:
+            - type: POSTGRES_16
+              tier: db-f1-micro
+              databases:
+                  - name: oppgave
