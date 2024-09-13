@@ -97,16 +97,14 @@ internal fun Application.server(dbConfig: DbConfig) {
 }
 
 class DbConfig(
-    val host: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_HOST"),
-    val port: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_PORT"),
     val database: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_DATABASE"),
-    val url: String = "jdbc:postgresql://$host:$port/$database",
+    val jdbcUrl: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_JDBC_URL"),
     val username: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_USERNAME"),
     val password: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_PASSWORD")
 )
 
 fun initDatasource(dbConfig: DbConfig) = HikariDataSource(HikariConfig().apply {
-    jdbcUrl = dbConfig.url
+    jdbcUrl = dbConfig.jdbcUrl
     username = dbConfig.username
     password = dbConfig.password
     maximumPoolSize = 10 + ANTALL_WORKERS
