@@ -39,7 +39,11 @@ private const val ANTALL_WORKERS = 5
 class App
 
 fun main() {
-    Thread.currentThread().setUncaughtExceptionHandler { _, e -> SECURE_LOGGER.error("Uhåndtert feil", e) }
+    Thread.currentThread().setUncaughtExceptionHandler { _, e ->
+        LoggerFactory.getLogger("App")
+            .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
+        SECURE_LOGGER.error("Uhåndtert feil", e)
+    }
 
     embeddedServer(Netty, 8080) { server(DbConfig()) }.start(wait = true)
 
