@@ -54,7 +54,7 @@ spec:
         inbound:
             rules:
                 - application: behandlingsflyt
-                - application: mottak
+                - application: postmottak-backend
         outbound:
             rules:
                 - application: tilgang
