@@ -2,7 +2,8 @@ val ktorVersion = "2.3.12"
 val komponenterVersjon = "0.0.46"
 
 plugins {
-    id("io.ktor.plugin")
+    id("oppgave.conventions")
+    id("io.ktor.plugin") version "2.3.12"
 }
 
 application {
