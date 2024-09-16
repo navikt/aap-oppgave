@@ -31,7 +31,7 @@ fun NormalOpenAPIRoute.avsluttOppgave(dataSource: DataSource, prometheus: Promet
                 dto.saksnummer,
                 dto.behandlingRef,
                 dto.journalpostId,
-                dto.avklaringsbehovType,
+                dto.avklaringsbehovKode,
                 ident()
             )
             oppgaverSomSkalAvsluttes.forEach {

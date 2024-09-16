@@ -13,10 +13,17 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.filter.FilterDto
-import no.nav.aap.oppgave.opprett.OpprettOppgaveDto
+import no.nav.aap.oppgave.opprett.AvklaringsbehovDto
+import no.nav.aap.oppgave.opprett.AvklaringsbehovhendelseEndring
+import no.nav.aap.oppgave.opprett.Avklaringsbehovstatus
+import no.nav.aap.oppgave.opprett.Avklaringsbehovtype
+import no.nav.aap.oppgave.opprett.BehandlingshistorikkRequest
+import no.nav.aap.oppgave.opprett.Behandlingstatus
+import no.nav.aap.oppgave.opprett.Behandlingstype
+import no.nav.aap.oppgave.opprett.Definisjon
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovType
+import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -34,10 +41,9 @@ class ApiTest {
     @Test
     fun `Opprett og  plukk oppgave`() {
         val saksnummer = "123456"
-        val behandlingRef = UUID.randomUUID()
-        val avklaringsbehovKode = "1000"
+        val referanse = UUID.randomUUID().toString()
 
-        val oppgaveId = opprettOppgave(saksnummer, behandlingRef, avklaringsbehovKode)
+        val oppgaveId = opprettOppgave(saksnummer, referanse)
         assertThat(oppgaveId).isNotNull()
 
         val nesteOppgaveDto = hentNesteOppgave()
@@ -61,14 +67,34 @@ class ApiTest {
         assertThat(filterListe).hasSize(2)
     }
 
-
-    private fun opprettOppgave(saksnummer: String, behandlingRef: UUID, avklaringsbehovKode: String): OppgaveId? {
-        val request = OpprettOppgaveDto(
+    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: String): BehandlingshistorikkRequest {
+        return BehandlingshistorikkRequest(
+            personident = "01010012345",
             saksnummer = saksnummer,
-            behandlingRef = behandlingRef,
-            behandlingOpprettet = LocalDateTime.now(),
-            avklaringsbehovType = AvklaringsbehovType(avklaringsbehovKode)
+            referanse = referanse,
+            behandlingType = Behandlingstype.Førstegangsbehandling,
+            status = Behandlingstatus.OPPRETTET,
+            opprettetTidspunkt = LocalDateTime.now(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovDto(
+                    definisjon = Definisjon(
+                        type = Avklaringsbehovtype.AVKLAR_SYKDOM.kode
+                    ),
+                    status = Avklaringsbehovstatus.OPPRETTET,
+                    endringer = listOf(
+                        AvklaringsbehovhendelseEndring(
+                            status = Avklaringsbehovstatus.OPPRETTET,
+                            tidsstempel = LocalDateTime.now(),
+                            endretAv = "Kelvin"
+                        )
+                    )
+                )
+            )
         )
+    }
+
+    private fun opprettOppgave(saksnummer: String, referanse: String): OppgaveId? {
+        val request = opprettBehandlingshistorikk(saksnummer, referanse)
         val oppgaveId:OppgaveId? = client.post(
             URI.create("http://localhost:8080/opprett-oppgave"),
             PostRequest(body = request)
@@ -91,7 +117,7 @@ class ApiTest {
                 saksnummer = saksnummer,
                 behandlingRef = behandlingRef,
                 journalpostId = null,
-                avklaringsbehovType = AvklaringsbehovType(avklaringsbehovKode))
+                avklaringsbehovKode = AvklaringsbehovKode(avklaringsbehovKode))
             )
         )
         return oppgaveIder!!

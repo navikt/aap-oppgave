@@ -3,7 +3,7 @@ package no.nav.aap.oppgave
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovType
+import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
 import java.util.UUID
@@ -32,7 +32,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setUUID(2, oppgaveDto.behandlingRef)
                 setLong(3, oppgaveDto.journalpostId)
                 setLocalDateTime(4, oppgaveDto.behandlingOpprettet)
-                setString(5, oppgaveDto.avklaringsbehovType.kode)
+                setString(5, oppgaveDto.avklaringsbehovKode.kode)
                 setString(6, oppgaveDto.status.name)
                 setString(7, oppgaveDto.opprettetAv)
                 setLocalDateTime(8, oppgaveDto.opprettetTidspunkt)
@@ -117,7 +117,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                     behandlingRef = row.getUUIDOrNull("BEHANDLING_REF"),
                     journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
                     behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
-                    avklaringsbehovType = AvklaringsbehovType(row.getString("AVKLARINGSBEHOV_TYPE")),
+                    avklaringsbehovKode = AvklaringsbehovKode(row.getString("AVKLARINGSBEHOV_TYPE")),
                     status = Status.valueOf(row.getString("STATUS")),
                     reservertAv = row.getStringOrNull("RESERVERT_AV"),
                     reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
@@ -130,7 +130,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentOppgaverForReferanse(saksnummer: String?, behandlingRef: UUID?, journalpostId: Long?, avklaringsbehovType: AvklaringsbehovType, ident: String): List<OppgaveId> {
+    fun hentOppgaverForReferanse(saksnummer: String?, behandlingRef: UUID?, journalpostId: Long?, avklaringsbehovKode: AvklaringsbehovKode, ident: String): List<OppgaveId> {
         val oppgaverForReferanseQuery = """
             SELECT 
                 ID 
@@ -149,7 +149,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(1, saksnummer)
                 setUUID(2, behandlingRef)
                 setLong(3, journalpostId)
-                setString(4, avklaringsbehovType.kode)
+                setString(4, avklaringsbehovKode.kode)
                 setString(5, ident)
             }
         }
@@ -183,7 +183,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         return ""
     }
 
-    private fun Set<AvklaringsbehovType>.tilStringListe(): String {
+    private fun Set<AvklaringsbehovKode>.tilStringListe(): String {
         return map {"'${it.kode}'"}.joinToString(prefix = "(", postfix = ")", separator = ", ")
     }
 }

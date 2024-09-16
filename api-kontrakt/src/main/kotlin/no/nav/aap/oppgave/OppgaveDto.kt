@@ -1,6 +1,6 @@
 package no.nav.aap.oppgave
 
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovType
+import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDateTime
@@ -12,7 +12,7 @@ data class OppgaveDto(
     val behandlingRef: UUID? = null,
     val journalpostId: Long? = null,
     val behandlingOpprettet: LocalDateTime,
-    val avklaringsbehovType: AvklaringsbehovType,
+    val avklaringsbehovKode: AvklaringsbehovKode,
     val status: Status = Status.OPPRETTET,
     val reservertAv: String? = null,
     val reservertTidspunkt: LocalDateTime? = null,

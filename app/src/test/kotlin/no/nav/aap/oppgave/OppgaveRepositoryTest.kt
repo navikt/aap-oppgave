@@ -4,7 +4,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovType
+import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
@@ -38,7 +38,7 @@ class OppgaveRepositoryTest {
 
     @Test
     fun `Reserver neste oppgave finner ingen oppgave fordi opprettet oppgave ikke matcher filter`() {
-        opprettOppgave(avklaringsbehovType = AvklaringsbehovType("1000"))
+        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("1000"))
         InitTestDatabase.dataSource.transaction { connection ->
             val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(filter("2000"), "test")
             assertThat(oppgaveId).isNull()
@@ -47,8 +47,8 @@ class OppgaveRepositoryTest {
 
     @Test
     fun `Reserver neste oppgave finner en oppgave fordi en av oppgavene matcher filter`() {
-        opprettOppgave(avklaringsbehovType = AvklaringsbehovType("2000"))
-        opprettOppgave(avklaringsbehovType = AvklaringsbehovType("3000"))
+        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("2000"))
+        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("3000"))
         InitTestDatabase.dataSource.transaction { connection ->
             val oppgaveId = OppgaveRepository(connection).reserverNesteOppgave(filter("3000"), "test")
             assertThat(oppgaveId).isNotNull()
@@ -84,7 +84,7 @@ class OppgaveRepositoryTest {
     }
 
     private fun filter(vararg avklaringsbehovKoder: String) =
-        FilterDto(1, "Filter for test", avklaringsbehovKoder.map { AvklaringsbehovType(it) }.toSet())
+        FilterDto(1, "Filter for test", avklaringsbehovKoder.map { AvklaringsbehovKode(it) }.toSet())
 
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
@@ -103,13 +103,13 @@ class OppgaveRepositoryTest {
         saksnummer: String = "123",
         behandlingRef: UUID = UUID.randomUUID(),
         status: Status = Status.OPPRETTET,
-        avklaringsbehovType: AvklaringsbehovType = AvklaringsbehovType("1000")
+        avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000")
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
-            avklaringsbehovType = avklaringsbehovType,
+            avklaringsbehovKode = avklaringsbehovKode,
             status = status,
             opprettetAv = "bruker1",
             opprettetTidspunkt = LocalDateTime.now()
