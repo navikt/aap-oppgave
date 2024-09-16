@@ -28,6 +28,7 @@ publishing {
             url = uri("https://maven.pkg.github.com/navikt/aap-oppgave")
             credentials {
                 username = "x-access-token"
+                // Ligger tilgjengelig i Github Actions
                 password = System.getenv("GITHUB_TOKEN")
             }
         }

@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 val ktorVersion = "2.3.12"
 val komponenterVersjon = "0.0.53"
 
@@ -48,4 +50,10 @@ dependencies {
     testImplementation("org.testcontainers:postgresql:1.20.1")
     testImplementation("io.mockk:mockk:1.13.12")
     testImplementation(kotlin("test"))
+}
+
+tasks {
+    withType<ShadowJar> {
+        mergeServiceFiles()
+    }
 }
