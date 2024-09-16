@@ -133,7 +133,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentOppgaverForReferanse(saksnummer: String?, behandlingRef: UUID?, journalpostId: Long?, avklaringsbehovType: AvklaringsbehovType, ident: String): List<OppgaveId> {
         val oppgaverForReferanseQuery = """
             SELECT 
-                OPPGAVE_ID 
+                ID 
             FROM 
                 OPPGAVE 
             WHERE 

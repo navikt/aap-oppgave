@@ -19,7 +19,7 @@ fun NormalOpenAPIRoute.opprettOppgaveApi(dataSource: DataSource, prometheus: Pro
 
     route("/opprett-oppgave").post<Unit, OppgaveId, OpprettOppgaveDto> { _, request ->
         prometheus.httpCallCounter("/opprett-oppgave").increment()
-        val oppgaveId =  dataSource.transaction(readOnly = true) { connection ->
+        val oppgaveId =  dataSource.transaction { connection ->
             val oppgaveDto = OppgaveDto(
                 saksnummer = request.saksnummer,
                 behandlingRef = request.behandlingRef,
