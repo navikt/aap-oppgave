@@ -55,6 +55,7 @@ spec:
             rules:
                 - application: behandlingsflyt
                 - application: postmottak-backend
+                - application: oppgavestyring-frontend
         outbound:
             rules:
                 - application: tilgang
