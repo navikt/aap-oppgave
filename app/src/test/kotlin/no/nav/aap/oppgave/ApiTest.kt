@@ -23,7 +23,6 @@ import no.nav.aap.oppgave.opprett.Behandlingstype
 import no.nav.aap.oppgave.opprett.Definisjon
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -39,21 +38,28 @@ import java.util.UUID
 class ApiTest {
 
     @Test
-    fun `Opprett og  plukk oppgave`() {
+    fun `Opprett, plukk og avslutt oppgave`() {
         val saksnummer = "123456"
-        val referanse = UUID.randomUUID().toString()
+        val referanse = UUID.randomUUID()
+        val avklaringsbehovtype: Avklaringsbehovtype = Avklaringsbehovtype.AVKLAR_SYKDOM
 
+        // Opprett ny oppgave
         val oppgaveId = opprettOppgave(saksnummer, referanse)
         assertThat(oppgaveId).isNotNull()
 
-        val nesteOppgaveDto = hentNesteOppgave()
-        assertThat(nesteOppgaveDto).isNotNull()
-        assertThat(nesteOppgaveDto!!.oppgaveId).isEqualTo(oppgaveId!!)
+        // Plukk neste oppgave
+        var nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNotNull()
+        assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgaveId!!)
 
-//TODO: fiks senere
-//        val oppgaveIder = avsluttOppgave(saksnummer, behandlingRef, avklaringsbehovKode)
-//        assertThat(oppgaveIder).hasSize(1)
-//        assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
+        // Avslutt plukket oppgave
+        val oppgaveIder = avsluttOppgave(saksnummer, referanse, avklaringsbehovtype)
+        assertThat(oppgaveIder).hasSize(1)
+        assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
+
+        // Sjekk at det ikkk er flere oppgaver i køen
+        nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNull()
     }
 
 
@@ -67,18 +73,18 @@ class ApiTest {
         assertThat(filterListe).hasSize(2)
     }
 
-    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: String): BehandlingshistorikkRequest {
+    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID, avklaringsbehovtype: Avklaringsbehovtype): BehandlingshistorikkRequest {
         return BehandlingshistorikkRequest(
             personident = "01010012345",
             saksnummer = saksnummer,
-            referanse = referanse,
+            referanse = referanse.toString(),
             behandlingType = Behandlingstype.Førstegangsbehandling,
             status = Behandlingstatus.OPPRETTET,
             opprettetTidspunkt = LocalDateTime.now(),
             avklaringsbehov = listOf(
                 AvklaringsbehovDto(
                     definisjon = Definisjon(
-                        type = Avklaringsbehovtype.AVKLAR_SYKDOM.kode
+                        type = avklaringsbehovtype.kode
                     ),
                     status = Avklaringsbehovstatus.OPPRETTET,
                     endringer = listOf(
@@ -93,8 +99,8 @@ class ApiTest {
         )
     }
 
-    private fun opprettOppgave(saksnummer: String, referanse: String): OppgaveId? {
-        val request = opprettBehandlingshistorikk(saksnummer, referanse)
+    private fun opprettOppgave(saksnummer: String, referanse: UUID): OppgaveId? {
+        val request = opprettBehandlingshistorikk(saksnummer, referanse, Avklaringsbehovtype.AVKLAR_SYKDOM)
         val oppgaveId:OppgaveId? = client.post(
             URI.create("http://localhost:8080/opprett-oppgave"),
             PostRequest(body = request)
@@ -110,14 +116,14 @@ class ApiTest {
         return nesteOppgave
     }
 
-    private fun avsluttOppgave(saksnummer: String, behandlingRef: UUID, avklaringsbehovKode: String): List<OppgaveId> {
+    private fun avsluttOppgave(saksnummer: String, referanse: UUID, avklaringsbehovtype: Avklaringsbehovtype): List<OppgaveId> {
         val oppgaveIder: List<OppgaveId>? = client.post(
             URI.create("http://localhost:8080/avslutt-oppgave"),
             PostRequest(body = AvsluttOppgaveDto(
                 saksnummer = saksnummer,
-                behandlingRef = behandlingRef,
+                referanse = referanse,
                 journalpostId = null,
-                avklaringsbehovKode = AvklaringsbehovKode(avklaringsbehovKode))
+                avklaringsbehovtype = avklaringsbehovtype)
             )
         )
         return oppgaveIder!!

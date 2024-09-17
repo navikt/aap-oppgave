@@ -29,9 +29,9 @@ fun NormalOpenAPIRoute.avsluttOppgave(dataSource: DataSource, prometheus: Promet
         val oppgaver = dataSource.transaction { connection ->
             val oppgaverSomSkalAvsluttes = OppgaveRepository(connection).hentOppgaverForReferanse(
                 dto.saksnummer,
-                dto.behandlingRef,
+                dto.referanse,
                 dto.journalpostId,
-                dto.avklaringsbehovKode,
+                dto.avklaringsbehovtype,
                 ident()
             )
             oppgaverSomSkalAvsluttes.forEach {

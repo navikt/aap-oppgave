@@ -29,6 +29,6 @@ fun NormalOpenAPIRoute.plukkApi(dataSource: DataSource, prometheus: PrometheusMe
         if (nesteOppgave != null) {
             respond(nesteOppgave)
         } else {
-            respondWithStatus(HttpStatusCode.NotFound)
+            respondWithStatus(HttpStatusCode.NoContent)
         }
     }

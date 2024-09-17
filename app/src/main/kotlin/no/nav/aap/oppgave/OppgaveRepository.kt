@@ -2,6 +2,7 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.opprett.Avklaringsbehovtype
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
@@ -130,27 +131,34 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentOppgaverForReferanse(saksnummer: String?, behandlingRef: UUID?, journalpostId: Long?, avklaringsbehovKode: AvklaringsbehovKode, ident: String): List<OppgaveId> {
+    fun hentOppgaverForReferanse(saksnummer: String?, referanse: UUID?, journalpostId: Long?, avklaringsbehovtype: Avklaringsbehovtype, ident: String): List<OppgaveId> {
+        val saksnummerClause = if (saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
+        val referanseClause = if (referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
+        val journalpostIdClause = if (journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
         val oppgaverForReferanseQuery = """
             SELECT 
                 ID 
             FROM 
                 OPPGAVE 
             WHERE 
-                SAKSNUMMER = ? AND
-                BEHANDLING_REF = ? AND
-                JOURNALPOST_ID = ? AND
+                $saksnummerClause AND
+                $referanseClause AND
+                $journalpostIdClause AND
                 AVKLARINGSBEHOV_TYPE = ? AND
                 RESERVERT_AV = ?
         """.trimIndent()
 
         return connection.queryList<OppgaveId>(oppgaverForReferanseQuery) {
             setParams {
-                setString(1, saksnummer)
-                setUUID(2, behandlingRef)
-                setLong(3, journalpostId)
-                setString(4, avklaringsbehovKode.kode)
-                setString(5, ident)
+                var index = 1
+                if (saksnummer != null) setString(index++, saksnummer)
+                if (referanse != null) setUUID(index++, referanse)
+                if (journalpostId != null ) setLong(index++, journalpostId)
+                setString(index++, avklaringsbehovtype.kode)
+                setString(index++, ident)
+            }
+            setRowMapper { row ->
+                OppgaveId(row.getLong("ID"))
             }
         }
     }
