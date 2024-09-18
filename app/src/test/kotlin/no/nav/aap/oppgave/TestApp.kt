@@ -14,9 +14,10 @@ fun main() {
     val fakes = Fakes(azurePort = 8081)
     embeddedServer(Netty, port = 8080) {
         val dbConfig = DbConfig(
-            database = "test",
+            database = postgres.databaseName,
             username = postgres.username,
-            password = postgres.password
+            password = postgres.password,
+            jdbcUrl = postgres.jdbcUrl,
         )
         server(dbConfig)
         module(fakes)
