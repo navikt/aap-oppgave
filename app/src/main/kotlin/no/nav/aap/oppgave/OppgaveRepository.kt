@@ -53,10 +53,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun reserverNesteOppgave(filterDto: FilterDto, ident: String): NesteOppgaveDto? {
+    fun finnNesteOppgave(filterDto: FilterDto): NesteOppgaveDto? {
         val hentNesteOppgaveQuery = """
             SELECT 
-                ID, SAKSNUMMER, BEHANDLING_REF, JOURNALPOST_ID
+                ID, SAKSNUMMER, BEHANDLING_REF, JOURNALPOST_ID, AVKLARINGSBEHOV_TYPE
             FROM 
                 OPPGAVE 
             WHERE 
@@ -74,15 +74,35 @@ class OppgaveRepository(private val connection: DBConnection) {
                     saksnummer = it.getStringOrNull("SAKSNUMMER"),
                     behandlingRef = it.getUUIDOrNull("BEHANDLING_REF"),
                     journalpostId = it.getLongOrNull("JOURNALPOST_ID"),
+                    avklaringsbehovKode = it.getString("AVKLARINGSBEHOV_TYPE")
                 )
             }
         }
-
-        if (nesteOppgave != null) {
-           reserverOppgave(connection, nesteOppgave.oppgaveId, ident)
-        }
         return nesteOppgave
     }
+
+    fun reserverOppgave(oppgaveId: OppgaveId, ident: String) {
+        val updaterOppgaveReservasjonQuery = """
+            UPDATE 
+                OPPGAVE 
+            SET 
+                RESERVERT_AV = ?,
+                RESERVERT_TIDSPUNKT = CURRENT_TIMESTAMP,
+                ENDRET_AV = ?,
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP
+            WHERE ID = ?
+        """.trimIndent()
+
+        connection.execute(updaterOppgaveReservasjonQuery) {
+            setParams {
+                setString(1, ident)
+                setString(2, ident)
+                setLong(3, oppgaveId.id)
+            }
+        }
+    }
+
+
 
     fun hentMineOppgaver(ident: String): List<OppgaveDto> {
         val query = """
@@ -159,27 +179,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
             setRowMapper { row ->
                 OppgaveId(row.getLong("ID"))
-            }
-        }
-    }
-
-    private fun reserverOppgave(connection: DBConnection, oppgaveId: OppgaveId, ident: String) {
-        val updaterOppgaveReservasjonQuery = """
-            UPDATE 
-                OPPGAVE 
-            SET 
-                RESERVERT_AV = ?,
-                RESERVERT_TIDSPUNKT = CURRENT_TIMESTAMP,
-                ENDRET_AV = ?,
-                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP
-            WHERE ID = ?
-        """.trimIndent()
-
-        connection.execute(updaterOppgaveReservasjonQuery) {
-            setParams {
-                setString(1, ident)
-                setString(2, ident)
-                setLong(3, oppgaveId.id)
             }
         }
     }

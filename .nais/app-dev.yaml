@@ -64,6 +64,11 @@ spec:
         outbound:
             rules:
                 - application: tilgang
+    env:
+        - name: INTEGRASJON_TILGANG_URL
+          value: http://tilgang
+        - name: INTEGRASJON_TILGANG_SCOPE
+          value: api://dev-gcp.aap.tilgang/.default
     gcp:
         sqlInstances:
             - type: POSTGRES_16

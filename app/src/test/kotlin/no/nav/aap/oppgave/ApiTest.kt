@@ -57,7 +57,7 @@ class ApiTest {
         assertThat(oppgaveIder).hasSize(1)
         assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
 
-        // Sjekk at det ikkk er flere oppgaver i køen
+        // Sjekk at det ikke er flere oppgaver i køen
         nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNull()
     }
@@ -134,16 +134,15 @@ class ApiTest {
         private val fakes = Fakes(azurePort = 8081)
 
         private val dbConfig = DbConfig(
-            database = "test",
+            database = postgres.databaseName,
             jdbcUrl = postgres.jdbcUrl,
             username = postgres.username,
             password = postgres.password
         )
 
-        private val client = RestClient(
+        private val client = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = ClientCredentialsTokenProvider,
-            responseHandler = DefaultResponseHandler()
+            tokenProvider = ClientCredentialsTokenProvider
         )
 
         // Starter server

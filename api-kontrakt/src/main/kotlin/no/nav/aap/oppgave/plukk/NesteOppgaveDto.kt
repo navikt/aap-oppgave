@@ -7,5 +7,6 @@ data class NesteOppgaveDto(
     val oppgaveId: OppgaveId,
     val saksnummer: String?,
     val behandlingRef: UUID?,
-    val journalpostId: Long?
+    val journalpostId: Long?,
+    val avklaringsbehovKode: String
 )
