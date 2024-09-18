@@ -38,6 +38,11 @@ spec:
     azure:
         application:
             enabled: true
+            allowAllUsers: true
+            claims:
+                extra:
+                    - "NAVident"
+                    - "azp_name"
     liveness:
         path: /actuator/live
         initialDelay: 5
