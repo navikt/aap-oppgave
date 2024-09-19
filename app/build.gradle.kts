@@ -10,7 +10,7 @@ plugins {
 }
 
 application {
-    mainClass.set("no.nav.aap.oppgave.AppKt")
+    mainClass.set("no.nav.aap.oppgave.server.AppKt")
 }
 
 dependencies {
