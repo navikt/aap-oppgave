@@ -24,8 +24,10 @@ import no.nav.aap.behandlingsflyt.server.authenticate.AZURE
 import no.nav.aap.komponenter.commonKtorModule
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
+import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.avsluttOppgave
 import no.nav.aap.oppgave.filter.filterApi
+import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.opprette.opprettOppgaveApi
 import no.nav.aap.oppgave.plukk.plukkApi
@@ -75,6 +77,8 @@ internal fun Application.server(dbConfig: DbConfig) {
                 mineOppgaverApi(dataSource, prometheus)
                 avsluttOppgave(dataSource, prometheus)
                 filterApi(dataSource, prometheus)
+                avreserverOppgave(dataSource, prometheus)
+                flyttOppgave(dataSource, prometheus)
             }
         }
         actuator(prometheus)

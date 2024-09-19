@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThat
 import java.time.LocalDateTime
 import java.util.UUID
 import org.junit.jupiter.api.Test
+import kotlin.math.min
 import kotlin.test.AfterTest
 
 class OppgaveRepositoryTest {
@@ -31,7 +32,7 @@ class OppgaveRepositoryTest {
     fun `Avslutt åpen oppgave`() {
         val oppgaveId = opprettOppgave()
         InitTestDatabase.dataSource.transaction { connection ->
-            OppgaveRepository(connection).avsluttOppgave(oppgaveId)
+            OppgaveRepository(connection).avsluttOppgave(oppgaveId, "test")
         }
     }
 
@@ -82,19 +83,45 @@ class OppgaveRepositoryTest {
         }
     }
 
+    @Test
+    fun `Avregistrer oppgave`() {
+        val oppgaveId = opprettOppgave()
+
+        reserverOppgave(oppgaveId, "saksbehandler1")
+        var mineOppgaver  = mineOppgave("saksbehandler1")
+        assertThat(mineOppgaver).hasSize(1)
+
+        avreserverOppgave(oppgaveId, "saksbehandler1")
+        mineOppgaver  = mineOppgave("saksbehandler1")
+        assertThat(mineOppgaver).hasSize(0)
+    }
+
+
     private fun filter(vararg avklaringsbehovKoder: String) =
         FilterDto(1, "Filter for test", avklaringsbehovKoder.map { AvklaringsbehovKode(it) }.toSet())
 
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
         InitTestDatabase.dataSource.transaction { connection ->
-            OppgaveRepository(connection).avsluttOppgave(oppgaveId)
+            OppgaveRepository(connection).avsluttOppgave(oppgaveId, "test")
         }
     }
 
     private fun reserverOppgave(oppgaveId: OppgaveId, ident: String) {
         return InitTestDatabase.dataSource.transaction { connection ->
-            OppgaveRepository(connection).reserverOppgave(oppgaveId, ident)
+            OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, ident)
+        }
+    }
+
+    private fun avreserverOppgave(oppgaveId: OppgaveId, ident: String) {
+        InitTestDatabase.dataSource.transaction { connection ->
+            OppgaveRepository(connection).avreserverOppgave(oppgaveId, ident)
+        }
+    }
+
+    private fun mineOppgave(ident: String): List<OppgaveDto> {
+        return InitTestDatabase.dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentMineOppgaver(ident)
         }
     }
 

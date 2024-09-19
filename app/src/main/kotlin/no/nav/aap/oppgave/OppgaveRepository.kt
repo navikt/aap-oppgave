@@ -42,13 +42,43 @@ class OppgaveRepository(private val connection: DBConnection) {
         return OppgaveId(id)
     }
 
-    fun avsluttOppgave(oppgaveId: OppgaveId) {
+    fun avsluttOppgave(oppgaveId: OppgaveId, ident: String) {
         val query = """
-            UPDATE OPPGAVE SET STATUS = 'AVSLUTTET' WHERE ID = ?
+            UPDATE 
+                OPPGAVE 
+            SET 
+                STATUS = 'AVSLUTTET', 
+                ENDRET_AV = ?,
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP
+            WHERE 
+                ID = ? AND
+                STATUS != 'AVSLUTTET'
         """.trimIndent()
         connection.execute(query) {
             setParams {
-                setLong(1, oppgaveId.id)
+                setString(1, ident)
+                setLong(2, oppgaveId.id)
+            }
+        }
+    }
+
+    fun avreserverOppgave(oppgaveId: OppgaveId, ident: String) {
+        val query = """
+            UPDATE 
+                OPPGAVE 
+            SET 
+                RESERVERT_AV = NULL, 
+                RESERVERT_TIDSPUNKT = NULL,
+                ENDRET_AV = ?,
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP
+            WHERE 
+                ID = ? AND 
+                STATUS != 'AVSLUTTET'
+        """.trimIndent()
+        connection.execute(query) {
+            setParams {
+                setString(1, ident)
+                setLong(2, oppgaveId.id)
             }
         }
     }
@@ -81,7 +111,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         return nesteOppgave
     }
 
-    fun reserverOppgave(oppgaveId: OppgaveId, ident: String) {
+    fun reserverOppgave(oppgaveId: OppgaveId, ident: String, reservertAvIdent: String) {
         val updaterOppgaveReservasjonQuery = """
             UPDATE 
                 OPPGAVE 
@@ -95,14 +125,12 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         connection.execute(updaterOppgaveReservasjonQuery) {
             setParams {
-                setString(1, ident)
+                setString(1, reservertAvIdent)
                 setString(2, ident)
                 setLong(3, oppgaveId.id)
             }
         }
     }
-
-
 
     fun hentMineOppgaver(ident: String): List<OppgaveDto> {
         val query = """
@@ -165,6 +193,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 $referanseClause AND
                 $journalpostIdClause AND
                 AVKLARINGSBEHOV_TYPE = ? AND
+                STATUS != 'AVSLUTTET' AND
                 RESERVERT_AV = ?
         """.trimIndent()
 

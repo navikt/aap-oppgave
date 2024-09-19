@@ -26,7 +26,7 @@ class PlukkOppgaveService(val connection: DBConnection) {
             )
             if (TilgangGateway.harTilgang(tilgangRequest, token)) {
 
-                oppgaveRepo.reserverOppgave(nesteOppgave.oppgaveId, ident)
+                oppgaveRepo.reserverOppgave(nesteOppgave.oppgaveId, ident, ident)
             }
         }
         return nesteOppgave
