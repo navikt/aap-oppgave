@@ -11,7 +11,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
-import no.nav.aap.oppgave.ErrorRespons
+import no.nav.aap.oppgave.server.ErrorRespons
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import tilgang.TilgangRequest

@@ -5,7 +5,6 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
-import no.nav.aap.komponenter.httpklient.httpclient.error.DefaultResponseHandler
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
@@ -23,6 +22,8 @@ import no.nav.aap.oppgave.opprett.Behandlingstype
 import no.nav.aap.oppgave.opprett.Definisjon
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
+import no.nav.aap.oppgave.server.DbConfig
+import no.nav.aap.oppgave.server.server
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -73,7 +74,7 @@ class ApiTest {
         assertThat(filterListe).hasSize(2)
     }
 
-    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID, avklaringsbehovtype: Avklaringsbehovtype): BehandlingshistorikkRequest {
+    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID): BehandlingshistorikkRequest {
         return BehandlingshistorikkRequest(
             personident = "01010012345",
             saksnummer = saksnummer,
@@ -84,7 +85,7 @@ class ApiTest {
             avklaringsbehov = listOf(
                 AvklaringsbehovDto(
                     definisjon = Definisjon(
-                        type = avklaringsbehovtype.kode
+                        type = Avklaringsbehovtype.AVKLAR_SYKDOM.kode
                     ),
                     status = Avklaringsbehovstatus.OPPRETTET,
                     endringer = listOf(
@@ -100,7 +101,7 @@ class ApiTest {
     }
 
     private fun opprettOppgave(saksnummer: String, referanse: UUID): OppgaveId? {
-        val request = opprettBehandlingshistorikk(saksnummer, referanse, Avklaringsbehovtype.AVKLAR_SYKDOM)
+        val request = opprettBehandlingshistorikk(saksnummer, referanse)
         val oppgaveId:OppgaveId? = client.post(
             URI.create("http://localhost:8080/opprett-oppgave"),
             PostRequest(body = request)

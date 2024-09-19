@@ -1,8 +1,9 @@
-package no.nav.aap.oppgave
+package no.nav.aap.oppgave.server
 
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopped
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
 import no.nav.aap.oppgave.fakes.Fakes
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
@@ -23,7 +24,6 @@ fun main() {
         module(fakes)
     }.start(wait = true)
 }
-
 
 private fun postgreSQLContainer(): PostgreSQLContainer<Nothing> {
     val postgres = PostgreSQLContainer<Nothing>("postgres:16")

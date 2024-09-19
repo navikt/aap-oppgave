@@ -1,30 +1,37 @@
-package no.nav.aap.oppgave
+package no.nav.aap.oppgave.server
 
 import com.papsign.ktor.openapigen.route.apiRouting
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.Application
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.auth.authenticate
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Routing
+import io.ktor.server.routing.get
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.server.authenticate.AZURE
 import no.nav.aap.komponenter.commonKtorModule
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
-import no.nav.aap.oppgave.opprette.opprettOppgaveApi
+import no.nav.aap.oppgave.avsluttOppgave
 import no.nav.aap.oppgave.filter.filterApi
+import no.nav.aap.oppgave.mineOppgaverApi
+import no.nav.aap.oppgave.opprette.opprettOppgaveApi
 import no.nav.aap.oppgave.plukk.plukkApi
 import org.slf4j.LoggerFactory
 
 private val SECURE_LOGGER = LoggerFactory.getLogger("secureLog")
-
 private const val ANTALL_WORKERS = 5
 
 class App
@@ -49,7 +56,7 @@ internal fun Application.server(dbConfig: DbConfig) {
         exception<Throwable> { call, cause ->
             LoggerFactory.getLogger(App::class.java)
                 .warn("Ukjent feil ved kall til '{}'", call.request.local.uri, cause)
-            call.respond(status = HttpStatusCode.InternalServerError, message = ErrorRespons(cause.message))
+            call.respond(status = HttpStatusCode.Companion.InternalServerError, message = ErrorRespons(cause.message))
         }
     }
     install(CORS) {
@@ -100,14 +107,13 @@ private fun Routing.actuator(prometheus: PrometheusMeterRegistry) {
         }
 
         get("/live") {
-            val status = HttpStatusCode.OK
+            val status = HttpStatusCode.Companion.OK
             call.respond(status, "Oppe!")
         }
 
         get("/ready") {
-            val status = HttpStatusCode.OK
+            val status = HttpStatusCode.Companion.OK
             call.respond(status, "Oppe!")
         }
     }
 }
-
