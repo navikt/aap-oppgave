@@ -4,33 +4,24 @@ import com.papsign.ktor.openapigen.route.apiRouting
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.http.*
-import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
-import io.ktor.server.metrics.micrometer.*
 import io.ktor.server.netty.*
-import io.ktor.server.plugins.callid.*
-import io.ktor.server.plugins.callloging.*
-import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.micrometer.core.instrument.binder.logging.LogbackMetrics
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import no.nav.aap.behandlingsflyt.server.authenticate.AZURE
+import no.nav.aap.komponenter.commonKtorModule
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
-import no.nav.aap.komponenter.httpklient.json.DefaultJsonMapper
 import no.nav.aap.oppgave.opprette.opprettOppgaveApi
 import no.nav.aap.oppgave.filter.filterApi
 import no.nav.aap.oppgave.plukk.plukkApi
-import no.nav.aap.oppgave.server.authenticate.AZURE
-import no.nav.aap.oppgave.server.authenticate.authentication
 import org.slf4j.LoggerFactory
-import java.util.*
 
 private val SECURE_LOGGER = LoggerFactory.getLogger("secureLog")
 
@@ -52,22 +43,8 @@ fun main() {
 internal fun Application.server(dbConfig: DbConfig) {
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 
-    install(MicrometerMetrics) {
-        registry = prometheus
-        meterBinders += LogbackMetrics()
-    }
-    generateOpenAPI()
-    install(ContentNegotiation) {
-        register(ContentType.Application.Json, JacksonConverter(objectMapper = DefaultJsonMapper.objectMapper(), true))
-    }
-    install(CallId) {
-        retrieveFromHeader(HttpHeaders.XCorrelationId)
-        generate { UUID.randomUUID().toString() }
-    }
-    install(CallLogging) {
-        callIdMdc("callId")
-        filter { call -> call.request.path().startsWith("/actuator").not() }
-    }
+    commonKtorModule(prometheus, AzureConfig(), "AAP - Oppgave")
+
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             LoggerFactory.getLogger(App::class.java)
@@ -79,7 +56,6 @@ internal fun Application.server(dbConfig: DbConfig) {
         anyHost()
         allowHeader(HttpHeaders.ContentType)
     }
-    authentication(AzureConfig())
 
     val dataSource = initDatasource(dbConfig)
     Migrering.migrate(dataSource)
@@ -96,8 +72,6 @@ internal fun Application.server(dbConfig: DbConfig) {
         }
         actuator(prometheus)
     }
-
-
 }
 
 class DbConfig(

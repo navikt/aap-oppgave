@@ -19,6 +19,7 @@ dependencies {
     implementation("no.nav.aap.kelvin:dbmigrering:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbtest:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:infrastructure:$komponenterVersjon")
+    implementation("no.nav.aap.kelvin:server:$komponenterVersjon")
     implementation("no.nav:ktor-openapi-generator:1.0.31")
     implementation("no.nav.aap.tilgang:api-kontrakt:$tilgangVersjon")
 
