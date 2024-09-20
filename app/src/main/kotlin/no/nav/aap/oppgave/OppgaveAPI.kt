@@ -81,6 +81,8 @@ fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: Promethe
             oppgaverSomSkalFlyttes.forEach {
                 OppgaveRepository(connection).reserverOppgave(it, innloggetBrukerIdent, dto.flyttTilIdent)
             }
+            oppgaverSomSkalFlyttes
         }
+        respond(oppgaver)
 
     }
