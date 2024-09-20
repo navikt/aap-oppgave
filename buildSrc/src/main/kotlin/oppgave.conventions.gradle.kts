@@ -16,8 +16,10 @@ repositories {
         url = uri("https://maven.pkg.github.com/navikt/behandlingsflyt")
         credentials {
             username = "x-access-token"
-            password = (project.findProperty("githubPassword") ?: System.getenv("GITHUB_PASSWORD")
-            ?: error("")).toString()
+            password = (project.findProperty("githubPassword")
+                ?: System.getenv("GITHUB_PASSWORD")
+                ?: System.getenv("GITHUB_TOKEN")
+                ?: error("")).toString()
         }
     }
 }
