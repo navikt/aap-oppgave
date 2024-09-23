@@ -19,9 +19,9 @@ class PlukkOppgaveService(val connection: DBConnection) {
         val nesteOppgave = oppgaveRepo.finnNesteOppgave(filter)
         if (nesteOppgave != null) {
             val tilgangRequest = TilgangRequest(
-                saksnummer = nesteOppgave.saksnummer!!,
-                behandlingsreferanse = nesteOppgave.behandlingRef!!.toString(),
-                avklaringsbehovKode = nesteOppgave.avklaringsbehovKode,
+                saksnummer = nesteOppgave.avklaringsbehovReferanse.saksnummer!!,
+                behandlingsreferanse = nesteOppgave.avklaringsbehovReferanse.referanse?.toString(),
+                avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovtype.kode,
                 operasjon = Operasjon.SAKSBEHANDLE
             )
             if (TilgangGateway.harTilgang(tilgangRequest, token)) {

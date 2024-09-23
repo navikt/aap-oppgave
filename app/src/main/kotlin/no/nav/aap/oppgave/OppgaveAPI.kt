@@ -7,7 +7,9 @@ import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.oppgave.metriker.httpCallCounter
+import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import javax.sql.DataSource
@@ -24,17 +26,11 @@ fun NormalOpenAPIRoute.mineOppgaverApi(dataSource: DataSource, prometheus: Prome
 
 fun NormalOpenAPIRoute.avsluttOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
-    route("/avslutt-oppgave").post<Unit, List<OppgaveId>, OppgaveReferanseDto> { _, dto ->
+    route("/avslutt-oppgave").post<Unit, List<OppgaveId>, AvklaringsbehovReferanseDto> { _, dto ->
         prometheus.httpCallCounter("/avslutt-oppgave").increment()
         val oppgaver = dataSource.transaction { connection ->
             val innloggetBrukerIdent = ident()
-            val oppgaverSomSkalAvsluttes = OppgaveRepository(connection).hentOppgaverForReferanse(
-                dto.saksnummer,
-                dto.referanse,
-                dto.journalpostId,
-                dto.avklaringsbehovtype,
-                innloggetBrukerIdent
-            )
+            val oppgaverSomSkalAvsluttes = OppgaveRepository(connection).hentOppgaver(dto)
             oppgaverSomSkalAvsluttes.forEach {
                 OppgaveRepository(connection).avsluttOppgave(it,innloggetBrukerIdent)
             }
@@ -45,16 +41,10 @@ fun NormalOpenAPIRoute.avsluttOppgave(dataSource: DataSource, prometheus: Promet
 
 fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
-    route("/avreserver-oppgave").post<Unit, List<OppgaveId>, OppgaveReferanseDto> { _, dto ->
+    route("/avreserver-oppgave").post<Unit, List<OppgaveId>, AvklaringsbehovReferanseDto> { _, dto ->
         prometheus.httpCallCounter("avreserver-oppgave").increment()
         val oppgaver = dataSource.transaction { connection ->
-            val oppgaverSomSkalAvreserveres = OppgaveRepository(connection).hentOppgaverForReferanse(
-                dto.saksnummer,
-                dto.referanse,
-                dto.journalpostId,
-                dto.avklaringsbehovtype,
-                ident()
-            )
+            val oppgaverSomSkalAvreserveres = OppgaveRepository(connection).hentOppgaver(dto)
             oppgaverSomSkalAvreserveres.forEach {
                 OppgaveRepository(connection).avreserverOppgave(it, ident())
             }
@@ -71,17 +61,9 @@ fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: Promethe
 
         val oppgaver = dataSource.transaction { connection ->
             val innloggetBrukerIdent = ident()
-            val oppgaverSomSkalFlyttes = OppgaveRepository(connection).hentOppgaverForReferanse(
-                dto.oppgaveReferanseDto.saksnummer,
-                dto.oppgaveReferanseDto.referanse,
-                dto.oppgaveReferanseDto.journalpostId,
-                dto.oppgaveReferanseDto.avklaringsbehovtype,
-                innloggetBrukerIdent
-            )
-            oppgaverSomSkalFlyttes.forEach {
-                OppgaveRepository(connection).reserverOppgave(it, innloggetBrukerIdent, dto.flyttTilIdent)
-            }
-            oppgaverSomSkalFlyttes
+            val token = token()
+            val reserverOppgaveService = ReserverOppgaveService(connection)
+            reserverOppgaveService.reserverOppgave(dto.avklaringsbehovReferanse, innloggetBrukerIdent, token)
         }
         respond(oppgaver)
 

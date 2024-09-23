@@ -7,7 +7,9 @@ import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
-import java.util.UUID
+import org.slf4j.LoggerFactory
+
+private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
 class OppgaveRepository(private val connection: DBConnection) {
 
@@ -101,10 +103,12 @@ class OppgaveRepository(private val connection: DBConnection) {
             setRowMapper {
                 NesteOppgaveDto(
                     oppgaveId = OppgaveId(it.getLong("ID")),
-                    saksnummer = it.getStringOrNull("SAKSNUMMER"),
-                    behandlingRef = it.getUUIDOrNull("BEHANDLING_REF"),
-                    journalpostId = it.getLongOrNull("JOURNALPOST_ID"),
-                    avklaringsbehovKode = it.getString("AVKLARINGSBEHOV_TYPE")
+                    AvklaringsbehovReferanseDto(
+                        saksnummer = it.getStringOrNull("SAKSNUMMER"),
+                        referanse = it.getUUIDOrNull("BEHANDLING_REF"),
+                        journalpostId = it.getLongOrNull("JOURNALPOST_ID"),
+                        avklaringsbehovtype = Avklaringsbehovtype.fraKode(it.getString("AVKLARINGSBEHOV_TYPE"))
+                    )
                 )
             }
         }
@@ -179,10 +183,13 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentOppgaverForReferanse(saksnummer: String?, referanse: UUID?, journalpostId: Long?, avklaringsbehovtype: Avklaringsbehovtype, ident: String): List<OppgaveId> {
-        val saksnummerClause = if (saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
-        val referanseClause = if (referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
-        val journalpostIdClause = if (journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
+    /**
+     * Hent oppgaver som ikke er avsluttet.
+     */
+    fun hentOppgaver(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): List<OppgaveId> {
+        val saksnummerClause = if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
+        val referanseClause = if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
+        val journalpostIdClause = if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
         val oppgaverForReferanseQuery = """
             SELECT 
                 ID 
@@ -193,23 +200,25 @@ class OppgaveRepository(private val connection: DBConnection) {
                 $referanseClause AND
                 $journalpostIdClause AND
                 AVKLARINGSBEHOV_TYPE = ? AND
-                STATUS != 'AVSLUTTET' AND
-                RESERVERT_AV = ?
+                STATUS != 'AVSLUTTET'
         """.trimIndent()
 
-        return connection.queryList<OppgaveId>(oppgaverForReferanseQuery) {
+        val oppgaver =  connection.queryList<OppgaveId>(oppgaverForReferanseQuery) {
             setParams {
                 var index = 1
-                if (saksnummer != null) setString(index++, saksnummer)
-                if (referanse != null) setUUID(index++, referanse)
-                if (journalpostId != null ) setLong(index++, journalpostId)
-                setString(index++, avklaringsbehovtype.kode)
-                setString(index++, ident)
+                if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
+                if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
+                if (avklaringsbehovReferanse.journalpostId != null ) setLong(index++, avklaringsbehovReferanse.journalpostId)
+                setString(index++, avklaringsbehovReferanse.avklaringsbehovtype.kode)
             }
             setRowMapper { row ->
                 OppgaveId(row.getLong("ID"))
             }
         }
+        if (oppgaver.size > 1) {
+            log.warn("Hent oppgaver skal ikke returnere mer en 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
+        }
+        return oppgaver
     }
 
     private fun FilterDto.whereClause(): String {

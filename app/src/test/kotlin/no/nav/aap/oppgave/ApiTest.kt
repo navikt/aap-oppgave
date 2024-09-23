@@ -120,7 +120,7 @@ class ApiTest {
     private fun avsluttOppgave(saksnummer: String, referanse: UUID, avklaringsbehovtype: Avklaringsbehovtype): List<OppgaveId> {
         val oppgaveIder: List<OppgaveId>? = client.post(
             URI.create("http://localhost:8080/avslutt-oppgave"),
-            PostRequest(body = OppgaveReferanseDto(
+            PostRequest(body = AvklaringsbehovReferanseDto(
                 saksnummer = saksnummer,
                 referanse = referanse,
                 journalpostId = null,

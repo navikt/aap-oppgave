@@ -1,6 +1,6 @@
 package no.nav.aap.oppgave
 
 data class FlyttOppgaveDto(
-    val oppgaveReferanseDto: OppgaveReferanseDto,
+    val avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
     val flyttTilIdent: String
 )
