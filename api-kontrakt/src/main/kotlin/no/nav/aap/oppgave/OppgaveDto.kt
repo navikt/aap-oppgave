@@ -20,4 +20,12 @@ data class OppgaveDto(
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
-)
+) {
+    init {
+        if (journalpostId == null) {
+            if (saksnummer == null || behandlingRef == null) {
+                throw IllegalArgumentException("Saksnummer og behandlingRef kan ikke være null dersom journalpostId er null")
+            }
+        }
+    }
+}
