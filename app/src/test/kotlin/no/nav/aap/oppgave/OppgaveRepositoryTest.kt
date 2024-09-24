@@ -8,10 +8,9 @@ import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.UUID
-import org.junit.jupiter.api.Test
-import kotlin.math.min
 import kotlin.test.AfterTest
 
 class OppgaveRepositoryTest {
