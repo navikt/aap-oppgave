@@ -42,10 +42,9 @@ class ApiTest {
     fun `Opprett, plukk og avslutt oppgave`() {
         val saksnummer = "123456"
         val referanse = UUID.randomUUID()
-        val avklaringsbehovtype: Avklaringsbehovtype = Avklaringsbehovtype.AVKLAR_SYKDOM
 
         // Opprett ny oppgave
-        val oppgaveId = opprettOppgave(saksnummer, referanse)
+        val oppgaveId = opprettOppgave(opprettBehandlingshistorikkMedEtAvklaringsbehov(saksnummer, referanse))
         assertThat(oppgaveId).isNotNull()
 
         // Plukk neste oppgave
@@ -53,13 +52,38 @@ class ApiTest {
         assertThat(nesteOppgave).isNotNull()
         assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgaveId!!)
 
+        // Sjekk at oppgave kommer i mine oppgaver listen
+        assertThat(hentMineOppgaver().first().id).isEqualTo(oppgaveId)
+
         // Avslutt plukket oppgave
-        val oppgaveIder = avsluttOppgave(saksnummer, referanse, avklaringsbehovtype)
+        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Avklaringsbehovtype.AVKLAR_SYKDOM)
         assertThat(oppgaveIder).hasSize(1)
         assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
 
         // Sjekk at det ikke er flere oppgaver i køen
         nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNull()
+    }
+
+    @Test
+    fun `Opprett, oppgave ble automatisk plukket og avslutt oppgave`() {
+        val saksnummer = "654321"
+        val referanse = UUID.randomUUID()
+
+        // Opprett ny oppgave
+        val oppgaveId = opprettOppgave(opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer, referanse))
+        assertThat(oppgaveId).isNotNull()
+
+        // Sjekk at oppgave kommer i mine oppgaver listen
+        assertThat(hentMineOppgaver().first().id).isEqualTo(oppgaveId)
+
+        // Avslutt plukket oppgave
+        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Avklaringsbehovtype.AVKLAR_BARN)
+        assertThat(oppgaveIder).hasSize(1)
+        assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
+
+        // Sjekk at det ikke er flere oppgaver i køen
+        val nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNull()
     }
 
@@ -74,7 +98,7 @@ class ApiTest {
         assertThat(filterListe).hasSize(2)
     }
 
-    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID): BehandlingshistorikkRequest {
+    private fun opprettBehandlingshistorikkMedEtAvklaringsbehov(saksnummer: String, referanse: UUID): BehandlingshistorikkRequest {
         return BehandlingshistorikkRequest(
             personident = "01010012345",
             saksnummer = saksnummer,
@@ -100,8 +124,53 @@ class ApiTest {
         )
     }
 
-    private fun opprettOppgave(saksnummer: String, referanse: UUID): OppgaveId? {
-        val request = opprettBehandlingshistorikk(saksnummer, referanse)
+
+    private fun opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer: String, referanse: UUID): BehandlingshistorikkRequest {
+        return BehandlingshistorikkRequest(
+            personident = "01010012345",
+            saksnummer = saksnummer,
+            referanse = referanse.toString(),
+            behandlingType = Behandlingstype.Førstegangsbehandling,
+            status = Behandlingstatus.OPPRETTET,
+            opprettetTidspunkt = LocalDateTime.now(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovDto(
+                    definisjon = Definisjon(
+                        type = Avklaringsbehovtype.AVKLAR_BARN.kode
+                    ),
+                    status = Avklaringsbehovstatus.OPPRETTET,
+                    endringer = listOf(
+                        AvklaringsbehovhendelseEndring(
+                            status = Avklaringsbehovstatus.OPPRETTET,
+                            tidsstempel = LocalDateTime.now(),
+                            endretAv = "Kelvin"
+                        )
+                    )
+                ),
+                AvklaringsbehovDto(
+                    definisjon = Definisjon(
+                        type = Avklaringsbehovtype.AVKLAR_SYKDOM.kode
+                    ),
+                    status = Avklaringsbehovstatus.AVSLUTTET,
+                    endringer = listOf(
+                        AvklaringsbehovhendelseEndring(
+                            status = Avklaringsbehovstatus.OPPRETTET,
+                            tidsstempel = LocalDateTime.now().minusHours(2),
+                            endretAv = "Kelvin"
+                        ),
+                        AvklaringsbehovhendelseEndring(
+                            status = Avklaringsbehovstatus.AVSLUTTET,
+                            tidsstempel = LocalDateTime.now().minusHours(1),
+                            endretAv = "Lokalsaksbehandler"
+                        )
+
+                    )
+                )
+            )
+        )
+    }
+
+    private fun opprettOppgave(request: BehandlingshistorikkRequest): OppgaveId? {
         val oppgaveId:OppgaveId? = client.post(
             URI.create("http://localhost:8080/opprett-oppgave"),
             PostRequest(body = request)
@@ -116,6 +185,14 @@ class ApiTest {
         )
         return nesteOppgave
     }
+
+    private fun hentMineOppgaver(): List<OppgaveDto> {
+        return client.get<List<OppgaveDto>>(
+            URI.create("http://localhost:8080/mine-oppgaver"),
+            GetRequest()
+        )!!
+    }
+
 
     private fun avsluttOppgave(saksnummer: String, referanse: UUID, avklaringsbehovtype: Avklaringsbehovtype): List<OppgaveId> {
         val oppgaveIder: List<OppgaveId>? = client.post(

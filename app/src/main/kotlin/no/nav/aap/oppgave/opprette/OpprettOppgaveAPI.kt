@@ -8,21 +8,43 @@ import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.komponenter.httpklient.auth.token
+import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.metriker.httpCallCounter
+import no.nav.aap.oppgave.opprett.Avklaringsbehovtype
 import no.nav.aap.oppgave.opprett.BehandlingshistorikkRequest
+import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
+import org.slf4j.LoggerFactory
 import javax.sql.DataSource
+
+private val log = LoggerFactory.getLogger("OpprettOppgaveAPI")
 
 fun NormalOpenAPIRoute.opprettOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/opprett-oppgave").post<Unit, OppgaveId, BehandlingshistorikkRequest> { _, request ->
         prometheus.httpCallCounter("/opprett-oppgave").increment()
-        val oppgave = BehandlingshistorikkTilOppgaveConverter.lagOppgave(request, ident())
+        val oppgave = request.lagOppgave(ident())
         if (oppgave != null) {
             val oppgaveId =  dataSource.transaction { connection ->
-                OppgaveRepository(connection).opprettOppgave(oppgave)
+                val oppgaveId = OppgaveRepository(connection).opprettOppgave(oppgave)
+                val hvemLøsteForrigeAvklaringsbehovIdent = request.hvemLøsteForrigeAvklaringsbehov()
+                if (hvemLøsteForrigeAvklaringsbehovIdent != null) {
+                    val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
+                        oppgave.saksnummer,
+                        oppgave.behandlingRef,
+                        oppgave.journalpostId,
+                        Avklaringsbehovtype.fraKode(oppgave.avklaringsbehovKode.kode)
+                    )
+                    val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgave(avklaringsbehovReferanse, hvemLøsteForrigeAvklaringsbehovIdent, token())
+                    if (reserverteOppgaver.isNotEmpty()) {
+                        log.info("Ny oppgave($oppgaveId) ble automatisk tilordnet: $hvemLøsteForrigeAvklaringsbehovIdent")
+                    }
+
+                }
+                oppgaveId
             }
             respond(oppgaveId)
         } else {

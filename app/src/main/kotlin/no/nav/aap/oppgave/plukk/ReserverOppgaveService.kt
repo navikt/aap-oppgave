@@ -12,7 +12,7 @@ class ReserverOppgaveService(val connection: DBConnection) {
 
     fun reserverOppgave(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, ident: String, token: OidcToken): List<OppgaveId> {
         val oppgaveRepo = OppgaveRepository(connection)
-        val oppgaverSomSkalReserveres = oppgaveRepo.hentOppgaver(avklaringsbehovReferanse)
+        val oppgaverSomSkalReserveres = oppgaveRepo.hentÅpneOppgaver(avklaringsbehovReferanse)
         val tilgangRequest = TilgangRequest(
             saksnummer = avklaringsbehovReferanse.saksnummer,
             behandlingsreferanse = avklaringsbehovReferanse.referanse?.toString(),
