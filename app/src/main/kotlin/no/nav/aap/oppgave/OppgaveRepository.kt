@@ -2,7 +2,6 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.filter.FilterDto
-import no.nav.aap.oppgave.opprett.Avklaringsbehovtype
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
@@ -107,7 +106,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                         saksnummer = it.getStringOrNull("SAKSNUMMER"),
                         referanse = it.getUUIDOrNull("BEHANDLING_REF"),
                         journalpostId = it.getLongOrNull("JOURNALPOST_ID"),
-                        avklaringsbehovtype = Avklaringsbehovtype.fraKode(it.getString("AVKLARINGSBEHOV_TYPE"))
+                        avklaringsbehovKode = AvklaringsbehovKode(it.getString("AVKLARINGSBEHOV_TYPE"))
                     )
                 )
             }
@@ -209,7 +208,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
                 if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
                 if (avklaringsbehovReferanse.journalpostId != null ) setLong(index++, avklaringsbehovReferanse.journalpostId)
-                setString(index++, avklaringsbehovReferanse.avklaringsbehovtype.kode)
+                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode.kode)
             }
             setRowMapper { row ->
                 OppgaveId(row.getLong("ID"))

@@ -21,7 +21,7 @@ class PlukkOppgaveService(val connection: DBConnection) {
             val tilgangRequest = TilgangRequest(
                 saksnummer = nesteOppgave.avklaringsbehovReferanse.saksnummer!!,
                 behandlingsreferanse = nesteOppgave.avklaringsbehovReferanse.referanse?.toString(),
-                avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovtype.kode,
+                avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovKode.kode,
                 operasjon = Operasjon.SAKSBEHANDLE
             )
             if (TilgangGateway.harTilgang(tilgangRequest, token)) {

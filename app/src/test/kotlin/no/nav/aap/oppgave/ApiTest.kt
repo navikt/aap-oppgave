@@ -3,6 +3,15 @@ package no.nav.aap.oppgave
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.DefinisjonDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
+import no.nav.aap.behandlingsflyt.kontrakt.sak.Status
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
@@ -12,18 +21,11 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.filter.FilterDto
-import no.nav.aap.oppgave.opprett.AvklaringsbehovDto
-import no.nav.aap.oppgave.opprett.AvklaringsbehovhendelseEndring
-import no.nav.aap.oppgave.opprett.Avklaringsbehovstatus
-import no.nav.aap.oppgave.opprett.Avklaringsbehovtype
-import no.nav.aap.oppgave.opprett.BehandlingshistorikkRequest
-import no.nav.aap.oppgave.opprett.Behandlingstatus
-import no.nav.aap.oppgave.opprett.Behandlingstype
-import no.nav.aap.oppgave.opprett.Definisjon
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.server
+import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -56,7 +58,7 @@ class ApiTest {
         assertThat(hentMineOppgaver().first().id).isEqualTo(oppgaveId)
 
         // Avslutt plukket oppgave
-        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Avklaringsbehovtype.AVKLAR_SYKDOM)
+        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Definisjon.AVKLAR_SYKDOM)
         assertThat(oppgaveIder).hasSize(1)
         assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
 
@@ -78,7 +80,7 @@ class ApiTest {
         assertThat(hentMineOppgaver().first().id).isEqualTo(oppgaveId)
 
         // Avslutt plukket oppgave
-        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Avklaringsbehovtype.AVKLAR_BARN)
+        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Definisjon.AVKLAR_BARNETILLEGG)
         assertThat(oppgaveIder).hasSize(1)
         assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
 
@@ -98,68 +100,75 @@ class ApiTest {
         assertThat(filterListe).hasSize(2)
     }
 
-    private fun opprettBehandlingshistorikkMedEtAvklaringsbehov(saksnummer: String, referanse: UUID): BehandlingshistorikkRequest {
-        return BehandlingshistorikkRequest(
-            personident = "01010012345",
-            saksnummer = saksnummer,
-            referanse = referanse.toString(),
-            behandlingType = Behandlingstype.Førstegangsbehandling,
-            status = Behandlingstatus.OPPRETTET,
+    private fun Definisjon.tilDefinisjonDTO(): DefinisjonDTO {
+        return DefinisjonDTO(
+            type = this.kode,
+            behovType = this.type,
+            løsesISteg = this.løsesISteg
+        )
+    }
+
+    private fun opprettBehandlingshistorikkMedEtAvklaringsbehov(saksnummer: String, referanse: UUID): BehandlingFlytStoppetHendelse {
+        return BehandlingFlytStoppetHendelse(
+            personIdent = "01010012345",
+            saksnummer = Saksnummer(saksnummer),
+            referanse = BehandlingReferanse(referanse),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            status = Status.OPPRETTET,
             opprettetTidspunkt = LocalDateTime.now(),
+            hendelsesTidspunkt = LocalDateTime.now(),
+            versjon = "1",
             avklaringsbehov = listOf(
-                AvklaringsbehovDto(
-                    definisjon = Definisjon(
-                        type = Avklaringsbehovtype.AVKLAR_SYKDOM.kode
-                    ),
-                    status = Avklaringsbehovstatus.OPPRETTET,
+                AvklaringsbehovHendelseDto(
+                    definisjon = Definisjon.AVKLAR_SYKDOM.tilDefinisjonDTO(),
+                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                     endringer = listOf(
-                        AvklaringsbehovhendelseEndring(
-                            status = Avklaringsbehovstatus.OPPRETTET,
+                        EndringDTO(
+                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                             tidsstempel = LocalDateTime.now(),
                             endretAv = "Kelvin"
                         )
+
                     )
-                )
+                ),
             )
         )
     }
 
 
-    private fun opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer: String, referanse: UUID): BehandlingshistorikkRequest {
-        return BehandlingshistorikkRequest(
-            personident = "01010012345",
-            saksnummer = saksnummer,
-            referanse = referanse.toString(),
-            behandlingType = Behandlingstype.Førstegangsbehandling,
-            status = Behandlingstatus.OPPRETTET,
+    private fun opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer: String, referanse: UUID): BehandlingFlytStoppetHendelse {
+        return BehandlingFlytStoppetHendelse(
+            personIdent = "01010012345",
+            saksnummer = Saksnummer(saksnummer),
+            referanse = BehandlingReferanse(referanse),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            status = Status.OPPRETTET,
             opprettetTidspunkt = LocalDateTime.now(),
+            hendelsesTidspunkt = LocalDateTime.now(),
+            versjon = "1",
             avklaringsbehov = listOf(
-                AvklaringsbehovDto(
-                    definisjon = Definisjon(
-                        type = Avklaringsbehovtype.AVKLAR_BARN.kode
-                    ),
-                    status = Avklaringsbehovstatus.OPPRETTET,
+                AvklaringsbehovHendelseDto(
+                    definisjon = Definisjon.AVKLAR_BARNETILLEGG.tilDefinisjonDTO(),
+                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                     endringer = listOf(
-                        AvklaringsbehovhendelseEndring(
-                            status = Avklaringsbehovstatus.OPPRETTET,
+                        EndringDTO(
+                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                             tidsstempel = LocalDateTime.now(),
                             endretAv = "Kelvin"
                         )
                     )
                 ),
-                AvklaringsbehovDto(
-                    definisjon = Definisjon(
-                        type = Avklaringsbehovtype.AVKLAR_SYKDOM.kode
-                    ),
-                    status = Avklaringsbehovstatus.AVSLUTTET,
+                AvklaringsbehovHendelseDto(
+                    definisjon = Definisjon.AVKLAR_SYKDOM.tilDefinisjonDTO(),
+                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
                     endringer = listOf(
-                        AvklaringsbehovhendelseEndring(
-                            status = Avklaringsbehovstatus.OPPRETTET,
+                        EndringDTO(
+                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                             tidsstempel = LocalDateTime.now().minusHours(2),
                             endretAv = "Kelvin"
                         ),
-                        AvklaringsbehovhendelseEndring(
-                            status = Avklaringsbehovstatus.AVSLUTTET,
+                        EndringDTO(
+                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
                             tidsstempel = LocalDateTime.now().minusHours(1),
                             endretAv = "Lokalsaksbehandler"
                         )
@@ -170,7 +179,7 @@ class ApiTest {
         )
     }
 
-    private fun opprettOppgave(request: BehandlingshistorikkRequest): OppgaveId? {
+    private fun opprettOppgave(request: BehandlingFlytStoppetHendelse): OppgaveId? {
         val oppgaveId:OppgaveId? = client.post(
             URI.create("http://localhost:8080/opprett-oppgave"),
             PostRequest(body = request)
@@ -194,14 +203,14 @@ class ApiTest {
     }
 
 
-    private fun avsluttOppgave(saksnummer: String, referanse: UUID, avklaringsbehovtype: Avklaringsbehovtype): List<OppgaveId> {
+    private fun avsluttOppgave(saksnummer: String, referanse: UUID, definisjon: Definisjon): List<OppgaveId> {
         val oppgaveIder: List<OppgaveId>? = client.post(
             URI.create("http://localhost:8080/avslutt-oppgave"),
             PostRequest(body = AvklaringsbehovReferanseDto(
                 saksnummer = saksnummer,
                 referanse = referanse,
                 journalpostId = null,
-                avklaringsbehovtype = avklaringsbehovtype)
+                avklaringsbehovKode = AvklaringsbehovKode(definisjon.kode))
             )
         )
         return oppgaveIder!!

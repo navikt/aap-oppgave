@@ -16,7 +16,7 @@ class ReserverOppgaveService(val connection: DBConnection) {
         val tilgangRequest = TilgangRequest(
             saksnummer = avklaringsbehovReferanse.saksnummer,
             behandlingsreferanse = avklaringsbehovReferanse.referanse?.toString(),
-            avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovtype.kode,
+            avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode.kode,
             operasjon = Operasjon.SAKSBEHANDLE
         )
         if (TilgangGateway.harTilgang(tilgangRequest, token)) {

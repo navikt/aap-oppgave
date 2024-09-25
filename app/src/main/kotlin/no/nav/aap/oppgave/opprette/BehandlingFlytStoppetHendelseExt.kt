@@ -1,31 +1,29 @@
 package no.nav.aap.oppgave.opprette
 
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.oppgave.OppgaveDto
-import no.nav.aap.oppgave.opprett.AvklaringsbehovDto
-import no.nav.aap.oppgave.opprett.Avklaringsbehovstatus
-import no.nav.aap.oppgave.opprett.BehandlingshistorikkRequest
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import java.time.LocalDateTime
-import java.util.UUID
 
-
-fun BehandlingshistorikkRequest.lagOppgave(ident: String): OppgaveDto? {
-    val åpentAvklaringsbehov = this.getÅpentAvklaringsbehov()
+fun BehandlingFlytStoppetHendelse.lagOppgave(ident: String): OppgaveDto? {
+    val åpentAvklaringsbehov = this.finnÅpentAvklaringsbehov()
     if (åpentAvklaringsbehov == null) {
         return null
     }
     return when (åpentAvklaringsbehov.status) {
-        Avklaringsbehovstatus.OPPRETTET ->
+        Status.OPPRETTET ->
             this.opprettNyOppgave(åpentAvklaringsbehov, ident)
-        Avklaringsbehovstatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER, Avklaringsbehovstatus.SENDT_TILBAKE_FRA_BESLUTTER ->
+        Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER, Status.SENDT_TILBAKE_FRA_BESLUTTER ->
             this.gjenopprettOppgave(åpentAvklaringsbehov, ident)
         else -> return null
     }
 }
 
-fun BehandlingshistorikkRequest.hvemLøsteForrigeAvklaringsbehov(): String? {
+fun BehandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov(): String? {
     val avsluttedeAvklaringsbehov = avklaringsbehov
-        .filter { it.status == Avklaringsbehovstatus.AVSLUTTET }
+        .filter { it.status == Status.AVSLUTTET }
     val løsteForrigeAvklaringsbehov = avsluttedeAvklaringsbehov
         .map {it.endringer.sortedBy { it.tidsstempel }.last()}
         .sortedBy { it.tidsstempel }
@@ -33,10 +31,10 @@ fun BehandlingshistorikkRequest.hvemLøsteForrigeAvklaringsbehov(): String? {
     return løsteForrigeAvklaringsbehov
 }
 
-private fun BehandlingshistorikkRequest.opprettNyOppgave(avklaringsbehov: AvklaringsbehovDto, ident: String): OppgaveDto {
+private fun BehandlingFlytStoppetHendelse.opprettNyOppgave(avklaringsbehov: AvklaringsbehovHendelseDto, ident: String): OppgaveDto {
     return OppgaveDto(
-        saksnummer = this.saksnummer,
-        behandlingRef = UUID.fromString(this.referanse),
+        saksnummer = this.saksnummer.toString(),
+        behandlingRef = this.referanse.referanse,
         behandlingOpprettet = this.opprettetTidspunkt,
         avklaringsbehovKode = AvklaringsbehovKode(avklaringsbehov.definisjon.type),
         opprettetAv = ident,
@@ -44,17 +42,25 @@ private fun BehandlingshistorikkRequest.opprettNyOppgave(avklaringsbehov: Avklar
     )
 }
 
-private fun BehandlingshistorikkRequest.gjenopprettOppgave(avklaringsbehov: AvklaringsbehovDto, ident: String): OppgaveDto {
+private fun BehandlingFlytStoppetHendelse.gjenopprettOppgave(avklaringsbehov: AvklaringsbehovHendelseDto, ident: String): OppgaveDto {
     val oppgaveDto = this.opprettNyOppgave(avklaringsbehov, ident)
     val sistEndretAv = avklaringsbehov.sistEndretAv()
     oppgaveDto.copy(reservertAv = sistEndretAv, reservertTidspunkt = LocalDateTime.now())
     return oppgaveDto
 }
 
-private fun AvklaringsbehovDto.sistEndretAv(): String? {
+private fun AvklaringsbehovHendelseDto.sistEndretAv(): String? {
     return endringer
         .sortedByDescending { it.tidsstempel }
         .filter { it.status == this.status }
         .map { it.endretAv }
         .firstOrNull()
+}
+
+fun BehandlingFlytStoppetHendelse.finnÅpentAvklaringsbehov() = avklaringsbehov.firstOrNull {
+    it.status in setOf(
+        Status.OPPRETTET,
+        Status.SENDT_TILBAKE_FRA_BESLUTTER,
+        Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER
+    )
 }

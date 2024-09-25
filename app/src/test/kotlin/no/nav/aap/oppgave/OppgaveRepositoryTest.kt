@@ -1,9 +1,9 @@
 package no.nav.aap.oppgave
 
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.oppgave.filter.FilterDto
-import no.nav.aap.oppgave.opprett.Avklaringsbehovtype
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
@@ -47,10 +47,10 @@ class OppgaveRepositoryTest {
 
     @Test
     fun `Finn neste oppgave finner en oppgave fordi en av oppgavene matcher filter`() {
-        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Avklaringsbehovtype.AVKLAR_SYKDOM.kode))
-        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Avklaringsbehovtype.AVKLAR_STUDENT.kode))
+        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode))
+        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_STUDENT.kode))
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(filter(Avklaringsbehovtype.AVKLAR_STUDENT.kode))
+            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(filter(Definisjon.AVKLAR_STUDENT.kode))
             assertThat(oppgaveId).isNotNull()
         }
     }
