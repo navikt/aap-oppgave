@@ -27,7 +27,19 @@ fun NormalOpenAPIRoute.opprettOppgaveApi(dataSource: DataSource, prometheus: Pro
         val oppgave = request.lagOppgave("Kelvin")
         if (oppgave != null) {
             val oppgaveId =  dataSource.transaction { connection ->
-                val oppgaveId = OppgaveRepository(connection).opprettOppgave(oppgave)
+                val oppgaveRepo = OppgaveRepository(connection)
+                val eksisterendeOppgave = oppgaveRepo.hentOppgave(AvklaringsbehovReferanseDto(
+                    oppgave.saksnummer,
+                    oppgave.behandlingRef,
+                    oppgave.journalpostId,
+                    oppgave.avklaringsbehovKode
+                ))
+                val oppgaveId = if (eksisterendeOppgave != null) {
+                    oppgaveRepo.gjenåpneOppgave(eksisterendeOppgave.id!!, "Kelvin")
+                    eksisterendeOppgave.id
+                } else {
+                    oppgaveRepo.opprettOppgave(oppgave)
+                }
                 val hvemLøsteForrigeAvklaringsbehovIdent = request.hvemLøsteForrigeAvklaringsbehov()
                 if (hvemLøsteForrigeAvklaringsbehovIdent != null) {
                     val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
@@ -44,7 +56,11 @@ fun NormalOpenAPIRoute.opprettOppgaveApi(dataSource: DataSource, prometheus: Pro
                 }
                 oppgaveId
             }
-            respond(oppgaveId)
+            if (oppgaveId != null) {
+                respond(oppgaveId)
+            } else {
+                respondWithStatus(HttpStatusCode.NoContent)
+            }
         } else {
             respondWithStatus(HttpStatusCode.NoContent)
         }
