@@ -46,21 +46,24 @@ class ApiTest {
         val referanse = UUID.randomUUID()
 
         // Opprett ny oppgave
-        val oppgaveId = opprettOppgave(opprettBehandlingshistorikkMedEtAvklaringsbehov(saksnummer, referanse))
-        assertThat(oppgaveId).isNotNull()
+        opprettOppgave(opprettBehandlingshistorikkMedEtAvklaringsbehov(saksnummer, referanse))
+
+        // Hent oppgaven som ble opprettet
+        val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SYKDOM)
+        assertThat(oppgave).isNotNull
 
         // Plukk neste oppgave
         var nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNotNull()
-        assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgaveId!!)
+        assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgave!!.id)
 
         // Sjekk at oppgave kommer i mine oppgaver listen
-        assertThat(hentMineOppgaver().first().id).isEqualTo(oppgaveId)
+        assertThat(hentMineOppgaver().first().id).isEqualTo(oppgave.id)
 
         // Avslutt plukket oppgave
         val oppgaveIder = avsluttOppgave(saksnummer, referanse, Definisjon.AVKLAR_SYKDOM)
         assertThat(oppgaveIder).hasSize(1)
-        assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
+        assertThat(oppgaveIder.first()).isEqualTo(oppgave.id)
 
         // Sjekk at det ikke er flere oppgaver i køen
         nesteOppgave = hentNesteOppgave()
@@ -73,16 +76,19 @@ class ApiTest {
         val referanse = UUID.randomUUID()
 
         // Opprett ny oppgave
-        val oppgaveId = opprettOppgave(opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer, referanse))
-        assertThat(oppgaveId).isNotNull()
+        opprettOppgave(opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer, referanse))
+
+        // Hent oppgaven som ble opprettet
+        val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_BARNETILLEGG)
+        assertThat(oppgave).isNotNull
 
         // Sjekk at oppgave kommer i mine oppgaver listen
-        assertThat(hentMineOppgaver().first().id).isEqualTo(oppgaveId)
+        assertThat(hentMineOppgaver().first().id).isEqualTo(oppgave!!.id)
 
         // Avslutt plukket oppgave
         val oppgaveIder = avsluttOppgave(saksnummer, referanse, Definisjon.AVKLAR_BARNETILLEGG)
         assertThat(oppgaveIder).hasSize(1)
-        assertThat(oppgaveIder.first()).isEqualTo(oppgaveId)
+        assertThat(oppgaveIder.first()).isEqualTo(oppgave.id)
 
         // Sjekk at det ikke er flere oppgaver i køen
         val nesteOppgave = hentNesteOppgave()
@@ -179,12 +185,11 @@ class ApiTest {
         )
     }
 
-    private fun opprettOppgave(request: BehandlingFlytStoppetHendelse): OppgaveId? {
-        val oppgaveId:OppgaveId? = client.post(
+    private fun opprettOppgave(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse):Unit? {
+         return client.post(
             URI.create("http://localhost:8080/opprett-oppgave"),
-            PostRequest(body = request)
+            PostRequest(body = behandlingFlytStoppetHendelse)
         )
-        return oppgaveId
     }
 
     private fun hentNesteOppgave(): NesteOppgaveDto? {
@@ -195,13 +200,24 @@ class ApiTest {
         return nesteOppgave
     }
 
+    private fun hentOppgave(saksnummer: String, referanse: UUID, definisjon: Definisjon): OppgaveDto? {
+        return client.post(
+            URI.create("http://localhost:8080/hent-oppgave"),
+            PostRequest(body = AvklaringsbehovReferanseDto(
+                saksnummer = saksnummer,
+                referanse = referanse,
+                journalpostId = null,
+                avklaringsbehovKode = AvklaringsbehovKode(definisjon.kode)
+            ))
+        )
+    }
+
     private fun hentMineOppgaver(): List<OppgaveDto> {
         return client.get<List<OppgaveDto>>(
             URI.create("http://localhost:8080/mine-oppgaver"),
             GetRequest()
         )!!
     }
-
 
     private fun avsluttOppgave(saksnummer: String, referanse: UUID, definisjon: Definisjon): List<OppgaveId> {
         val oppgaveIder: List<OppgaveId>? = client.post(

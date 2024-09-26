@@ -28,4 +28,13 @@ data class OppgaveDto(
             }
         }
     }
+
+    fun tilAvklaringsbehovReferanseDto():AvklaringsbehovReferanseDto  {
+        return AvklaringsbehovReferanseDto(
+            this.saksnummer,
+            this.behandlingRef,
+            this.journalpostId,
+            this.avklaringsbehovKode
+        )
+    }
 }

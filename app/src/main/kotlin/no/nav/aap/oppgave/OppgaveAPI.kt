@@ -4,7 +4,9 @@ import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.get
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
+import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
+import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
@@ -22,6 +24,23 @@ fun NormalOpenAPIRoute.mineOppgaverApi(dataSource: DataSource, prometheus: Prome
             OppgaveRepository(connection).hentMineOppgaver(ident())
         }
         respond(mineOppgaver)
+    }
+
+fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
+
+    route("/hent-oppgave").post<Unit, OppgaveDto, AvklaringsbehovReferanseDto> { _, request ->
+        prometheus.httpCallCounter("/hent-oppgave").increment()
+        val oppgave = dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).hentOppgave(request)
+
+
+        }
+        if (oppgave != null) {
+            respond(oppgave)
+        } else {
+            respondWithStatus(HttpStatusCode.NoContent)
+        }
+
     }
 
 fun NormalOpenAPIRoute.avsluttOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =

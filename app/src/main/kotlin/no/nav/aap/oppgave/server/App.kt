@@ -28,6 +28,7 @@ import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.avsluttOppgave
 import no.nav.aap.oppgave.filter.filterApi
 import no.nav.aap.oppgave.flyttOppgave
+import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.opprette.opprettOppgaveApi
 import no.nav.aap.oppgave.plukk.plukkApi
@@ -74,6 +75,7 @@ internal fun Application.server(dbConfig: DbConfig) {
             apiRouting {
                 opprettOppgaveApi(dataSource, prometheus)
                 plukkApi(dataSource, prometheus)
+                hentOppgaveApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
                 avsluttOppgave(dataSource, prometheus)
                 filterApi(dataSource, prometheus)
