@@ -9,9 +9,11 @@ import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.sql.SQLException
 import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.test.AfterTest
+import kotlin.test.fail
 
 class OppgaveRepositoryTest {
 
@@ -27,6 +29,21 @@ class OppgaveRepositoryTest {
     fun `Opprett ny oppgave`() {
         opprettOppgave()
     }
+
+    @Test
+    fun `Opprettelse av duplikat oppgave skal feile`() {
+        val uuid = UUID.randomUUID()
+        opprettOppgave(saksnummer = "999", behandlingRef = uuid)
+        try {
+            opprettOppgave(saksnummer = "999", behandlingRef = uuid)
+        } catch (e: SQLException) {
+            if (e.sqlState != "23505") {
+                fail("Skulle mottatt sqlSatte 23505 når det blir forsøkt lagret duplikat oppgave")
+            }
+        }
+    }
+
+
 
     @Test
     fun `Avslutt åpen oppgave`() {
