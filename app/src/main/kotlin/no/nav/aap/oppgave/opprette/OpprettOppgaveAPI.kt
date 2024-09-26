@@ -15,7 +15,6 @@ import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.metriker.httpCallCounter
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
-import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -25,7 +24,7 @@ fun NormalOpenAPIRoute.opprettOppgaveApi(dataSource: DataSource, prometheus: Pro
 
     route("/opprett-oppgave").post<Unit, OppgaveId, BehandlingFlytStoppetHendelse> { _, request ->
         prometheus.httpCallCounter("/opprett-oppgave").increment()
-        val oppgave = request.lagOppgave(ident())
+        val oppgave = request.lagOppgave("Kelvin")
         if (oppgave != null) {
             val oppgaveId =  dataSource.transaction { connection ->
                 val oppgaveId = OppgaveRepository(connection).opprettOppgave(oppgave)
