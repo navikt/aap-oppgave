@@ -8,6 +8,7 @@ import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
@@ -78,6 +79,36 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
         return oppgaver.firstOrNull()
     }
+
+    fun hentOppgaver(saksnummer: String?, referanse: UUID?, journalpostId: Long?): List<OppgaveDto> {
+        val saksnummerClause = if (saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
+        val referanseClause = if (referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
+        val journalpostIdClause = if (journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
+        val oppgaverForReferanseQuery = """
+            SELECT 
+                $alleOppgaveFelt
+            FROM 
+                OPPGAVE 
+            WHERE 
+                $saksnummerClause AND
+                $referanseClause AND
+                $journalpostIdClause
+        """.trimIndent()
+
+        return connection.queryList<OppgaveDto>(oppgaverForReferanseQuery) {
+            setParams {
+                var index = 1
+                if (saksnummer != null) setString(index++, saksnummer)
+                if (referanse != null) setUUID(index++, referanse)
+                if (journalpostId != null ) setLong(index++, journalpostId)
+            }
+            setRowMapper { row ->
+                oppgaveMapper(row)
+            }
+        }
+    }
+
+
 
     fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String) {
         val query = """
