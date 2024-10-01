@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.opprette
+package no.nav.aap.oppgave.oppdater
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post

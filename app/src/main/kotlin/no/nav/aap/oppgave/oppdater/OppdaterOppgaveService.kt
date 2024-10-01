@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.opprette
+package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
@@ -12,6 +12,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 
 private val AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER =
     setOf(
@@ -29,7 +30,6 @@ private val AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER =
         Definisjon.AVKLAR_BARNETILLEGG,
         Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT
     ).map { AvklaringsbehovKode(it.kode)}.toSet()
-
 
 private val ÅPNE_STATUSER = setOf(
     no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -142,4 +142,43 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             .forEach { oppgaveRepo.avsluttOppgave(it.id!!, "Kelvin") }
     }
 
+    private fun BehandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
+        val sisteAvsluttetAvklaringsbehov = avklaringsbehov
+            .filter { it.status == no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET }
+            .filter {it.sistEndretAv() != null}
+            .sortedBy { it.sistEndret() }
+            .lastOrNull()
+
+        if (sisteAvsluttetAvklaringsbehov == null) {
+            return null
+        }
+        return Pair(AvklaringsbehovKode(sisteAvsluttetAvklaringsbehov.definisjon.type), sisteAvsluttetAvklaringsbehov.sistEndretAv()!!)
+    }
+
+    private fun AvklaringsbehovHendelseDto.sistEndretAv(): String? {
+        return endringer
+            .sortedBy { it.tidsstempel }
+            .filter { it.status == this.status }
+            .map { it.endretAv }
+            .lastOrNull()
+    }
+
+    private fun AvklaringsbehovHendelseDto.sistEndret(): LocalDateTime {
+        return endringer
+            .sortedBy { it.tidsstempel }
+            .filter { it.status == this.status }
+            .map { it.tidsstempel }
+            .last()
+    }
+
+    private fun BehandlingFlytStoppetHendelse.opprettNyOppgave(avklaringsbehov: AvklaringsbehovHendelseDto, ident: String): OppgaveDto {
+        return OppgaveDto(
+            saksnummer = this.saksnummer.toString(),
+            behandlingRef = this.referanse.referanse,
+            behandlingOpprettet = this.opprettetTidspunkt,
+            avklaringsbehovKode = AvklaringsbehovKode(avklaringsbehov.definisjon.type),
+            opprettetAv = ident,
+            opprettetTidspunkt = LocalDateTime.now()
+        )
+    }
 }

@@ -30,8 +30,8 @@ import no.nav.aap.oppgave.filter.filterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.mineOppgaverApi
-import no.nav.aap.oppgave.opprette.oppdaterOppgaverApi
-import no.nav.aap.oppgave.opprette.opprettOppgaveApi
+import no.nav.aap.oppgave.oppdater.oppdaterOppgaverApi
+import no.nav.aap.oppgave.oppdater.opprettOppgaveApi
 import no.nav.aap.oppgave.plukk.plukkApi
 import org.slf4j.LoggerFactory
 
