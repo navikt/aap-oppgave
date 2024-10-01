@@ -43,21 +43,6 @@ fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: Promet
 
     }
 
-fun NormalOpenAPIRoute.avsluttOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
-    route("/avslutt-oppgave").post<Unit, List<OppgaveId>, AvklaringsbehovReferanseDto> { _, dto ->
-        prometheus.httpCallCounter("/avslutt-oppgave").increment()
-        val oppgaver = dataSource.transaction { connection ->
-            val innloggetBrukerIdent = ident()
-            val oppgaverSomSkalAvsluttes = OppgaveRepository(connection).hentÅpneOppgaver(dto)
-            oppgaverSomSkalAvsluttes.forEach {
-                OppgaveRepository(connection).avsluttOppgave(it,innloggetBrukerIdent)
-            }
-            oppgaverSomSkalAvsluttes
-        }
-        respond(oppgaver)
-    }
-
 fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/avreserver-oppgave").post<Unit, List<OppgaveId>, AvklaringsbehovReferanseDto> { _, dto ->
