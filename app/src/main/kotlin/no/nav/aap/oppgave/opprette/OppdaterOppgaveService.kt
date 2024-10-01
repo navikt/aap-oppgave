@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.opprette
 
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
@@ -11,6 +12,37 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import org.slf4j.LoggerFactory
+
+private val AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER =
+    setOf(
+        Definisjon.AVKLAR_SYKDOM,
+        Definisjon.AVKLAR_BISTANDSBEHOV,
+        Definisjon.FASTSETT_ARBEIDSEVNE,
+        Definisjon.FRITAK_MELDEPLIKT
+    ).map { AvklaringsbehovKode(it.kode)}.toSet()
+
+private val AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER =
+    setOf(
+        Definisjon.AVKLAR_STUDENT,
+        Definisjon.FORESLÅ_VEDTAK,
+        Definisjon.AVKLAR_SYKEPENGEERSTATNING,
+        Definisjon.AVKLAR_BARNETILLEGG,
+        Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT
+    ).map { AvklaringsbehovKode(it.kode)}.toSet()
+
+
+private val ÅPNE_STATUSER = setOf(
+    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_BESLUTTER,
+    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+)
+
+private val AVSLUTTEDE_STATUSER = setOf(
+    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.KVALITETSSIKRET,
+    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.TOTRINNS_VURDERT,
+)
 
 class OppdaterOppgaveService(private val connection: DBConnection) {
 
@@ -34,8 +66,8 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         oppgaveRepo: OppgaveRepository,
         token: OidcToken
     ) {
-        val åpneAvklaringsbehov = behandlingFlytStoppetHendelse.avklaringsbehov.filter {it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET}
-        val avsluttedeAvklaringsbehov = behandlingFlytStoppetHendelse.avklaringsbehov.filter {it.status == no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET}
+        val åpneAvklaringsbehov = behandlingFlytStoppetHendelse.avklaringsbehov.filter {it.status in ÅPNE_STATUSER}
+        val avsluttedeAvklaringsbehov = behandlingFlytStoppetHendelse.avklaringsbehov.filter {it.status in AVSLUTTEDE_STATUSER}
 
         // Opprett nye oppgaver
         val avklarsbehovSomDetSkalOpprettesOppgaverFor = åpneAvklaringsbehov.filter { oppgaveMap[AvklaringsbehovKode(it.definisjon.type)] == null}
@@ -72,25 +104,35 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     }
 
     private fun opprettOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelseDto>, oppgaveRepo: OppgaveRepository, token: OidcToken) {
-
-        val hvemLøsteForrigeAvklaringsbehovIdent = behandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov()
-
-
-        avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach {
-            val nyOppgave = behandlingFlytStoppetHendelse.opprettNyOppgave(it, "Kelvin")
-            oppgaveRepo.opprettOppgave(nyOppgave)
-            if (hvemLøsteForrigeAvklaringsbehovIdent != null) {
-                val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
-                    saksnummer = behandlingFlytStoppetHendelse.saksnummer.toString(),
-                    referanse = behandlingFlytStoppetHendelse.referanse.referanse,
-                    null,
-                    AvklaringsbehovKode(it.definisjon.type)
-                )
-                val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgave(avklaringsbehovReferanse, hvemLøsteForrigeAvklaringsbehovIdent, token)
-                if (reserverteOppgaver.isNotEmpty()) {
-                    log.info("Ny oppgave ble automatisk tilordnet: $hvemLøsteForrigeAvklaringsbehovIdent")
+        avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelseDto ->
+            val nyOppgave = behandlingFlytStoppetHendelse.opprettNyOppgave(avklaringsbehovHendelseDto, "Kelvin")
+            val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
+            log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
+            val hvemLøsteForrigeAvklaringsbehov = behandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov()
+            if (hvemLøsteForrigeAvklaringsbehov != null) {
+                val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
+                val nyAvklaringsbehovKode = AvklaringsbehovKode(avklaringsbehovHendelseDto.definisjon.type)
+                if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, nyAvklaringsbehovKode)) {
+                    val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
+                        saksnummer = behandlingFlytStoppetHendelse.saksnummer.toString(),
+                        referanse = behandlingFlytStoppetHendelse.referanse.referanse,
+                        null,
+                        nyAvklaringsbehovKode
+                    )
+                    val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse, hvemLøsteForrigeIdent)
+                    if (reserverteOppgaver.isNotEmpty()) {
+                        log.info("Ny oppgave(id=${oppgaveId.id}) ble automatisk tilordnet: $hvemLøsteForrigeIdent")
+                    }
                 }
             }
+        }
+    }
+
+    private fun sammeSaksbehandlerType(avklaringsbehovKode1: AvklaringsbehovKode, avklaringsbehovKode2: AvklaringsbehovKode): Boolean {
+        return when {
+            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER -> true
+            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER -> true
+            else -> false
         }
     }
 

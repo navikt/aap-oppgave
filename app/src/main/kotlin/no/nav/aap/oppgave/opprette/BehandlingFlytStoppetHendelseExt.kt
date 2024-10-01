@@ -7,14 +7,17 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import java.time.LocalDateTime
 
-fun BehandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov(): String? {
-    val avsluttedeAvklaringsbehov = avklaringsbehov
+fun BehandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
+    val sisteAvsluttetAvklaringsbehov = avklaringsbehov
         .filter { it.status == Status.AVSLUTTET }
-    val løsteForrigeAvklaringsbehov = avsluttedeAvklaringsbehov
-        .map {it.endringer.sortedBy { it.tidsstempel }.last()}
-        .sortedBy { it.tidsstempel }
-        .lastOrNull()?.endretAv
-    return løsteForrigeAvklaringsbehov
+        .filter {it.sistEndretAv() != null}
+        .sortedBy { it.sistEndret() }
+        .lastOrNull()
+
+    if (sisteAvsluttetAvklaringsbehov == null) {
+        return null
+    }
+    return Pair(AvklaringsbehovKode(sisteAvsluttetAvklaringsbehov.definisjon.type), sisteAvsluttetAvklaringsbehov.sistEndretAv()!!)
 }
 
 fun BehandlingFlytStoppetHendelse.opprettNyOppgave(avklaringsbehov: AvklaringsbehovHendelseDto, ident: String): OppgaveDto {
@@ -30,16 +33,17 @@ fun BehandlingFlytStoppetHendelse.opprettNyOppgave(avklaringsbehov: Avklaringsbe
 
 fun AvklaringsbehovHendelseDto.sistEndretAv(): String? {
     return endringer
-        .sortedByDescending { it.tidsstempel }
+        .sortedBy { it.tidsstempel }
         .filter { it.status == this.status }
         .map { it.endretAv }
-        .firstOrNull()
+        .lastOrNull()
 }
 
-private fun BehandlingFlytStoppetHendelse.gjenopprettOppgave(avklaringsbehov: AvklaringsbehovHendelseDto, ident: String): OppgaveDto {
-    val oppgaveDto = this.opprettNyOppgave(avklaringsbehov, ident)
-    val sistEndretAv = avklaringsbehov.sistEndretAv()
-    oppgaveDto.copy(reservertAv = sistEndretAv, reservertTidspunkt = LocalDateTime.now())
-    return oppgaveDto
+fun AvklaringsbehovHendelseDto.sistEndret(): LocalDateTime {
+    return endringer
+        .sortedBy { it.tidsstempel }
+        .filter { it.status == this.status }
+        .map { it.tidsstempel }
+        .last()
 }
 

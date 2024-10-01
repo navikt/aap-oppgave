@@ -79,14 +79,14 @@ class ApiTest {
         opprettOppgave(opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer, referanse))
 
         // Hent oppgaven som ble opprettet
-        val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_BARNETILLEGG)
+        val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_BISTANDSBEHOV)
         assertThat(oppgave).isNotNull
 
         // Sjekk at oppgave kommer i mine oppgaver listen
         assertThat(hentMineOppgaver().first().id).isEqualTo(oppgave!!.id)
 
         // Avslutt plukket oppgave
-        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Definisjon.AVKLAR_BARNETILLEGG)
+        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Definisjon.AVKLAR_BISTANDSBEHOV)
         assertThat(oppgaveIder).hasSize(1)
         assertThat(oppgaveIder.first()).isEqualTo(oppgave.id)
 
@@ -154,7 +154,7 @@ class ApiTest {
             versjon = "1",
             avklaringsbehov = listOf(
                 AvklaringsbehovHendelseDto(
-                    definisjon = Definisjon.AVKLAR_BARNETILLEGG.tilDefinisjonDTO(),
+                    definisjon = Definisjon.AVKLAR_BISTANDSBEHOV.tilDefinisjonDTO(),
                     status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                     endringer = listOf(
                         EndringDTO(

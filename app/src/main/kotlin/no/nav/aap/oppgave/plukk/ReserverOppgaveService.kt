@@ -29,4 +29,13 @@ class ReserverOppgaveService(val connection: DBConnection) {
         return listOf()
     }
 
+    fun reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, ident: String): List<OppgaveId> {
+        val oppgaveRepo = OppgaveRepository(connection)
+        val oppgaverSomSkalReserveres = oppgaveRepo.hentÅpneOppgaver(avklaringsbehovReferanse)
+            oppgaverSomSkalReserveres.forEach {
+                oppgaveRepo.reserverOppgave(OppgaveId(it.id), ident, ident)
+            }
+        return oppgaverSomSkalReserveres
+    }
+
 }
