@@ -26,7 +26,6 @@ import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.server
 import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
-import no.nav.aap.oppgave.verdityper.OppgaveId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
@@ -46,7 +45,11 @@ class ApiTest {
         val referanse = UUID.randomUUID()
 
         // Opprett ny oppgave
-        opprettOppgave(opprettBehandlingshistorikkMedEtAvklaringsbehov(saksnummer, referanse))
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+            ))
+        )))
 
         // Hent oppgaven som ble opprettet
         val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SYKDOM)
@@ -60,10 +63,13 @@ class ApiTest {
         // Sjekk at oppgave kommer i mine oppgaver listen
         assertThat(hentMineOppgaver().first().id).isEqualTo(oppgave.id)
 
-        // Avslutt plukket oppgave
-        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Definisjon.AVKLAR_SYKDOM)
-        assertThat(oppgaveIder).hasSize(1)
-        assertThat(oppgaveIder.first()).isEqualTo(oppgave.id)
+        // Avslutt oppgave
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET)
+            ))
+        )))
 
         // Sjekk at det ikke er flere oppgaver i køen
         nesteOppgave = hentNesteOppgave()
@@ -76,7 +82,15 @@ class ApiTest {
         val referanse = UUID.randomUUID()
 
         // Opprett ny oppgave
-        opprettOppgave(opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer, referanse))
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_BISTANDSBEHOV, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+            )),
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endretAv = "Lokalsaksbehandler")
+            )),
+        )))
 
         // Hent oppgaven som ble opprettet
         val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_BISTANDSBEHOV)
@@ -86,9 +100,16 @@ class ApiTest {
         assertThat(hentMineOppgaver().first().id).isEqualTo(oppgave!!.id)
 
         // Avslutt plukket oppgave
-        val oppgaveIder = avsluttOppgave(saksnummer, referanse, Definisjon.AVKLAR_BISTANDSBEHOV)
-        assertThat(oppgaveIder).hasSize(1)
-        assertThat(oppgaveIder.first()).isEqualTo(oppgave.id)
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_BISTANDSBEHOV, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endretAv = "Lokalsaksbehandler"),
+            )),
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endretAv = "Lokalsaksbehandler")
+            )),
+        )))
 
         // Sjekk at det ikke er flere oppgaver i køen
         val nesteOppgave = hentNesteOppgave()
@@ -114,80 +135,48 @@ class ApiTest {
         )
     }
 
-    private fun opprettBehandlingshistorikkMedEtAvklaringsbehov(saksnummer: String, referanse: UUID): BehandlingFlytStoppetHendelse {
-        return BehandlingFlytStoppetHendelse(
-            personIdent = "01010012345",
-            saksnummer = Saksnummer(saksnummer),
-            referanse = BehandlingReferanse(referanse),
-            behandlingType = TypeBehandling.Førstegangsbehandling,
-            status = Status.OPPRETTET,
-            opprettetTidspunkt = LocalDateTime.now(),
-            hendelsesTidspunkt = LocalDateTime.now(),
-            versjon = "1",
-            avklaringsbehov = listOf(
-                AvklaringsbehovHendelseDto(
-                    definisjon = Definisjon.AVKLAR_SYKDOM.tilDefinisjonDTO(),
-                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                    endringer = listOf(
-                        EndringDTO(
-                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                            tidsstempel = LocalDateTime.now(),
-                            endretAv = "Kelvin"
-                        )
+    data class Behandlingsbehov(
+        val definisjon: Definisjon,
+        val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+        val endringer: List<Endring>
+    )
 
-                    )
-                ),
-            )
-        )
-    }
-
-
-    private fun opprettBehandlingshistorikkMedTidligereUtførtOppgave(saksnummer: String, referanse: UUID): BehandlingFlytStoppetHendelse {
-        return BehandlingFlytStoppetHendelse(
-            personIdent = "01010012345",
-            saksnummer = Saksnummer(saksnummer),
-            referanse = BehandlingReferanse(referanse),
-            behandlingType = TypeBehandling.Førstegangsbehandling,
-            status = Status.OPPRETTET,
-            opprettetTidspunkt = LocalDateTime.now(),
-            hendelsesTidspunkt = LocalDateTime.now(),
-            versjon = "1",
-            avklaringsbehov = listOf(
-                AvklaringsbehovHendelseDto(
-                    definisjon = Definisjon.AVKLAR_BISTANDSBEHOV.tilDefinisjonDTO(),
-                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                    endringer = listOf(
-                        EndringDTO(
-                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                            tidsstempel = LocalDateTime.now(),
-                            endretAv = "Kelvin"
-                        )
-                    )
-                ),
-                AvklaringsbehovHendelseDto(
-                    definisjon = Definisjon.AVKLAR_SYKDOM.tilDefinisjonDTO(),
-                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                    endringer = listOf(
-                        EndringDTO(
-                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                            tidsstempel = LocalDateTime.now().minusHours(2),
-                            endretAv = "Kelvin"
-                        ),
-                        EndringDTO(
-                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                            tidsstempel = LocalDateTime.now().minusHours(1),
-                            endretAv = "Lokalsaksbehandler"
-                        )
-
-                    )
+    data class Endring(
+        val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status,
+        val endretAv: String = "Kelvin",
+    )
+    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID, behandlingStatus: Status = Status.OPPRETTET, behandlingsbehov: List<Behandlingsbehov>): BehandlingFlytStoppetHendelse {
+        val nå = LocalDateTime.now()
+        val avklaringsbehovHendelseDtoListe = behandlingsbehov.map { avklaringsbehovHendelse ->
+            val endringer = avklaringsbehovHendelse.endringer.mapIndexed { i, endring ->
+                EndringDTO(
+                    status = endring.status,
+                    tidsstempel = nå.minusMinutes(avklaringsbehovHendelse.endringer.size.toLong() - i),
+                    endretAv = endring.endretAv
                 )
+            }
+            AvklaringsbehovHendelseDto(
+                definisjon = avklaringsbehovHendelse.definisjon.tilDefinisjonDTO(),
+                status = avklaringsbehovHendelse.status,
+                endringer = endringer
             )
+        }
+        return BehandlingFlytStoppetHendelse(
+            personIdent = "01010012345",
+            saksnummer = Saksnummer(saksnummer),
+            referanse = BehandlingReferanse(referanse),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            status = behandlingStatus,
+            opprettetTidspunkt = nå,
+            hendelsesTidspunkt = nå,
+            versjon = "1",
+            avklaringsbehov = avklaringsbehovHendelseDtoListe,
         )
     }
 
-    private fun opprettOppgave(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse):Unit? {
+    private fun oppdaterOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse):Unit? {
          return client.post(
-            URI.create("http://localhost:8080/opprett-oppgave"),
+            URI.create("http://localhost:8080/oppdater-oppgaver"),
             PostRequest(body = behandlingFlytStoppetHendelse)
         )
     }
@@ -217,19 +206,6 @@ class ApiTest {
             URI.create("http://localhost:8080/mine-oppgaver"),
             GetRequest()
         )!!
-    }
-
-    private fun avsluttOppgave(saksnummer: String, referanse: UUID, definisjon: Definisjon): List<OppgaveId> {
-        val oppgaveIder: List<OppgaveId>? = client.post(
-            URI.create("http://localhost:8080/avslutt-oppgave"),
-            PostRequest(body = AvklaringsbehovReferanseDto(
-                saksnummer = saksnummer,
-                referanse = referanse,
-                journalpostId = null,
-                avklaringsbehovKode = AvklaringsbehovKode(definisjon.kode))
-            )
-        )
-        return oppgaveIder!!
     }
 
     companion object {
