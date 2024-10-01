@@ -241,6 +241,22 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
+        val query = """
+            SELECT 
+                $alleOppgaveFelt
+            FROM
+                OPPGAVE    
+            WHERE
+                STATUS != 'AVSLUTTET'
+        """.trimIndent()
+
+        return connection.queryList<OppgaveDto>(query) {
+            setRowMapper { row -> oppgaveMapper(row) }
+        }
+    }
+
+
     /**
      * Hent oppgaver som ikke er avsluttet.
      */

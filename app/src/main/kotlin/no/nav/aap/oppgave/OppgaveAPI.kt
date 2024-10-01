@@ -26,6 +26,16 @@ fun NormalOpenAPIRoute.mineOppgaverApi(dataSource: DataSource, prometheus: Prome
         respond(mineOppgaver)
     }
 
+fun NormalOpenAPIRoute.alleÅpneOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry)  =
+
+    route("alle-oppgaver").get<Unit, List<OppgaveDto>> {
+        prometheus.httpCallCounter("/alle-oppgaver").increment()
+        val mineOppgaver = dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).hentAlleÅpneOppgaver()
+        }
+        respond(mineOppgaver)
+    }
+
 fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/hent-oppgave").post<Unit, OppgaveDto, AvklaringsbehovReferanseDto> { _, request ->
