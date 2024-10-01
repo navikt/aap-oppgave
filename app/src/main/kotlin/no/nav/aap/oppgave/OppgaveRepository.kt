@@ -137,7 +137,10 @@ class OppgaveRepository(private val connection: DBConnection) {
             SET 
                 STATUS = 'AVSLUTTET', 
                 ENDRET_AV = ?,
-                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                RESERVERT_AV = NULL,
+                RESERVERT_TIDSPUNKT = NULL
+                
             WHERE 
                 ID = ? AND
                 STATUS != 'AVSLUTTET'
