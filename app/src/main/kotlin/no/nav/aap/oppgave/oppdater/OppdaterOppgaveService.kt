@@ -5,12 +5,12 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.komponenter.dbconnect.DBConnection
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
+import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.OppgaveId
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 
@@ -48,30 +48,29 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
-    fun oppdaterOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse, token: OidcToken) {
+    fun oppdaterOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse) {
         val oppgaveRepo = OppgaveRepository(connection)
         val eksisterendeOppgaver = oppgaveRepo.hentOppgaver(behandlingFlytStoppetHendelse.saksnummer.toString(), behandlingFlytStoppetHendelse.referanse.referanse, null)
 
-        val oppgaveMap = eksisterendeOppgaver.associateBy( {it.avklaringsbehovKode}, {it} )
+        val oppgaveMap = eksisterendeOppgaver.associateBy( {AvklaringsbehovKode(it.avklaringsbehovKode)}, {it} )
 
         when (behandlingFlytStoppetHendelse.status) {
             Status.AVSLUTTET -> avslutteOppgaver(eksisterendeOppgaver, oppgaveRepo)
-            else -> oppdaterOppgaver(behandlingFlytStoppetHendelse, oppgaveMap, oppgaveRepo, token)
+            else -> oppdaterOppgaver(behandlingFlytStoppetHendelse, oppgaveMap, oppgaveRepo)
         }
     }
 
     private fun oppdaterOppgaver(
         behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
-        oppgaveRepo: OppgaveRepository,
-        token: OidcToken
+        oppgaveRepo: OppgaveRepository
     ) {
         val åpneAvklaringsbehov = behandlingFlytStoppetHendelse.avklaringsbehov.filter {it.status in ÅPNE_STATUSER}
         val avsluttedeAvklaringsbehov = behandlingFlytStoppetHendelse.avklaringsbehov.filter {it.status in AVSLUTTEDE_STATUSER}
 
         // Opprett nye oppgaver
         val avklarsbehovSomDetSkalOpprettesOppgaverFor = åpneAvklaringsbehov.filter { oppgaveMap[AvklaringsbehovKode(it.definisjon.type)] == null}
-        opprettOppgaver(behandlingFlytStoppetHendelse, avklarsbehovSomDetSkalOpprettesOppgaverFor, oppgaveRepo, token)
+        opprettOppgaver(behandlingFlytStoppetHendelse, avklarsbehovSomDetSkalOpprettesOppgaverFor, oppgaveRepo)
 
         // Gjenåpne avsluttede oppgaver
         åpneAvklaringsbehov.forEach { avklaringsbehov ->
@@ -90,20 +89,20 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     ) {
         val eksisterendeOppgave = oppgaveMap[AvklaringsbehovKode(avklaringsbehov.definisjon.type)]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
-            oppgaveRepo.gjenåpneOppgave(eksisterendeOppgave.id!!, "Kelvin")
+            oppgaveRepo.gjenåpneOppgave(OppgaveId(eksisterendeOppgave.id!!), "Kelvin")
             if (avklaringsbehov.status in setOf(
                     no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                     no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_BESLUTTER)
             ) {
                 val sistEndretAv = avklaringsbehov.sistEndretAv()
                 if (sistEndretAv != null && sistEndretAv != "Kelvin") {
-                    oppgaveRepo.reserverOppgave(eksisterendeOppgave.id!!, "Kelvin", sistEndretAv)
+                    oppgaveRepo.reserverOppgave(OppgaveId(eksisterendeOppgave.id!!), "Kelvin", sistEndretAv)
                 }
             }
         }
     }
 
-    private fun opprettOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelseDto>, oppgaveRepo: OppgaveRepository, token: OidcToken) {
+    private fun opprettOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelseDto>, oppgaveRepo: OppgaveRepository) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelseDto ->
             val nyOppgave = behandlingFlytStoppetHendelse.opprettNyOppgave(avklaringsbehovHendelseDto, "Kelvin")
             val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
@@ -117,7 +116,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
                         saksnummer = behandlingFlytStoppetHendelse.saksnummer.toString(),
                         referanse = behandlingFlytStoppetHendelse.referanse.referanse,
                         null,
-                        nyAvklaringsbehovKode
+                        nyAvklaringsbehovKode.kode
                     )
                     val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse, hvemLøsteForrigeIdent)
                     if (reserverteOppgaver.isNotEmpty()) {
@@ -139,7 +138,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     private fun avslutteOppgaver(oppgaver: List<OppgaveDto>, oppgaveRepo: OppgaveRepository) {
         oppgaver
             .filter { it.status != no.nav.aap.oppgave.verdityper.Status.AVSLUTTET }
-            .forEach { oppgaveRepo.avsluttOppgave(it.id!!, "Kelvin") }
+            .forEach { oppgaveRepo.avsluttOppgave(OppgaveId(it.id!!), "Kelvin") }
     }
 
     private fun BehandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
@@ -176,7 +175,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             saksnummer = this.saksnummer.toString(),
             behandlingRef = this.referanse.referanse,
             behandlingOpprettet = this.opprettetTidspunkt,
-            avklaringsbehovKode = AvklaringsbehovKode(avklaringsbehov.definisjon.type),
+            avklaringsbehovKode = avklaringsbehov.definisjon.type,
             opprettetAv = ident,
             opprettetTidspunkt = LocalDateTime.now()
         )

@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.verdityper
+package no.nav.aap.oppgave
 
 @JvmInline
 value class OppgaveId(val id: Long)

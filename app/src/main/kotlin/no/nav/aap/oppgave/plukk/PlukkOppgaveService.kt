@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.plukk
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.filter.FilterRepository
 import tilgang.Operasjon
@@ -21,12 +22,12 @@ class PlukkOppgaveService(val connection: DBConnection) {
             val tilgangRequest = TilgangRequest(
                 saksnummer = nesteOppgave.avklaringsbehovReferanse.saksnummer!!,
                 behandlingsreferanse = nesteOppgave.avklaringsbehovReferanse.referanse?.toString(),
-                avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovKode.kode,
+                avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovKode,
                 operasjon = Operasjon.SAKSBEHANDLE
             )
             if (TilgangGateway.harTilgang(tilgangRequest, token)) {
 
-                oppgaveRepo.reserverOppgave(nesteOppgave.oppgaveId, ident, ident)
+                oppgaveRepo.reserverOppgave(OppgaveId(nesteOppgave.oppgaveId), ident, ident)
             }
         }
         return nesteOppgave

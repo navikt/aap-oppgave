@@ -4,8 +4,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.oppgave.filter.FilterDto
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
-import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -115,7 +113,7 @@ class OppgaveRepositoryTest {
 
 
     private fun filter(vararg avklaringsbehovKoder: String) =
-        FilterDto(1, "Filter for test", avklaringsbehovKoder.map { AvklaringsbehovKode(it) }.toSet())
+        FilterDto(1, "Filter for test", avklaringsbehovKoder.toSet())
 
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
@@ -152,7 +150,7 @@ class OppgaveRepositoryTest {
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
-            avklaringsbehovKode = avklaringsbehovKode,
+            avklaringsbehovKode = avklaringsbehovKode.kode,
             status = status,
             opprettetAv = "bruker1",
             opprettetTidspunkt = LocalDateTime.now()

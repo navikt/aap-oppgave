@@ -13,7 +13,6 @@ import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.oppgave.metriker.httpCallCounter
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
-import no.nav.aap.oppgave.verdityper.OppgaveId
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.mineOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =

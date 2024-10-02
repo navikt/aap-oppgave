@@ -4,8 +4,6 @@ import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
-import no.nav.aap.oppgave.verdityper.OppgaveId
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -37,7 +35,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setUUID(2, oppgaveDto.behandlingRef)
                 setLong(3, oppgaveDto.journalpostId)
                 setLocalDateTime(4, oppgaveDto.behandlingOpprettet)
-                setString(5, oppgaveDto.avklaringsbehovKode.kode)
+                setString(5, oppgaveDto.avklaringsbehovKode)
                 setString(6, oppgaveDto.status.name)
                 setString(7, oppgaveDto.opprettetAv)
                 setLocalDateTime(8, oppgaveDto.opprettetTidspunkt)
@@ -68,7 +66,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
                 if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
                 if (avklaringsbehovReferanse.journalpostId != null ) setLong(index++, avklaringsbehovReferanse.journalpostId)
-                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode.kode)
+                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
             }
             setRowMapper { row ->
                 oppgaveMapper(row)
@@ -191,12 +189,12 @@ class OppgaveRepository(private val connection: DBConnection) {
         val nesteOppgave = connection.queryFirstOrNull(hentNesteOppgaveQuery) {
             setRowMapper {
                 NesteOppgaveDto(
-                    oppgaveId = OppgaveId(it.getLong("ID")),
+                    oppgaveId = it.getLong("ID"),
                     AvklaringsbehovReferanseDto(
                         saksnummer = it.getStringOrNull("SAKSNUMMER"),
                         referanse = it.getUUIDOrNull("BEHANDLING_REF"),
                         journalpostId = it.getLongOrNull("JOURNALPOST_ID"),
-                        avklaringsbehovKode = AvklaringsbehovKode(it.getString("AVKLARINGSBEHOV_TYPE"))
+                        avklaringsbehovKode = it.getString("AVKLARINGSBEHOV_TYPE")
                     )
                 )
             }
@@ -286,7 +284,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
                 if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
                 if (avklaringsbehovReferanse.journalpostId != null ) setLong(index++, avklaringsbehovReferanse.journalpostId)
-                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode.kode)
+                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
             }
             setRowMapper { row ->
                 OppgaveId(row.getLong("ID"))
@@ -305,18 +303,18 @@ class OppgaveRepository(private val connection: DBConnection) {
         return ""
     }
 
-    private fun Set<AvklaringsbehovKode>.tilStringListe(): String {
-        return map {"'${it.kode}'"}.joinToString(prefix = "(", postfix = ")", separator = ", ")
+    private fun Set<String>.tilStringListe(): String {
+        return map {"'$it'"}.joinToString(prefix = "(", postfix = ")", separator = ", ")
     }
 
     private fun oppgaveMapper(row: Row): OppgaveDto {
         return OppgaveDto(
-            id = OppgaveId(row.getLong("ID")),
+            id = row.getLong("ID"),
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
             behandlingRef = row.getUUIDOrNull("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
-            avklaringsbehovKode = AvklaringsbehovKode(row.getString("AVKLARINGSBEHOV_TYPE")),
+            avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
             status = Status.valueOf(row.getString("STATUS")),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
             reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
@@ -344,6 +342,5 @@ class OppgaveRepository(private val connection: DBConnection) {
             ENDRET_TIDSPUNKT
         """.trimIndent()
     }
-
 
 }

@@ -4,7 +4,7 @@ import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.verdityper.OppgaveId
+import no.nav.aap.oppgave.OppgaveId
 import tilgang.Operasjon
 import tilgang.TilgangRequest
 
@@ -16,7 +16,7 @@ class ReserverOppgaveService(val connection: DBConnection) {
         val tilgangRequest = TilgangRequest(
             saksnummer = avklaringsbehovReferanse.saksnummer,
             behandlingsreferanse = avklaringsbehovReferanse.referanse?.toString(),
-            avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode.kode,
+            avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
             operasjon = Operasjon.SAKSBEHANDLE
         )
         if (TilgangGateway.harTilgang(tilgangRequest, token)) {

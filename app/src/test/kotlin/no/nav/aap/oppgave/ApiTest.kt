@@ -25,7 +25,6 @@ import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.server
-import no.nav.aap.oppgave.verdityper.AvklaringsbehovKode
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
@@ -196,7 +195,7 @@ class ApiTest {
                 saksnummer = saksnummer,
                 referanse = referanse,
                 journalpostId = null,
-                avklaringsbehovKode = AvklaringsbehovKode(definisjon.kode)
+                avklaringsbehovKode = definisjon.kode
             ))
         )
     }
