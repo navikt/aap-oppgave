@@ -31,7 +31,6 @@ import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterOppgaverApi
-import no.nav.aap.oppgave.oppdater.opprettOppgaveApi
 import no.nav.aap.oppgave.plukk.plukkApi
 import org.slf4j.LoggerFactory
 
@@ -74,7 +73,6 @@ internal fun Application.server(dbConfig: DbConfig) {
     routing {
         authenticate(AZURE) {
             apiRouting {
-                opprettOppgaveApi(dataSource, prometheus)
                 oppdaterOppgaverApi(dataSource, prometheus)
                 plukkApi(dataSource, prometheus)
                 hentOppgaveApi(dataSource, prometheus)

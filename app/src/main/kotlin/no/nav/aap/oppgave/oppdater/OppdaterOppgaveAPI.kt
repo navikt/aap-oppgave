@@ -12,17 +12,6 @@ import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.oppgave.metriker.httpCallCounter
 import javax.sql.DataSource
 
-@Deprecated("Bruk oppdaterOppgaverApi istedet")
-fun NormalOpenAPIRoute.opprettOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
-    route("/opprett-oppgave").post<Unit, Unit, BehandlingFlytStoppetHendelse> { _, request ->
-        prometheus.httpCallCounter("/opprett-oppgave").increment()
-        dataSource.transaction { connection ->
-            OppdaterOppgaveService(connection).oppdaterOppgaver(request, token())
-        }
-        respondWithStatus(HttpStatusCode.OK)
-    }
-
 fun NormalOpenAPIRoute.oppdaterOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/oppdater-oppgaver").post<Unit, Unit, BehandlingFlytStoppetHendelse> { _, request ->
