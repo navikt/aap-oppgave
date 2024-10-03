@@ -8,7 +8,7 @@ import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.oppgave.metriker.httpCallCounter
+import no.nav.aap.oppgave.metrikker.httpCallCounter
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =

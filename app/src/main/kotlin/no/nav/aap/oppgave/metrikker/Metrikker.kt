@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.metriker
+package no.nav.aap.oppgave.metrikker
 
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.Tag
