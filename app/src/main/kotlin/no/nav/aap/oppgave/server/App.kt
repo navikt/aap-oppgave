@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.server
 
+import com.papsign.ktor.openapigen.model.info.InfoModel
 import com.papsign.ktor.openapigen.route.apiRouting
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -20,10 +21,10 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import no.nav.aap.behandlingsflyt.server.authenticate.AZURE
-import no.nav.aap.komponenter.commonKtorModule
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
+import no.nav.aap.komponenter.server.AZURE
+import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.oppgave.alleÅpneOppgaverApi
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.filter.filterApi
@@ -54,7 +55,7 @@ fun main() {
 internal fun Application.server(dbConfig: DbConfig) {
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 
-    commonKtorModule(prometheus, AzureConfig(), "AAP - Oppgave")
+    commonKtorModule(prometheus, AzureConfig(), InfoModel(title = "AAP - Oppgave"))
 
     install(StatusPages) {
         exception<Throwable> { call, cause ->
