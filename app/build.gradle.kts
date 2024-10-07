@@ -4,6 +4,7 @@ val ktorVersion = "2.3.12"
 val komponenterVersjon = "0.0.84"
 val tilgangVersjon = "0.0.11"
 val behandlingsflytVersjon= "0.0.13"
+val postmottakVersjon = "0.0.8"
 
 plugins {
     id("oppgave.conventions")
@@ -24,6 +25,7 @@ dependencies {
     implementation("no.nav:ktor-openapi-generator:1.0.34")
     implementation("no.nav.aap.tilgang:api-kontrakt:$tilgangVersjon")
     implementation("no.nav.aap.behandlingsflyt:kontrakt:$behandlingsflytVersjon")
+    implementation("no.nav.aap.postmottak:kontrakt:$postmottakVersjon")
 
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")

@@ -1,9 +1,6 @@
 package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
-import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
@@ -32,45 +29,47 @@ private val AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER =
     ).map { AvklaringsbehovKode(it.kode)}.toSet()
 
 private val ÅPNE_STATUSER = setOf(
-    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_BESLUTTER,
-    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+    AvklaringsbehovStatus.OPPRETTET,
+    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
 )
 
 private val AVSLUTTEDE_STATUSER = setOf(
-    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.KVALITETSSIKRET,
-    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.TOTRINNS_VURDERT,
+    AvklaringsbehovStatus.AVSLUTTET,
+    AvklaringsbehovStatus.AVSLUTTET,
+    AvklaringsbehovStatus.KVALITETSSIKRET,
+    AvklaringsbehovStatus.TOTRINNS_VURDERT,
 )
 
 class OppdaterOppgaveService(private val connection: DBConnection) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
-    fun oppdaterOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse) {
+    fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
         val oppgaveRepo = OppgaveRepository(connection)
-        val eksisterendeOppgaver = oppgaveRepo.hentOppgaver(behandlingFlytStoppetHendelse.saksnummer.toString(), behandlingFlytStoppetHendelse.referanse.referanse, null)
+        val eksisterendeOppgaver = oppgaveRepo.hentOppgaver(oppgaveOppdatering.saksnummer, oppgaveOppdatering.referanse, oppgaveOppdatering.journalpostId)
 
         val oppgaveMap = eksisterendeOppgaver.associateBy( {AvklaringsbehovKode(it.avklaringsbehovKode)}, {it} )
 
-        when (behandlingFlytStoppetHendelse.status) {
-            Status.AVSLUTTET -> avslutteOppgaver(eksisterendeOppgaver, oppgaveRepo)
-            else -> oppdaterOppgaver(behandlingFlytStoppetHendelse, oppgaveMap, oppgaveRepo)
+        when (oppgaveOppdatering.behandlingStatus) {
+            BehandlingStatus.LUKKET -> avslutteOppgaver(eksisterendeOppgaver, oppgaveRepo)
+            else -> oppdaterOppgaver(oppgaveOppdatering, oppgaveMap, oppgaveRepo)
         }
     }
 
     private fun oppdaterOppgaver(
-        behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse,
+        oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
         oppgaveRepo: OppgaveRepository
     ) {
-        val åpneAvklaringsbehov = behandlingFlytStoppetHendelse.avklaringsbehov.filter {it.status in ÅPNE_STATUSER}
-        val avsluttedeAvklaringsbehov = behandlingFlytStoppetHendelse.avklaringsbehov.filter {it.status in AVSLUTTEDE_STATUSER}
+        val åpneAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter {it.status in ÅPNE_STATUSER}
+        val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter {it.status in AVSLUTTEDE_STATUSER}
 
         // Opprett nye oppgaver
-        val avklarsbehovSomDetSkalOpprettesOppgaverFor = åpneAvklaringsbehov.filter { oppgaveMap[AvklaringsbehovKode(it.definisjon.type)] == null}
-        opprettOppgaver(behandlingFlytStoppetHendelse, avklarsbehovSomDetSkalOpprettesOppgaverFor, oppgaveRepo)
+        val avklarsbehovSomDetSkalOpprettesOppgaverFor = åpneAvklaringsbehov
+            .filter { oppgaveMap[it.avklaringsbehovKode] == null}
+            .map { it.avklaringsbehovKode }
+        opprettOppgaver(oppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor, oppgaveRepo)
 
         // Gjenåpne avsluttede oppgaver
         åpneAvklaringsbehov.forEach { avklaringsbehov ->
@@ -78,21 +77,21 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         }
 
         // Avslutt oppgaver hvor avklaringsbehovet er lukket
-        val oppgaverSomSkalAvsluttes = avsluttedeAvklaringsbehov.mapNotNull { oppgaveMap[AvklaringsbehovKode(it.definisjon.type)] }
+        val oppgaverSomSkalAvsluttes = avsluttedeAvklaringsbehov.mapNotNull { oppgaveMap[it.avklaringsbehovKode] }
         avslutteOppgaver(oppgaverSomSkalAvsluttes, oppgaveRepo)
     }
 
     private fun gjenåpneOppgave(
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
-        avklaringsbehov: AvklaringsbehovHendelseDto,
+        avklaringsbehov: AvklaringsbehovHendelse,
         oppgaveRepo: OppgaveRepository
     ) {
-        val eksisterendeOppgave = oppgaveMap[AvklaringsbehovKode(avklaringsbehov.definisjon.type)]
+        val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
             oppgaveRepo.gjenåpneOppgave(OppgaveId(eksisterendeOppgave.id!!), "Kelvin")
             if (avklaringsbehov.status in setOf(
-                    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-                    no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_BESLUTTER)
+                    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER)
             ) {
                 val sistEndretAv = avklaringsbehov.sistEndretAv()
                 if (sistEndretAv != null && sistEndretAv != "Kelvin") {
@@ -102,19 +101,19 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         }
     }
 
-    private fun opprettOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelseDto>, oppgaveRepo: OppgaveRepository) {
-        avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelseDto ->
-            val nyOppgave = behandlingFlytStoppetHendelse.opprettNyOppgave(avklaringsbehovHendelseDto, "Kelvin")
+    private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>, oppgaveRepo: OppgaveRepository) {
+        avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
+            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(avklaringsbehovKode, "Kelvin")
             val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
-            val hvemLøsteForrigeAvklaringsbehov = behandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov()
+            val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
             if (hvemLøsteForrigeAvklaringsbehov != null) {
                 val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
-                val nyAvklaringsbehovKode = AvklaringsbehovKode(avklaringsbehovHendelseDto.definisjon.type)
+                val nyAvklaringsbehovKode = avklaringsbehovKode
                 if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, nyAvklaringsbehovKode)) {
                     val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
-                        saksnummer = behandlingFlytStoppetHendelse.saksnummer.toString(),
-                        referanse = behandlingFlytStoppetHendelse.referanse.referanse,
+                        saksnummer = oppgaveOppdatering.saksnummer,
+                        referanse = oppgaveOppdatering.referanse,
                         null,
                         nyAvklaringsbehovKode.kode
                     )
@@ -141,9 +140,9 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             .forEach { oppgaveRepo.avsluttOppgave(OppgaveId(it.id!!), "Kelvin") }
     }
 
-    private fun BehandlingFlytStoppetHendelse.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
+    private fun OppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
         val sisteAvsluttetAvklaringsbehov = avklaringsbehov
-            .filter { it.status == no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET }
+            .filter { it.status == AvklaringsbehovStatus.AVSLUTTET }
             .filter {it.sistEndretAv() != null}
             .sortedBy { it.sistEndret() }
             .lastOrNull()
@@ -151,10 +150,10 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         if (sisteAvsluttetAvklaringsbehov == null) {
             return null
         }
-        return Pair(AvklaringsbehovKode(sisteAvsluttetAvklaringsbehov.definisjon.type), sisteAvsluttetAvklaringsbehov.sistEndretAv()!!)
+        return Pair(sisteAvsluttetAvklaringsbehov.avklaringsbehovKode, sisteAvsluttetAvklaringsbehov.sistEndretAv()!!)
     }
 
-    private fun AvklaringsbehovHendelseDto.sistEndretAv(): String? {
+    private fun AvklaringsbehovHendelse.sistEndretAv(): String? {
         return endringer
             .sortedBy { it.tidsstempel }
             .filter { it.status == this.status }
@@ -162,7 +161,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             .lastOrNull()
     }
 
-    private fun AvklaringsbehovHendelseDto.sistEndret(): LocalDateTime {
+    private fun AvklaringsbehovHendelse.sistEndret(): LocalDateTime {
         return endringer
             .sortedBy { it.tidsstempel }
             .filter { it.status == this.status }
@@ -170,12 +169,12 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             .last()
     }
 
-    private fun BehandlingFlytStoppetHendelse.opprettNyOppgave(avklaringsbehov: AvklaringsbehovHendelseDto, ident: String): OppgaveDto {
+    private fun OppgaveOppdatering.opprettNyOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String): OppgaveDto {
         return OppgaveDto(
-            saksnummer = this.saksnummer.toString(),
-            behandlingRef = this.referanse.referanse,
+            saksnummer = this.saksnummer,
+            behandlingRef = this.referanse,
             behandlingOpprettet = this.opprettetTidspunkt,
-            avklaringsbehovKode = avklaringsbehov.definisjon.type,
+            avklaringsbehovKode = avklaringsbehovKode.kode,
             opprettetAv = ident,
             opprettetTidspunkt = LocalDateTime.now()
         )

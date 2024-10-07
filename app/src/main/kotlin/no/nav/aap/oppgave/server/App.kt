@@ -30,7 +30,8 @@ import no.nav.aap.oppgave.filter.filterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.mineOppgaverApi
-import no.nav.aap.oppgave.oppdater.oppdaterOppgaverApi
+import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
+import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
 import no.nav.aap.oppgave.plukk.plukkApi
 import org.slf4j.LoggerFactory
 
@@ -73,7 +74,8 @@ internal fun Application.server(dbConfig: DbConfig) {
     routing {
         authenticate(AZURE) {
             apiRouting {
-                oppdaterOppgaverApi(dataSource, prometheus)
+                oppdaterBehandlingOppgaverApi(dataSource, prometheus)
+                oppdaterPostmottakOppgaverApi(dataSource, prometheus)
                 plukkApi(dataSource, prometheus)
                 hentOppgaveApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
