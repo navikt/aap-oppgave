@@ -8,6 +8,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 
@@ -103,7 +104,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
 
     private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>, oppgaveRepo: OppgaveRepository) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
-            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(avklaringsbehovKode, "Kelvin")
+            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin")
             val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
@@ -169,12 +170,13 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             .last()
     }
 
-    private fun OppgaveOppdatering.opprettNyOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String): OppgaveDto {
+    private fun OppgaveOppdatering.opprettNyOppgave(avklaringsbehovKode: AvklaringsbehovKode, behandlingstype: Behandlingstype, ident: String): OppgaveDto {
         return OppgaveDto(
             saksnummer = this.saksnummer,
             behandlingRef = this.referanse,
             behandlingOpprettet = this.opprettetTidspunkt,
             avklaringsbehovKode = avklaringsbehovKode.kode,
+            behandlingstype = behandlingstype,
             opprettetAv = ident,
             opprettetTidspunkt = LocalDateTime.now()
         )

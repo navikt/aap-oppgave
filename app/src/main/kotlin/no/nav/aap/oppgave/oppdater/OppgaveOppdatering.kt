@@ -1,9 +1,11 @@
 package no.nav.aap.oppgave.oppdater
 
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import java.time.LocalDateTime
 import java.util.UUID
@@ -28,6 +30,7 @@ data class OppgaveOppdatering(
     val referanse: UUID? = null,
     val journalpostId: Long? = null,
     val behandlingStatus: BehandlingStatus,
+    val behandlingstype: Behandlingstype,
     val opprettetTidspunkt: LocalDateTime,
     val avklaringsbehov: List<AvklaringsbehovHendelse>
 )
@@ -49,10 +52,19 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         saksnummer = this.saksnummer.toString(),
         referanse = this.referanse.referanse,
         behandlingStatus = this.status.tilBehandlingsstatus(),
+        behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflyt()
     )
 }
+
+private fun TypeBehandling.tilBehandlingstype() =
+    when (this) {
+        TypeBehandling.Førstegangsbehandling -> Behandlingstype.FØRSTEGANGSBEHANDLING
+        TypeBehandling.Revurdering -> Behandlingstype.REVURDERING
+        TypeBehandling.Tilbakekreving -> Behandlingstype.TILBAKEKREVING
+        TypeBehandling.Klage -> Behandlingstype.KLAGE
+    }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
     return this.map {
@@ -82,10 +94,17 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
         journalpostId = this.referanse.referanse,
         behandlingStatus = this.status.tilBehandlingsstatus(),
+        behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForPostmottak()
     )
 }
+
+private fun no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.tilBehandlingstype() =
+    when (this) {
+        no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.DokumentHåndtering -> Behandlingstype.DOKUMENT_HÅNDTERING
+    }
+
 
 private fun no.nav.aap.postmottak.kontrakt.behandling.Status.tilBehandlingsstatus(): BehandlingStatus {
     if (this.erAvsluttet()) {

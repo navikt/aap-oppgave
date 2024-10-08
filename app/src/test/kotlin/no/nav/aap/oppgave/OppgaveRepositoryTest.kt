@@ -4,6 +4,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -152,6 +153,7 @@ class OppgaveRepositoryTest {
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
             avklaringsbehovKode = avklaringsbehovKode.kode,
             status = status,
+            behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
             opprettetAv = "bruker1",
             opprettetTidspunkt = LocalDateTime.now()
         )

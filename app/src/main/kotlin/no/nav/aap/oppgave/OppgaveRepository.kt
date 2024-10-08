@@ -4,6 +4,7 @@ import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -22,10 +23,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                 BEHANDLING_OPPRETTET,
                 AVKLARINGSBEHOV_TYPE,
                 STATUS,
+                BEHANDLINGSTYPE,
                 OPPRETTET_AV,
                 OPPRETTET_TIDSPUNKT
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -37,8 +39,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDateTime(4, oppgaveDto.behandlingOpprettet)
                 setString(5, oppgaveDto.avklaringsbehovKode)
                 setString(6, oppgaveDto.status.name)
-                setString(7, oppgaveDto.opprettetAv)
-                setLocalDateTime(8, oppgaveDto.opprettetTidspunkt)
+                setString(7, oppgaveDto.behandlingstype.name)
+                setString(8, oppgaveDto.opprettetAv)
+                setLocalDateTime(9, oppgaveDto.opprettetTidspunkt)
             }
         }
         return OppgaveId(id)
@@ -316,6 +319,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
             avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
             status = Status.valueOf(row.getString("STATUS")),
+            behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE")),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
             reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
             opprettetAv = row.getString("OPPRETTET_AV"),
@@ -334,6 +338,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             BEHANDLING_OPPRETTET,
             AVKLARINGSBEHOV_TYPE,
             STATUS,
+            BEHANDLINGSTYPE,
             RESERVERT_AV,
             RESERVERT_TIDSPUNKT,
             OPPRETTET_AV,
