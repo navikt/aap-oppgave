@@ -14,7 +14,6 @@ import kotlinx.coroutines.runBlocking
 import no.nav.aap.oppgave.server.ErrorRespons
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import tilgang.TilgangRequest
 import tilgang.TilgangResponse
 
 class Fakes(azurePort: Int = 0) : AutoCloseable{
@@ -81,8 +80,10 @@ class Fakes(azurePort: Int = 0) : AutoCloseable{
             }
         }
         routing {
-            post("/tilgang") {
-                val req = call.receive<TilgangRequest>()
+            post("/tilgang/behandling") {
+                call.respond(TilgangResponse(true))
+            }
+            post("/tilgang/journalpost") {
                 call.respond(TilgangResponse(true))
             }
         }

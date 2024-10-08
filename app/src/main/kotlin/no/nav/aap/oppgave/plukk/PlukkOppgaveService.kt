@@ -5,8 +5,9 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.filter.FilterRepository
+import tilgang.BehandlingTilgangRequest
+import tilgang.JournalpostRequest
 import tilgang.Operasjon
-import tilgang.TilgangRequest
 
 class PlukkOppgaveService(val connection: DBConnection) {
 
@@ -18,19 +19,33 @@ class PlukkOppgaveService(val connection: DBConnection) {
             throw IllegalArgumentException("Finner ikke filter med id: $filterId")
         }
         val nesteOppgave = oppgaveRepo.finnNesteOppgave(filter)
-        if (nesteOppgave != null) {
-            val tilgangRequest = TilgangRequest(
-                saksnummer = nesteOppgave.avklaringsbehovReferanse.saksnummer!!,
-                behandlingsreferanse = nesteOppgave.avklaringsbehovReferanse.referanse?.toString(),
-                avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovKode,
-                operasjon = Operasjon.SAKSBEHANDLE
-            )
-            if (TilgangGateway.harTilgang(tilgangRequest, token)) {
 
+        if (nesteOppgave != null) {
+            require(nesteOppgave.avklaringsbehovReferanse.referanse != null || nesteOppgave.avklaringsbehovReferanse.journalpostId != null) {
+                "AvklaringsbehovReferanse må ha referanse til enten behandling eller journalpost"
+            }
+            val harTilgang = if (nesteOppgave.avklaringsbehovReferanse.referanse != null)
+                TilgangGateway.harTilgangTilBehandling(
+                    BehandlingTilgangRequest(
+                        behandlingsreferanse = nesteOppgave.avklaringsbehovReferanse.referanse.toString(),
+                        avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovKode,
+                        operasjon = Operasjon.SAKSBEHANDLE
+                    ), token
+                )
+            else
+                TilgangGateway.harTilgangTilJournalpost(
+                    JournalpostRequest(
+                        journalpostId = nesteOppgave.avklaringsbehovReferanse.journalpostId!!,
+                        avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovKode,
+                        operasjon = Operasjon.SAKSBEHANDLE
+                    ), token
+                )
+
+            if (harTilgang) {
                 oppgaveRepo.reserverOppgave(OppgaveId(nesteOppgave.oppgaveId), ident, ident)
             }
         }
+
         return nesteOppgave
     }
-
 }

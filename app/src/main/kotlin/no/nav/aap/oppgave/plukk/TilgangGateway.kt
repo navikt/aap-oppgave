@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.plukk
 
-import tilgang.TilgangRequest
 import tilgang.TilgangResponse
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
@@ -9,6 +8,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.komponenter.config.requiredConfigForKey
+import tilgang.BehandlingTilgangRequest
+import tilgang.JournalpostRequest
 import java.net.URI
 
 object TilgangGateway {
@@ -20,24 +21,31 @@ object TilgangGateway {
         tokenProvider = OnBehalfOfTokenProvider,
     )
 
-    fun harTilgang(body: TilgangRequest, currentToken: OidcToken): Boolean {
-        val respons = query(
-            body,
-            currentToken = currentToken
-        )
-        return respons.tilgang
-    }
-
-    private fun query(body: TilgangRequest, currentToken: OidcToken): TilgangResponse {
+    fun harTilgangTilBehandling(body: BehandlingTilgangRequest, currentToken: OidcToken): Boolean {
         val httpRequest = PostRequest(
             body = body,
             currentToken = currentToken
         )
-        return requireNotNull(
+        val respons = requireNotNull(
             client.post<_, TilgangResponse>(
-                uri = baseUrl.resolve("/tilgang"),
+                uri = baseUrl.resolve("/tilgang/behandling"),
                 request = httpRequest
             )
         )
+        return respons.tilgang
+    }
+
+    fun harTilgangTilJournalpost(body: JournalpostRequest, currentToken: OidcToken): Boolean {
+        val httpRequest = PostRequest(
+            body = body,
+            currentToken = currentToken
+        )
+        val respons = requireNotNull(
+            client.post<_, TilgangResponse>(
+                uri = baseUrl.resolve("/tilgang/journalpost"),
+                request = httpRequest
+            )
+        )
+        return respons.tilgang
     }
 }
