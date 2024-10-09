@@ -89,14 +89,14 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
-            oppgaveRepo.gjenåpneOppgave(OppgaveId(eksisterendeOppgave.id!!), "Kelvin")
+            oppgaveRepo.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin")
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER)
             ) {
                 val sistEndretAv = avklaringsbehov.sistEndretAv()
                 if (sistEndretAv != null && sistEndretAv != "Kelvin") {
-                    oppgaveRepo.reserverOppgave(OppgaveId(eksisterendeOppgave.id!!), "Kelvin", sistEndretAv)
+                    oppgaveRepo.reserverOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin", sistEndretAv)
                 }
             }
         }
@@ -138,7 +138,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     private fun avslutteOppgaver(oppgaver: List<OppgaveDto>, oppgaveRepo: OppgaveRepository) {
         oppgaver
             .filter { it.status != no.nav.aap.oppgave.verdityper.Status.AVSLUTTET }
-            .forEach { oppgaveRepo.avsluttOppgave(OppgaveId(it.id!!), "Kelvin") }
+            .forEach { oppgaveRepo.avsluttOppgave(it.oppgaveId(), "Kelvin") }
     }
 
     private fun OppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
@@ -179,7 +179,9 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             avklaringsbehovKode = avklaringsbehovKode.kode,
             behandlingstype = behandlingstype,
             opprettetAv = ident,
-            opprettetTidspunkt = LocalDateTime.now()
+            opprettetTidspunkt = LocalDateTime.now(),
         )
     }
+
+    private fun OppgaveDto.oppgaveId() = OppgaveId(this.id!!, this.versjon)
 }

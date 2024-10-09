@@ -91,11 +91,16 @@ class OppgaveRepositoryTest {
         reserverOppgave(oppgaveId2, "bruker2")
         reserverOppgave(oppgaveId3, "bruker1")
         reserverOppgave(oppgaveId4, "bruker1")
-        avsluttOppgave(oppgaveId4)
+
+        val mineOppgaverFørAvslutt = mineOppgave("bruker1")
+        assertThat(mineOppgaverFørAvslutt).hasSize(3)
+
+        val oppgaveSomSkalAvsluttes = mineOppgaverFørAvslutt.first { it.id == oppgaveId4.id }
+        avsluttOppgave(OppgaveId(oppgaveSomSkalAvsluttes.id!!, oppgaveSomSkalAvsluttes.versjon))
 
         InitTestDatabase.dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection).hentMineOppgaver("bruker1")
-            assertThat(oppgaver.size).isEqualTo(2)
+            assertThat(oppgaver).hasSize(2)
         }
     }
 
@@ -107,7 +112,7 @@ class OppgaveRepositoryTest {
         var mineOppgaver  = mineOppgave("saksbehandler1")
         assertThat(mineOppgaver).hasSize(1)
 
-        avreserverOppgave(oppgaveId, "saksbehandler1")
+        avreserverOppgave(OppgaveId(mineOppgaver.first().id!!, mineOppgaver.first().versjon), "saksbehandler1")
         mineOppgaver  = mineOppgave("saksbehandler1")
         assertThat(mineOppgaver).hasSize(0)
     }

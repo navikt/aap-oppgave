@@ -44,7 +44,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDateTime(9, oppgaveDto.opprettetTidspunkt)
             }
         }
-        return OppgaveId(id)
+        return OppgaveId(id, 0L)
     }
 
     fun hentOppgave(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): OppgaveDto? {
@@ -109,8 +109,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-
-
     fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String) {
         val query = """
             UPDATE 
@@ -118,16 +116,21 @@ class OppgaveRepository(private val connection: DBConnection) {
             SET 
                 STATUS = 'OPPRETTET', 
                 ENDRET_AV = ?,
-                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
-                STATUS != 'OPPRETTET'
+                STATUS != 'OPPRETTET' AND
+                VERSJON = ?
+                
         """.trimIndent()
         connection.execute(query) {
             setParams {
                 setString(1, ident)
                 setLong(2, oppgaveId.id)
+                setLong(3, oppgaveId.versjon)
             }
+            setResultValidator { require(it == 1) }
         }
     }
 
@@ -140,17 +143,20 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 RESERVERT_AV = NULL,
-                RESERVERT_TIDSPUNKT = NULL
-                
+                RESERVERT_TIDSPUNKT = NULL,
+                VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
-                STATUS != 'AVSLUTTET'
+                STATUS != 'AVSLUTTET' AND
+                VERSJON = ?
         """.trimIndent()
         connection.execute(query) {
             setParams {
                 setString(1, ident)
                 setLong(2, oppgaveId.id)
+                setLong(3, oppgaveId.versjon)
             }
+            setResultValidator { require(it == 1) }
         }
     }
 
@@ -162,23 +168,27 @@ class OppgaveRepository(private val connection: DBConnection) {
                 RESERVERT_AV = NULL, 
                 RESERVERT_TIDSPUNKT = NULL,
                 ENDRET_AV = ?,
-                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND 
-                STATUS != 'AVSLUTTET'
+                STATUS != 'AVSLUTTET' AND
+                VERSJON = ?
         """.trimIndent()
         connection.execute(query) {
             setParams {
                 setString(1, ident)
                 setLong(2, oppgaveId.id)
+                setLong(3, oppgaveId.versjon)
             }
+            setResultValidator { require(it == 1) }
         }
     }
 
     fun finnNesteOppgave(filterDto: FilterDto): NesteOppgaveDto? {
         val hentNesteOppgaveQuery = """
             SELECT 
-                ID, SAKSNUMMER, BEHANDLING_REF, JOURNALPOST_ID, AVKLARINGSBEHOV_TYPE
+                ID, VERSJON, SAKSNUMMER, BEHANDLING_REF, JOURNALPOST_ID, AVKLARINGSBEHOV_TYPE
             FROM 
                 OPPGAVE 
             WHERE 
@@ -193,6 +203,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             setRowMapper {
                 NesteOppgaveDto(
                     oppgaveId = it.getLong("ID"),
+                    oppgaveVersjon = it.getLong("VERSJON"),
                     AvklaringsbehovReferanseDto(
                         saksnummer = it.getStringOrNull("SAKSNUMMER"),
                         referanse = it.getUUIDOrNull("BEHANDLING_REF"),
@@ -213,8 +224,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                 RESERVERT_AV = ?,
                 RESERVERT_TIDSPUNKT = CURRENT_TIMESTAMP,
                 ENDRET_AV = ?,
-                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP
-            WHERE ID = ?
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                VERSJON = VERSJON + 1
+            WHERE 
+                ID = ? AND
+                VERSJON = ?
         """.trimIndent()
 
         connection.execute(updaterOppgaveReservasjonQuery) {
@@ -222,7 +236,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(1, reservertAvIdent)
                 setString(2, ident)
                 setLong(3, oppgaveId.id)
+                setLong(4, oppgaveId.versjon)
             }
+            setResultValidator { require(it == 1) }
         }
     }
 
@@ -270,7 +286,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val journalpostIdClause = if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
         val oppgaverForReferanseQuery = """
             SELECT 
-                ID 
+                ID, VERSJON
             FROM 
                 OPPGAVE 
             WHERE 
@@ -290,7 +306,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
             }
             setRowMapper { row ->
-                OppgaveId(row.getLong("ID"))
+                OppgaveId(row.getLong("ID"), row.getLong("VERSJON"))
             }
         }
         if (oppgaver.size > 1) {
@@ -325,7 +341,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             opprettetAv = row.getString("OPPRETTET_AV"),
             opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
             endretAv = row.getStringOrNull("ENDRET_AV"),
-            endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT")
+            endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
+            versjon = row.getLong("VERSJON"),
         )
     }
 
@@ -344,7 +361,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPRETTET_AV,
             OPPRETTET_TIDSPUNKT,
             ENDRET_AV,
-            ENDRET_TIDSPUNKT
+            ENDRET_TIDSPUNKT,
+            VERSJON            
         """.trimIndent()
     }
 

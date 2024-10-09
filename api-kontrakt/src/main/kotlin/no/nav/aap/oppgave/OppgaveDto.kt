@@ -20,6 +20,7 @@ data class OppgaveDto(
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
+    val versjon: Long = 0
 ) {
     init {
         if (journalpostId == null) {
@@ -37,4 +38,5 @@ data class OppgaveDto(
             this.avklaringsbehovKode
         )
     }
+
 }

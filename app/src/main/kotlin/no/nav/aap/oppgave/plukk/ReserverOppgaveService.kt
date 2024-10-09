@@ -43,21 +43,22 @@ class ReserverOppgaveService(val connection: DBConnection) {
         if (harTilgang) {
             val oppgaveRepo = OppgaveRepository(connection)
             oppgaverSomSkalReserveres.forEach {
-                oppgaveRepo.reserverOppgave(OppgaveId(it.id), ident, ident)
+                oppgaveRepo.reserverOppgave(it, ident, ident)
             }
             return oppgaverSomSkalReserveres
         }
         return listOf()
     }
 
-    fun reserverOppgaveUtenTilgangskontroll(
-        avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
-        ident: String
-    ): List<OppgaveId> {
+    /**
+     * Reserver oppgave uten kall mot tilgangkontroll - brukes når oppgave skal reserveres av behandlingsprosess uten
+     * uten noen innloggingskontekst.
+     */
+    fun reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, ident: String): List<OppgaveId> {
         val oppgaveRepo = OppgaveRepository(connection)
         val oppgaverSomSkalReserveres = oppgaveRepo.hentÅpneOppgaver(avklaringsbehovReferanse)
         oppgaverSomSkalReserveres.forEach {
-            oppgaveRepo.reserverOppgave(OppgaveId(it.id), ident, ident)
+            oppgaveRepo.reserverOppgave(it, ident, ident)
         }
         return oppgaverSomSkalReserveres
     }
