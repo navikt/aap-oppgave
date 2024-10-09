@@ -174,6 +174,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         return OppgaveDto(
             saksnummer = this.saksnummer,
             behandlingRef = this.referanse,
+            journalpostId = this.journalpostId,
             behandlingOpprettet = this.opprettetTidspunkt,
             avklaringsbehovKode = avklaringsbehovKode.kode,
             behandlingstype = behandlingstype,
