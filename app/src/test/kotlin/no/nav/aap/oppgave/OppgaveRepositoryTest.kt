@@ -42,8 +42,6 @@ class OppgaveRepositoryTest {
         }
     }
 
-
-
     @Test
     fun `Avslutt åpen oppgave`() {
         val oppgaveId = opprettOppgave()
@@ -56,7 +54,7 @@ class OppgaveRepositoryTest {
     fun `Finn neste oppgave finner ingen oppgave fordi opprettet oppgave ikke matcher filter`() {
         opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("1000"))
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(filter("2000"))
+            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(avklaringsbehovFilter("2000"))
             assertThat(oppgaveId).isNull()
         }
     }
@@ -64,18 +62,32 @@ class OppgaveRepositoryTest {
     @Test
     fun `Finn neste oppgave finner en oppgave fordi en av oppgavene matcher filter`() {
         opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode))
-        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_STUDENT.kode))
+        val oppgaveIdForAvklarStudent = opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_STUDENT.kode))
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(filter(Definisjon.AVKLAR_STUDENT.kode))
-            assertThat(oppgaveId).isNotNull()
+            val plukketOppgaveId = OppgaveRepository(connection).finnNesteOppgave(avklaringsbehovFilter(Definisjon.AVKLAR_STUDENT.kode))
+            assertThat(plukketOppgaveId).isNotNull()
+            assertThat(plukketOppgaveId!!.oppgaveId).isEqualTo(oppgaveIdForAvklarStudent.id)
         }
     }
+
+    @Test
+    fun `Finn neste oppgave som bare matcher på behandlingstype dokumenthåndtering`() {
+        opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING)
+        val oppgaveIdForDokumentshåndteringsoppgave = opprettOppgave(behandlingstype = Behandlingstype.DOKUMENT_HÅNDTERING)
+
+        InitTestDatabase.dataSource.transaction { connection ->
+            val plukketOppgaveId = OppgaveRepository(connection).finnNesteOppgave(behandlingstypeFilter(Behandlingstype.DOKUMENT_HÅNDTERING))
+            assertThat(plukketOppgaveId).isNotNull()
+            assertThat(plukketOppgaveId!!.oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
+        }
+    }
+
 
     @Test
     fun `Finn neste oppgave finner ikke en oppgave fordi den er avsluttet`() {
         opprettOppgave(status = Status.AVSLUTTET)
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(filter())
+            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(avklaringsbehovFilter())
             assertThat(oppgaveId).isNull()
         }
     }
@@ -117,10 +129,11 @@ class OppgaveRepositoryTest {
         assertThat(mineOppgaver).hasSize(0)
     }
 
+    private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =
+        FilterDto(1, "Filter for test", avklaringsbehovKoder = avklaringsbehovKoder.toSet())
 
-    private fun filter(vararg avklaringsbehovKoder: String) =
-        FilterDto(1, "Filter for test", avklaringsbehovKoder.toSet())
-
+    private fun behandlingstypeFilter(vararg behandlingstyper: Behandlingstype) =
+        FilterDto(1, "Filter for test", behandlingstyper = behandlingstyper.toSet())
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
         InitTestDatabase.dataSource.transaction { connection ->
@@ -150,7 +163,8 @@ class OppgaveRepositoryTest {
         saksnummer: String = "123",
         behandlingRef: UUID = UUID.randomUUID(),
         status: Status = Status.OPPRETTET,
-        avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000")
+        avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
+        behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -158,7 +172,7 @@ class OppgaveRepositoryTest {
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
             avklaringsbehovKode = avklaringsbehovKode.kode,
             status = status,
-            behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+            behandlingstype = behandlingstype,
             opprettetAv = "bruker1",
             opprettetTidspunkt = LocalDateTime.now()
         )

@@ -8,6 +8,7 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.util.UUID
+import kotlin.collections.map
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
@@ -316,14 +317,20 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     private fun FilterDto.whereClause(): String {
+        val sb = StringBuilder()
         if (avklaringsbehovKoder.isNotEmpty()) {
-            return "AVKLARINGSBEHOV_TYPE IN ${avklaringsbehovKoder.tilStringListe()} AND "
+            val stringListeAvklaringsbehovKoder = avklaringsbehovKoder
+                .map {"'$it'"}
+                .joinToString(prefix = "(", postfix = ")", separator = ", ")
+            sb.append("AVKLARINGSBEHOV_TYPE IN $stringListeAvklaringsbehovKoder AND ")
         }
-        return ""
-    }
-
-    private fun Set<String>.tilStringListe(): String {
-        return map {"'$it'"}.joinToString(prefix = "(", postfix = ")", separator = ", ")
+        if (behandlingstyper.isNotEmpty()) {
+            val stringListeAvBehandlingstyper = behandlingstyper
+                .map { "'${it.name}'" }
+                .joinToString(prefix = "(", postfix = ")", separator = ", ")
+            sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
+        }
+        return sb.toString()
     }
 
     private fun oppgaveMapper(row: Row): OppgaveDto {

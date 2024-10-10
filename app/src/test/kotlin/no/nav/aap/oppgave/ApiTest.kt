@@ -123,7 +123,7 @@ class ApiTest {
             URI.create("http://localhost:8080/filter"),
             GetRequest()
         )
-        assertThat(filterListe).hasSize(2)
+        assertThat(filterListe).hasSize(8)
     }
 
     private fun Definisjon.tilDefinisjonDTO(): DefinisjonDTO {
