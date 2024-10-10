@@ -96,7 +96,13 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             ) {
                 val sistEndretAv = avklaringsbehov.sistEndretAv()
                 if (sistEndretAv != null && sistEndretAv != "Kelvin") {
-                    oppgaveRepo.reserverOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin", sistEndretAv)
+                    val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
+                    val oppdatertOppgave = oppgaveRepo.hentOppgave(avklaringsbehovReferanse)
+                    if (oppdatertOppgave != null) {
+                        oppgaveRepo.reserverOppgave(oppdatertOppgave.oppgaveId(), "Kelvin", sistEndretAv)
+                    } else {
+                        log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
+                    }
                 }
             }
         }
