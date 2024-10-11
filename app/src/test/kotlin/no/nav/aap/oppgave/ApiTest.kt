@@ -20,6 +20,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.fakes.Fakes
+import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
@@ -113,6 +114,26 @@ class ApiTest {
         // Sjekk at det ikke er flere oppgaver i køen
         val nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNull()
+    }
+
+    @Test
+    fun `Skal ikke få plukket oppgave dersom tilgang nektes`() {
+        val saksnummer = "123456"
+        val referanse = UUID.randomUUID()
+
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+            ))
+        )))
+
+        fakesConfig.negativtSvarFraTilgang = true
+        var nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNull()
+
+        fakesConfig.negativtSvarFraTilgang = false
+        nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNotNull()
     }
 
 
@@ -209,7 +230,8 @@ class ApiTest {
 
     companion object {
         private val postgres = postgreSQLContainer()
-        private val fakes = Fakes(azurePort = 8081)
+        val fakesConfig: FakesConfig = FakesConfig()
+        private val fakes = Fakes(azurePort = 8081, fakesConfig = fakesConfig)
 
         private val dbConfig = DbConfig(
             database = postgres.databaseName,

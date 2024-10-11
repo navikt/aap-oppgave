@@ -14,12 +14,17 @@ import kotlinx.coroutines.runBlocking
 import no.nav.aap.oppgave.server.ErrorRespons
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import tilgang.BehandlingTilgangRequest
 import tilgang.TilgangResponse
 
-class Fakes(azurePort: Int = 0) : AutoCloseable{
+data class FakesConfig(
+    var negativtSvarFraTilgang: Boolean = false
+)
+
+class Fakes(azurePort: Int = 0, fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable{
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val azure = embeddedServer(Netty, port = azurePort, module = { azureFake() }).start()
-    private val tilgang = embeddedServer(Netty, port = 0, module = { tilgangFake() }).apply { start() }
+    private val tilgang = embeddedServer(Netty, port = 0, module = { tilgangFake(fakesConfig) }).apply { start() }
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
         // Azure
@@ -65,7 +70,7 @@ class Fakes(azurePort: Int = 0) : AutoCloseable{
         }
     }
 
-    private fun Application.tilgangFake() {
+    private fun Application.tilgangFake(fakesConfig: FakesConfig) = runBlocking {
         install(ContentNegotiation) {
             jackson()
         }
@@ -81,7 +86,12 @@ class Fakes(azurePort: Int = 0) : AutoCloseable{
         }
         routing {
             post("/tilgang/behandling") {
-                call.respond(TilgangResponse(true))
+                val req = call.receive<BehandlingTilgangRequest>()
+                if (fakesConfig.negativtSvarFraTilgang)  {
+                    call.respond(TilgangResponse(false))
+                } else {
+                    call.respond(TilgangResponse(true))
+                }
             }
             post("/tilgang/journalpost") {
                 call.respond(TilgangResponse(true))

@@ -43,6 +43,8 @@ class PlukkOppgaveService(val connection: DBConnection) {
 
             if (harTilgang) {
                 oppgaveRepo.reserverOppgave(OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon), ident, ident)
+            } else {
+                return null
             }
         }
 
