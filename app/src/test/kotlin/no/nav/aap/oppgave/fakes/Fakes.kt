@@ -16,9 +16,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import tilgang.BehandlingTilgangRequest
 import tilgang.TilgangResponse
+import java.util.UUID
 
 data class FakesConfig(
-    var negativtSvarFraTilgang: Boolean = false
+    var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf()
 )
 
 class Fakes(azurePort: Int = 0, fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable{
@@ -87,7 +88,7 @@ class Fakes(azurePort: Int = 0, fakesConfig: FakesConfig = FakesConfig()) : Auto
         routing {
             post("/tilgang/behandling") {
                 val req = call.receive<BehandlingTilgangRequest>()
-                if (fakesConfig.negativtSvarFraTilgang)  {
+                if (UUID.fromString(req.behandlingsreferanse) in fakesConfig.negativtSvarFraTilgangForBehandling)  {
                     call.respond(TilgangResponse(false))
                 } else {
                     call.respond(TilgangResponse(true))

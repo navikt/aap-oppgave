@@ -127,11 +127,11 @@ class ApiTest {
             ))
         )))
 
-        fakesConfig.negativtSvarFraTilgang = true
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         var nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNull()
 
-        fakesConfig.negativtSvarFraTilgang = false
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
         nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNotNull()
     }
