@@ -12,6 +12,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.DefinisjonDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
+import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
@@ -25,6 +26,7 @@ import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.server.DbConfig
+import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -36,8 +38,14 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import kotlin.test.AfterTest
 
 class ApiTest {
+
+    @AfterTest
+    fun tearDown() {
+        resetDatabase()
+    }
 
     @Test
     fun `Opprett, plukk og avslutt oppgave`() {
@@ -118,7 +126,7 @@ class ApiTest {
 
     @Test
     fun `Skal ikke få plukket oppgave dersom tilgang nektes`() {
-        val saksnummer = "123456"
+        val saksnummer = "100001"
         val referanse = UUID.randomUUID()
 
         oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
@@ -136,6 +144,36 @@ class ApiTest {
         assertThat(nesteOppgave).isNotNull()
     }
 
+    @Test
+    fun `Skal forsøke å reservere flere oppgaver dersom bruker ikke har tilgang på den første`() {
+        val saksnummer1 = "100002"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+            ))
+        )))
+
+        val saksnummer2 = "100003"
+        val referanse2 = UUID.randomUUID()
+
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+            ))
+        )))
+
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse1)
+        var nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNotNull()
+        assertThat(nesteOppgave!!.avklaringsbehovReferanse.referanse).isEqualTo(referanse2)
+
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
+        nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNotNull()
+        assertThat(nesteOppgave!!.avklaringsbehovReferanse.referanse).isEqualTo(referanse1)
+    }
 
     @Test
     fun `Hent alle filter`() {
@@ -250,6 +288,13 @@ class ApiTest {
             server(dbConfig = dbConfig)
             module(fakes)
         }.start()
+
+        private fun resetDatabase() {
+            initDatasource(dbConfig).transaction {
+                @Suppress("SqlWithoutWhere")
+                it.execute("DELETE FROM OPPGAVE")
+            }
+        }
 
         @JvmStatic
         @AfterAll

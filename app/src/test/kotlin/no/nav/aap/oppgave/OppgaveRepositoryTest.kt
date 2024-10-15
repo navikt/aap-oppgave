@@ -54,8 +54,8 @@ class OppgaveRepositoryTest {
     fun `Finn neste oppgave finner ingen oppgave fordi opprettet oppgave ikke matcher filter`() {
         opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("1000"))
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(avklaringsbehovFilter("2000"))
-            assertThat(oppgaveId).isNull()
+            val oppgaver = OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter("2000"))
+            assertThat(oppgaver).hasSize(0)
         }
     }
 
@@ -64,9 +64,9 @@ class OppgaveRepositoryTest {
         opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode))
         val oppgaveIdForAvklarStudent = opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_STUDENT.kode))
         InitTestDatabase.dataSource.transaction { connection ->
-            val plukketOppgaveId = OppgaveRepository(connection).finnNesteOppgave(avklaringsbehovFilter(Definisjon.AVKLAR_STUDENT.kode))
-            assertThat(plukketOppgaveId).isNotNull()
-            assertThat(plukketOppgaveId!!.oppgaveId).isEqualTo(oppgaveIdForAvklarStudent.id)
+            val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter(Definisjon.AVKLAR_STUDENT.kode))
+            assertThat(plukketOppgaver).hasSize(1)
+            assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForAvklarStudent.id)
         }
     }
 
@@ -76,9 +76,9 @@ class OppgaveRepositoryTest {
         val oppgaveIdForDokumentshåndteringsoppgave = opprettOppgave(behandlingstype = Behandlingstype.DOKUMENT_HÅNDTERING)
 
         InitTestDatabase.dataSource.transaction { connection ->
-            val plukketOppgaveId = OppgaveRepository(connection).finnNesteOppgave(behandlingstypeFilter(Behandlingstype.DOKUMENT_HÅNDTERING))
-            assertThat(plukketOppgaveId).isNotNull()
-            assertThat(plukketOppgaveId!!.oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
+            val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.DOKUMENT_HÅNDTERING))
+            assertThat(plukketOppgaver).hasSize(1)
+            assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
         }
     }
 
@@ -87,8 +87,8 @@ class OppgaveRepositoryTest {
     fun `Finn neste oppgave finner ikke en oppgave fordi den er avsluttet`() {
         opprettOppgave(status = Status.AVSLUTTET)
         InitTestDatabase.dataSource.transaction { connection ->
-            val oppgaveId = OppgaveRepository(connection).finnNesteOppgave(avklaringsbehovFilter())
-            assertThat(oppgaveId).isNull()
+            val oppgaver= OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter())
+            assertThat(oppgaver).hasSize(0)
         }
     }
 

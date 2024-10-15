@@ -186,7 +186,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnNesteOppgave(filterDto: FilterDto): NesteOppgaveDto? {
+    fun finnNesteOppgaver(filterDto: FilterDto, limit: Int = 1): List<NesteOppgaveDto> {
         val hentNesteOppgaveQuery = """
             SELECT 
                 ID, VERSJON, SAKSNUMMER, BEHANDLING_REF, JOURNALPOST_ID, AVKLARINGSBEHOV_TYPE
@@ -195,12 +195,12 @@ class OppgaveRepository(private val connection: DBConnection) {
             WHERE 
                 ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
-            LIMIT 1
+            LIMIT $limit
             FOR UPDATE
             SKIP LOCKED
         """.trimIndent()
 
-        val nesteOppgave = connection.queryFirstOrNull(hentNesteOppgaveQuery) {
+        return connection.queryList(hentNesteOppgaveQuery) {
             setRowMapper {
                 NesteOppgaveDto(
                     oppgaveId = it.getLong("ID"),
@@ -214,7 +214,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 )
             }
         }
-        return nesteOppgave
     }
 
     fun reserverOppgave(oppgaveId: OppgaveId, ident: String, reservertAvIdent: String) {
