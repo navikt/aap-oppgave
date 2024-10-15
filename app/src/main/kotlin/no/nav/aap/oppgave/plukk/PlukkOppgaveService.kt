@@ -8,7 +8,7 @@ import no.nav.aap.oppgave.filter.FilterRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import tilgang.BehandlingTilgangRequest
-import tilgang.JournalpostRequest
+import tilgang.JournalpostTilgangRequest
 import tilgang.Operasjon
 
 class PlukkOppgaveService(val connection: DBConnection) {
@@ -50,7 +50,7 @@ class PlukkOppgaveService(val connection: DBConnection) {
         }
         else {
             TilgangGateway.harTilgangTilJournalpost(
-                JournalpostRequest(
+                JournalpostTilgangRequest(
                     journalpostId = nesteOppgave.avklaringsbehovReferanse.journalpostId!!,
                     avklaringsbehovKode = nesteOppgave.avklaringsbehovReferanse.avklaringsbehovKode,
                     operasjon = Operasjon.SAKSBEHANDLE

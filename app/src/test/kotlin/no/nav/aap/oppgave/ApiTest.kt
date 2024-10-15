@@ -316,11 +316,11 @@ private fun postgreSQLContainer(): PostgreSQLContainer<Nothing> {
 
 private fun Application.module(fakes: Fakes) {
     // Setter opp virtuell sandkasse lokalt
-    environment.monitor.subscribe(ApplicationStopped) { application ->
+    monitor.subscribe(ApplicationStopped) { application ->
         application.environment.log.info("Server har stoppet")
         fakes.close()
         // Release resources and unsubscribe from events
-        application.environment.monitor.unsubscribe(ApplicationStopped) {}
+        application.monitor.unsubscribe(ApplicationStopped) {}
     }
 }
 

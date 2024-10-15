@@ -29,13 +29,13 @@ class Fakes(azurePort: Int = 0, fakesConfig: FakesConfig = FakesConfig()) : Auto
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
         // Azure
-        System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azure.port()}/token")
+        System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azure.engine.port()}/token")
         System.setProperty("azure.app.client.id", "behandlingsflyt")
         System.setProperty("azure.app.client.secret", "")
-        System.setProperty("azure.openid.config.jwks.uri", "http://localhost:${azure.port()}/jwks")
+        System.setProperty("azure.openid.config.jwks.uri", "http://localhost:${azure.engine.port()}/jwks")
         System.setProperty("azure.openid.config.issuer", "behandlingsflyt")
         // Tilgang
-        System.setProperty("integrasjon.tilgang.url", "http://localhost:${tilgang.port()}")
+        System.setProperty("integrasjon.tilgang.url", "http://localhost:${tilgang.engine.port()}")
         System.setProperty("integrasjon.tilgang.scope", "scope")
         System.setProperty("integrasjon.tilgang.azp", "azp")
 

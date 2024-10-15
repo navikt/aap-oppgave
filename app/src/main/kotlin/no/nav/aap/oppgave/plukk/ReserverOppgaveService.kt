@@ -6,7 +6,7 @@ import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveId
 import tilgang.BehandlingTilgangRequest
-import tilgang.JournalpostRequest
+import tilgang.JournalpostTilgangRequest
 import tilgang.Operasjon
 
 class ReserverOppgaveService(val connection: DBConnection) {
@@ -32,7 +32,7 @@ class ReserverOppgaveService(val connection: DBConnection) {
             )
         else
             TilgangGateway.harTilgangTilJournalpost(
-                JournalpostRequest(
+                JournalpostTilgangRequest(
                     journalpostId = avklaringsbehovReferanse.journalpostId!!,
                     avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
                     operasjon = Operasjon.SAKSBEHANDLE

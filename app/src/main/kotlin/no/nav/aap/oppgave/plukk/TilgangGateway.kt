@@ -9,7 +9,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import tilgang.BehandlingTilgangRequest
-import tilgang.JournalpostRequest
+import tilgang.JournalpostTilgangRequest
 import java.net.URI
 
 object TilgangGateway {
@@ -35,7 +35,7 @@ object TilgangGateway {
         return respons.tilgang
     }
 
-    fun harTilgangTilJournalpost(body: JournalpostRequest, currentToken: OidcToken): Boolean {
+    fun harTilgangTilJournalpost(body: JournalpostTilgangRequest, currentToken: OidcToken): Boolean {
         val httpRequest = PostRequest(
             body = body,
             currentToken = currentToken
