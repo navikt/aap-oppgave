@@ -8,8 +8,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.komponenter.config.requiredConfigForKey
+import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import tilgang.BehandlingTilgangRequest
 import tilgang.JournalpostTilgangRequest
+import tilgang.Operasjon
 import java.net.URI
 
 object TilgangGateway {
@@ -21,7 +23,28 @@ object TilgangGateway {
         tokenProvider = OnBehalfOfTokenProvider,
     )
 
-    fun harTilgangTilBehandling(body: BehandlingTilgangRequest, currentToken: OidcToken): Boolean {
+    fun sjekkTilgang(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, token: OidcToken): Boolean {
+        return  if (avklaringsbehovReferanse.referanse != null) {
+            harTilgangTilBehandling(
+                BehandlingTilgangRequest(
+                    behandlingsreferanse = avklaringsbehovReferanse.referanse.toString(),
+                    avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
+                    operasjon = Operasjon.SAKSBEHANDLE
+                ), token
+            )
+        }
+        else {
+            harTilgangTilJournalpost(
+                JournalpostTilgangRequest(
+                    journalpostId = avklaringsbehovReferanse.journalpostId!!,
+                    avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
+                    operasjon = Operasjon.SAKSBEHANDLE
+                ), token
+            )
+        }
+    }
+
+    private fun harTilgangTilBehandling(body: BehandlingTilgangRequest, currentToken: OidcToken): Boolean {
         val httpRequest = PostRequest(
             body = body,
             currentToken = currentToken
@@ -35,7 +58,7 @@ object TilgangGateway {
         return respons.tilgang
     }
 
-    fun harTilgangTilJournalpost(body: JournalpostTilgangRequest, currentToken: OidcToken): Boolean {
+    private fun harTilgangTilJournalpost(body: JournalpostTilgangRequest, currentToken: OidcToken): Boolean {
         val httpRequest = PostRequest(
             body = body,
             currentToken = currentToken

@@ -5,9 +5,6 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveId
-import tilgang.BehandlingTilgangRequest
-import tilgang.JournalpostTilgangRequest
-import tilgang.Operasjon
 
 class ReserverOppgaveService(val connection: DBConnection) {
 
@@ -22,24 +19,8 @@ class ReserverOppgaveService(val connection: DBConnection) {
         require(avklaringsbehovReferanse.referanse != null || avklaringsbehovReferanse.journalpostId != null) {
             "AvklaringsbehovReferanse må ha referanse til enten behandling eller journalpost"
         }
-        val harTilgang = if (avklaringsbehovReferanse.referanse != null)
-            TilgangGateway.harTilgangTilBehandling(
-                BehandlingTilgangRequest(
-                    behandlingsreferanse = avklaringsbehovReferanse.referanse.toString(),
-                    avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
-                    operasjon = Operasjon.SAKSBEHANDLE
-                ), token
-            )
-        else
-            TilgangGateway.harTilgangTilJournalpost(
-                JournalpostTilgangRequest(
-                    journalpostId = avklaringsbehovReferanse.journalpostId!!,
-                    avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
-                    operasjon = Operasjon.SAKSBEHANDLE
-                ), token
-            )
 
-
+        val harTilgang = TilgangGateway.sjekkTilgang(avklaringsbehovReferanse, token)
         if (harTilgang) {
             val oppgaveRepo = OppgaveRepository(connection)
             oppgaverSomSkalReserveres.forEach {
