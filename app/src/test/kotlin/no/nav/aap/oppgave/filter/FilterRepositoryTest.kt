@@ -34,11 +34,11 @@ class FilterRepositoryTest {
 
             val filter = filterRepo.hent(filterId)
             assertThat(filter).isNotNull()
-            assertThat(filter!!.beskrivelse).isEqualTo("Basic filter")
+            assertThat(filter!!.navn).isEqualTo("Basic filter")
 
             val alleFilter = filterRepo.hentAlle()
             assertThat(alleFilter).hasSize(1)
-            assertThat(alleFilter.first().beskrivelse).isEqualTo("Basic filter")
+            assertThat(alleFilter.first().navn).isEqualTo("Basic filter")
         }
     }
 
@@ -56,7 +56,7 @@ class FilterRepositoryTest {
 
             val alleFilter = filterRepo.hentAlle()
             assertThat(alleFilter).hasSize(1)
-            assertThat(alleFilter.first().beskrivelse).isEqualTo("Filter for avklar sykdom oppgave")
+            assertThat(alleFilter.first().navn).isEqualTo("Filter for avklar sykdom oppgave")
             assertThat(alleFilter.first().behandlingstyper).hasSize(0)
             assertThat(alleFilter.first().avklaringsbehovKoder).hasSize(1)
             assertThat(alleFilter.first().avklaringsbehovKoder.contains(Definisjon.AVKLAR_SYKDOM.kode)).isTrue()
@@ -77,7 +77,7 @@ class FilterRepositoryTest {
 
             val alleFilter = filterRepo.hentAlle()
             assertThat(alleFilter).hasSize(1)
-            assertThat(alleFilter.first().beskrivelse).isEqualTo("Filter for førstegangsbehandling")
+            assertThat(alleFilter.first().navn).isEqualTo("Filter for førstegangsbehandling")
             assertThat(alleFilter.first().avklaringsbehovKoder).hasSize(0)
             assertThat(alleFilter.first().behandlingstyper).hasSize(1)
             assertThat(alleFilter.first().behandlingstyper.contains(Behandlingstype.FØRSTEGANGSBEHANDLING)).isTrue()
@@ -100,7 +100,7 @@ class FilterRepositoryTest {
             var alleFilter = filterRepo.hentAlle()
             assertThat(alleFilter).hasSize(1)
             var hentetFilter = alleFilter.first()
-            assertThat(hentetFilter.beskrivelse).isEqualTo("Filter for avklar sykdom oppgave og førstegangsbehandling")
+            assertThat(hentetFilter.navn).isEqualTo("Filter for avklar sykdom oppgave og førstegangsbehandling")
             assertThat(hentetFilter.behandlingstyper).hasSize(1)
             assertThat(hentetFilter.behandlingstyper.contains(Behandlingstype.FØRSTEGANGSBEHANDLING)).isTrue()
             assertThat(hentetFilter.avklaringsbehovKoder).hasSize(1)
@@ -119,7 +119,7 @@ class FilterRepositoryTest {
             alleFilter = filterRepo.hentAlle()
             assertThat(alleFilter).hasSize(1)
             hentetFilter = alleFilter.first()
-            assertThat(hentetFilter.beskrivelse).isEqualTo("Filter for avklar barnetillegg og revurdering")
+            assertThat(hentetFilter.navn).isEqualTo("Filter for avklar barnetillegg og revurdering")
             assertThat(hentetFilter.behandlingstyper).hasSize(1)
             assertThat(hentetFilter.behandlingstyper.contains(Behandlingstype.REVURDERING)).isTrue()
             assertThat(hentetFilter.avklaringsbehovKoder).hasSize(1)

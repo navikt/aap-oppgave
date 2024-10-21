@@ -185,7 +185,7 @@ class OppgaveApiTest {
     @Test
     fun `Hente filter`() {
         opprettEllerOpdaterFilter(FilterDto(
-            beskrivelse = "Simpelt filter",
+            navn = "Simpelt filter",
             opprettetAv = "test",
             opprettetTidspunkt = LocalDateTime.now(),
         ))
@@ -200,7 +200,7 @@ class OppgaveApiTest {
     fun `Endre filter`() {
         // Opprett filter
         opprettEllerOpdaterFilter(FilterDto(
-            beskrivelse = "Avklare sykdom i førstegangsbehandling filter",
+            navn = "Avklare sykdom i førstegangsbehandling filter",
             behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
             avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode),
             opprettetAv = "test",
@@ -216,7 +216,7 @@ class OppgaveApiTest {
 
         // Oppdater filter
         opprettEllerOpdaterFilter(hentetFilter.copy(
-            beskrivelse = "Forslå vedtak i revurdering filter",
+            navn = "Forslå vedtak i revurdering filter",
             behandlingstyper = setOf(Behandlingstype.REVURDERING),
             avklaringsbehovKoder = setOf(Definisjon.FORESLÅ_VEDTAK.kode),
             endretAv = "test",
@@ -227,7 +227,7 @@ class OppgaveApiTest {
         val alleFilterEtterOppdatering = hentAlleFilter()
         assertThat(alleFilterEtterOppdatering).hasSize(1)
         val hentetFilterEtterOppdatering = alleFilterEtterOppdatering.first()
-        assertThat(hentetFilterEtterOppdatering.beskrivelse).isEqualTo("Forslå vedtak i revurdering filter")
+        assertThat(hentetFilterEtterOppdatering.navn).isEqualTo("Forslå vedtak i revurdering filter")
         assertThat(hentetFilterEtterOppdatering.behandlingstyper).isEqualTo(setOf(Behandlingstype.REVURDERING))
         assertThat(hentetFilterEtterOppdatering.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.FORESLÅ_VEDTAK.kode))
     }
@@ -235,7 +235,7 @@ class OppgaveApiTest {
     @Test
     fun `Slette filter`() {
         opprettEllerOpdaterFilter(FilterDto(
-            beskrivelse = "Simpelt filter",
+            navn = "Simpelt filter",
             opprettetAv = "test",
             opprettetTidspunkt = LocalDateTime.now(),
         ))

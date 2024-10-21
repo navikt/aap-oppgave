@@ -135,7 +135,7 @@ class FilterRepository(private val connection: DBConnection) {
             setRowMapper { row ->
                 FilterDto(
                     id = row.getLong("ID"),
-                    beskrivelse = row.getString("BESKRIVELSE"),
+                    navn = row.getString("BESKRIVELSE"),
                     opprettetAv = row.getString("OPPRETTET_AV"),
                     opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
                     endretAv = row.getStringOrNull("ENDRET_AV"),

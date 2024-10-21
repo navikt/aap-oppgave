@@ -33,7 +33,7 @@ fun NormalOpenAPIRoute.opprettEllerOppdaterFilterApi(dataSource: DataSource, pro
             if (request.id != null) {
                 filterRepo.oppdater(OppdaterFilter(
                     id = request.id!!,
-                    beskrivelse = request.beskrivelse,
+                    beskrivelse = request.navn,
                     avklaringsbehovtyper = request.avklaringsbehovKoder,
                     behandlingstyper = request.behandlingstyper,
                     endretAv = ident(),
@@ -41,7 +41,7 @@ fun NormalOpenAPIRoute.opprettEllerOppdaterFilterApi(dataSource: DataSource, pro
                 ))
             } else {
                 filterRepo.opprett(OpprettFilter(
-                    beskrivelse = request.beskrivelse,
+                    beskrivelse = request.navn,
                     avklaringsbehovtyper = request.avklaringsbehovKoder,
                     behandlingstyper = request.behandlingstyper,
                     opprettetAv = ident(),
