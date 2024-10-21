@@ -14,7 +14,7 @@ class PlukkOppgaveService(val connection: DBConnection) {
 
     fun plukkNesteOppgave(filterId: Long, ident: String, token: OidcToken, maksAntallForsøk: Int = 10): NesteOppgaveDto? {
         val filterRepo = FilterRepository(connection)
-        val filter = filterRepo.hentFilter(filterId)
+        val filter = filterRepo.hent(filterId)
         if (filter == null) {
             throw IllegalArgumentException("Finner ikke filter med id: $filterId")
         }

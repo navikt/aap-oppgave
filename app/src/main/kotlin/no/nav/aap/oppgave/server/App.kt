@@ -7,7 +7,6 @@ import com.zaxxer.hikari.HikariDataSource
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
-import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.auth.authenticate
 import io.ktor.server.engine.embeddedServer
@@ -27,7 +26,9 @@ import no.nav.aap.komponenter.server.AZURE
 import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.oppgave.alleÅpneOppgaverApi
 import no.nav.aap.oppgave.avreserverOppgave
-import no.nav.aap.oppgave.filter.filterApi
+import no.nav.aap.oppgave.filter.hentFilterApi
+import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
+import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.mineOppgaverApi
@@ -47,9 +48,7 @@ fun main() {
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
         SECURE_LOGGER.error("Uhåndtert feil", e)
     }
-
     embeddedServer(Netty, 8080) { server(DbConfig()) }.start(wait = true)
-
 }
 
 internal fun Application.server(dbConfig: DbConfig) {
@@ -75,15 +74,19 @@ internal fun Application.server(dbConfig: DbConfig) {
     routing {
         authenticate(AZURE) {
             apiRouting {
+                //Oppgave endepunkt
                 oppdaterBehandlingOppgaverApi(dataSource, prometheus)
                 oppdaterPostmottakOppgaverApi(dataSource, prometheus)
                 plukkApi(dataSource, prometheus)
                 hentOppgaveApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
                 alleÅpneOppgaverApi(dataSource, prometheus)
-                filterApi(dataSource, prometheus)
                 avreserverOppgave(dataSource, prometheus)
                 flyttOppgave(dataSource, prometheus)
+                //Filter endepunkt
+                hentFilterApi(dataSource, prometheus)
+                opprettEllerOppdaterFilterApi(dataSource, prometheus)
+                slettFilterApi(dataSource, prometheus)
             }
         }
         actuator(prometheus)

@@ -23,11 +23,13 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.Client
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.filter.FilterId
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
@@ -40,7 +42,7 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.test.AfterTest
 
-class ApiTest {
+class OppgaveApiTest {
 
     @AfterTest
     fun tearDown() {
@@ -49,6 +51,7 @@ class ApiTest {
 
     @Test
     fun `Opprett, plukk og avslutt oppgave`() {
+        leggInnFilterForTest()
         val saksnummer = "123456"
         val referanse = UUID.randomUUID()
 
@@ -86,6 +89,7 @@ class ApiTest {
 
     @Test
     fun `Opprett, oppgave ble automatisk plukket og avslutt oppgave`() {
+        leggInnFilterForTest()
         val saksnummer = "654321"
         val referanse = UUID.randomUUID()
 
@@ -126,6 +130,7 @@ class ApiTest {
 
     @Test
     fun `Skal ikke få plukket oppgave dersom tilgang nektes`() {
+        leggInnFilterForTest()
         val saksnummer = "100001"
         val referanse = UUID.randomUUID()
 
@@ -146,6 +151,7 @@ class ApiTest {
 
     @Test
     fun `Skal forsøke å reservere flere oppgaver dersom bruker ikke har tilgang på den første`() {
+        leggInnFilterForTest()
         val saksnummer1 = "100002"
         val referanse1 = UUID.randomUUID()
 
@@ -175,14 +181,73 @@ class ApiTest {
         assertThat(nesteOppgave!!.avklaringsbehovReferanse.referanse).isEqualTo(referanse1)
     }
 
+
     @Test
-    fun `Hent alle filter`() {
-        //TODO endre denne når full funksjonalitet er ferdig utviklet
-        val filterListe = client.get<List<FilterDto>>(
-            URI.create("http://localhost:8080/filter"),
-            GetRequest()
-        )
-        assertThat(filterListe).hasSize(8)
+    fun `Hente filter`() {
+        opprettEllerOpdaterFilter(FilterDto(
+            beskrivelse = "Simpelt filter",
+            opprettetAv = "test",
+            opprettetTidspunkt = LocalDateTime.now(),
+        ))
+
+        val alleFilter = hentAlleFilter()
+
+        assertThat(alleFilter).hasSize(1)
+    }
+
+
+    @Test
+    fun `Endre filter`() {
+        // Opprett filter
+        opprettEllerOpdaterFilter(FilterDto(
+            beskrivelse = "Avklare sykdom i førstegangsbehandling filter",
+            behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+            avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode),
+            opprettetAv = "test",
+            opprettetTidspunkt = LocalDateTime.now(),
+        ))
+
+        // Sjekk lagret filter
+        val alleFilter = hentAlleFilter()
+        assertThat(alleFilter).hasSize(1)
+        val hentetFilter = alleFilter.first()
+        assertThat(hentetFilter.behandlingstyper).isEqualTo(setOf(Behandlingstype.FØRSTEGANGSBEHANDLING))
+        assertThat(hentetFilter.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.AVKLAR_SYKDOM.kode))
+
+        // Oppdater filter
+        opprettEllerOpdaterFilter(hentetFilter.copy(
+            beskrivelse = "Forslå vedtak i revurdering filter",
+            behandlingstyper = setOf(Behandlingstype.REVURDERING),
+            avklaringsbehovKoder = setOf(Definisjon.FORESLÅ_VEDTAK.kode),
+            endretAv = "test",
+            endretTidspunkt = LocalDateTime.now(),
+        ))
+
+        // Sjekk oppdatert filter
+        val alleFilterEtterOppdatering = hentAlleFilter()
+        assertThat(alleFilterEtterOppdatering).hasSize(1)
+        val hentetFilterEtterOppdatering = alleFilterEtterOppdatering.first()
+        assertThat(hentetFilterEtterOppdatering.beskrivelse).isEqualTo("Forslå vedtak i revurdering filter")
+        assertThat(hentetFilterEtterOppdatering.behandlingstyper).isEqualTo(setOf(Behandlingstype.REVURDERING))
+        assertThat(hentetFilterEtterOppdatering.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.FORESLÅ_VEDTAK.kode))
+    }
+
+    @Test
+    fun `Slette filter`() {
+        opprettEllerOpdaterFilter(FilterDto(
+            beskrivelse = "Simpelt filter",
+            opprettetAv = "test",
+            opprettetTidspunkt = LocalDateTime.now(),
+        ))
+
+        val alleFilter = hentAlleFilter()
+        assertThat(alleFilter).hasSize(1)
+
+        val hentetFilter = alleFilter.first()
+        slettFilter(FilterId(hentetFilter.id!!))
+
+        val alleFilterEtterSletting = hentAlleFilter()
+        assertThat(alleFilterEtterSletting).hasSize(0)
     }
 
     private fun Definisjon.tilDefinisjonDTO(): DefinisjonDTO {
@@ -193,13 +258,13 @@ class ApiTest {
         )
     }
 
-    data class Behandlingsbehov(
+    private data class Behandlingsbehov(
         val definisjon: Definisjon,
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
         val endringer: List<Endring>
     )
 
-    data class Endring(
+    private data class Endring(
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status,
         val endretAv: String = "Kelvin",
     )
@@ -240,9 +305,10 @@ class ApiTest {
     }
 
     private fun hentNesteOppgave(): NesteOppgaveDto? {
+        val alleFilter = hentAlleFilter()
         val nesteOppgave: NesteOppgaveDto? = client.post(
             URI.create("http://localhost:8080/neste-oppgave"),
-            PostRequest(body = FinnNesteOppgaveDto(filterId = 1))
+            PostRequest(body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!))
         )
         return nesteOppgave
     }
@@ -264,6 +330,27 @@ class ApiTest {
             URI.create("http://localhost:8080/mine-oppgaver"),
             GetRequest()
         )!!
+    }
+
+    private fun opprettEllerOpdaterFilter(filter: FilterDto): FilterDto? {
+        return client.post(
+            URI.create("http://localhost:8080/filter"),
+            PostRequest(body = filter)
+        )
+    }
+
+    private fun hentAlleFilter(): List<FilterDto> {
+        return client.get<List<FilterDto>>(
+            URI.create("http://localhost:8080/filter"),
+            GetRequest()
+        )!!
+    }
+
+    private fun slettFilter(filterId: FilterId): Unit? {
+        return client.post(
+            URI.create("http://localhost:8080/filter/${filterId.filterId}/slett"),
+            PostRequest(body = filterId)
+        )
     }
 
     companion object {
@@ -290,9 +377,18 @@ class ApiTest {
         }.start()
 
         private fun resetDatabase() {
+            @Suppress("SqlWithoutWhere")
             initDatasource(dbConfig).transaction {
-                @Suppress("SqlWithoutWhere")
                 it.execute("DELETE FROM OPPGAVE")
+                it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
+                it.execute("DELETE FROM FILTER_BEHANDLINGSTYPE")
+                it.execute("DELETE FROM FILTER")
+            }
+        }
+
+        private fun leggInnFilterForTest() {
+            initDatasource(dbConfig).transaction {
+                it.execute("INSERT INTO FILTER (BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'test', current_timestamp)")
             }
         }
 

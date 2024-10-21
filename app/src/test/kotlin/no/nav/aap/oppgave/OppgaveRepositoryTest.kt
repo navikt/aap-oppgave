@@ -130,10 +130,10 @@ class OppgaveRepositoryTest {
     }
 
     private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =
-        FilterDto(1, "Filter for test", avklaringsbehovKoder = avklaringsbehovKoder.toSet())
+        FilterDto(1, "Filter for test", avklaringsbehovKoder = avklaringsbehovKoder.toSet(), opprettetAv = "test", opprettetTidspunkt = LocalDateTime.now())
 
     private fun behandlingstypeFilter(vararg behandlingstyper: Behandlingstype) =
-        FilterDto(1, "Filter for test", behandlingstyper = behandlingstyper.toSet())
+        FilterDto(1, "Filter for test", behandlingstyper = behandlingstyper.toSet(), opprettetAv = "test", opprettetTidspunkt = LocalDateTime.now())
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
         InitTestDatabase.dataSource.transaction { connection ->
