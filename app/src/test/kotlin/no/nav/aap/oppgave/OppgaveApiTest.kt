@@ -379,6 +379,7 @@ class OppgaveApiTest {
         private fun resetDatabase() {
             @Suppress("SqlWithoutWhere")
             initDatasource(dbConfig).transaction {
+                it.execute("DELETE FROM OPPGAVE_HISTORIKK")
                 it.execute("DELETE FROM OPPGAVE")
                 it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
                 it.execute("DELETE FROM FILTER_BEHANDLINGSTYPE")

@@ -18,8 +18,9 @@ class OppgaveRepositoryTest {
 
     @AfterTest
     fun tearDown() {
+        @Suppress("SqlWithoutWhere")
         InitTestDatabase.dataSource.transaction {
-            @Suppress("SqlWithoutWhere")
+            it.execute("DELETE FROM OPPGAVE_HISTORIKK")
             it.execute("DELETE FROM OPPGAVE")
         }
     }
