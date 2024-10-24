@@ -110,7 +110,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
 
     private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>, oppgaveRepo: OppgaveRepository) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
-            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin")
+            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin")
             val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
@@ -176,8 +176,9 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
             .last()
     }
 
-    private fun OppgaveOppdatering.opprettNyOppgave(avklaringsbehovKode: AvklaringsbehovKode, behandlingstype: Behandlingstype, ident: String): OppgaveDto {
+    private fun OppgaveOppdatering.opprettNyOppgave(personIdent: String?, avklaringsbehovKode: AvklaringsbehovKode, behandlingstype: Behandlingstype, ident: String): OppgaveDto {
         return OppgaveDto(
+            personIdent = personIdent,
             saksnummer = this.saksnummer,
             behandlingRef = this.referanse,
             journalpostId = this.journalpostId,

@@ -26,6 +26,7 @@ enum class AvklaringsbehovStatus {
 }
 
 data class OppgaveOppdatering(
+    val personIdent: String? = null,
     val saksnummer: String? = null,
     val referanse: UUID? = null,
     val journalpostId: Long? = null,
@@ -49,6 +50,7 @@ data class Endring(
 
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
+        personIdent = this.personIdent,
         saksnummer = this.saksnummer.toString(),
         referanse = this.referanse.referanse,
         behandlingStatus = this.status.tilBehandlingsstatus(),

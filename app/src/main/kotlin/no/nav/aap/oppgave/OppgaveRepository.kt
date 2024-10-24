@@ -26,9 +26,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 STATUS,
                 BEHANDLINGSTYPE,
                 OPPRETTET_AV,
-                OPPRETTET_TIDSPUNKT
+                OPPRETTET_TIDSPUNKT,
+                PERSON_IDENT
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -43,6 +44,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(7, oppgaveDto.behandlingstype.name)
                 setString(8, oppgaveDto.opprettetAv)
                 setLocalDateTime(9, oppgaveDto.opprettetTidspunkt)
+                setString(10, oppgaveDto.personIdent)
             }
         }
         return OppgaveId(id, 0L)
@@ -335,6 +337,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     private fun oppgaveMapper(row: Row): OppgaveDto {
         return OppgaveDto(
             id = row.getLong("ID"),
+            personIdent = row.getStringOrNull("PERSON_IDENT"),
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
             behandlingRef = row.getUUIDOrNull("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
@@ -355,6 +358,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     private companion object {
         val alleOppgaveFelt = """
             ID,
+            PERSON_IDENT,
             SAKSNUMMER,
             BEHANDLING_REF,
             JOURNALPOST_ID,
