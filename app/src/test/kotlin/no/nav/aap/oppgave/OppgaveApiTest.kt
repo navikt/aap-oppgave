@@ -26,6 +26,7 @@ import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterId
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
+import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
@@ -250,6 +251,55 @@ class OppgaveApiTest {
         assertThat(alleFilterEtterSletting).hasSize(0)
     }
 
+
+    @Test
+    fun `Hent antall oppgaver uten oppgitt behandlingstype`() {
+        val saksnummer = "100004"
+        val referanse = UUID.randomUUID()
+
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+            ))
+        )))
+
+        val antallOppgaver = hentAntallOppgaver()
+        assertThat(antallOppgaver.keys).hasSize(1)
+        assertThat(antallOppgaver[Definisjon.AVKLAR_SYKDOM.kode]).isEqualTo(1)
+    }
+
+    @Test
+    fun `Hent antall oppgaver kun for revurdering`() {
+        val saksnummer1 = "100005"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+            ))
+        )))
+
+        val saksnummer2 = "100006"
+        val referanse2 = UUID.randomUUID()
+
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer2, referanse = referanse2, typeBehandling = TypeBehandling.Revurdering, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_STUDENT, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+            ))
+        )))
+
+        val antallOppgaver = hentAntallOppgaver(Behandlingstype.REVURDERING)
+        assertThat(antallOppgaver.keys).hasSize(1)
+        assertThat(antallOppgaver[Definisjon.AVKLAR_STUDENT.kode]).isEqualTo(1)
+    }
+
+    private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
+        return client.post(
+            URI.create("http://localhost:8080/produksjonsstyring/antall-oppgaver"),
+            PostRequest(body = AntallOppgaverDto(behandlingstype = behandlingstype))
+        )!!
+    }
+
     private fun Definisjon.tilDefinisjonDTO(): DefinisjonDTO {
         return DefinisjonDTO(
             type = this.kode,
@@ -268,7 +318,7 @@ class OppgaveApiTest {
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status,
         val endretAv: String = "Kelvin",
     )
-    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID, behandlingStatus: Status = Status.OPPRETTET, behandlingsbehov: List<Behandlingsbehov>): BehandlingFlytStoppetHendelse {
+    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID, behandlingStatus: Status = Status.OPPRETTET, behandlingsbehov: List<Behandlingsbehov>, typeBehandling: TypeBehandling = TypeBehandling.Førstegangsbehandling): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
         val avklaringsbehovHendelseDtoListe = behandlingsbehov.map { avklaringsbehovHendelse ->
             val endringer = avklaringsbehovHendelse.endringer.mapIndexed { i, endring ->
@@ -288,7 +338,7 @@ class OppgaveApiTest {
             personIdent = "01010012345",
             saksnummer = Saksnummer(saksnummer),
             referanse = BehandlingReferanse(referanse),
-            behandlingType = TypeBehandling.Førstegangsbehandling,
+            behandlingType = typeBehandling,
             status = behandlingStatus,
             opprettetTidspunkt = nå,
             hendelsesTidspunkt = nå,

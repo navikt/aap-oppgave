@@ -35,6 +35,7 @@ import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
 import no.nav.aap.oppgave.plukk.plukkApi
+import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import org.slf4j.LoggerFactory
 
 private val SECURE_LOGGER = LoggerFactory.getLogger("secureLog")
@@ -87,6 +88,8 @@ internal fun Application.server(dbConfig: DbConfig) {
                 hentFilterApi(dataSource, prometheus)
                 opprettEllerOppdaterFilterApi(dataSource, prometheus)
                 slettFilterApi(dataSource, prometheus)
+                //Produksjonsstyring
+                hentAntallOppgaver(dataSource, prometheus)
             }
         }
         actuator(prometheus)
