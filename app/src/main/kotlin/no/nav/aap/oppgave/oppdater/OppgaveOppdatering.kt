@@ -6,6 +6,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import java.time.LocalDateTime
 import java.util.UUID
@@ -89,7 +90,15 @@ private fun no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.tilBehandlings
 }
 
 private fun no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
-    return AvklaringsbehovStatus.valueOf(this.name)
+    return when(this) {
+        no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
+        no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
+        no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.TOTRINNS_VURDERT -> AvklaringsbehovStatus.TOTRINNS_VURDERT
+        no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_BESLUTTER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
+        no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.KVALITETSSIKRET -> AvklaringsbehovStatus.KVALITETSSIKRET
+        no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER
+        no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVBRUTT -> AvklaringsbehovStatus.AVBRUTT
+    }
 }
 
 fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
@@ -125,8 +134,14 @@ private fun List<no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelse
     }
 }
 
-private fun no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
-    return AvklaringsbehovStatus.valueOf(this.name)
+private fun Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
+    return when(this) {
+        Status.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
+        Status.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
+        Status.SENDT_TILBAKE_FRA_BESLUTTER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
+        Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER
+        Status.AVBRUTT -> AvklaringsbehovStatus.AVBRUTT
+    }
 }
 
 private fun List<no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO>.tilEndringerForPostmottak() =

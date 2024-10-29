@@ -2,12 +2,12 @@ package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.DBConnection
+import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
-import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
@@ -37,7 +37,7 @@ private val ÅPNE_STATUSER = setOf(
 
 private val AVSLUTTEDE_STATUSER = setOf(
     AvklaringsbehovStatus.AVSLUTTET,
-    AvklaringsbehovStatus.AVSLUTTET,
+    AvklaringsbehovStatus.AVBRUTT,
     AvklaringsbehovStatus.KVALITETSSIKRET,
     AvklaringsbehovStatus.TOTRINNS_VURDERT,
 )
