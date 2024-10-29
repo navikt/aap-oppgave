@@ -75,20 +75,22 @@ internal fun Application.server(dbConfig: DbConfig) {
     routing {
         authenticate(AZURE) {
             apiRouting {
-                //Oppgave endepunkt
+                // Oppdater oppgaver fra applikasjonene
                 oppdaterBehandlingOppgaverApi(dataSource, prometheus)
                 oppdaterPostmottakOppgaverApi(dataSource, prometheus)
+                // Plukk/endre oppgave
                 plukkApi(dataSource, prometheus)
+                avreserverOppgave(dataSource, prometheus)
+                flyttOppgave(dataSource, prometheus)
+                // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
                 alleÅpneOppgaverApi(dataSource, prometheus)
-                avreserverOppgave(dataSource, prometheus)
-                flyttOppgave(dataSource, prometheus)
-                //Filter endepunkt
+                // Filter
                 hentFilterApi(dataSource, prometheus)
                 opprettEllerOppdaterFilterApi(dataSource, prometheus)
                 slettFilterApi(dataSource, prometheus)
-                //Produksjonsstyring
+                // Produksjonsstyring
                 hentAntallOppgaver(dataSource, prometheus)
             }
         }
