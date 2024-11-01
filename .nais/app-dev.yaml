@@ -60,6 +60,7 @@ spec:
             rules:
                 - application: behandlingsflyt
                 - application: postmottak-backend
+                - application: produksjonsstyring
                 - application: oppgavestyring-frontend
         outbound:
             rules:
