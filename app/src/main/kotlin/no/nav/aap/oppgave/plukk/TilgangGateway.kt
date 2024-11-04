@@ -24,19 +24,19 @@ object TilgangGateway {
     )
 
     fun sjekkTilgang(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, token: OidcToken): Boolean {
-        return  if (avklaringsbehovReferanse.referanse != null) {
-            harTilgangTilBehandling(
-                BehandlingTilgangRequest(
-                    behandlingsreferanse = avklaringsbehovReferanse.referanse.toString(),
+        return  if (avklaringsbehovReferanse.journalpostId != null) {
+            harTilgangTilJournalpost(
+                JournalpostTilgangRequest(
+                    journalpostId = avklaringsbehovReferanse.journalpostId!!,
                     avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
                     operasjon = Operasjon.SAKSBEHANDLE
                 ), token
             )
         }
         else {
-            harTilgangTilJournalpost(
-                JournalpostTilgangRequest(
-                    journalpostId = avklaringsbehovReferanse.journalpostId!!,
+            harTilgangTilBehandling(
+                BehandlingTilgangRequest(
+                    behandlingsreferanse = avklaringsbehovReferanse.referanse.toString(),
                     avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
                     operasjon = Operasjon.SAKSBEHANDLE
                 ), token

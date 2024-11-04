@@ -103,7 +103,7 @@ private fun no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.tilAvklar
 
 fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
-        // TODO: Håndtere behandlingsreferanse?
+        referanse = this.referanse,
         journalpostId = this.journalpostId.referanse,
         behandlingStatus = this.status.tilBehandlingsstatus(),
         behandlingstype = this.behandlingType.tilBehandlingstype(),
