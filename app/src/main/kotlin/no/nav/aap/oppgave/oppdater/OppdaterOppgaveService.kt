@@ -29,6 +29,11 @@ private val AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER =
         Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT
     ).map { AvklaringsbehovKode(it.kode)}.toSet()
 
+// TODO: Forløpig skal alle oppgaver kunne løses av samme saksbehandler. Avklarer dette senere.
+private val AVKLARINGSBEHOV_FOR_POSTMOTTAK =
+    no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.entries
+        .map { AvklaringsbehovKode(it.kode) }.toSet()
+
 private val ÅPNE_STATUSER = setOf(
     AvklaringsbehovStatus.OPPRETTET,
     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
@@ -137,6 +142,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         return when {
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER -> true
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER -> true
+            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_POSTMOTTAK && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_POSTMOTTAK -> true
             else -> false
         }
     }
