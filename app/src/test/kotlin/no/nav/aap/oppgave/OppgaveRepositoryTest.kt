@@ -83,6 +83,19 @@ class OppgaveRepositoryTest {
         }
     }
 
+    @Test
+    fun `Finn neste oppgave som bare matcher på behandlingstype journalføring`() {
+        opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING)
+        val oppgaveIdForDokumentshåndteringsoppgave = opprettOppgave(behandlingstype = Behandlingstype.JOURNALFØRING)
+
+        InitTestDatabase.dataSource.transaction { connection ->
+            val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.JOURNALFØRING))
+            assertThat(plukketOppgaver).hasSize(1)
+            assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
+        }
+    }
+
+
 
     @Test
     fun `Finn neste oppgave finner ikke en oppgave fordi den er avsluttet`() {

@@ -115,6 +115,7 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
 private fun no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.tilBehandlingstype() =
     when (this) {
         no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.DokumentHåndtering -> Behandlingstype.DOKUMENT_HÅNDTERING
+        no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring -> Behandlingstype.JOURNALFØRING
     }
 
 

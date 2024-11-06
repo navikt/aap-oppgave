@@ -8,5 +8,6 @@ enum class Behandlingstype {
     KLAGE,
 
     // Fra postmottak
-    DOKUMENT_HÅNDTERING
+    DOKUMENT_HÅNDTERING,
+    JOURNALFØRING
 }
