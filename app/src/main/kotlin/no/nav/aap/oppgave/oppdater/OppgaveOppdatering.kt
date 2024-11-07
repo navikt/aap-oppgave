@@ -129,7 +129,7 @@ private fun no.nav.aap.postmottak.kontrakt.behandling.Status.tilBehandlingsstatu
 private fun List<no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForPostmottak(): List<AvklaringsbehovHendelse> {
     return this.map {
         AvklaringsbehovHendelse(
-            avklaringsbehovKode = AvklaringsbehovKode(it.definisjon.type),
+            avklaringsbehovKode = AvklaringsbehovKode(it.definisjon.type.name),
             status = it.status.tilAvklaringsbehovStatus(),
             endringer = it.endringer.tilEndringerForPostmottak()
         )

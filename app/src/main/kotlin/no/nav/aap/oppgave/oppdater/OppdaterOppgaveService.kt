@@ -32,7 +32,7 @@ private val AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER =
 // TODO: Forløpig skal alle oppgaver kunne løses av samme saksbehandler. Avklarer dette senere.
 private val AVKLARINGSBEHOV_FOR_POSTMOTTAK =
     no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.entries
-        .map { AvklaringsbehovKode(it.kode) }.toSet()
+        .map { AvklaringsbehovKode(it.kode.name) }.toSet()
 
 private val ÅPNE_STATUSER = setOf(
     AvklaringsbehovStatus.OPPRETTET,
