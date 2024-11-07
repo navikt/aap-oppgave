@@ -50,7 +50,7 @@ class FilterRepositoryTest {
                 beskrivelse = "Filter for avklar sykdom oppgave",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
-                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode)
+                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode.name)
             )
             filterRepo.opprett(nyttFilter)
 
@@ -59,7 +59,7 @@ class FilterRepositoryTest {
             assertThat(alleFilter.first().navn).isEqualTo("Filter for avklar sykdom oppgave")
             assertThat(alleFilter.first().behandlingstyper).hasSize(0)
             assertThat(alleFilter.first().avklaringsbehovKoder).hasSize(1)
-            assertThat(alleFilter.first().avklaringsbehovKoder.contains(Definisjon.AVKLAR_SYKDOM.kode)).isTrue()
+            assertThat(alleFilter.first().avklaringsbehovKoder.contains(Definisjon.AVKLAR_SYKDOM.kode.name)).isTrue()
         }
     }
 
@@ -93,7 +93,7 @@ class FilterRepositoryTest {
                 opprettetAv = "test1",
                 opprettetTidspunkt = LocalDateTime.now(),
                 behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
-                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode)
+                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode.name)
             )
             val filterId = filterRepo.opprett(nyttFilter)
 
@@ -104,13 +104,13 @@ class FilterRepositoryTest {
             assertThat(hentetFilter.behandlingstyper).hasSize(1)
             assertThat(hentetFilter.behandlingstyper.contains(Behandlingstype.FØRSTEGANGSBEHANDLING)).isTrue()
             assertThat(hentetFilter.avklaringsbehovKoder).hasSize(1)
-            assertThat(hentetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_SYKDOM.kode)).isTrue()
+            assertThat(hentetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_SYKDOM.kode.name)).isTrue()
 
             val oppdaterFilter = OppdaterFilter(
                 id = filterId,
                 beskrivelse = "Filter for avklar barnetillegg og revurdering",
                 behandlingstyper = setOf(Behandlingstype.REVURDERING),
-                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_BARNETILLEGG.kode),
+                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_BARNETILLEGG.kode.name),
                 endretAv = "test2",
                 endretTidspunkt = LocalDateTime.now()
             )
@@ -123,7 +123,7 @@ class FilterRepositoryTest {
             assertThat(hentetFilter.behandlingstyper).hasSize(1)
             assertThat(hentetFilter.behandlingstyper.contains(Behandlingstype.REVURDERING)).isTrue()
             assertThat(hentetFilter.avklaringsbehovKoder).hasSize(1)
-            assertThat(hentetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_BARNETILLEGG.kode)).isTrue()
+            assertThat(hentetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_BARNETILLEGG.kode.name)).isTrue()
         }
     }
 

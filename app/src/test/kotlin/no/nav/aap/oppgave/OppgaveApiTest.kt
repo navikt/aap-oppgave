@@ -203,7 +203,7 @@ class OppgaveApiTest {
         opprettEllerOpdaterFilter(FilterDto(
             navn = "Avklare sykdom i førstegangsbehandling filter",
             behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
-            avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode),
+            avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
             opprettetAv = "test",
             opprettetTidspunkt = LocalDateTime.now(),
         ))
@@ -213,13 +213,13 @@ class OppgaveApiTest {
         assertThat(alleFilter).hasSize(1)
         val hentetFilter = alleFilter.first()
         assertThat(hentetFilter.behandlingstyper).isEqualTo(setOf(Behandlingstype.FØRSTEGANGSBEHANDLING))
-        assertThat(hentetFilter.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.AVKLAR_SYKDOM.kode))
+        assertThat(hentetFilter.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.AVKLAR_SYKDOM.kode.name))
 
         // Oppdater filter
         opprettEllerOpdaterFilter(hentetFilter.copy(
             navn = "Forslå vedtak i revurdering filter",
             behandlingstyper = setOf(Behandlingstype.REVURDERING),
-            avklaringsbehovKoder = setOf(Definisjon.FORESLÅ_VEDTAK.kode),
+            avklaringsbehovKoder = setOf(Definisjon.FORESLÅ_VEDTAK.kode.name),
             endretAv = "test",
             endretTidspunkt = LocalDateTime.now(),
         ))
@@ -230,7 +230,7 @@ class OppgaveApiTest {
         val hentetFilterEtterOppdatering = alleFilterEtterOppdatering.first()
         assertThat(hentetFilterEtterOppdatering.navn).isEqualTo("Forslå vedtak i revurdering filter")
         assertThat(hentetFilterEtterOppdatering.behandlingstyper).isEqualTo(setOf(Behandlingstype.REVURDERING))
-        assertThat(hentetFilterEtterOppdatering.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.FORESLÅ_VEDTAK.kode))
+        assertThat(hentetFilterEtterOppdatering.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.FORESLÅ_VEDTAK.kode.name))
     }
 
     @Test
@@ -265,7 +265,7 @@ class OppgaveApiTest {
 
         val antallOppgaver = hentAntallOppgaver()
         assertThat(antallOppgaver.keys).hasSize(1)
-        assertThat(antallOppgaver[Definisjon.AVKLAR_SYKDOM.kode]).isEqualTo(1)
+        assertThat(antallOppgaver[Definisjon.AVKLAR_SYKDOM.kode.name]).isEqualTo(1)
     }
 
     @Test
@@ -290,7 +290,7 @@ class OppgaveApiTest {
 
         val antallOppgaver = hentAntallOppgaver(Behandlingstype.REVURDERING)
         assertThat(antallOppgaver.keys).hasSize(1)
-        assertThat(antallOppgaver[Definisjon.AVKLAR_STUDENT.kode]).isEqualTo(1)
+        assertThat(antallOppgaver[Definisjon.AVKLAR_STUDENT.kode.name]).isEqualTo(1)
     }
 
     private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
@@ -370,7 +370,7 @@ class OppgaveApiTest {
                 saksnummer = saksnummer,
                 referanse = referanse,
                 journalpostId = null,
-                avklaringsbehovKode = definisjon.kode
+                avklaringsbehovKode = definisjon.kode.name
             ))
         )
     }

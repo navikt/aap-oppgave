@@ -18,7 +18,7 @@ private val AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER =
         Definisjon.AVKLAR_BISTANDSBEHOV,
         Definisjon.FASTSETT_ARBEIDSEVNE,
         Definisjon.FRITAK_MELDEPLIKT
-    ).map { AvklaringsbehovKode(it.kode)}.toSet()
+    ).map { AvklaringsbehovKode(it.kode.name)}.toSet()
 
 private val AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER =
     setOf(
@@ -27,7 +27,7 @@ private val AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER =
         Definisjon.AVKLAR_SYKEPENGEERSTATNING,
         Definisjon.AVKLAR_BARNETILLEGG,
         Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT
-    ).map { AvklaringsbehovKode(it.kode)}.toSet()
+    ).map { AvklaringsbehovKode(it.kode.name)}.toSet()
 
 // TODO: Forløpig skal alle oppgaver kunne løses av samme saksbehandler. Avklarer dette senere.
 private val AVKLARINGSBEHOV_FOR_POSTMOTTAK =

@@ -72,7 +72,7 @@ private fun TypeBehandling.tilBehandlingstype() =
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
     return this.map {
         AvklaringsbehovHendelse(
-            avklaringsbehovKode = AvklaringsbehovKode(it.definisjon.type),
+            avklaringsbehovKode = AvklaringsbehovKode(it.definisjon.type.name),
             status = it.status.tilAvklaringsbehovStatus(),
             endringer = it.endringer.tilEndringerForBehandlingsflyt()
         )
