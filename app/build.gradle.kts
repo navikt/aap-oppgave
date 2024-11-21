@@ -1,9 +1,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.0.1"
-val komponenterVersjon = "1.0.63"
+val komponenterVersjon = "1.0.67"
 val tilgangVersjon = "0.0.44"
-val behandlingsflytVersjon= "0.0.48"
+val behandlingsflytVersjon = "0.0.48"
 val postmottakVersjon = "0.0.18"
 
 plugins {
@@ -34,6 +34,10 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-server-metrics-micrometer:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    constraints {
+        implementation("io.netty:netty-common:4.1.115.Final")
+    }
+
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
 
