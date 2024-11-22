@@ -22,7 +22,7 @@ dependencies {
     implementation("no.nav.aap.kelvin:dbtest:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:infrastructure:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:server:$komponenterVersjon")
-    implementation("no.nav:ktor-openapi-generator:1.0.34")
+    implementation("no.nav:ktor-openapi-generator:1.0.50")
     implementation("no.nav.aap.tilgang:api-kontrakt:$tilgangVersjon")
     implementation("no.nav.aap.behandlingsflyt:kontrakt:$behandlingsflytVersjon")
     implementation("no.nav.aap.postmottak:kontrakt:$postmottakVersjon")
