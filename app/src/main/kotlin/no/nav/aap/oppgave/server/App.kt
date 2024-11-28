@@ -34,7 +34,8 @@ import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
-import no.nav.aap.oppgave.plukk.plukkApi
+import no.nav.aap.oppgave.plukk.plukkNesteApi
+import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import org.slf4j.LoggerFactory
 
@@ -79,7 +80,8 @@ internal fun Application.server(dbConfig: DbConfig) {
                 oppdaterBehandlingOppgaverApi(dataSource, prometheus)
                 oppdaterPostmottakOppgaverApi(dataSource, prometheus)
                 // Plukk/endre oppgave
-                plukkApi(dataSource, prometheus)
+                plukkNesteApi(dataSource, prometheus)
+                plukkOppgaveApi(dataSource, prometheus)
                 avreserverOppgave(dataSource, prometheus)
                 flyttOppgave(dataSource, prometheus)
                 // Hent oppgave(r)

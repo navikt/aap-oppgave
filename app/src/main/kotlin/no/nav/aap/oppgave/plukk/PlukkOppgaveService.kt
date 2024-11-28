@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.plukk
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.filter.FilterRepository
@@ -33,6 +34,17 @@ class PlukkOppgaveService(val connection: DBConnection) {
             }
         }
         log.info("Fant ikke neste oppgave etter å ha forsøkt ${nesteOppgaver.size} oppgaver for filterId $filterId")
+        return null
+    }
+
+    fun plukkOppgave(oppgaveId: OppgaveId, ident: String, token: OidcToken): OppgaveDto? {
+        val oppgaveRepo = OppgaveRepository(connection)
+        val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        val harTilgang = TilgangGateway.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
+        if (harTilgang) {
+            oppgaveRepo.reserverOppgave(OppgaveId(oppgave.id!!, oppgave.versjon), ident, ident)
+            return oppgave
+        }
         return null
     }
 

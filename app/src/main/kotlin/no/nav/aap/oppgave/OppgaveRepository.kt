@@ -2,6 +2,7 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -82,6 +83,26 @@ class OppgaveRepository(private val connection: DBConnection) {
             log.warn("Hent oppgaver skal ikke returnere mer en 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
         }
         return oppgaver.firstOrNull()
+    }
+
+    fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
+        val oppgaverForIdQuery = """
+            SELECT 
+                $alleOppgaveFelt
+            FROM 
+                OPPGAVE 
+            WHERE 
+                OPPGAVE_ID = ?
+        """.trimIndent()
+
+        return connection.queryFirst<OppgaveDto>(oppgaverForIdQuery) {
+            setParams {
+                setLong(1, oppgaveId.id)
+            }
+            setRowMapper { row ->
+                oppgaveMapper(row)
+            }
+        }
     }
 
     fun hentOppgaver(saksnummer: String?, referanse: UUID?, journalpostId: Long?): List<OppgaveDto> {
@@ -214,6 +235,24 @@ class OppgaveRepository(private val connection: DBConnection) {
                         avklaringsbehovKode = it.getString("AVKLARINGSBEHOV_TYPE")
                     )
                 )
+            }
+        }
+    }
+
+    fun finnOppgaver(filterDto: FilterDto): List<OppgaveDto> {
+        val hentNesteOppgaveQuery = """
+            SELECT 
+                   $alleOppgaveFelt
+            FROM 
+                OPPGAVE 
+            WHERE 
+                ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+            ORDER BY BEHANDLING_OPPRETTET
+        """.trimIndent()
+
+        return connection.queryList(hentNesteOppgaveQuery) {
+            setRowMapper {
+                oppgaveMapper(it)
             }
         }
     }

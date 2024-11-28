@@ -9,6 +9,8 @@ import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.oppgave.filter.FilterId
+import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
@@ -48,4 +50,15 @@ fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: Promet
             respondWithStatus(HttpStatusCode.NoContent)
         }
 
+    }
+
+fun NormalOpenAPIRoute.hentOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
+
+    route("/hent-oppgaver").post<Unit, List<OppgaveDto>, FilterId> { _, request ->
+        prometheus.httpCallCounter("/hent-oppgave").increment()
+        val oppgaver = dataSource.transaction(readOnly = true) { connection ->
+            val filter = FilterRepository(connection).hent(request.filterId)
+            OppgaveRepository(connection).finnOppgaver(filter!!)
+        }
+        respond(oppgaver)
     }
