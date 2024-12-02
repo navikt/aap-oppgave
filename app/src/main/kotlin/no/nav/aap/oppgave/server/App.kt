@@ -62,7 +62,7 @@ internal fun Application.server(dbConfig: DbConfig) {
             title = "AAP - Oppgave",
             description = """
                 For å teste API i dev, besøk
-                <a href="https://azure-token-generator.intern.dev.nav.no/api/m2m?aud=dev-gcp:aap:oppgave">Token Generator</a> for å få token.
+                <a href="https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:aap:oppgave">Token Generator</a> for å få token.
                 """.trimIndent(),
         )
     )
