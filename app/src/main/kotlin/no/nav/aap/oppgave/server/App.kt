@@ -31,6 +31,7 @@ import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
+import no.nav.aap.oppgave.hentOppgaverApi
 import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
@@ -86,6 +87,7 @@ internal fun Application.server(dbConfig: DbConfig) {
                 flyttOppgave(dataSource, prometheus)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
+                hentOppgaverApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
                 alleÅpneOppgaverApi(dataSource, prometheus)
                 // Filter

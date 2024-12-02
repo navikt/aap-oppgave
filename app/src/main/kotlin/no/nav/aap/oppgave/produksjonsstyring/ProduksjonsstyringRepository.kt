@@ -37,7 +37,7 @@ class ProduksjonsstyringRepository(private val connection: DBConnection) {
                 AvklaringbehovOgAntall(AvklaringsbehovKode(row.getString("AVKLARINGSBEHOV_TYPE")), row.getInt("ANTALL"))
             }
         }
-        return antallList.map {it.avklaringsbehovtype to it.antall}.toMap()
+        return antallList.associate { it.avklaringsbehovtype to it.antall }
     }
 
 }
