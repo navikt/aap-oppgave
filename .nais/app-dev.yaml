@@ -62,6 +62,9 @@ spec:
                 - application: postmottak-backend
                 - application: produksjonsstyring
                 - application: oppgavestyring-frontend
+                - application: azure-token-generator # Ikke i prod :)
+                  namespace: aura
+                  cluster: dev-gcp
         outbound:
             rules:
                 - application: tilgang
