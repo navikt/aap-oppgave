@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 data class FilterDto(
     val id: Long? = null,
     val navn: String,
+    val beskrivelse: String,
     val avklaringsbehovKoder: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
     val opprettetAv: String,

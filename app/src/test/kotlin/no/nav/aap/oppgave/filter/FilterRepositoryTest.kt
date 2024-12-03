@@ -26,6 +26,7 @@ class FilterRepositoryTest {
         InitTestDatabase.dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
+                navn = "Basic filter",
                 beskrivelse = "Basic filter",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now()
@@ -47,6 +48,7 @@ class FilterRepositoryTest {
         InitTestDatabase.dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
+                navn = "Filter for avklar sykdom oppgave",
                 beskrivelse = "Filter for avklar sykdom oppgave",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
@@ -68,6 +70,7 @@ class FilterRepositoryTest {
         InitTestDatabase.dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
+                navn = "Filter for førstegangsbehandling",
                 beskrivelse = "Filter for førstegangsbehandling",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
@@ -89,6 +92,7 @@ class FilterRepositoryTest {
         InitTestDatabase.dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
+                navn = "Filter for avklar sykdom oppgave og førstegangsbehandling",
                 beskrivelse = "Filter for avklar sykdom oppgave og førstegangsbehandling",
                 opprettetAv = "test1",
                 opprettetTidspunkt = LocalDateTime.now(),
@@ -108,6 +112,7 @@ class FilterRepositoryTest {
 
             val oppdaterFilter = OppdaterFilter(
                 id = filterId,
+                navn = "Filter for avklar barnetillegg og revurdering",
                 beskrivelse = "Filter for avklar barnetillegg og revurdering",
                 behandlingstyper = setOf(Behandlingstype.REVURDERING),
                 avklaringsbehovtyper = setOf(Definisjon.AVKLAR_BARNETILLEGG.kode.name),
@@ -132,6 +137,7 @@ class FilterRepositoryTest {
         InitTestDatabase.dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
+                navn = "Test filter",
                 beskrivelse = "Test filter",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now()

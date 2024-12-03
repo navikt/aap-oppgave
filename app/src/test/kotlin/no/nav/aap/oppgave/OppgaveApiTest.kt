@@ -187,6 +187,7 @@ class OppgaveApiTest {
     fun `Hente filter`() {
         opprettEllerOpdaterFilter(FilterDto(
             navn = "Simpelt filter",
+            beskrivelse ="Et enkelt filter for alle oppgave",
             opprettetAv = "test",
             opprettetTidspunkt = LocalDateTime.now(),
         ))
@@ -202,6 +203,7 @@ class OppgaveApiTest {
         // Opprett filter
         opprettEllerOpdaterFilter(FilterDto(
             navn = "Avklare sykdom i førstegangsbehandling filter",
+            beskrivelse = "Avklare sykdom i førstegangsbehandling filter",
             behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
             avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
             opprettetAv = "test",
@@ -237,6 +239,7 @@ class OppgaveApiTest {
     fun `Slette filter`() {
         opprettEllerOpdaterFilter(FilterDto(
             navn = "Simpelt filter",
+            beskrivelse ="Simpelt filter",
             opprettetAv = "test",
             opprettetTidspunkt = LocalDateTime.now(),
         ))
@@ -439,7 +442,7 @@ class OppgaveApiTest {
 
         private fun leggInnFilterForTest() {
             initDatasource(dbConfig).transaction {
-                it.execute("INSERT INTO FILTER (BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'test', current_timestamp)")
+                it.execute("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
             }
         }
 

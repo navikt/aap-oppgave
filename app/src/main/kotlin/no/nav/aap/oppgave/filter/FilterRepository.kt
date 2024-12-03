@@ -5,6 +5,7 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import java.time.LocalDateTime
 
 data class OpprettFilter(
+    val navn: String,
     val beskrivelse: String,
     val avklaringsbehovtyper: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
@@ -14,6 +15,7 @@ data class OpprettFilter(
 
 data class OppdaterFilter(
     val id: Long,
+    val navn: String,
     val beskrivelse: String,
     val avklaringsbehovtyper: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
@@ -55,12 +57,13 @@ class FilterRepository(private val connection: DBConnection) {
     }
 
     private fun oppdaterFilter(filter: OppdaterFilter) {
-        connection.execute("UPDATE FILTER SET BESKRIVELSE = ?, ENDRET_AV = ?, ENDRET_TIDSPUNKT = ? WHERE ID = ?") {
+        connection.execute("UPDATE FILTER SET NAVN = ?, BESKRIVELSE = ?, ENDRET_AV = ?, ENDRET_TIDSPUNKT = ? WHERE ID = ?") {
             setParams {
-                setString(1, filter.beskrivelse)
-                setString(2, filter.endretAv)
-                setLocalDateTime(3, filter.endretTidspunkt)
-                setLong(4, filter.id)
+                setString(1, filter.navn)
+                setString(2, filter.beskrivelse)
+                setString(3, filter.endretAv)
+                setLocalDateTime(4, filter.endretTidspunkt)
+                setLong(5, filter.id)
             }
         }
     }
@@ -76,14 +79,15 @@ class FilterRepository(private val connection: DBConnection) {
 
     private fun opprettFilter(filter: OpprettFilter): Long {
         val insertFilterSql = """
-            INSERT INTO FILTER (BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES (?, ?, ?)
+            INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES (?, ?, ?, ?)
         """.trimIndent()
 
         return connection.executeReturnKey(insertFilterSql) {
             setParams {
-                setString(1, filter.beskrivelse)
-                setString(2, filter.opprettetAv)
-                setLocalDateTime(3, filter.opprettetTidspunkt)
+                setString(1, filter.navn)
+                setString(2, filter.beskrivelse)
+                setString(3, filter.opprettetAv)
+                setLocalDateTime(4, filter.opprettetTidspunkt)
             }
         }
     }
@@ -119,7 +123,7 @@ class FilterRepository(private val connection: DBConnection) {
         val filterIdClause = if (filterId != null) " AND ID = ?" else ""
         val query = """
             SELECT 
-                ID, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT
+                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT
             FROM 
                 FILTER 
             WHERE 
@@ -135,7 +139,8 @@ class FilterRepository(private val connection: DBConnection) {
             setRowMapper { row ->
                 FilterDto(
                     id = row.getLong("ID"),
-                    navn = row.getString("BESKRIVELSE"),
+                    navn = row.getString("NAVN"),
+                    beskrivelse = row.getString("BESKRIVELSE"),
                     opprettetAv = row.getString("OPPRETTET_AV"),
                     opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
                     endretAv = row.getStringOrNull("ENDRET_AV"),
