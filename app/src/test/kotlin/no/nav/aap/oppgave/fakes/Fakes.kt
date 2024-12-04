@@ -1,5 +1,7 @@
 package no.nav.aap.oppgave.fakes
 
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
@@ -22,27 +24,62 @@ data class FakesConfig(
     var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf()
 )
 
+class FakeServer(port: Int = 0, private val module: Application.() -> Unit) {
+    private var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration> =
+        embeddedServer(Netty, port = port, module = module).start()
+
+    fun stop() {
+        server.stop()
+    }
+
+    fun clean() {
+        val port = server.port()
+        server.stop(0, 0)
+        server = embeddedServer(Netty, port = port, module = module).start()
+    }
+
+    fun setCustomModule(module: Application.() -> Unit) {
+        val port = server.port()
+        server.stop(0, 0)
+        server = embeddedServer(Netty, port = port, module = module).start()
+    }
+
+    fun port(): Int = server.port()
+
+    private fun EmbeddedServer<*, *>.port(): Int {
+        return runBlocking {
+            this@port.engine.resolvedConnectors()
+        }.first { it.type == ConnectorType.HTTP }.port
+    }
+}
+
+
 class Fakes(azurePort: Int = 0, fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable{
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
-    private val azure = embeddedServer(Netty, port = azurePort, module = { azureFake() }).start()
-    private val tilgang = embeddedServer(Netty, port = 0, module = { tilgangFake(fakesConfig) }).apply { start() }
+    private val azure = FakeServer(module = { azureFake() })
+    private val tilgang = FakeServer(module = { tilgangFake(fakesConfig) })
+    private val pdl = FakeServer(module = { pdlFake() })
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
         // Azure
-        System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azure.engine.port()}/token")
+        System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azure.port()}/token")
         System.setProperty("azure.app.client.id", "behandlingsflyt")
         System.setProperty("azure.app.client.secret", "")
-        System.setProperty("azure.openid.config.jwks.uri", "http://localhost:${azure.engine.port()}/jwks")
+        System.setProperty("azure.openid.config.jwks.uri", "http://localhost:${azure.port()}/jwks")
         System.setProperty("azure.openid.config.issuer", "behandlingsflyt")
         // Tilgang
-        System.setProperty("integrasjon.tilgang.url", "http://localhost:${tilgang.engine.port()}")
+        System.setProperty("integrasjon.tilgang.url", "http://localhost:${tilgang.port()}")
         System.setProperty("integrasjon.tilgang.scope", "scope")
         System.setProperty("integrasjon.tilgang.azp", "azp")
-
+        // PDL
+        System.setProperty("integrasjon.pdl.url", "http://localhost:${pdl.port()}")
+        System.setProperty("integrasjon.pdl.scope", "scope")
     }
 
     override fun close() {
-        azure.stop(0L,0L)
+        azure.stop()
+        tilgang.stop()
+        pdl.stop()
     }
 
     private fun NettyApplicationEngine.port(): Int =
@@ -98,6 +135,56 @@ class Fakes(azurePort: Int = 0, fakesConfig: FakesConfig = FakesConfig()) : Auto
                 call.respond(TilgangResponse(true))
             }
         }
+    }
+
+    private fun Application.pdlFake() {
+        install(ContentNegotiation) {
+            jackson {
+                registerModule(JavaTimeModule())
+                disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            }
+        }
+
+        routing {
+            post("/graphql") {
+                val body = call.receive<String>()
+                if (body.contains("hentGeografiskTilknytning")) {
+                    call.respondText(genererHentAdressebeskytelseOgGeotilknytning())
+                } else {
+                    call.respondText(genererHentPersonRespons())
+                }
+            }
+        }
+    }
+
+    private fun genererHentAdressebeskytelseOgGeotilknytning(): String {
+        return """
+            {
+              "data": {
+                "hentPerson": {
+                  "adressebeskyttelse": ["UGRADERT"]
+                },
+                "hentGeografiskTilknytning": {
+                  "gtType": "KOMMUNE",
+                  "gtKommune": "3207",
+                  "gtBydel": null,
+                  "gtLand": null
+                }
+              }
+            }
+        """.trimIndent()
+    }
+
+    private fun genererHentPersonRespons(): String {
+        return """
+            { "data":
+            {"hentPerson": {
+                    "foedselsdato": [
+                        {"foedselsdato": "1990-01-01"}
+                    ]
+                }
+            }}
+        """.trimIndent()
     }
 
     internal data class TestToken(

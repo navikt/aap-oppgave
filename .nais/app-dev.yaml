@@ -66,6 +66,8 @@ spec:
                   namespace: aura
                   cluster: dev-gcp
         outbound:
+            external:
+                - host: pdl-api.dev-fss-pub.nais.io
             rules:
                 - application: tilgang
     env:
@@ -73,6 +75,11 @@ spec:
           value: http://tilgang
         - name: INTEGRASJON_TILGANG_SCOPE
           value: api://dev-gcp.aap.tilgang/.default
+        - name: INTEGRASJON_PDL_URL
+          value: https://pdl-api.dev-fss-pub.nais.io
+        - name: INTEGRASJON_PDL_SCOPE
+          value: api://dev-fss.pdl.pdl-api/.default
+
     gcp:
         sqlInstances:
             - type: POSTGRES_16

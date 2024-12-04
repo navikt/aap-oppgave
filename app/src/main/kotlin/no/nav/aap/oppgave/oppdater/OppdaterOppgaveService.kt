@@ -7,6 +7,9 @@ import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
+import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
@@ -79,7 +82,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
 
         // Gjenåpne avsluttede oppgaver
         åpneAvklaringsbehov.forEach { avklaringsbehov ->
-            gjenåpneOppgave(oppgaveMap, avklaringsbehov, oppgaveRepo)
+            gjenåpneOppgave(oppgaveOppdatering, oppgaveMap, avklaringsbehov, oppgaveRepo)
         }
 
         // Avslutt oppgaver hvor avklaringsbehovet er lukket
@@ -88,12 +91,14 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     }
 
     private fun gjenåpneOppgave(
+        oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
         avklaringsbehov: AvklaringsbehovHendelse,
         oppgaveRepo: OppgaveRepository
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
+            val geografiskTilknytning = finnGeografiskTilknytning(oppgaveOppdatering.personIdent)
             oppgaveRepo.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin")
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
@@ -113,8 +118,18 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         }
     }
 
+    private fun finnGeografiskTilknytning(fnr: String?): GeografiskTilknytning {
+        return if (fnr != null) {
+            PdlGraphqlKlient.withClientCredentialsRestClient().hentGeografiskTilknytning(fnr)
+                ?: GeografiskTilknytning(gtType = GeografiskTilknytningType.UDEFINERT)
+        } else {
+            return GeografiskTilknytning(gtType = GeografiskTilknytningType.UDEFINERT)
+        }
+    }
+
     private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>, oppgaveRepo: OppgaveRepository) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
+            val geografiskTilknytning = finnGeografiskTilknytning(oppgaveOppdatering.personIdent)
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin")
             val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
