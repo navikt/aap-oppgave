@@ -98,7 +98,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
-            val geografiskTilknytning = finnGeografiskTilknytning(oppgaveOppdatering.personIdent)
+            //val geografiskTilknytning = finnGeografiskTilknytning(oppgaveOppdatering.personIdent)
             oppgaveRepo.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin")
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
@@ -129,7 +129,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
 
     private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>, oppgaveRepo: OppgaveRepository) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
-            val geografiskTilknytning = finnGeografiskTilknytning(oppgaveOppdatering.personIdent)
+            //val geografiskTilknytning = finnGeografiskTilknytning(oppgaveOppdatering.personIdent)
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin")
             val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
