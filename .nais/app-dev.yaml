@@ -79,7 +79,8 @@ spec:
           value: https://pdl-api.dev-fss-pub.nais.io
         - name: INTEGRASJON_PDL_SCOPE
           value: api://dev-fss.pdl.pdl-api/.default
-
+        - name: INTEGRASJON_NORG_URL
+          value: https://norg2.dev-fss-pub.nais.io
     gcp:
         sqlInstances:
             - type: POSTGRES_16

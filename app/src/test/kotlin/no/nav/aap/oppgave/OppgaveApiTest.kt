@@ -409,7 +409,7 @@ class OppgaveApiTest {
     companion object {
         private val postgres = postgreSQLContainer()
         val fakesConfig: FakesConfig = FakesConfig()
-        private val fakes = Fakes(azurePort = 8081, fakesConfig = fakesConfig)
+        private val fakes = Fakes(fakesConfig = fakesConfig)
 
         private val dbConfig = DbConfig(
             database = postgres.databaseName,
