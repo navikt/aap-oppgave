@@ -28,7 +28,7 @@ jobs:
         secrets: inherit
         with:
             publish-typescript: true
-            typescrips-enums: true
+            typescript-enums: true
             app-navn: oppgave
             openapi-test-navn: "*OppgaveApiTest*.*openapi*"
 
