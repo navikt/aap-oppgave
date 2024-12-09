@@ -26,6 +26,11 @@ jobs:
             id-token: write
         uses: navikt/aap-workflows/.github/workflows/gradle-build.yml@main
         secrets: inherit
+        with:
+            publish-typescript: true
+            typescrips-enums: true
+            app-navn: oppgave
+            openapi-test-navn: "*OppgaveApiTest*.*openapi*"
 
     publish-kontrakt:
         needs: gradle
