@@ -42,3 +42,4 @@ build/
 .idea/
 .gradle
 .java-version
+openapi.json

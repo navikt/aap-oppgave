@@ -36,12 +36,16 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
+import java.io.BufferedWriter
+import java.io.FileWriter
 import java.net.URI
+import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.test.AfterTest
+import kotlin.test.fail
 
 class OppgaveApiTest {
 
@@ -294,6 +298,29 @@ class OppgaveApiTest {
         val antallOppgaver = hentAntallOppgaver(Behandlingstype.REVURDERING)
         assertThat(antallOppgaver.keys).hasSize(1)
         assertThat(antallOppgaver[Definisjon.AVKLAR_STUDENT.kode.name]).isEqualTo(1)
+    }
+
+    @Test
+    fun `Ekporter openapi typer til json`() {
+        val openApiDoc =
+            requireNotNull(
+                client.get(
+                    URI.create("http://localhost:8080/openapi.json"),
+                    GetRequest()
+                ) { body, _ ->
+                    String(body.readAllBytes(), StandardCharsets.UTF_8)
+                }
+            )
+
+        try {
+            val writer = BufferedWriter(FileWriter("../openapi.json"));
+            writer.write(openApiDoc);
+
+            writer.close();
+        } catch (_: Exception) {
+            fail()
+        }
+
     }
 
     private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
