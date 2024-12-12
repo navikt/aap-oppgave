@@ -70,6 +70,8 @@ spec:
                 - host: pdl-api.dev-fss-pub.nais.io
             rules:
                 - application: tilgang
+                - application: skjermede-personer-pip
+                  namespace: nom
     env:
         - name: INTEGRASJON_TILGANG_URL
           value: http://tilgang
@@ -81,6 +83,10 @@ spec:
           value: api://dev-fss.pdl.pdl-api/.default
         - name: INTEGRASJON_NORG_URL
           value: https://norg2.dev-fss-pub.nais.io
+        - name: INTEGRASJON_NOM_URL
+          value: http://skjermede-personer-pip.nom
+        - name: INTEGRASJON_NOM_SCOPE
+          value: api://dev-gcp.nom.skjermede-personer-pip/.default
     gcp:
         sqlInstances:
             - type: POSTGRES_16

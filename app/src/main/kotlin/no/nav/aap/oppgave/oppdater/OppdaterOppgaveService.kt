@@ -7,6 +7,10 @@ import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.klienter.nom.NomKlient
+import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
+import no.nav.aap.oppgave.klienter.norg.NorgKlient
+import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
@@ -98,7 +102,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
-            val geografiskTilknytning = finnGeografiskTilknytning(oppgaveOppdatering.personIdent)
+            //val enhet = finnEnhet(oppgaveOppdatering.personIdent)
             oppgaveRepo.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin")
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
@@ -118,18 +122,75 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         }
     }
 
-    private fun finnGeografiskTilknytning(fnr: String?): GeografiskTilknytning {
+
+    private fun finnEnhet(fnr: String?): String {
+        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
+        return NorgKlient().finnEnhet(
+            tilknytningOgSkjerming.geografiskTilknytningKode,
+            tilknytningOgSkjerming.erNavAnsatt,
+            tilknytningOgSkjerming.diskresjonskode
+        )
+    }
+
+    private fun mapGeografiskTilknytningTilKode(geoTilknytning: GeografiskTilknytning) =
+        when (geoTilknytning.gtType) {
+            GeografiskTilknytningType.KOMMUNE ->
+                geoTilknytning.gtKommune
+            GeografiskTilknytningType.BYDEL ->
+                geoTilknytning.gtBydel
+            GeografiskTilknytningType.UTLAND ->
+                geoTilknytning.gtLand
+            GeografiskTilknytningType.UDEFINERT ->
+                geoTilknytning.gtType.name
+        }
+
+    data class TilknytningOgSkjerming(
+        val geografiskTilknytningKode: String,
+        val diskresjonskode: Diskresjonskode,
+        val erNavAnsatt: Boolean
+    )
+
+    private fun finnTilknytningOgSkjerming(fnr: String?): TilknytningOgSkjerming {
         return if (fnr != null) {
-            PdlGraphqlKlient.withClientCredentialsRestClient().hentGeografiskTilknytning(fnr)
-                ?: GeografiskTilknytning(gtType = GeografiskTilknytningType.UDEFINERT)
+            val pdlData = PdlGraphqlKlient.withClientCredentialsRestClient().hentAdressebeskyttelseOgGeolokasjon(fnr)
+            val geografiskTilknytning = pdlData.hentGeografiskTilknytning
+            val geografiskTilknytningKode = if (geografiskTilknytning != null) {
+                mapGeografiskTilknytningTilKode(geografiskTilknytning)
+            } else {
+                null
+            }
+
+            val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse)
+            val egenAnsatt = NomKlient().erEgenansatt(fnr)
+            return TilknytningOgSkjerming(
+                geografiskTilknytningKode ?: GeografiskTilknytningType.UDEFINERT.name,
+                diskresjonskode,
+                egenAnsatt
+            )
         } else {
-            return GeografiskTilknytning(gtType = GeografiskTilknytningType.UDEFINERT)
+            return TilknytningOgSkjerming(
+                GeografiskTilknytningType.UDEFINERT.name,
+                Diskresjonskode.ANY,
+                false
+            )
         }
     }
 
+    private fun mapDiskresjonskode(adressebgeskyttelseskoder: List<Adressebeskyttelseskode>?) =
+        adressebgeskyttelseskoder?.firstOrNull().let {
+            when (it) {
+                Adressebeskyttelseskode.FORTROLIG ->
+                    Diskresjonskode.SPFO
+                Adressebeskyttelseskode.STRENGT_FORTROLIG, Adressebeskyttelseskode.STRENGT_FORTROLIG_UTLAND ->
+                    Diskresjonskode.SPSF
+                else -> Diskresjonskode.ANY
+            }
+        }
+
+
     private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>, oppgaveRepo: OppgaveRepository) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
-            val geografiskTilknytning = finnGeografiskTilknytning(oppgaveOppdatering.personIdent)
+            //val enhet = finnEnhet(oppgaveOppdatering.personIdent)
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin")
             val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")

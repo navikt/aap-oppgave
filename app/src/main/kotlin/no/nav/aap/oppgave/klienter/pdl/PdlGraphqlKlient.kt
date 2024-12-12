@@ -10,12 +10,14 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
+import org.slf4j.LoggerFactory
 import java.io.InputStream
 import java.net.URI
 
 class PdlGraphqlKlient(
     private val restClient: RestClient<InputStream>
 ) {
+    private val log = LoggerFactory.getLogger(PdlGraphqlKlient::class.java)
 
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
 
@@ -43,7 +45,7 @@ class PdlGraphqlKlient(
                 )
             )
     }
-    
+
     fun hentGeografiskTilknytning(
         personident: String,
         currentToken: OidcToken? = null
@@ -53,15 +55,15 @@ class PdlGraphqlKlient(
         return response.data?.hentGeografiskTilknytning
     }
 
-    fun hentAdressebeskyttelseOgGeolokasjon(ident: String, currentToken: OidcToken? = null): PdlData {
-        val request = PdlRequest.hentAdressebeskyttelseOgGeografiskTilknytning(ident)
+    fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData {
+        val request = PdlRequest.hentAdressebeskyttelseOgGeografiskTilknytning(personident)
         val response = runBlocking { graphqlQuery(request, currentToken) }
 
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
 
 
-    
+
     private fun graphqlQuery(query: PdlRequest, currentToken: OidcToken? = null): PdlResponse {
         val request = PostRequest(
             query, currentToken = currentToken, additionalHeaders = listOf(

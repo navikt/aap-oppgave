@@ -14,10 +14,10 @@ data class Enhet(val enhetNr: String)
 data class FinnNavenhetRequest(
     val geografiskOmraade: String?,
     val skjermet: Boolean = false,
-    val diskresjonskode : Diskresjonskode
-){
-    val tema = "AAP"
-}
+    val diskresjonskode : Diskresjonskode,
+    val tema: String = "AAP",
+    val behandlingstema: String = "ab0014"
+)
 
 enum class Diskresjonskode { SPFO, SPSF, ANY }
 
