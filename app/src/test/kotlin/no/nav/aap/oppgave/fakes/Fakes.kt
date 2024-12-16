@@ -15,6 +15,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
     private val tilgang = FakeServer(module = { tilgangFake(fakesConfig) })
     private val pdl = FakeServer(module = { pdlFake() })
     private val norg = FakeServer(module = { norgFake() })
+    private val nom = FakeServer(module = { nomFake() })
 
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
@@ -33,6 +34,9 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         System.setProperty("integrasjon.pdl.scope", "scope")
         // NORG
         System.setProperty("integrasjon.norg.url", "http://localhost:${norg.port()}")
+        // NOM
+        System.setProperty("integrasjon.nom.url", "http://localhost:${nom.port()}")
+        System.setProperty("integrasjon.nom.scope", "scope")
     }
 
     override fun close() {
@@ -40,6 +44,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         tilgang.stop()
         pdl.stop()
         norg.stop()
+        nom.stop()
     }
 
 }

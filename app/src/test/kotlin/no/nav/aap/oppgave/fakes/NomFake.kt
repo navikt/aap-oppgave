@@ -7,12 +7,16 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-val finnEnhet: suspend RoutingContext.() -> Unit = {
-    call.respond("""[{"enhetNr": "superNav!"}]""")
+val erEgenansatt: suspend RoutingContext.() -> Unit = {
+    call.respond(true)
 }
 
-fun Application.norgFake(
-    bestMatch: suspend RoutingContext.() -> Unit = finnEnhet,
+val erIkkeEgenansatt: suspend RoutingContext.() -> Unit = {
+    call.respond(false)
+}
+
+fun Application.nomFake(
+    egenansatt: suspend RoutingContext.() -> Unit = erIkkeEgenansatt,
 ) {
 
     install(ContentNegotiation) {
@@ -22,7 +26,7 @@ fun Application.norgFake(
     }
 
     routing {
-        post("/norg2/api/v1/arbeidsfordeling/enheter/bestmatch", bestMatch)
+        post("/skjermet", egenansatt)
     }
 
 }

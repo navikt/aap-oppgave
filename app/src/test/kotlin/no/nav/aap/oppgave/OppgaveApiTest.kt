@@ -70,6 +70,7 @@ class OppgaveApiTest {
         // Hent oppgaven som ble opprettet
         val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SYKDOM)
         assertThat(oppgave).isNotNull
+        assertThat(oppgave!!.enhet).isEqualTo("superNav!")
 
         // Plukk neste oppgave
         var nesteOppgave = hentNesteOppgave()

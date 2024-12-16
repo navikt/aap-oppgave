@@ -16,6 +16,8 @@ import kotlin.test.fail
 
 class OppgaveRepositoryTest {
 
+    private val ENHET_NAV_LØRENSKOG = "0230"
+
     @AfterTest
     fun tearDown() {
         @Suppress("SqlWithoutWhere")
@@ -183,6 +185,7 @@ class OppgaveRepositoryTest {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
+            enhet = ENHET_NAV_LØRENSKOG,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
             avklaringsbehovKode = avklaringsbehovKode.kode,
             status = status,

@@ -2,7 +2,6 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -22,6 +21,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 SAKSNUMMER,
                 BEHANDLING_REF,
                 JOURNALPOST_ID,
+                ENHET,
                 BEHANDLING_OPPRETTET,
                 AVKLARINGSBEHOV_TYPE,
                 STATUS,
@@ -30,7 +30,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPRETTET_TIDSPUNKT,
                 PERSON_IDENT
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -39,13 +39,14 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(1, oppgaveDto.saksnummer)
                 setUUID(2, oppgaveDto.behandlingRef)
                 setLong(3, oppgaveDto.journalpostId)
-                setLocalDateTime(4, oppgaveDto.behandlingOpprettet)
-                setString(5, oppgaveDto.avklaringsbehovKode)
-                setString(6, oppgaveDto.status.name)
-                setString(7, oppgaveDto.behandlingstype.name)
-                setString(8, oppgaveDto.opprettetAv)
-                setLocalDateTime(9, oppgaveDto.opprettetTidspunkt)
-                setString(10, oppgaveDto.personIdent)
+                setString(4, oppgaveDto.enhet)
+                setLocalDateTime(5, oppgaveDto.behandlingOpprettet)
+                setString(6, oppgaveDto.avklaringsbehovKode)
+                setString(7, oppgaveDto.status.name)
+                setString(8, oppgaveDto.behandlingstype.name)
+                setString(9, oppgaveDto.opprettetAv)
+                setLocalDateTime(10, oppgaveDto.opprettetTidspunkt)
+                setString(11, oppgaveDto.personIdent)
             }
         }
         return OppgaveId(id, 0L)
@@ -133,7 +134,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String) {
+    fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String, enhet: String) {
         val query = """
             UPDATE 
                 OPPGAVE 
@@ -141,6 +142,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 STATUS = 'OPPRETTET', 
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                ENHET = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -151,8 +153,9 @@ class OppgaveRepository(private val connection: DBConnection) {
         connection.execute(query) {
             setParams {
                 setString(1, ident)
-                setLong(2, oppgaveId.id)
-                setLong(3, oppgaveId.versjon)
+                setString(2, enhet)
+                setLong(3, oppgaveId.id)
+                setLong(4, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) }
         }
@@ -380,6 +383,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
             behandlingRef = row.getUUIDOrNull("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
+            enhet = row.getString("ENHET"),
             behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
             avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
             status = Status.valueOf(row.getString("STATUS")),
@@ -401,6 +405,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             SAKSNUMMER,
             BEHANDLING_REF,
             JOURNALPOST_ID,
+            ENHET,
             BEHANDLING_OPPRETTET,
             AVKLARINGSBEHOV_TYPE,
             STATUS,

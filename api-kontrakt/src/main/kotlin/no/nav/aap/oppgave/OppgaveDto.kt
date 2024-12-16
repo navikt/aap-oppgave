@@ -11,6 +11,7 @@ data class OppgaveDto(
     val saksnummer: String? = null,
     val behandlingRef: UUID? = null,
     val journalpostId: Long? = null,
+    val enhet: String,
     val behandlingOpprettet: LocalDateTime,
     val avklaringsbehovKode: String,
     val status: Status = Status.OPPRETTET,
