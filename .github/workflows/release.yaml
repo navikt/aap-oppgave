@@ -59,11 +59,16 @@ jobs:
             - id: notes
               if: ${{ steps.tag.outputs.changed == 'true' }}
               run: |
-                  randomDelimiter=${RANDOM}
-                  text=$(git --no-pager log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"%h %s")
-                  echo 'CHANGELOG<<$randomDelimiter' >> $GITHUB_OUTPUT
-                  echo $text >> $GITHUB_OUTPUT
-                  echo '$randomDelimiter' >> $GITHUB_OUTPUT
+                randomDelimiter=${RANDOM}
+                text=$(git --no-pager log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"%h %s" | sed ':a;N;$!ba;s/\n/\n\n/g')
+                echo 'CHANGELOG<<$randomDelimiter' >> $GITHUB_OUTPUT
+                echo -e "$text" >> $GITHUB_OUTPUT
+                echo '$randomDelimiter' >> $GITHUB_OUTPUT
+            - if: ${{ steps.tag.outputs.changed == 'true' }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  ./gradlew -Pversion=${{ steps.tag.outputs.version }} publish
             - uses:  softprops/action-gh-release@v2
               if: ${{ steps.tag.outputs.changed == 'true' }}
               id: create_release
@@ -75,11 +80,6 @@ jobs:
                   body: |
                       Endringer siden sist:
                       ${{ steps.notes.outputs.CHANGELOG }}
-            - if: ${{ steps.tag.outputs.changed == 'true' }}
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  ./gradlew -Pversion=${{ steps.tag.outputs.version }} publish
 
     dev:
         ## push til main eller etter branch (e.g. dependabot) er merget
