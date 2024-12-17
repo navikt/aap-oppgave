@@ -134,7 +134,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String, enhet: String) {
+    fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String, personIdent: String?, enhet: String) {
         val query = """
             UPDATE 
                 OPPGAVE 
@@ -143,6 +143,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 ENHET = ?,
+                PERSON_IDENT = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -154,8 +155,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             setParams {
                 setString(1, ident)
                 setString(2, enhet)
-                setLong(3, oppgaveId.id)
-                setLong(4, oppgaveId.versjon)
+                setString(3, personIdent)
+                setLong(4, oppgaveId.id)
+                setLong(5, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) }
         }

@@ -103,7 +103,11 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
             val enhet = finnEnhet(oppgaveOppdatering.personIdent)
-            oppgaveRepo.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin", enhet)
+            oppgaveRepo.gjenåpneOppgave(
+                oppgaveId = eksisterendeOppgave.oppgaveId(),
+                ident = "Kelvin",
+                personIdent = oppgaveOppdatering.personIdent,
+                enhet = enhet)
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER)

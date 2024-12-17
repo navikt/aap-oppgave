@@ -38,9 +38,14 @@ class NorgKlient {
         val request = PostRequest(
             FinnNavenhetRequest(geografiskTilknyttning, erNavansatt, diskresjonskode)
         )
-
-        return client.post<FinnNavenhetRequest, List<Enhet>>(finnEnhetUrl, request)
-            .let { response -> response?.first()?.enhetNr } ?: error("Feil i response fra norg")
+        val enheter = client.post<FinnNavenhetRequest, List<Enhet>>(finnEnhetUrl, request)
+        if (enheter == null) {
+            error("Feil i response fra norg for geo = $geografiskTilknyttning, erNavansatt = $erNavansatt, diskresjonskode = $diskresjonskode")
+        }
+        if (enheter.isEmpty()) {
+            return "UDEFINERT"
+        }
+        return enheter.first().enhetNr
     }
 
 }
