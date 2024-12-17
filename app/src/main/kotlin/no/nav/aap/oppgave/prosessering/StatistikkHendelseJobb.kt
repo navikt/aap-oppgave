@@ -5,24 +5,29 @@ import no.nav.aap.komponenter.httpklient.json.DefaultJsonMapper
 import no.nav.aap.motor.Jobb
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.motor.JobbUtfører
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.statistikk.OppgaveHendelse
 
-class StatistikkHendelseJobb : JobbUtfører {
+class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository) : JobbUtfører {
     override fun utfør(input: JobbInput) {
         val hendelsesType = HendelseType.valueOf(input.parameter("hendelsesType"))
-        val oppgaveDto = DefaultJsonMapper.fromJson<OppgaveDto>(input.payload())
+        val oppgaveId = DefaultJsonMapper.fromJson<OppgaveId>(input.payload())
 
-        StatistikkGateway.avgiHendelse(OppgaveHendelse(
-            hendelse = hendelsesType,
-            oppgaveDto = oppgaveDto
-        ))
+        oppgaveRepository.hentOppgave(oppgaveId).let { oppgaveDto ->
+            StatistikkGateway.avgiHendelse(
+                OppgaveHendelse(
+                    hendelse = hendelsesType,
+                    oppgaveDto = oppgaveDto
+                )
+            )
+        }
     }
 
     companion object : Jobb {
         override fun konstruer(connection: DBConnection): JobbUtfører {
-            return StatistikkHendelseJobb()
+            return StatistikkHendelseJobb(OppgaveRepository(connection))
         }
 
         override fun type(): String {
