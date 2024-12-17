@@ -70,6 +70,7 @@ spec:
                 - host: pdl-api.dev-fss-pub.nais.io
             rules:
                 - application: tilgang
+                - application: statistikk
                 - application: skjermede-personer-pip
                   namespace: nom
     env:
