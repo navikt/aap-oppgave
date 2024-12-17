@@ -26,12 +26,14 @@ import no.nav.aap.komponenter.server.AZURE
 import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.oppgave.alleÅpneOppgaverApi
 import no.nav.aap.oppgave.avreserverOppgave
+import no.nav.aap.oppgave.enhet.hentEnhetApi
 import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.hentOppgaverApi
+import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
@@ -82,6 +84,9 @@ internal fun Application.server(dbConfig: DbConfig) {
     val dataSource = initDatasource(dbConfig)
     Migrering.migrate(dataSource)
 
+    val iMsGraphClient = MsGraphClient(AzureConfig())
+
+
     routing {
         authenticate(AZURE) {
             apiRouting {
@@ -104,6 +109,8 @@ internal fun Application.server(dbConfig: DbConfig) {
                 slettFilterApi(dataSource, prometheus)
                 // Produksjonsstyring
                 hentAntallOppgaver(dataSource, prometheus)
+                // Enheter
+                hentEnhetApi(iMsGraphClient, prometheus)
             }
         }
         actuator(prometheus)

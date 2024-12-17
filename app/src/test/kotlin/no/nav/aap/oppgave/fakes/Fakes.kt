@@ -37,6 +37,9 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         // NOM
         System.setProperty("integrasjon.nom.url", "http://localhost:${nom.port()}")
         System.setProperty("integrasjon.nom.scope", "scope")
+        // MS GRAPH
+        System.setProperty("MS_GRAPH_BASE_URL", "http://localhost:9999")
+        System.setProperty("MS_GRAPH_SCOPE", "scope")
     }
 
     override fun close() {
