@@ -4,26 +4,23 @@ import com.papsign.ktor.openapigen.model.info.InfoModel
 import com.papsign.ktor.openapigen.route.apiRouting
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.auth.authenticate
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.ktor.server.plugins.cors.routing.CORS
-import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.response.respond
-import io.ktor.server.routing.Routing
-import io.ktor.server.routing.get
-import io.ktor.server.routing.route
-import io.ktor.server.routing.routing
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
 import no.nav.aap.komponenter.server.AZURE
 import no.nav.aap.komponenter.server.commonKtorModule
+import no.nav.aap.motor.Motor
+import no.nav.aap.motor.api.motorApi
 import no.nav.aap.oppgave.alleÅpneOppgaverApi
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.enhet.hentEnhetApi
@@ -40,7 +37,9 @@ import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
 import no.nav.aap.oppgave.plukk.plukkNesteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
+import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import org.slf4j.LoggerFactory
+import javax.sql.DataSource
 
 private val SECURE_LOGGER = LoggerFactory.getLogger("secureLog")
 private const val ANTALL_WORKERS = 5
@@ -86,6 +85,7 @@ internal fun Application.server(dbConfig: DbConfig) {
 
     val iMsGraphClient = MsGraphClient(AzureConfig())
 
+    val motor = motor(dataSource)
 
     routing {
         authenticate(AZURE) {
@@ -111,10 +111,34 @@ internal fun Application.server(dbConfig: DbConfig) {
                 hentAntallOppgaver(dataSource, prometheus)
                 // Enheter
                 hentEnhetApi(iMsGraphClient, prometheus)
+                // Motor-API
+                motorApi(dataSource)
             }
         }
         actuator(prometheus)
     }
+}
+
+fun Application.motor(dataSource: DataSource): Motor {
+    val motor = Motor(
+        dataSource = dataSource,
+        antallKammer = ANTALL_WORKERS,
+        jobber = listOf(StatistikkHendelseJobb)
+    )
+
+    monitor.subscribe(ApplicationStarted) {
+        motor.start()
+    }
+
+    monitor.subscribe(ApplicationStopPreparing) { application ->
+        application.log.info("Server er i ferd med å stoppe")
+        motor.stop()
+        // Release resources and unsubscribe from events
+        monitor.unsubscribe(ApplicationStopPreparing) {}
+        monitor.unsubscribe(ApplicationStopPreparing) {}
+    }
+
+    return motor
 }
 
 class DbConfig(
