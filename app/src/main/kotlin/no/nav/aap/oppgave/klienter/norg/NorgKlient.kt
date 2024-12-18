@@ -3,13 +3,17 @@ package no.nav.aap.oppgave.klienter.norg
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
+import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
+import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.NoTokenTokenProvider
 import org.slf4j.LoggerFactory
 import java.net.URI
 
 data class Enhet(val enhetNr: String)
+
+data class EnhetMedNavn(val enhetNr: String, val navn: String)
 
 data class FinnNavenhetRequest(
     val geografiskOmraade: String?,
@@ -46,6 +50,16 @@ class NorgKlient {
             return "UDEFINERT"
         }
         return enheter.first().enhetNr
+    }
+
+    fun hentEnheter(): Map<String, String> {
+        log.info("Henter enheter")
+        val hentEnheterUrl = url.resolve("norg2/api/v1/enhet/simple")
+        val enheter = client.get<List<EnhetMedNavn>>(hentEnheterUrl, GetRequest())
+        if (enheter == null) {
+            return mapOf()
+        }
+        return enheter.associate { it.enhetNr to it.navn }
     }
 
 }
