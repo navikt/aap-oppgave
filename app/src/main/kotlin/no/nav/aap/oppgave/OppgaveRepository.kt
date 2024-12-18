@@ -93,7 +93,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                OPPGAVE_ID = ?
+                ID = ?
         """.trimIndent()
 
         return connection.queryFirst<OppgaveDto>(oppgaverForIdQuery) {
