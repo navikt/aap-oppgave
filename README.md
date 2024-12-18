@@ -13,16 +13,16 @@ Inneholder følgende funksjonalitet:
 # Kontekstdiagram
 ```mermaid
 graph TD
-    Behandlingsflyt--Oppdater \navklaringbehov \nstatus-->Oppgave((Oppgave))
-    Postmottak--Oppdater \navklaringbehov \nstatus-->Oppgave
-    Oppgave--Lagrer \noppgaver-->DB[(Database)]
-    Oppgave--Oppdaterer ved \nåpning og lukking\n av oppgaver-->Statistikk
-    Saksbehandler-frontend--Viser, plukker og \nadministrerer oppgaver-->Oppgave
+    Behandlingsflyt--Oppdater avklaringbehov status-->Oppgave((Oppgave))
+    Postmottak--Oppdater avklaringbehov status-->Oppgave
+    Oppgave--Lagrer oppgaver-->DB[(Database)]
+    Oppgave--Oppdaterer ved åpning og lukking av oppgaver-->Statistikk
+    Saksbehandler-frontend--Viser, plukker og administrerer oppgaver-->Oppgave
     Oppgave--Sjekker tilgang til oppgave-->Tilgang
-    Oppgave--Henter geo-tilhørighet\n og skjerming-->PDL
+    Oppgave--Henter geo-tilhørighet og skjerming-->PDL
     Oppgave--Henter egen-ansatt-->NOM
-    Oppgave--Finn enhet \ngeo tilknytning-->NORG2
-    Oppgave--Hent enheter \nfor innlogget bruker-->MsGraph
+    Oppgave--Finn enhet geo-tilknytning-->NORG2
+    Oppgave--Hent enheter for innlogget bruker-->MsGraph
 ```
 
 ### API-dokumentasjon
