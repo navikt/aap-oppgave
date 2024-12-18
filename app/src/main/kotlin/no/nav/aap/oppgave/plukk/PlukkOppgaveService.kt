@@ -15,14 +15,14 @@ class PlukkOppgaveService(val connection: DBConnection) {
 
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
-    fun plukkNesteOppgave(filterId: Long, ident: String, token: OidcToken, maksAntallForsøk: Int = 10): NesteOppgaveDto? {
+    fun plukkNesteOppgave(filterId: Long, enheter: Set<String>, ident: String, token: OidcToken, maksAntallForsøk: Int = 10): NesteOppgaveDto? {
         val filterRepo = FilterRepository(connection)
         val filter = filterRepo.hent(filterId)
         if (filter == null) {
             throw IllegalArgumentException("Finner ikke filter med id: $filterId")
         }
         val oppgaveRepo = OppgaveRepository(connection)
-        val nesteOppgaver = oppgaveRepo.finnNesteOppgaver(filter, maksAntallForsøk)
+        val nesteOppgaver = oppgaveRepo.finnNesteOppgaver(filter.copy(enheter = enheter), maksAntallForsøk)
         for ((i, nesteOppgave) in nesteOppgaver.withIndex()) {
             require(nesteOppgave.avklaringsbehovReferanse.referanse != null || nesteOppgave.avklaringsbehovReferanse.journalpostId != null) {
                 "AvklaringsbehovReferanse må ha referanse til enten behandling eller journalpost"

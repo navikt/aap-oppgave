@@ -9,6 +9,7 @@ data class FilterDto(
     val beskrivelse: String,
     val avklaringsbehovKoder: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
+    val enheter: Set<String> = emptySet(),
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,

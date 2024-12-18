@@ -244,7 +244,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnOppgaver(filterDto: FilterDto): List<OppgaveDto> {
+    fun finnOppgaver(filterDto: FilterDto, enheter: Set<String>): List<OppgaveDto> {
         val hentNesteOppgaveQuery = """
             SELECT 
                    $alleOppgaveFelt
@@ -374,6 +374,12 @@ class OppgaveRepository(private val connection: DBConnection) {
                 .map { "'${it.name}'" }
                 .joinToString(prefix = "(", postfix = ")", separator = ", ")
             sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
+        }
+        if (enheter.isNotEmpty()) {
+            val stringListeEnheter = enheter
+                .map {"'$it'"}
+                .joinToString(prefix = "(", postfix = ")", separator = ", ")
+            sb.append("ENHET in $stringListeEnheter AND ")
         }
         return sb.toString()
     }

@@ -20,7 +20,7 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
     route("/neste-oppgave").post<Unit, NesteOppgaveDto, FinnNesteOppgaveDto> { _, request ->
         prometheus.httpCallCounter("/neste-oppgave").increment()
         val nesteOppgave =  dataSource.transaction { connection ->
-            PlukkOppgaveService(connection).plukkNesteOppgave(request.filterId, ident(), token())
+            PlukkOppgaveService(connection).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
         }
         if (nesteOppgave != null) {
             respond(nesteOppgave)

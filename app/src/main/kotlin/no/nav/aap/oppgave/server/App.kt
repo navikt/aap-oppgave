@@ -29,6 +29,7 @@ import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
+import no.nav.aap.oppgave.hentOppgavelisteApi
 import no.nav.aap.oppgave.hentOppgaverApi
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.mineOppgaverApi
@@ -103,6 +104,7 @@ internal fun Application.server(dbConfig: DbConfig) {
                 hentOppgaverApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
                 alleÅpneOppgaverApi(dataSource, prometheus)
+                hentOppgavelisteApi(dataSource, prometheus)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
                 opprettEllerOppdaterFilterApi(dataSource, prometheus)
