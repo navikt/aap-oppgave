@@ -23,7 +23,7 @@ object StatistikkGateway {
             body = oppgaveHendelse,
         )
         requireNotNull(
-            client.post<_, String>(
+            client.post<_, Unit>(
                 uri = baseUrl.resolve("/oppgave"),
                 request = httpRequest
             )
