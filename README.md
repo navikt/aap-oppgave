@@ -10,7 +10,7 @@ Inneholder følgende funksjonalitet:
 * Vedlikehold av filter
 * Hent tilgjengelige enheter for innlogget bruker
 
-# Kontekstdiagram
+### Kontekstdiagram
 ```mermaid
 graph TD
     Behandlingsflyt--Oppdater avklaringbehov status-->Oppgave((Oppgave))
