@@ -15,6 +15,8 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
+import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
+import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
@@ -58,22 +60,26 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
-    fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
-        val oppgaveRepo = OppgaveRepository(connection)
-        val eksisterendeOppgaver = oppgaveRepo.hentOppgaver(oppgaveOppdatering.saksnummer, oppgaveOppdatering.referanse, oppgaveOppdatering.journalpostId)
+    private val oppgaveRepository = OppgaveRepository(connection)
 
-        val oppgaveMap = eksisterendeOppgaver.associateBy( {AvklaringsbehovKode(it.avklaringsbehovKode)}, {it} )
+    fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
+        val eksisterendeOppgaver = oppgaveRepository.hentOppgaver(
+            oppgaveOppdatering.saksnummer,
+            oppgaveOppdatering.referanse,
+            oppgaveOppdatering.journalpostId
+        )
+
+        val oppgaveMap = eksisterendeOppgaver.associateBy({ AvklaringsbehovKode(it.avklaringsbehovKode) }, { it })
 
         when (oppgaveOppdatering.behandlingStatus) {
-            BehandlingStatus.LUKKET -> avslutteOppgaver(eksisterendeOppgaver, oppgaveRepo)
-            else -> oppdaterOppgaver(oppgaveOppdatering, oppgaveMap, oppgaveRepo)
+            BehandlingStatus.LUKKET -> avslutteOppgaver(eksisterendeOppgaver)
+            else -> oppdaterOppgaver(oppgaveOppdatering, oppgaveMap)
         }
     }
 
     private fun oppdaterOppgaver(
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
-        oppgaveRepo: OppgaveRepository
     ) {
         val åpneAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter {it.status in ÅPNE_STATUSER}
         val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter {it.status in AVSLUTTEDE_STATUSER}
@@ -82,32 +88,33 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         val avklarsbehovSomDetSkalOpprettesOppgaverFor = åpneAvklaringsbehov
             .filter { oppgaveMap[it.avklaringsbehovKode] == null}
             .map { it.avklaringsbehovKode }
-        opprettOppgaver(oppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor, oppgaveRepo)
+        opprettOppgaver(oppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor)
 
         // Gjenåpne avsluttede oppgaver
         åpneAvklaringsbehov.forEach { avklaringsbehov ->
-            gjenåpneOppgave(oppgaveOppdatering, oppgaveMap, avklaringsbehov, oppgaveRepo)
+            gjenåpneOppgave(oppgaveOppdatering, oppgaveMap, avklaringsbehov)
         }
 
         // Avslutt oppgaver hvor avklaringsbehovet er lukket
         val oppgaverSomSkalAvsluttes = avsluttedeAvklaringsbehov.mapNotNull { oppgaveMap[it.avklaringsbehovKode] }
-        avslutteOppgaver(oppgaverSomSkalAvsluttes, oppgaveRepo)
+        avslutteOppgaver(oppgaverSomSkalAvsluttes)
     }
 
     private fun gjenåpneOppgave(
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
         avklaringsbehov: AvklaringsbehovHendelse,
-        oppgaveRepo: OppgaveRepository
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
             val enhet = finnEnhet(oppgaveOppdatering.personIdent)
-            oppgaveRepo.gjenåpneOppgave(
+            oppgaveRepository.gjenåpneOppgave(
                 oppgaveId = eksisterendeOppgave.oppgaveId(),
                 ident = "Kelvin",
                 personIdent = oppgaveOppdatering.personIdent,
                 enhet = enhet)
+            sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.GJENÅPNET)
+
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER)
@@ -115,9 +122,10 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
                 val sistEndretAv = avklaringsbehov.sistEndretAv()
                 if (sistEndretAv != null && sistEndretAv != "Kelvin") {
                     val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
-                    val oppdatertOppgave = oppgaveRepo.hentOppgave(avklaringsbehovReferanse)
+                    val oppdatertOppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanse)
                     if (oppdatertOppgave != null) {
-                        oppgaveRepo.reserverOppgave(oppdatertOppgave.oppgaveId(), "Kelvin", sistEndretAv)
+                        oppgaveRepository.reserverOppgave(oppdatertOppgave.oppgaveId(), "Kelvin", sistEndretAv)
+                        sendOppgaveStatusOppdatering(connection, oppdatertOppgave.oppgaveId(), HendelseType.RESERVERT)
                     } else {
                         log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
                     }
@@ -180,8 +188,8 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         }
     }
 
-    private fun mapDiskresjonskode(adressebgeskyttelseskoder: List<Adressebeskyttelseskode>?) =
-        adressebgeskyttelseskoder?.firstOrNull().let {
+    private fun mapDiskresjonskode(adressebeskyttelsekoder: List<Adressebeskyttelseskode>?) =
+        adressebeskyttelsekoder?.firstOrNull().let {
             when (it) {
                 Adressebeskyttelseskode.FORTROLIG ->
                     Diskresjonskode.SPFO
@@ -192,12 +200,14 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         }
 
 
-    private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>, oppgaveRepo: OppgaveRepository) {
+    private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
             val enhet = finnEnhet(oppgaveOppdatering.personIdent)
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin", enhet)
-            val oppgaveId = oppgaveRepo.opprettOppgave(nyOppgave)
+            val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
+            sendOppgaveStatusOppdatering(connection, oppgaveId, HendelseType.OPPRETTET)
+
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
             if (hvemLøsteForrigeAvklaringsbehov != null) {
                 val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
@@ -227,18 +237,20 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         }
     }
 
-    private fun avslutteOppgaver(oppgaver: List<OppgaveDto>, oppgaveRepo: OppgaveRepository) {
+    private fun avslutteOppgaver(oppgaver: List<OppgaveDto>) {
         oppgaver
             .filter { it.status != no.nav.aap.oppgave.verdityper.Status.AVSLUTTET }
-            .forEach { oppgaveRepo.avsluttOppgave(it.oppgaveId(), "Kelvin") }
+            .forEach {
+                oppgaveRepository.avsluttOppgave(it.oppgaveId(), "Kelvin")
+                sendOppgaveStatusOppdatering(connection, it.oppgaveId(), HendelseType.LUKKET)
+            }
     }
 
     private fun OppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
         val sisteAvsluttetAvklaringsbehov = avklaringsbehov
             .filter { it.status == AvklaringsbehovStatus.AVSLUTTET }
-            .filter {it.sistEndretAv() != null}
-            .sortedBy { it.sistEndret() }
-            .lastOrNull()
+            .filter { it.sistEndretAv() != null }
+            .maxByOrNull { it.sistEndret() }
 
         if (sisteAvsluttetAvklaringsbehov == null) {
             return null
