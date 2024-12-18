@@ -22,7 +22,7 @@ object StatistikkGateway {
         val httpRequest = PostRequest(
             body = oppgaveHendelse,
         )
-        val respons = requireNotNull(
+        requireNotNull(
             client.post<_, String>(
                 uri = baseUrl.resolve("/oppgave"),
                 request = httpRequest

@@ -4,6 +4,7 @@ import no.nav.aap.oppgave.OppgaveDto
 
 enum class HendelseType {
     OPPRETTET,
+    GJENÅPNET,
     RESERVERT,
     AVRESERVERT,
     LUKKET

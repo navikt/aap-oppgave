@@ -6,6 +6,8 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.filter.FilterRepository
+import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
+import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -28,8 +30,10 @@ class PlukkOppgaveService(val connection: DBConnection) {
 
             val harTilgang = TilgangGateway.sjekkTilgang(nesteOppgave.avklaringsbehovReferanse, token)
             if (harTilgang) {
-                oppgaveRepo.reserverOppgave(OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon), ident, ident)
-                log.info("Fant neste oppgave med id ${nesteOppgave.oppgaveId} etter ${i+1} forsøk for filterId $filterId")
+                val oppgaveId = OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon)
+                oppgaveRepo.reserverOppgave(oppgaveId, ident, ident)
+                sendOppgaveStatusOppdatering(connection, oppgaveId, HendelseType.RESERVERT)
+                log.info("Fant neste oppgave med id ${nesteOppgave.oppgaveId} etter ${i + 1} forsøk for filterId $filterId")
                 return nesteOppgave
             }
         }
@@ -42,7 +46,9 @@ class PlukkOppgaveService(val connection: DBConnection) {
         val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
         val harTilgang = TilgangGateway.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
         if (harTilgang) {
-            oppgaveRepo.reserverOppgave(OppgaveId(oppgave.id!!, oppgave.versjon), ident, ident)
+            val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
+            oppgaveRepo.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
+            sendOppgaveStatusOppdatering(connection, oppgaveIdMedVersjon, HendelseType.RESERVERT)
             return oppgave
         }
         return null
