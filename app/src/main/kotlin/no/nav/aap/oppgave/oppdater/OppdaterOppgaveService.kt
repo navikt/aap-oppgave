@@ -163,7 +163,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     )
 
     private fun finnTilknytningOgSkjerming(fnr: String?): TilknytningOgSkjerming {
-        return if (fnr != null) {
+        if (fnr != null) {
             val pdlData = PdlGraphqlKlient.withClientCredentialsRestClient().hentAdressebeskyttelseOgGeolokasjon(fnr)
             val geografiskTilknytning = pdlData.hentGeografiskTilknytning
             val geografiskTilknytningKode = if (geografiskTilknytning != null) {
