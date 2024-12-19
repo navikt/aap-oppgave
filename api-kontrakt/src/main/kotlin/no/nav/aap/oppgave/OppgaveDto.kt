@@ -5,6 +5,9 @@ import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDateTime
 import java.util.UUID
 
+/**
+ * @param enhet Enhetsnummeret til enheten som er koblet til oppgaven.
+ */
 data class OppgaveDto(
     val id: Long? = null,
     val personIdent: String? = null,
@@ -32,7 +35,7 @@ data class OppgaveDto(
         }
     }
 
-    fun tilAvklaringsbehovReferanseDto():AvklaringsbehovReferanseDto  {
+    fun tilAvklaringsbehovReferanseDto(): AvklaringsbehovReferanseDto {
         return AvklaringsbehovReferanseDto(
             this.saksnummer,
             this.behandlingRef,
