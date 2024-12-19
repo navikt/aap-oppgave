@@ -2,6 +2,7 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
+import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -244,14 +245,14 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnOppgaver(filterDto: FilterDto, enheter: Set<String>): List<OppgaveDto> {
+    fun finnOppgaver(filter: Filter): List<OppgaveDto> {
         val hentNesteOppgaveQuery = """
             SELECT 
                    $alleOppgaveFelt
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+                ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
         """.trimIndent()
 
@@ -361,24 +362,20 @@ class OppgaveRepository(private val connection: DBConnection) {
         return oppgaver
     }
 
-    private fun FilterDto.whereClause(): String {
+    private fun Filter.whereClause(): String {
         val sb = StringBuilder()
         if (avklaringsbehovKoder.isNotEmpty()) {
-            val stringListeAvklaringsbehovKoder = avklaringsbehovKoder
-                .map {"'$it'"}
-                .joinToString(prefix = "(", postfix = ")", separator = ", ")
+            val stringListeAvklaringsbehovKoder =
+                avklaringsbehovKoder.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
             sb.append("AVKLARINGSBEHOV_TYPE IN $stringListeAvklaringsbehovKoder AND ")
         }
         if (behandlingstyper.isNotEmpty()) {
-            val stringListeAvBehandlingstyper = behandlingstyper
-                .map { "'${it.name}'" }
-                .joinToString(prefix = "(", postfix = ")", separator = ", ")
+            val stringListeAvBehandlingstyper =
+                behandlingstyper.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
             sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
         }
         if (enheter.isNotEmpty()) {
-            val stringListeEnheter = enheter
-                .map {"'$it'"}
-                .joinToString(prefix = "(", postfix = ")", separator = ", ")
+            val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
             sb.append("ENHET in $stringListeEnheter AND ")
         }
         return sb.toString()

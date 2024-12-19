@@ -12,6 +12,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.filter.FilterId
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.OppgaveSøkDto
+import no.nav.aap.oppgave.filter.TransientFilterDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
@@ -57,7 +58,7 @@ fun NormalOpenAPIRoute.hentOppgaverApi(dataSource: DataSource, prometheus: Prome
         prometheus.httpCallCounter("/hent-oppgave").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             val filter = FilterRepository(connection).hent(request.filterId)
-            OppgaveRepository(connection).finnOppgaver(filter!!, setOf())
+            OppgaveRepository(connection).finnOppgaver(filter!!)
         }
         respond(oppgaver)
     }
@@ -68,10 +69,18 @@ fun NormalOpenAPIRoute.hentOppgavelisteApi(dataSource: DataSource, prometheus: P
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             val filter = FilterRepository(connection).hent(request.filterId)
-            OppgaveRepository(connection).finnOppgaver(filter!!, request.enheter)
+            OppgaveRepository(connection).finnOppgaver(filter!!.copy(enheter = request.enheter))
         }
         respond(oppgaver)
     }
 
 
+fun NormalOpenAPIRoute.oppgavesøkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
+    route("/oppgavesok/").post<Unit, List<OppgaveDto>, TransientFilterDto> { _, filter ->
+        prometheus.httpCallCounter("/oppgavesok").increment()
+        val oppgaver = dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).finnOppgaver(filter)
+        }
+        respond(oppgaver)
+    }
