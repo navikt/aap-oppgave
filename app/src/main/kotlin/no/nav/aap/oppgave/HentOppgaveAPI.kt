@@ -108,7 +108,7 @@ fun NormalOpenAPIRoute.oppgavesøkApi(dataSource: DataSource, prometheus: Promet
 fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/sok/").post<Unit, List<OppgaveDto>, SøkDto> { _, søk ->
-        prometheus.httpCallCounter("/oppgavesok").increment()
+        prometheus.httpCallCounter("/sok").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             val søketekst =  søk.søketekst.trim()
             val oppgaveRepo = OppgaveRepository(connection)
