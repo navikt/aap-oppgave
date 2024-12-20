@@ -270,7 +270,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                SAKSNUMMER = ?
+                SAKSNUMMER = ? AND STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
         """.trimIndent()
 
@@ -291,7 +291,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                PERSON_IDENT = ?
+                PERSON_IDENT = ? AND STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
         """.trimIndent()
 
