@@ -17,6 +17,9 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
 
+/**
+ * Hent oppgaver reserver at innlogget bruker.
+ */
 fun NormalOpenAPIRoute.mineOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/mine-oppgaver").get<Unit, List<OppgaveDto>> {
@@ -27,6 +30,10 @@ fun NormalOpenAPIRoute.mineOppgaverApi(dataSource: DataSource, prometheus: Prome
         respond(mineOppgaver)
     }
 
+/**
+ * Hent alle åpne oppgaver.
+ * TODO: trenger vi denne lengre?
+ */
 fun NormalOpenAPIRoute.alleÅpneOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry)  =
 
     route("alle-oppgaver").get<Unit, List<OppgaveDto>> {
@@ -37,6 +44,9 @@ fun NormalOpenAPIRoute.alleÅpneOppgaverApi(dataSource: DataSource, prometheus: 
         respond(mineOppgaver)
     }
 
+/**
+ * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en joournalpost i postmottk.
+ */
 fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/hent-oppgave").post<Unit, OppgaveDto, AvklaringsbehovReferanseDto> { _, request ->
@@ -52,6 +62,7 @@ fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: Promet
 
     }
 
+@Deprecated("Bruk istedet hentOppgavelisteApi")
 fun NormalOpenAPIRoute.hentOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/hent-oppgaver").post<Unit, List<OppgaveDto>, FilterId> { _, request ->
@@ -63,6 +74,9 @@ fun NormalOpenAPIRoute.hentOppgaverApi(dataSource: DataSource, prometheus: Prome
         respond(oppgaver)
     }
 
+/**
+ * Søker etter oppgaver med et predefinert filter angitt med filterId. I tillegg kan det legges på en begrensning på enheter.
+ */
 fun NormalOpenAPIRoute.hentOppgavelisteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/oppgaveliste").post<Unit, List<OppgaveDto>, OppgaveSøkDto> { _, request ->
@@ -74,13 +88,35 @@ fun NormalOpenAPIRoute.hentOppgavelisteApi(dataSource: DataSource, prometheus: P
         respond(oppgaver)
     }
 
-
+/**
+ * Søker etter oppgaver med et fritt defininert filter som ikke trenger være lagret i database.
+ */
 fun NormalOpenAPIRoute.oppgavesøkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/oppgavesok/").post<Unit, List<OppgaveDto>, TransientFilterDto> { _, filter ->
         prometheus.httpCallCounter("/oppgavesok").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter)
+        }
+        respond(oppgaver)
+    }
+
+/**
+ * Fritekstsøk etter oppgave. Hvis søketekster er 11 tegn så søkes det etter oppgaver knyttet til fødselsnummer.
+ * Ellers søkers det etter oppgave knyttet til saksnummer.
+ */
+fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
+
+    route("/sok/").post<Unit, List<OppgaveDto>, SøkDto> { _, søk ->
+        prometheus.httpCallCounter("/oppgavesok").increment()
+        val oppgaver = dataSource.transaction(readOnly = true) { connection ->
+            val søketekst =  søk.søketekst.trim()
+            val oppgaveRepo = OppgaveRepository(connection)
+            if (søketekst.length >= 11) {
+                oppgaveRepo.finnOppgaverGittPersonident(søketekst)
+            } else {
+                oppgaveRepo.finnOppgaverGittSaksnummer(søketekst.uppercase())
+            }
         }
         respond(oppgaver)
     }

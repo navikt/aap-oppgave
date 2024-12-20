@@ -263,6 +263,48 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    fun finnOppgaverGittSaksnummer(saksnummer: String): List<OppgaveDto> {
+        val hentOppgaverGittSaksnummerQuery = """
+            SELECT 
+                   $alleOppgaveFelt
+            FROM 
+                OPPGAVE 
+            WHERE 
+                SAKSNUMMER = ?
+            ORDER BY BEHANDLING_OPPRETTET
+        """.trimIndent()
+
+        return connection.queryList(hentOppgaverGittSaksnummerQuery) {
+            setParams {
+                setString(1, saksnummer)
+            }
+            setRowMapper {
+                oppgaveMapper(it)
+            }
+        }
+    }
+
+    fun finnOppgaverGittPersonident(personIdent: String): List<OppgaveDto> {
+        val hentOppgaverGittPersonidentQuery = """
+            SELECT 
+                   $alleOppgaveFelt
+            FROM 
+                OPPGAVE 
+            WHERE 
+                PERSON_IDENT = ?
+            ORDER BY BEHANDLING_OPPRETTET
+        """.trimIndent()
+
+        return connection.queryList(hentOppgaverGittPersonidentQuery) {
+            setParams {
+                setString(1, personIdent)
+            }
+            setRowMapper {
+                oppgaveMapper(it)
+            }
+        }
+    }
+
     fun reserverOppgave(oppgaveId: OppgaveId, ident: String, reservertAvIdent: String) {
         val updaterOppgaveReservasjonQuery = """
             UPDATE 

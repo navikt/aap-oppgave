@@ -40,6 +40,7 @@ import no.nav.aap.oppgave.plukk.plukkNesteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
+import no.nav.aap.oppgave.søkApi
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -107,6 +108,7 @@ internal fun Application.server(dbConfig: DbConfig) {
                 alleÅpneOppgaverApi(dataSource, prometheus)
                 hentOppgavelisteApi(dataSource, prometheus)
                 oppgavesøkApi(dataSource, prometheus)
+                søkApi(dataSource, prometheus)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
                 opprettEllerOppdaterFilterApi(dataSource, prometheus)
