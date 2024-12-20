@@ -3,6 +3,8 @@ package no.nav.aap.oppgave
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.micrometer.prometheusmetrics.PrometheusConfig
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
@@ -43,7 +45,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.UUID
+import java.util.*
 import kotlin.test.AfterTest
 import kotlin.test.fail
 
@@ -75,7 +77,7 @@ class OppgaveApiTest {
         // Plukk neste oppgave
         var nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNotNull()
-        assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgave!!.id)
+        assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgave.id)
 
         // Sjekk at oppgave kommer i mine oppgaver listen
         assertThat(hentMineOppgaver().first().id).isEqualTo(oppgave.id)
@@ -314,10 +316,10 @@ class OppgaveApiTest {
             )
 
         try {
-            val writer = BufferedWriter(FileWriter("../openapi.json"));
-            writer.write(openApiDoc);
+            val writer = BufferedWriter(FileWriter("../openapi.json"))
+            writer.write(openApiDoc)
 
-            writer.close();
+            writer.close()
         } catch (_: Exception) {
             fail()
         }
@@ -451,15 +453,17 @@ class OppgaveApiTest {
             tokenProvider = ClientCredentialsTokenProvider
         )
 
+        private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+
         // Starter server
         private val server = embeddedServer(Netty, port = 8080) {
-            server(dbConfig = dbConfig)
+            server(dbConfig = dbConfig, prometheus = prometheus)
             module(fakes)
         }.start()
 
         private fun resetDatabase() {
             @Suppress("SqlWithoutWhere")
-            initDatasource(dbConfig).transaction {
+            initDatasource(dbConfig, prometheus).transaction {
                 it.execute("DELETE FROM OPPGAVE_HISTORIKK")
                 it.execute("DELETE FROM OPPGAVE")
                 it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
@@ -469,7 +473,7 @@ class OppgaveApiTest {
         }
 
         private fun leggInnFilterForTest() {
-            initDatasource(dbConfig).transaction {
+            initDatasource(dbConfig, prometheus).transaction {
                 it.execute("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
             }
         }

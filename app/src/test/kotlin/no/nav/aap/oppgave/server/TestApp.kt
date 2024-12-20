@@ -4,6 +4,8 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.micrometer.prometheusmetrics.PrometheusConfig
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.oppgave.fakes.Fakes
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
@@ -20,7 +22,7 @@ fun main() {
             password = postgres.password,
             jdbcUrl = postgres.jdbcUrl,
         )
-        server(dbConfig)
+        server(dbConfig, PrometheusMeterRegistry(PrometheusConfig.DEFAULT))
         module(fakes)
     }.start(wait = true)
 }

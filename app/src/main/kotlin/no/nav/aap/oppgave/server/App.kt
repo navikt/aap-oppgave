@@ -13,6 +13,7 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbmigrering.Migrering
@@ -55,11 +56,10 @@ fun main() {
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
         SECURE_LOGGER.error("Uhåndtert feil", e)
     }
-    embeddedServer(Netty, 8080) { server(DbConfig()) }.start(wait = true)
+    embeddedServer(Netty, 8080) { server(DbConfig(), PrometheusMeterRegistry(PrometheusConfig.DEFAULT)) }.start(wait = true)
 }
 
-internal fun Application.server(dbConfig: DbConfig) {
-    val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterRegistry) {
 
     commonKtorModule(
         prometheus, AzureConfig(), InfoModel(
@@ -83,7 +83,7 @@ internal fun Application.server(dbConfig: DbConfig) {
         allowHeader(HttpHeaders.ContentType)
     }
 
-    val dataSource = initDatasource(dbConfig)
+    val dataSource = initDatasource(dbConfig, prometheus)
     Migrering.migrate(dataSource)
 
     val iMsGraphClient = MsGraphClient(AzureConfig())
@@ -154,7 +154,7 @@ class DbConfig(
     val password: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_PASSWORD")
 )
 
-fun initDatasource(dbConfig: DbConfig) = HikariDataSource(HikariConfig().apply {
+fun initDatasource(dbConfig: DbConfig, meterRegistry: MeterRegistry) = HikariDataSource(HikariConfig().apply {
     jdbcUrl = dbConfig.jdbcUrl
     username = dbConfig.username
     password = dbConfig.password
@@ -162,6 +162,7 @@ fun initDatasource(dbConfig: DbConfig) = HikariDataSource(HikariConfig().apply {
     minimumIdle = 1
     driverClassName = "org.postgresql.Driver"
     connectionTestQuery = "SELECT 1"
+    metricRegistry = meterRegistry
 })
 
 internal data class ErrorRespons(val message: String?)
