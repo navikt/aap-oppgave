@@ -93,7 +93,7 @@ fun NormalOpenAPIRoute.hentOppgavelisteApi(dataSource: DataSource, prometheus: P
  */
 fun NormalOpenAPIRoute.oppgavesøkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
-    route("/oppgavesok/").post<Unit, List<OppgaveDto>, TransientFilterDto> { _, filter ->
+    route("/oppgavesok").post<Unit, List<OppgaveDto>, TransientFilterDto> { _, filter ->
         prometheus.httpCallCounter("/oppgavesok").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter)
@@ -107,7 +107,7 @@ fun NormalOpenAPIRoute.oppgavesøkApi(dataSource: DataSource, prometheus: Promet
  */
 fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
-    route("/sok/").post<Unit, List<OppgaveDto>, SøkDto> { _, søk ->
+    route("/sok").post<Unit, List<OppgaveDto>, SøkDto> { _, søk ->
         prometheus.httpCallCounter("/sok").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             val søketekst =  søk.søketekst.trim()
