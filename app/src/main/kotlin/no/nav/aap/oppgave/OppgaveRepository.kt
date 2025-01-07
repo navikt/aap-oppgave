@@ -427,6 +427,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         return OppgaveDto(
             id = row.getLong("ID"),
             personIdent = row.getStringOrNull("PERSON_IDENT"),
+            personNavn = row.getStringOrNull("PERSON_NAVN"),
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
             behandlingRef = row.getUUIDOrNull("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
@@ -449,6 +450,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val alleOppgaveFelt = """
             ID,
             PERSON_IDENT,
+            PERSON_NAVN,
             SAKSNUMMER,
             BEHANDLING_REF,
             JOURNALPOST_ID,

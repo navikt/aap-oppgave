@@ -11,6 +11,7 @@ import java.util.UUID
 data class OppgaveDto(
     val id: Long? = null,
     val personIdent: String? = null,
+    val personNavn: String? = null,
     val saksnummer: String? = null,
     val behandlingRef: UUID? = null,
     val journalpostId: Long? = null,
