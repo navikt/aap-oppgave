@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.filter.FilterId
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.OppgaveSøkDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
@@ -27,7 +28,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(dataSource: DataSource, prometheus: Prome
         val mineOppgaver = dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).hentMineOppgaver(ident())
         }
-        respond(mineOppgaver)
+        respond(mineOppgaver.medPersonNavn())
     }
 
 /**
@@ -41,7 +42,7 @@ fun NormalOpenAPIRoute.alleÅpneOppgaverApi(dataSource: DataSource, prometheus: 
         val mineOppgaver = dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).hentAlleÅpneOppgaver()
         }
-        respond(mineOppgaver)
+        respond(mineOppgaver.medPersonNavn())
     }
 
 /**
@@ -55,7 +56,7 @@ fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: Promet
             OppgaveRepository(connection).hentOppgave(request)
         }
         if (oppgave != null) {
-            respond(oppgave)
+            respond(oppgave.medPersonNavn())
         } else {
             respondWithStatus(HttpStatusCode.NoContent)
         }
@@ -71,7 +72,7 @@ fun NormalOpenAPIRoute.hentOppgaverApi(dataSource: DataSource, prometheus: Prome
             val filter = FilterRepository(connection).hent(request.filterId)
             OppgaveRepository(connection).finnOppgaver(filter!!)
         }
-        respond(oppgaver)
+        respond(oppgaver.medPersonNavn())
     }
 
 /**
@@ -85,7 +86,7 @@ fun NormalOpenAPIRoute.hentOppgavelisteApi(dataSource: DataSource, prometheus: P
             val filter = FilterRepository(connection).hent(request.filterId)
             OppgaveRepository(connection).finnOppgaver(filter!!.copy(enheter = request.enheter))
         }
-        respond(oppgaver)
+        respond(oppgaver.medPersonNavn())
     }
 
 /**
@@ -98,7 +99,7 @@ fun NormalOpenAPIRoute.oppgavesøkApi(dataSource: DataSource, prometheus: Promet
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter)
         }
-        respond(oppgaver)
+        respond(oppgaver.medPersonNavn())
     }
 
 /**
@@ -118,5 +119,28 @@ fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMet
                 oppgaveRepo.finnOppgaverGittSaksnummer(søketekst.uppercase())
             }
         }
-        respond(oppgaver)
+        respond(oppgaver.medPersonNavn())
     }
+
+
+private fun OppgaveDto.medPersonNavn(): OppgaveDto {
+    return listOf(this).medPersonNavn().first()
+}
+
+private fun List<OppgaveDto>.medPersonNavn(): List<OppgaveDto> {
+    val identer = mapNotNull { it.personIdent }
+    val navnMap = PdlGraphqlKlient.withClientCredentialsRestClient()
+        .hentPersoninfoForIdenter(identer)?.hentPersonBolk?.associate {
+            it.ident to it.person?.navn?.firstOrNull()
+        } ?: emptyMap()
+
+    return map {
+        val personIdent = it.personIdent
+        val personNavn = if (it.personIdent != null) {
+            navnMap[it.personIdent] ?: "UKJENT"
+        } else {
+            "UKJENT"
+        }
+        it.copy(personNavn = personIdent)
+    }
+}

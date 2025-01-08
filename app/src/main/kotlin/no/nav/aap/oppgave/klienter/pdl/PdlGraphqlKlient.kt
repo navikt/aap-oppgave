@@ -62,7 +62,11 @@ class PdlGraphqlKlient(
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
 
-
+    fun hentPersoninfoForIdenter(identer: List<String>): PdlData? {
+        val request = PdlRequest.hentPersoninfoForIdenter(identer)
+        val response = runBlocking { graphqlQuery(request) }
+        return response.data ?: error("Unexpected response from PDL: ${response.errors}")
+    }
 
     private fun graphqlQuery(query: PdlRequest, currentToken: OidcToken? = null): PdlResponse {
         val request = PostRequest(

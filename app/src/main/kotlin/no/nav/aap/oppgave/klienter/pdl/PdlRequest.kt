@@ -16,10 +16,16 @@ internal data class PdlRequest(val query: String, val variables: Variables) {
             query = GEOGRAFISK_TILKNYTNING_QUERY.asQuery(),
             variables = Variables(ident = ident)
         )
+
+        fun hentPersoninfoForIdenter(identer: List<String>) = PdlRequest(
+            query = PERSONINFO_BOLK_QUERY.asQuery(),
+            variables = Variables(identer = identer)
+        )
     }
 }
 
 private const val ident = "\$ident"
+private const val identer = "\$identer"
 
 val ADRESSEBESKYTTELSE_QUERY = """
      query($ident: ID!) {
@@ -47,4 +53,21 @@ val GEOGRAFISK_TILKNYTNING_QUERY = """
             gtLand
         }
 }
+""".trimIndent()
+
+
+val PERSONINFO_BOLK_QUERY = """
+    query($identer: [ID!]!) {
+        hentPersonBolk(identer: $identer) {
+            ident,
+            person {
+                navn(historikk: false) {
+                    fornavn
+                    mellomnavn
+                    etternavn
+                }
+            },
+            code
+        }
+    }
 """.trimIndent()
