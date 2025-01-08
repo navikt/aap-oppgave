@@ -129,6 +129,9 @@ private fun OppgaveDto.medPersonNavn(): OppgaveDto {
 
 private fun List<OppgaveDto>.medPersonNavn(): List<OppgaveDto> {
     val identer = mapNotNull { it.personIdent }
+    if (identer.isEmpty()) {
+        return this
+    }
     val navnMap = PdlGraphqlKlient.withClientCredentialsRestClient()
         .hentPersoninfoForIdenter(identer)?.hentPersonBolk?.associate {
             it.ident to it.person?.navn?.firstOrNull()
