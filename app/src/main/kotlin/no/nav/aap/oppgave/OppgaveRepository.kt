@@ -404,7 +404,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     fun finnOppgaverUtenEnhet(): List<OppgaveId> {
-        val finnOppgaverUtenEnhetQuery = "select id from oppgave where enhet = 'UDEFINERT'"
+        val finnOppgaverUtenEnhetQuery = "select ID, VERSJON from oppgave where enhet = 'UDEFINERT'"
 
         return connection.queryList<OppgaveId>(finnOppgaverUtenEnhetQuery) {
             setRowMapper { row ->
