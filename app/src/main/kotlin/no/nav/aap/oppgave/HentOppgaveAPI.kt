@@ -139,11 +139,11 @@ private fun List<OppgaveDto>.medPersonNavn(): List<OppgaveDto> {
 
     return map {
         val personIdent = it.personIdent
-        val personNavn = if (it.personIdent != null) {
-            navnMap[it.personIdent] ?: "UKJENT"
+        val personNavn = if (personIdent != null) {
+            navnMap[personIdent]?.fulltNavn() ?: "UKJENT"
         } else {
             "UKJENT"
         }
-        it.copy(personNavn = personIdent)
+        it.copy(personNavn = personNavn)
     }
 }
