@@ -5,11 +5,15 @@ import com.papsign.ktor.openapigen.route.path.normal.get
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
+import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.norg.NorgKlient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.oppdater.OppdaterOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
+import javax.sql.DataSource
 
 
 fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphClient, prometheus: PrometheusMeterRegistry) =
@@ -20,4 +24,26 @@ fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphClient, prometheus: P
         val enhetNrTilNavn = NorgKlient().hentEnheter()
         val enheterMedNavn = enheter.map { EnhetDto(it, enhetNrTilNavn[it] ?: "") }
         respond(enheterMedNavn)
+    }
+
+data class EnhetsoppdateringRapport(val antallOppgaverUtenEnhet: Int)
+
+fun NormalOpenAPIRoute.oppdaterEnhetPåOppgaver(dataSource: DataSource, msGraphClient: IMsGraphClient) =
+
+    route("/oppdater-enheter").get<Unit, EnhetsoppdateringRapport> {
+
+        //Hent alle oppgaver uten enhet
+        val oppgaverUtenEnhet = dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).finnOppgaverUtenEnhet()
+        }
+
+        //Finn enhet per fnr
+        //val enhetService = EnhetService(msGraphClient)
+
+        //Sett enhet på oppgaver
+        //dataSource.transaction { connection ->
+        //    val oppdaterOppgaveService = OppdaterOppgaveService(connection, msGraphClient)
+        //}
+
+        respond(EnhetsoppdateringRapport(oppgaverUtenEnhet.size))
     }

@@ -7,13 +7,8 @@ import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.nom.NomKlient
-import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
-import no.nav.aap.oppgave.klienter.norg.NorgKlient
-import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
-import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
-import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
-import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -56,11 +51,12 @@ private val AVSLUTTEDE_STATUSER = setOf(
     AvklaringsbehovStatus.TOTRINNS_VURDERT,
 )
 
-class OppdaterOppgaveService(private val connection: DBConnection) {
+class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient: IMsGraphClient) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
     private val oppgaveRepository = OppgaveRepository(connection)
+    private val enhetService = EnhetService(msGraphClient)
 
     fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
         val eksisterendeOppgaver = oppgaveRepository.hentOppgaver(
@@ -107,7 +103,7 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
-            val enhet = finnEnhet(oppgaveOppdatering.personIdent)
+            val enhet = enhetService.finnEnhet(oppgaveOppdatering.personIdent)
             oppgaveRepository.gjenåpneOppgave(
                 oppgaveId = eksisterendeOppgave.oppgaveId(),
                 ident = "Kelvin",
@@ -134,75 +130,9 @@ class OppdaterOppgaveService(private val connection: DBConnection) {
         }
     }
 
-
-    private fun finnEnhet(fnr: String?): String {
-        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
-        return NorgKlient().finnEnhet(
-            tilknytningOgSkjerming.geografiskTilknytningKode,
-            tilknytningOgSkjerming.erNavAnsatt,
-            tilknytningOgSkjerming.diskresjonskode
-        )
-    }
-
-    private fun mapGeografiskTilknytningTilKode(geoTilknytning: GeografiskTilknytning) =
-        when (geoTilknytning.gtType) {
-            GeografiskTilknytningType.KOMMUNE ->
-                geoTilknytning.gtKommune
-            GeografiskTilknytningType.BYDEL ->
-                geoTilknytning.gtBydel
-            GeografiskTilknytningType.UTLAND ->
-                geoTilknytning.gtLand
-            GeografiskTilknytningType.UDEFINERT ->
-                geoTilknytning.gtType.name
-        }
-
-    data class TilknytningOgSkjerming(
-        val geografiskTilknytningKode: String,
-        val diskresjonskode: Diskresjonskode,
-        val erNavAnsatt: Boolean
-    )
-
-    private fun finnTilknytningOgSkjerming(fnr: String?): TilknytningOgSkjerming {
-        if (fnr != null) {
-            val pdlData = PdlGraphqlKlient.withClientCredentialsRestClient().hentAdressebeskyttelseOgGeolokasjon(fnr)
-            val geografiskTilknytning = pdlData.hentGeografiskTilknytning
-            val geografiskTilknytningKode = if (geografiskTilknytning != null) {
-                mapGeografiskTilknytningTilKode(geografiskTilknytning)
-            } else {
-                null
-            }
-
-            val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse)
-            val egenAnsatt = NomKlient().erEgenansatt(fnr)
-            return TilknytningOgSkjerming(
-                geografiskTilknytningKode ?: GeografiskTilknytningType.UDEFINERT.name,
-                diskresjonskode,
-                egenAnsatt
-            )
-        } else {
-            return TilknytningOgSkjerming(
-                GeografiskTilknytningType.UDEFINERT.name,
-                Diskresjonskode.ANY,
-                false
-            )
-        }
-    }
-
-    private fun mapDiskresjonskode(adressebeskyttelsekoder: List<Adressebeskyttelseskode>?) =
-        adressebeskyttelsekoder?.firstOrNull().let {
-            when (it) {
-                Adressebeskyttelseskode.FORTROLIG ->
-                    Diskresjonskode.SPFO
-                Adressebeskyttelseskode.STRENGT_FORTROLIG, Adressebeskyttelseskode.STRENGT_FORTROLIG_UTLAND ->
-                    Diskresjonskode.SPSF
-                else -> Diskresjonskode.ANY
-            }
-        }
-
-
     private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
-            val enhet = finnEnhet(oppgaveOppdatering.personIdent)
+            val enhet = enhetService.finnEnhet(oppgaveOppdatering.personIdent)
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin", enhet)
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")

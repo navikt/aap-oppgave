@@ -25,6 +25,7 @@ import no.nav.aap.motor.api.motorApi
 import no.nav.aap.oppgave.alleÅpneOppgaverApi
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.enhet.hentEnhetApi
+import no.nav.aap.oppgave.enhet.oppdaterEnhetPåOppgaver
 import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
@@ -94,8 +95,8 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
         authenticate(AZURE) {
             apiRouting {
                 // Oppdater oppgaver fra applikasjonene
-                oppdaterBehandlingOppgaverApi(dataSource, prometheus)
-                oppdaterPostmottakOppgaverApi(dataSource, prometheus)
+                oppdaterBehandlingOppgaverApi(dataSource, iMsGraphClient, prometheus)
+                oppdaterPostmottakOppgaverApi(dataSource, iMsGraphClient, prometheus)
                 // Plukk/endre oppgave
                 plukkNesteApi(dataSource, prometheus)
                 plukkOppgaveApi(dataSource, prometheus)
@@ -117,6 +118,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 hentAntallOppgaver(dataSource, prometheus)
                 // Enheter
                 hentEnhetApi(iMsGraphClient, prometheus)
+                oppdaterEnhetPåOppgaver(dataSource, iMsGraphClient)
                 // Motor-API
                 motorApi(dataSource)
             }

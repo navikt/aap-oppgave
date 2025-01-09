@@ -403,6 +403,19 @@ class OppgaveRepository(private val connection: DBConnection) {
         return oppgaver
     }
 
+    fun finnOppgaverUtenEnhet(): List<OppgaveId> {
+        val finnOppgaverUtenEnhetQuery = "select id from oppgave where enhet is null"
+
+        return connection.queryList<OppgaveId>(finnOppgaverUtenEnhetQuery) {
+            setRowMapper { row ->
+                OppgaveId(row.getLong("ID"), row.getLong("VERSJON"))
+            }
+        }
+    }
+
+
+
+
     private fun Filter.whereClause(): String {
         val sb = StringBuilder()
         if (avklaringsbehovKoder.isNotEmpty()) {
