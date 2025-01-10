@@ -424,13 +424,13 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
         if (oppgaver.size > 1) {
-            log.warn("Hent oppgaver skal ikke returnere mer en 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
+            log.warn("Hent oppgave skal ikke returnere mer enn 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
         }
         return oppgaver
     }
 
     fun finnOppgaverUtenEnhet(): List<OppgaveOgPerson> {
-        val finnOppgaverUtenEnhetQuery = "select ID, VERSJON, PERSON_IDENT from oppgave where enhet = 'UDEFINERT' and person_ident is not null"
+        val finnOppgaverUtenEnhetQuery = "select ID, VERSJON, PERSON_IDENT from oppgave where enhet = 'UDEFINERT' and person_ident is not null and status = 'OPPRETTET'"
 
         return connection.queryList<OppgaveOgPerson>(finnOppgaverUtenEnhetQuery) {
             setRowMapper { row ->
