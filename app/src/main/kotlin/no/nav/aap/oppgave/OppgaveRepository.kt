@@ -170,7 +170,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             UPDATE
                 OPPGAVE
             SET
-                ENHET = ? AND
+                ENHET = ?,
                 VERSJON = VERSJON + 1
             WHERE
                 ID = ? AND
