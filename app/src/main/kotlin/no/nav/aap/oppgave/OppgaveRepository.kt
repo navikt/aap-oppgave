@@ -12,6 +12,8 @@ import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
+data class OppgaveOgPerson(val oppgaveId: OppgaveId, val personIdent: String)
+
 class OppgaveRepository(private val connection: DBConnection) {
 
 
@@ -162,6 +164,30 @@ class OppgaveRepository(private val connection: DBConnection) {
             setResultValidator { require(it == 1) }
         }
     }
+
+    fun oppdaterEnhet(oppgaveId: OppgaveId, enhet: String) {
+        val query = """
+            UPDATE
+                OPPGAVE
+            SET
+                ENHET = ? AND
+                VERSJON = VERSJON + 1
+            WHERE
+                ID = ? AND
+                VERSJON = ?
+        """.trimIndent()
+
+        connection.execute(query) {
+            setParams {
+                setString(1, enhet)
+                setLong(2, oppgaveId.id)
+                setLong(3, oppgaveId.versjon)
+            }
+            setResultValidator { require(it == 1) }
+        }
+        log.info("Oppgave med id=${oppgaveId.id} endret enhet=$enhet")
+    }
+
 
     fun avsluttOppgave(oppgaveId: OppgaveId, ident: String) {
         val query = """
@@ -403,16 +429,15 @@ class OppgaveRepository(private val connection: DBConnection) {
         return oppgaver
     }
 
-    fun finnOppgaverUtenEnhet(): List<OppgaveId> {
-        val finnOppgaverUtenEnhetQuery = "select ID, VERSJON from oppgave where enhet = 'UDEFINERT'"
+    fun finnOppgaverUtenEnhet(): List<OppgaveOgPerson> {
+        val finnOppgaverUtenEnhetQuery = "select ID, VERSJON, PERSON_IDENT from oppgave where enhet = 'UDEFINERT' and person_ident is not null"
 
-        return connection.queryList<OppgaveId>(finnOppgaverUtenEnhetQuery) {
+        return connection.queryList<OppgaveOgPerson>(finnOppgaverUtenEnhetQuery) {
             setRowMapper { row ->
-                OppgaveId(row.getLong("ID"), row.getLong("VERSJON"))
+                OppgaveOgPerson(oppgaveId = OppgaveId(row.getLong("ID"), row.getLong("VERSJON")), personIdent = row.getString("PERSON_IDENT"))
             }
         }
     }
-
 
     private fun Filter.whereClause(): String {
         val sb = StringBuilder()
