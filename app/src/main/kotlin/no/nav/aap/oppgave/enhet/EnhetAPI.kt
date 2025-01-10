@@ -38,12 +38,12 @@ fun NormalOpenAPIRoute.oppdaterEnhetPåOppgaver(dataSource: DataSource, msGraphC
         }
 
         val enhetService = EnhetService(msGraphClient)
-        oppgaverUtenEnhet.take(10).forEach { oppgaveOgPerson ->
+        oppgaverUtenEnhet.take(100).forEach { oppgaveOgPerson ->
             dataSource.transaction { connection ->
                 val enhet = enhetService.finnEnhet(oppgaveOgPerson.personIdent)
                 OppgaveRepository(connection).oppdaterEnhet(oppgaveOgPerson.oppgaveId, enhet)
             }
         }
 
-        respond(EnhetsoppdateringRapport(oppgaverUtenEnhet.size, oppgaverUtenEnhet.take(10)))
+        respond(EnhetsoppdateringRapport(oppgaverUtenEnhet.size, oppgaverUtenEnhet.take(100)))
     }
