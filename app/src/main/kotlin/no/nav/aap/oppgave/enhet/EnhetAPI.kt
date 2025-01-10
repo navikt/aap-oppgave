@@ -5,18 +5,11 @@ import com.papsign.ktor.openapigen.route.path.normal.get
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
-import no.nav.aap.oppgave.OppgaveOgPerson
-import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.norg.NorgKlient
-import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
-import no.nav.aap.oppgave.oppdater.OppdaterOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
-import org.slf4j.LoggerFactory
-import javax.sql.DataSource
 
 
 fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphClient, prometheus: PrometheusMeterRegistry) =
@@ -29,8 +22,10 @@ fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphClient, prometheus: P
         respond(enheterMedNavn)
     }
 
+/*
+ * Kode brukt for å populere enhetsfeltet på oppgave på gamle oppgaver. Lar det ligge en stund i tilfelle
+ * det skal bli aktuelt å gjøre det igjen.
 data class EnhetsoppdateringRapport(val antallOppgaverUtenEnhet: Int, val oppgaveOgPersonListe: List<OppgaveOgPerson>)
-
 
 fun NormalOpenAPIRoute.oppdaterEnhetPåOppgaver(dataSource: DataSource, msGraphClient: IMsGraphClient) =
 
@@ -55,3 +50,4 @@ fun NormalOpenAPIRoute.oppdaterEnhetPåOppgaver(dataSource: DataSource, msGraphC
 
         respond(EnhetsoppdateringRapport(oppgaverUtenEnhet.size, oppgaverUtenEnhet.take(100)))
     }
+ */
