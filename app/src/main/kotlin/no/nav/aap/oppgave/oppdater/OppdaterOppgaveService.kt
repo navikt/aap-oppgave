@@ -1,6 +1,8 @@
 package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
+import no.nav.aap.behandlingsflyt.kontrakt.steg.StegType
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
@@ -14,24 +16,23 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
+import tilgang.Rolle
 import java.time.LocalDateTime
 
-private val AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER =
-    setOf(
-        Definisjon.AVKLAR_SYKDOM,
-        Definisjon.AVKLAR_BISTANDSBEHOV,
-        Definisjon.FASTSETT_ARBEIDSEVNE,
-        Definisjon.FRITAK_MELDEPLIKT
-    ).map { AvklaringsbehovKode(it.kode.name)}.toSet()
+private val AVKLARINGSBEHOV_FOR_VEILEDER =
+    Definisjon.entries
+        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
+        .filter { it.løsesAv.contains(Rolle.VEILEDER) }
+        .map { AvklaringsbehovKode(it.kode.name)}
+        .toSet()
 
-private val AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER =
-    setOf(
-        Definisjon.AVKLAR_STUDENT,
-        Definisjon.FORESLÅ_VEDTAK,
-        Definisjon.AVKLAR_SYKEPENGEERSTATNING,
-        Definisjon.AVKLAR_BARNETILLEGG,
-        Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT
-    ).map { AvklaringsbehovKode(it.kode.name)}.toSet()
+private val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER =
+    Definisjon.entries
+        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
+        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER) }
+        .filter { it.løsesISteg != StegType.KVALITETSSIKRING }
+        .map { AvklaringsbehovKode(it.kode.name)}
+        .toSet()
 
 // TODO: Forløpig skal alle oppgaver kunne løses av samme saksbehandler. Avklarer dette senere.
 private val AVKLARINGSBEHOV_FOR_POSTMOTTAK =
@@ -160,8 +161,8 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
 
     private fun sammeSaksbehandlerType(avklaringsbehovKode1: AvklaringsbehovKode, avklaringsbehovKode2: AvklaringsbehovKode): Boolean {
         return when {
-            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_NAY_SAKSBEHANDLER -> true
-            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_LOKAL_SAKSBEHANDLER -> true
+            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER -> true
+            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_VEILEDER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER -> true
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_POSTMOTTAK && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_POSTMOTTAK -> true
             else -> false
         }
