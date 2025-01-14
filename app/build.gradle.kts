@@ -16,6 +16,10 @@ application {
 }
 
 dependencies {
+
+    implementation(project(":dbflyway"))
+    implementation(project(":api-kontrakt"))
+
     implementation("no.nav.aap.kelvin:httpklient:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbconnect:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbmigrering:$komponenterVersjon")
@@ -41,20 +45,16 @@ dependencies {
     constraints {
         implementation("io.netty:netty-common:4.1.116.Final")
     }
-
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
-
     implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
 
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2")
     implementation("io.micrometer:micrometer-registry-prometheus:1.14.2")
     implementation("ch.qos.logback:logback-classic:1.5.15")
     implementation("net.logstash.logback:logstash-logback-encoder:8.0")
 
-    implementation(project(":dbflyway"))
-    implementation(project(":api-kontrakt"))
     implementation("com.zaxxer:HikariCP:6.2.1")
     implementation("org.flywaydb:flyway-database-postgresql:11.1.1")
     runtimeOnly("org.postgresql:postgresql:42.7.4")
