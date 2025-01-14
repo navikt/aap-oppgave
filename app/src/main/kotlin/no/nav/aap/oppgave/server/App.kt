@@ -103,7 +103,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 flyttOppgave(dataSource, prometheus)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
-                hentOppgaverApi(dataSource, prometheus)
+                //hentOppgaverApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
                 alleÅpneOppgaverApi(dataSource, prometheus)
                 hentOppgavelisteApi(dataSource, prometheus)
