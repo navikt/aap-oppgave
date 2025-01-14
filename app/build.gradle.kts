@@ -59,7 +59,7 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql:11.1.1")
     runtimeOnly("org.postgresql:postgresql:42.7.4")
 
-    testImplementation("com.nimbusds:nimbus-jose-jwt:9.47")
+    testImplementation("com.nimbusds:nimbus-jose-jwt:10.0.1")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
     testImplementation("org.assertj:assertj-core:3.27.2")
