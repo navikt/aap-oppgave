@@ -47,7 +47,11 @@ class NorgKlient {
             error("Feil i response fra norg for geo = $geografiskTilknyttning, erNavansatt = $erNavansatt, diskresjonskode = $diskresjonskode")
         }
         if (enheter.isEmpty()) {
+            log.warn("Fant ingen enhet for geografiskTilknyttning=$geografiskTilknyttning, erNavansatt=$erNavansatt, diskresjonskode=$diskresjonskode. Returnerer UDEFINERT")
             return "UDEFINERT"
+        }
+        if (enheter.size > 1) {
+            log.warn("Flere aktuelle enheter for geografiskTilknyttning=$geografiskTilknyttning, erNavansatt=$erNavansatt, diskresjonskode=$diskresjonskode. Returnerer første.")
         }
         return enheter.first().enhetNr
     }
