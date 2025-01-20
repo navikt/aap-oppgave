@@ -11,7 +11,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.DefinisjonDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
@@ -333,15 +332,6 @@ class OppgaveApiTest {
         )!!
     }
 
-    private fun Definisjon.tilDefinisjonDTO(): DefinisjonDTO {
-        return DefinisjonDTO(
-            type = this.kode,
-            behovType = this.type,
-            løsesISteg = this.løsesISteg,
-            løsesAv = this.løsesAv
-        )
-    }
-
     private data class Behandlingsbehov(
         val definisjon: Definisjon,
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -363,7 +353,7 @@ class OppgaveApiTest {
                 )
             }
             AvklaringsbehovHendelseDto(
-                definisjon = avklaringsbehovHendelse.definisjon.tilDefinisjonDTO(),
+                avklaringsbehovDefinisjon = avklaringsbehovHendelse.definisjon,
                 status = avklaringsbehovHendelse.status,
                 endringer = endringer
             )
