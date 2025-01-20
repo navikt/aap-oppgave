@@ -1,14 +1,14 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.0.3"
-val komponenterVersjon = "1.0.101"
+val komponenterVersjon = "1.0.114"
 val tilgangVersjon = "0.0.89"
-val behandlingsflytVersjon = "0.0.103"
+val behandlingsflytVersjon = "0.0.113"
 val postmottakVersjon = "0.0.24"
 
 plugins {
     id("oppgave.conventions")
-    id("io.ktor.plugin") version "3.0.2"
+    id("io.ktor.plugin") version "3.0.3"
 }
 
 application {
@@ -22,6 +22,7 @@ dependencies {
 
     implementation("no.nav.aap.kelvin:httpklient:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbconnect:$komponenterVersjon")
+    implementation("no.nav.aap.kelvin:json:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbmigrering:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:dbtest:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:infrastructure:$komponenterVersjon")

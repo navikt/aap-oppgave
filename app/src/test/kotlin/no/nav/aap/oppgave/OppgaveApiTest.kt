@@ -337,7 +337,8 @@ class OppgaveApiTest {
         return DefinisjonDTO(
             type = this.kode,
             behovType = this.type,
-            løsesISteg = this.løsesISteg
+            løsesISteg = this.løsesISteg,
+            løsesAv = this.løsesAv
         )
     }
 
