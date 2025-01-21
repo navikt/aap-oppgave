@@ -16,6 +16,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
     private val pdl = FakeServer(module = { pdlFake() })
     private val norg = FakeServer(module = { norgFake() })
     private val nom = FakeServer(module = { nomFake() })
+    private val veilarbarena = FakeServer(module = { veilarbarenaFake() })
 
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
@@ -40,6 +41,9 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         // MS GRAPH
         System.setProperty("MS_GRAPH_BASE_URL", "http://localhost:9999")
         System.setProperty("MS_GRAPH_SCOPE", "scope")
+        // Veilarbarena
+        System.setProperty("integrasjon.veilarbarena.url", "http://localhost:${veilarbarena.port()}")
+        System.setProperty("integrasjon.veilarbarena.scope", "scope")
     }
 
     override fun close() {
@@ -48,6 +52,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         pdl.stop()
         norg.stop()
         nom.stop()
+        veilarbarena.stop()
     }
 
 }

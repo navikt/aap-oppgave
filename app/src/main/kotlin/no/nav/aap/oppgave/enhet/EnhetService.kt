@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.enhet
 
+import no.nav.aap.oppgave.klienter.arena.VeilarbarenaClient
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.nom.NomKlient
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
@@ -30,11 +31,18 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
 
     fun finnEnhet(fnr: String?): String {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
-        return NorgKlient().finnEnhet(
+        val enhetFraNorg = NorgKlient().finnEnhet(
             tilknytningOgSkjerming.geografiskTilknytningKode,
             tilknytningOgSkjerming.erNavAnsatt,
             tilknytningOgSkjerming.diskresjonskode
         )
+        val enhetFraArena = if (fnr != null) {
+            VeilarbarenaClient().hentOppfølgingsenhet(fnr)
+        } else {
+            null
+        }
+        log.info("Enhet fra norg: $enhetFraNorg, enhetFraArena: $enhetFraArena")
+        return enhetFraNorg
     }
 
     private fun mapGeografiskTilknytningTilKode(geoTilknytning: GeografiskTilknytning) =

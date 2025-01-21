@@ -69,6 +69,7 @@ spec:
         outbound:
             external:
                 - host: pdl-api.dev-fss-pub.nais.io
+                - host: veilarbarena.dev-fss-pub.nais.io
             rules:
                 - application: tilgang
                 - application: statistikk
@@ -97,6 +98,10 @@ spec:
           value: https://graph.microsoft.com/v1.0
         - name: MS_GRAPH_SCOPE
           value: https://graph.microsoft.com/.default
+        - name: VEILARBARENA_URL
+          value: https://veilarbarena.dev-fss-pub.nais.io/veilarbarena
+        - name: VEILARBARENA_SCOPE
+          value: api://dev-fss.pto.veilarbarena/.default
     gcp:
         sqlInstances:
             - type: POSTGRES_16
