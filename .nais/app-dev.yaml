@@ -98,9 +98,9 @@ spec:
           value: https://graph.microsoft.com/v1.0
         - name: MS_GRAPH_SCOPE
           value: https://graph.microsoft.com/.default
-        - name: VEILARBARENA_URL
+        - name: INTEGRASJON_VEILARBARENA_URL
           value: https://veilarbarena.dev-fss-pub.nais.io/veilarbarena
-        - name: VEILARBARENA_SCOPE
+        - name: INTEGRASJON_VEILARBARENA_SCOPE
           value: api://dev-fss.pto.veilarbarena/.default
     gcp:
         sqlInstances:
