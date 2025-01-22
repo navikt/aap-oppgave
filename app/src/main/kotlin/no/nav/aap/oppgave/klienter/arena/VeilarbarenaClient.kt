@@ -4,6 +4,7 @@ import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
+import no.nav.aap.komponenter.httpklient.httpclient.error.IkkeFunnetException
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
@@ -43,7 +44,12 @@ class VeilarbarenaClient {
                 Header("Nav-Consumer-Id", "aap-oppgave"),
             )
         )
-        val resp = client.post<HentOppfølgingsenhetRequest, HentOppfølgingsenhetResponse?>(hentStatusUrl, request)
+        val resp = try {
+            client.post<HentOppfølgingsenhetRequest, HentOppfølgingsenhetResponse?>(hentStatusUrl, request)
+        } catch (_: IkkeFunnetException) {
+            // Tjenesten returner 404 dersom det ikke finnes noen oppfølgingsenhet for oppgitt fnr
+            return null
+        }
         return resp?.oppfolgingsenhet
     }
 
