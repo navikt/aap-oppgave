@@ -99,7 +99,7 @@ spec:
         - name: MS_GRAPH_SCOPE
           value: https://graph.microsoft.com/.default
         - name: INTEGRASJON_VEILARBARENA_URL
-          value: https://veilarbarena.dev-fss-pub.nais.io/veilarbarena
+          value: https://veilarbarena.dev-fss-pub.nais.io
         - name: INTEGRASJON_VEILARBARENA_SCOPE
           value: api://dev-fss.pto.veilarbarena/.default
     gcp:
