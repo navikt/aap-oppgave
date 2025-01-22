@@ -57,7 +57,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:8.0")
 
     implementation("com.zaxxer:HikariCP:6.2.1")
-    implementation("org.flywaydb:flyway-database-postgresql:11.1.1")
+    implementation("org.flywaydb:flyway-database-postgresql:11.2.0")
     runtimeOnly("org.postgresql:postgresql:42.7.4")
 
     testImplementation("com.nimbusds:nimbus-jose-jwt:10.0.1")
