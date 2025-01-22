@@ -18,7 +18,7 @@ fun Application.veilarbarenaFake() {
     }
 
     routing {
-        post("/api/v2/arena/hent-status") {
+        post("/veilarbarena/api/v2/arena/hent-status") {
             call.respondText(responsFraArena())
         }
     }
