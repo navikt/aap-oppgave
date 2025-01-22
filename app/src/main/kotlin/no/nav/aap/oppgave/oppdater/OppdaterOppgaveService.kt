@@ -105,11 +105,14 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
             val enhet = enhetService.finnEnhet(oppgaveOppdatering.personIdent)
+            val oppfølgingsenhet = enhetService.finnOppfølgingsenhet(oppgaveOppdatering.personIdent)
             oppgaveRepository.gjenåpneOppgave(
                 oppgaveId = eksisterendeOppgave.oppgaveId(),
                 ident = "Kelvin",
                 personIdent = oppgaveOppdatering.personIdent,
-                enhet = enhet)
+                enhet = enhet,
+                oppfølgingsenhet = oppfølgingsenhet
+            )
             sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.GJENÅPNET)
 
             if (avklaringsbehov.status in setOf(
@@ -134,7 +137,8 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
     private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
             val enhet = enhetService.finnEnhet(oppgaveOppdatering.personIdent)
-            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin", enhet)
+            val oppfølgingsenhet = enhetService.finnOppfølgingsenhet(oppgaveOppdatering.personIdent)
+            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin", enhet, oppfølgingsenhet)
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
             sendOppgaveStatusOppdatering(connection, oppgaveId, HendelseType.OPPRETTET)
@@ -205,13 +209,14 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
             .last()
     }
 
-    private fun OppgaveOppdatering.opprettNyOppgave(personIdent: String?, avklaringsbehovKode: AvklaringsbehovKode, behandlingstype: Behandlingstype, ident: String, enhet: String): OppgaveDto {
+    private fun OppgaveOppdatering.opprettNyOppgave(personIdent: String?, avklaringsbehovKode: AvklaringsbehovKode, behandlingstype: Behandlingstype, ident: String, enhet: String, oppfølgingsenhet: String?): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
             saksnummer = this.saksnummer,
             behandlingRef = this.referanse,
             journalpostId = this.journalpostId,
             enhet = enhet,
+            oppfølgingsenhet = oppfølgingsenhet,
             behandlingOpprettet = this.opprettetTidspunkt,
             avklaringsbehovKode = avklaringsbehovKode.kode,
             behandlingstype = behandlingstype,

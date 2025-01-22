@@ -186,6 +186,7 @@ class OppgaveRepositoryTest {
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
             enhet = ENHET_NAV_LØRENSKOG,
+            oppfølgingsenhet = null,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
             avklaringsbehovKode = avklaringsbehovKode.kode,
             status = status,

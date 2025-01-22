@@ -24,6 +24,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 BEHANDLING_REF,
                 JOURNALPOST_ID,
                 ENHET,
+                OPPFOLGINGSENHET,
                 BEHANDLING_OPPRETTET,
                 AVKLARINGSBEHOV_TYPE,
                 STATUS,
@@ -32,7 +33,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPRETTET_TIDSPUNKT,
                 PERSON_IDENT
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -42,13 +43,14 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setUUID(2, oppgaveDto.behandlingRef)
                 setLong(3, oppgaveDto.journalpostId)
                 setString(4, oppgaveDto.enhet)
-                setLocalDateTime(5, oppgaveDto.behandlingOpprettet)
-                setString(6, oppgaveDto.avklaringsbehovKode)
-                setString(7, oppgaveDto.status.name)
-                setString(8, oppgaveDto.behandlingstype.name)
-                setString(9, oppgaveDto.opprettetAv)
-                setLocalDateTime(10, oppgaveDto.opprettetTidspunkt)
-                setString(11, oppgaveDto.personIdent)
+                setString(5, oppgaveDto.oppfølgingsenhet)
+                setLocalDateTime(6, oppgaveDto.behandlingOpprettet)
+                setString(7, oppgaveDto.avklaringsbehovKode)
+                setString(8, oppgaveDto.status.name)
+                setString(9, oppgaveDto.behandlingstype.name)
+                setString(10, oppgaveDto.opprettetAv)
+                setLocalDateTime(11, oppgaveDto.opprettetTidspunkt)
+                setString(12, oppgaveDto.personIdent)
             }
         }
         return OppgaveId(id, 0L)
@@ -136,7 +138,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String, personIdent: String?, enhet: String) {
+    fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String, personIdent: String?, enhet: String, oppfølgingsenhet: String?) {
         val query = """
             UPDATE 
                 OPPGAVE 
@@ -145,6 +147,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 ENHET = ?,
+                OPPFOLGINGSENHET = ?,
                 PERSON_IDENT = ?,
                 VERSJON = VERSJON + 1
             WHERE 
@@ -157,37 +160,14 @@ class OppgaveRepository(private val connection: DBConnection) {
             setParams {
                 setString(1, ident)
                 setString(2, enhet)
-                setString(3, personIdent)
-                setLong(4, oppgaveId.id)
-                setLong(5, oppgaveId.versjon)
+                setString(3, oppfølgingsenhet)
+                setString(4, personIdent)
+                setLong(5, oppgaveId.id)
+                setLong(6, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) }
         }
     }
-
-    fun oppdaterEnhet(oppgaveId: OppgaveId, enhet: String) {
-        val query = """
-            UPDATE
-                OPPGAVE
-            SET
-                ENHET = ?,
-                VERSJON = VERSJON + 1
-            WHERE
-                ID = ? AND
-                VERSJON = ?
-        """.trimIndent()
-
-        connection.execute(query) {
-            setParams {
-                setString(1, enhet)
-                setLong(2, oppgaveId.id)
-                setLong(3, oppgaveId.versjon)
-            }
-            setResultValidator { require(it == 1) }
-        }
-        log.info("Oppgave med id=${oppgaveId.id} endret enhet=$enhet")
-    }
-
 
     fun avsluttOppgave(oppgaveId: OppgaveId, ident: String) {
         val query = """
@@ -429,16 +409,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         return oppgaver
     }
 
-    fun finnOppgaverUtenEnhet(): List<OppgaveOgPerson> {
-        val finnOppgaverUtenEnhetQuery = "select ID, VERSJON, PERSON_IDENT from oppgave where enhet = 'UDEFINERT' and person_ident is not null and status = 'OPPRETTET'"
-
-        return connection.queryList<OppgaveOgPerson>(finnOppgaverUtenEnhetQuery) {
-            setRowMapper { row ->
-                OppgaveOgPerson(oppgaveId = OppgaveId(row.getLong("ID"), row.getLong("VERSJON")), personIdent = row.getString("PERSON_IDENT"))
-            }
-        }
-    }
-
     private fun Filter.whereClause(): String {
         val sb = StringBuilder()
         if (avklaringsbehovKoder.isNotEmpty()) {
@@ -466,6 +436,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             behandlingRef = row.getUUIDOrNull("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
+            oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
             behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
             avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
             status = Status.valueOf(row.getString("STATUS")),
@@ -488,6 +459,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             BEHANDLING_REF,
             JOURNALPOST_ID,
             ENHET,
+            OPPFOLGINGSENHET,
             BEHANDLING_OPPRETTET,
             AVKLARINGSBEHOV_TYPE,
             STATUS,

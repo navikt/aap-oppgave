@@ -21,8 +21,6 @@ private data class HentOppfølgingsenhetResponse(
 
 class VeilarbarenaClient {
 
-    private val log = LoggerFactory.getLogger(VeilarbarenaClient::class.java)
-
     private val url = URI.create(requiredConfigForKey("integrasjon.veilarbarena.url"))
 
     private val config = ClientConfig(

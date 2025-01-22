@@ -16,6 +16,7 @@ data class OppgaveDto(
     val behandlingRef: UUID? = null,
     val journalpostId: Long? = null,
     val enhet: String,
+    val oppfølgingsenhet: String?,
     val behandlingOpprettet: LocalDateTime,
     val avklaringsbehovKode: String,
     val status: Status = Status.OPPRETTET,

@@ -36,13 +36,16 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
             tilknytningOgSkjerming.erNavAnsatt,
             tilknytningOgSkjerming.diskresjonskode
         )
+        return enhetFraNorg
+    }
+
+    fun finnOppfølgingsenhet(fnr: String?): String? {
         val enhetFraArena = if (fnr != null) {
             VeilarbarenaClient().hentOppfølgingsenhet(fnr)
         } else {
             null
         }
-        log.info("Enhet fra norg: $enhetFraNorg, enhetFraArena: $enhetFraArena")
-        return enhetFraNorg
+        return enhetFraArena
     }
 
     private fun mapGeografiskTilknytningTilKode(geoTilknytning: GeografiskTilknytning) =
