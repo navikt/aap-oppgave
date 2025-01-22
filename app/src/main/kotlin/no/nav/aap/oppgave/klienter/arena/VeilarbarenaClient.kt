@@ -35,7 +35,7 @@ class VeilarbarenaClient {
 
     fun hentOppfølgingsenhet(personIdent: String): String? {
         log.info("Finner oppfølgingsenhet for fnr: $personIdent")
-        val hentStatusUrl = url.resolve("/api/v2/arena/hent-status")
+        val hentStatusUrl = url.resolve("/veilarbarena/api/v2/arena/hent-status")
         val request = PostRequest(
             body = HentOppfølgingsenhetRequest(personIdent),
             additionalHeaders = listOf(Header("forceSync", "true"))
