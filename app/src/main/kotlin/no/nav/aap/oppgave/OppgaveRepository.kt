@@ -12,8 +12,6 @@ import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
-data class OppgaveOgPerson(val oppgaveId: OppgaveId, val personIdent: String)
-
 class OppgaveRepository(private val connection: DBConnection) {
 
 
@@ -423,7 +421,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
         if (enheter.isNotEmpty()) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
-            sb.append("ENHET in $stringListeEnheter AND ")
+            sb.append("(OPPFOLGINGSENHET IN $stringListeEnheter OR (OPPFOLGINGSENHET IS NULL AND ENHET IN $stringListeEnheter)) AND ")
         }
         return sb.toString()
     }

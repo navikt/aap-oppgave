@@ -3,7 +3,9 @@ package no.nav.aap.oppgave
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.filter.TransientFilterDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
@@ -16,7 +18,9 @@ import kotlin.test.fail
 
 class OppgaveRepositoryTest {
 
+    private val ENHET_NAV_ENEBAKK = "0229"
     private val ENHET_NAV_LØRENSKOG = "0230"
+    private val ENHET_NAV_LILLESTRØM = "0231"
 
     @AfterTest
     fun tearDown() {
@@ -145,6 +149,31 @@ class OppgaveRepositoryTest {
         assertThat(mineOppgaver).hasSize(0)
     }
 
+    @Test
+    fun `Skal finne oppgaver knyttet til enhet`() {
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG)
+        val oppgaveId3 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG)
+
+        val oppgaver = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LØRENSKOG)))
+
+        assertThat(oppgaver).hasSize(2)
+        assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
+        assertThat(oppgaver.map {it.id}).contains(oppgaveId3.id)
+    }
+
+    @Test
+    fun `Skal finne oppgaver knyttet til oppfølgingsenhet dersom den er satt`() {
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG, oppfølgingsenhet = ENHET_NAV_LILLESTRØM)
+        opprettOppgave(enhet = ENHET_NAV_LØRENSKOG)
+
+        val oppgaver = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LILLESTRØM)))
+
+        assertThat(oppgaver).hasSize(1)
+        assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
+    }
+
     private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =
         FilterDto(1, "Filter for test", "Filter for test", avklaringsbehovKoder = avklaringsbehovKoder.toSet(), opprettetAv = "test", opprettetTidspunkt = LocalDateTime.now())
 
@@ -175,18 +204,26 @@ class OppgaveRepositoryTest {
         }
     }
 
+    private fun finnOppgaver(filter: Filter): List<OppgaveDto> {
+        return InitTestDatabase.dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).finnOppgaver(filter)
+        }
+    }
+
     private fun opprettOppgave(
         saksnummer: String = "123",
         behandlingRef: UUID = UUID.randomUUID(),
         status: Status = Status.OPPRETTET,
         avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
         behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+        enhet: String = ENHET_NAV_LØRENSKOG,
+        oppfølgingsenhet: String? = null,
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
-            enhet = ENHET_NAV_LØRENSKOG,
-            oppfølgingsenhet = null,
+            enhet = enhet,
+            oppfølgingsenhet = oppfølgingsenhet,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
             avklaringsbehovKode = avklaringsbehovKode.kode,
             status = status,
