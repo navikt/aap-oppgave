@@ -38,7 +38,10 @@ class VeilarbarenaClient {
         val hentStatusUrl = url.resolve("/veilarbarena/api/v2/arena/hent-status")
         val request = PostRequest(
             body = HentOppfølgingsenhetRequest(personIdent),
-            additionalHeaders = listOf(Header("forceSync", "true"))
+            additionalHeaders = listOf(
+                Header("forceSync", "true"),
+                Header("Nav-Consumer-Id", "aap-oppgave"),
+            )
         )
         val resp = client.post<HentOppfølgingsenhetRequest, HentOppfølgingsenhetResponse?>(hentStatusUrl, request)
         return resp?.oppfolgingsenhet
