@@ -9,16 +9,12 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
-import org.slf4j.LoggerFactory
 import java.io.InputStream
 import java.net.URI
 
 class PdlGraphqlKlient(
     private val restClient: RestClient<InputStream>
 ) {
-    private val log = LoggerFactory.getLogger(PdlGraphqlKlient::class.java)
-
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
 
     companion object {
@@ -36,23 +32,6 @@ class PdlGraphqlKlient(
                 )
             )
 
-        fun withOboRestClient() =
-            PdlGraphqlKlient(
-                RestClient(
-                    config = getClientConfig(),
-                    tokenProvider = OnBehalfOfTokenProvider,
-                    responseHandler = PdlResponseHandler()
-                )
-            )
-    }
-
-    fun hentGeografiskTilknytning(
-        personident: String,
-        currentToken: OidcToken? = null
-    ): GeografiskTilknytning? {
-        val request = PdlRequest.hentGeografiskTilknytning(personident)
-        val response = runBlocking { graphqlQuery(request, currentToken) }
-        return response.data?.hentGeografiskTilknytning
     }
 
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData {
