@@ -15,6 +15,11 @@ import kotlin.collections.map
 import kotlin.text.removePrefix
 import kotlin.text.startsWith
 
+data class EnhetForOppgave(
+    val enhet: String,
+    val oppfølgingsenhet: String?,
+)
+
 class EnhetService(private val msGraphClient: IMsGraphClient) {
 
     private val log = LoggerFactory.getLogger(EnhetService::class.java)
@@ -28,18 +33,22 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
     }
 
-
-    fun finnEnhet(fnr: String?): String {
+    fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
         val enhetFraNorg = NorgKlient().finnEnhet(
             tilknytningOgSkjerming.geografiskTilknytningKode,
             tilknytningOgSkjerming.erNavAnsatt,
             tilknytningOgSkjerming.diskresjonskode
         )
-        return enhetFraNorg
+        val enhetFraArena = if (tilknytningOgSkjerming.diskresjonskode != Diskresjonskode.SPSF) {
+            finnOppfølgingsenhet(fnr)
+        } else {
+            null
+        }
+        return EnhetForOppgave(enhetFraNorg, enhetFraArena)
     }
 
-    fun finnOppfølgingsenhet(fnr: String?): String? {
+    private fun finnOppfølgingsenhet(fnr: String?): String? {
         val enhetFraArena = if (fnr != null) {
             VeilarbarenaClient().hentOppfølgingsenhet(fnr)
         } else {
@@ -102,8 +111,6 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
                 else -> Diskresjonskode.ANY
             }
         }
-
-
 
 
     companion object {

@@ -104,14 +104,13 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
-            val enhet = enhetService.finnEnhet(oppgaveOppdatering.personIdent)
-            val oppfølgingsenhet = enhetService.finnOppfølgingsenhet(oppgaveOppdatering.personIdent)
+            val enhetForOppgave = enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
             oppgaveRepository.gjenåpneOppgave(
                 oppgaveId = eksisterendeOppgave.oppgaveId(),
                 ident = "Kelvin",
                 personIdent = oppgaveOppdatering.personIdent,
-                enhet = enhet,
-                oppfølgingsenhet = oppfølgingsenhet
+                enhet = enhetForOppgave.enhet,
+                oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet
             )
             sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.GJENÅPNET)
 
@@ -136,9 +135,15 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
 
     private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>) {
         avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
-            val enhet = enhetService.finnEnhet(oppgaveOppdatering.personIdent)
-            val oppfølgingsenhet = enhetService.finnOppfølgingsenhet(oppgaveOppdatering.personIdent)
-            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(oppgaveOppdatering.personIdent, avklaringsbehovKode, oppgaveOppdatering.behandlingstype, "Kelvin", enhet, oppfølgingsenhet)
+            val enhetForOppgave = enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
+            val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
+                personIdent = oppgaveOppdatering.personIdent,
+                avklaringsbehovKode = avklaringsbehovKode,
+                behandlingstype = oppgaveOppdatering.behandlingstype,
+                ident = "Kelvin",
+                enhet = enhetForOppgave.enhet,
+                oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet
+            )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
             sendOppgaveStatusOppdatering(connection, oppgaveId, HendelseType.OPPRETTET)
