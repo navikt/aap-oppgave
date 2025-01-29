@@ -196,7 +196,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(2, oppgaveId.id)
                 setLong(3, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) }
         }
     }
 
