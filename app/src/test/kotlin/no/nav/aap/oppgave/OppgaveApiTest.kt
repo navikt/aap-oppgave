@@ -12,6 +12,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
@@ -42,6 +43,7 @@ import java.io.FileWriter
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -133,6 +135,45 @@ class OppgaveApiTest {
         // Sjekk at det ikke er flere oppgaver i køen
         val nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNull()
+    }
+
+    @Test
+    fun `Oppgave skal oppdateres med på vent årsak og dato dersom behandlingen er på vent`() {
+        leggInnFilterForTest()
+
+        val saksnummer = "45937"
+        val referanse = UUID.randomUUID()
+
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(
+                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    påVentTil = LocalDate.now().plusWeeks(2),
+                    påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
+                )
+            ))
+        )))
+
+        var nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNull()
+
+        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
+            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
+                Endring(
+                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    påVentTil = LocalDate.now().plusWeeks(2),
+                    påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
+                ),
+                Endring(
+                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET
+                )
+
+            ))
+        )))
+
+        nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNotNull()
+        assertThat(nesteOppgave?.avklaringsbehovReferanse?.referanse).isEqualTo(referanse)
     }
 
     @Test
@@ -341,6 +382,8 @@ class OppgaveApiTest {
     private data class Endring(
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status,
         val endretAv: String = "Kelvin",
+        val påVentTil: LocalDate? = null,
+        val påVentÅrsak: ÅrsakTilSettPåVent? = null,
     )
     private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID, behandlingStatus: Status = Status.OPPRETTET, behandlingsbehov: List<Behandlingsbehov>, typeBehandling: TypeBehandling = TypeBehandling.Førstegangsbehandling): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
@@ -349,7 +392,9 @@ class OppgaveApiTest {
                 EndringDTO(
                     status = endring.status,
                     tidsstempel = nå.minusMinutes(avklaringsbehovHendelse.endringer.size.toLong() - i),
-                    endretAv = endring.endretAv
+                    endretAv = endring.endretAv,
+                    frist = endring.påVentTil,
+                    årsakTilSattPåVent = endring.påVentÅrsak
                 )
             }
             AvklaringsbehovHendelseDto(

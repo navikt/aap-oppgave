@@ -8,6 +8,7 @@ import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -46,7 +47,9 @@ data class AvklaringsbehovHendelse(
 data class Endring(
     val status: AvklaringsbehovStatus,
     val tidsstempel: LocalDateTime = LocalDateTime.now(),
-    val endretAv: String
+    val endretAv: String,
+    val påVentTil: LocalDate?,
+    val påVentÅrsak: String?
 )
 
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
@@ -72,7 +75,7 @@ private fun TypeBehandling.tilBehandlingstype() =
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
     return this.map {
         AvklaringsbehovHendelse(
-            avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon!!.kode.name),
+            avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
             status = it.status.tilAvklaringsbehovStatus(),
             endringer = it.endringer.tilEndringerForBehandlingsflyt()
         )
@@ -80,7 +83,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehand
 }
 
 private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
-    this.map { Endring(status = it.status.tilAvklaringsbehovStatus(), tidsstempel = it.tidsstempel, endretAv = it.endretAv) }
+    this.map { Endring(status = it.status.tilAvklaringsbehovStatus(), tidsstempel = it.tidsstempel, endretAv = it.endretAv, påVentTil = it.frist, påVentÅrsak = it.årsakTilSattPåVent?.name) }
 
 private fun no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.tilBehandlingsstatus(): BehandlingStatus {
     if (this.erAvsluttet()) {
@@ -148,4 +151,4 @@ private fun Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
 }
 
 private fun List<no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO>.tilEndringerForPostmottak() =
-    this.map { Endring(status = it.status.tilAvklaringsbehovStatus(), tidsstempel = it.tidsstempel, endretAv = it.endretAv) }
+    this.map { Endring(status = it.status.tilAvklaringsbehovStatus(), tidsstempel = it.tidsstempel, endretAv = it.endretAv, påVentTil = it.frist, påVentÅrsak = null) }

@@ -8,12 +8,12 @@ import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
+import java.time.LocalDate
 import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
 class OppgaveRepository(private val connection: DBConnection) {
-
 
     fun opprettOppgave(oppgaveDto: OppgaveDto): OppgaveId {
         val query = """
@@ -27,11 +27,13 @@ class OppgaveRepository(private val connection: DBConnection) {
                 AVKLARINGSBEHOV_TYPE,
                 STATUS,
                 BEHANDLINGSTYPE,
+                PAA_VENT_TIL,
+                PAA_VENT_AARSAK,
                 OPPRETTET_AV,
                 OPPRETTET_TIDSPUNKT,
                 PERSON_IDENT
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -46,9 +48,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(7, oppgaveDto.avklaringsbehovKode)
                 setString(8, oppgaveDto.status.name)
                 setString(9, oppgaveDto.behandlingstype.name)
-                setString(10, oppgaveDto.opprettetAv)
-                setLocalDateTime(11, oppgaveDto.opprettetTidspunkt)
-                setString(12, oppgaveDto.personIdent)
+                setLocalDate(10, oppgaveDto.påVentTil)
+                setString(11, oppgaveDto.påVentÅrsak)
+                setString(12, oppgaveDto.opprettetAv)
+                setLocalDateTime(13, oppgaveDto.opprettetTidspunkt)
+                setString(14, oppgaveDto.personIdent)
             }
         }
         return OppgaveId(id, 0L)
@@ -136,7 +140,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun gjenåpneOppgave(oppgaveId: OppgaveId, ident: String, personIdent: String?, enhet: String, oppfølgingsenhet: String?) {
+    fun oppdatereOppgave(oppgaveId: OppgaveId, ident: String, personIdent: String?, enhet: String, oppfølgingsenhet: String?, påVentTil: LocalDate?, påVentÅrsak: String?) {
         val query = """
             UPDATE 
                 OPPGAVE 
@@ -146,11 +150,12 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 ENHET = ?,
                 OPPFOLGINGSENHET = ?,
+                PAA_VENT_TIL = ?,
+                PAA_VENT_AARSAK= ?,
                 PERSON_IDENT = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
-                STATUS != 'OPPRETTET' AND
                 VERSJON = ?
                 
         """.trimIndent()
@@ -159,9 +164,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(1, ident)
                 setString(2, enhet)
                 setString(3, oppfølgingsenhet)
-                setString(4, personIdent)
-                setLong(5, oppgaveId.id)
-                setLong(6, oppgaveId.versjon)
+                setLocalDate(4, påVentTil)
+                setString(5, påVentÅrsak)
+                setString(6, personIdent)
+                setLong(7, oppgaveId.id)
+                setLong(8, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) }
         }
@@ -409,20 +416,27 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private fun Filter.whereClause(): String {
         val sb = StringBuilder()
+
+        // Avklaringsbehov
         if (avklaringsbehovKoder.isNotEmpty()) {
             val stringListeAvklaringsbehovKoder =
                 avklaringsbehovKoder.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
             sb.append("AVKLARINGSBEHOV_TYPE IN $stringListeAvklaringsbehovKoder AND ")
         }
+        //Behandlingstyper
         if (behandlingstyper.isNotEmpty()) {
             val stringListeAvBehandlingstyper =
                 behandlingstyper.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
             sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
         }
+        //Enheter
         if (enheter.isNotEmpty()) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
             sb.append("(OPPFOLGINGSENHET IN $stringListeEnheter OR (OPPFOLGINGSENHET IS NULL AND ENHET IN $stringListeEnheter)) AND ")
         }
+        //På vent
+        sb.append("PAA_VENT_TIL IS NULL AND ")
+
         return sb.toString()
     }
 
@@ -439,6 +453,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
             status = Status.valueOf(row.getString("STATUS")),
             behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE")),
+            påVentTil = row.getLocalDateOrNull("PAA_VENT_TIL"),
+            påVentÅrsak = row.getStringOrNull("PAA_VENT_AARSAK"),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
             reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
             opprettetAv = row.getString("OPPRETTET_AV"),
@@ -462,6 +478,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             AVKLARINGSBEHOV_TYPE,
             STATUS,
             BEHANDLINGSTYPE,
+            PAA_VENT_TIL,
+            PAA_VENT_AARSAK,
             RESERVERT_AV,
             RESERVERT_TIDSPUNKT,
             OPPRETTET_AV,

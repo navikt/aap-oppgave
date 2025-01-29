@@ -17,6 +17,7 @@ import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
 import tilgang.Rolle
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 private val AVKLARINGSBEHOV_FOR_VEILEDER =
@@ -84,7 +85,6 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         // Opprett nye oppgaver
         val avklarsbehovSomDetSkalOpprettesOppgaverFor = åpneAvklaringsbehov
             .filter { oppgaveMap[it.avklaringsbehovKode] == null}
-            .map { it.avklaringsbehovKode }
         opprettOppgaver(oppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor)
 
         // Gjenåpne avsluttede oppgaver
@@ -103,23 +103,25 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
-        if (eksisterendeOppgave != null && eksisterendeOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
+        if (eksisterendeOppgave != null) {
             val enhetForOppgave = enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
-            oppgaveRepository.gjenåpneOppgave(
+            oppgaveRepository.oppdatereOppgave(
                 oppgaveId = eksisterendeOppgave.oppgaveId(),
                 ident = "Kelvin",
                 personIdent = oppgaveOppdatering.personIdent,
                 enhet = enhetForOppgave.enhet,
-                oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet
+                oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
+                påVentTil = avklaringsbehov.sistePåVentTil(),
+                påVentÅrsak = avklaringsbehov.sistePåVentÅrsak()
             )
-            sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.GJENÅPNET)
+            sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.OPPDATERT)
 
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER)
             ) {
                 val sistEndretAv = avklaringsbehov.sistEndretAv()
-                if (sistEndretAv != null && sistEndretAv != "Kelvin") {
+                if (sistEndretAv != "Kelvin") {
                     val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
                     val oppdatertOppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanse)
                     if (oppdatertOppgave != null) {
@@ -133,16 +135,18 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         }
     }
 
-    private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovKode>) {
-        avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovKode ->
+    private fun opprettOppgaver(oppgaveOppdatering: OppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelse>) {
+        avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
             val enhetForOppgave = enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
                 personIdent = oppgaveOppdatering.personIdent,
-                avklaringsbehovKode = avklaringsbehovKode,
+                avklaringsbehovKode = avklaringsbehovHendelse.avklaringsbehovKode,
                 behandlingstype = oppgaveOppdatering.behandlingstype,
                 ident = "Kelvin",
                 enhet = enhetForOppgave.enhet,
-                oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet
+                oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
+                påVentTil = avklaringsbehovHendelse.sistePåVentTil(),
+                påVentÅrsak = avklaringsbehovHendelse.sistePåVentÅrsak()
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet")
@@ -151,13 +155,13 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
             if (hvemLøsteForrigeAvklaringsbehov != null) {
                 val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
-                val nyAvklaringsbehovKode = avklaringsbehovKode
-                if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, nyAvklaringsbehovKode)) {
+                val nyttAvklaringsbehov = avklaringsbehovHendelse
+                if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, nyttAvklaringsbehov.avklaringsbehovKode)) {
                     val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
                         saksnummer = oppgaveOppdatering.saksnummer,
                         referanse = oppgaveOppdatering.referanse,
                         null,
-                        nyAvklaringsbehovKode.kode
+                        nyttAvklaringsbehov.avklaringsbehovKode.kode
                     )
                     val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse, hvemLøsteForrigeIdent)
                     if (reserverteOppgaver.isNotEmpty()) {
@@ -189,32 +193,35 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
     private fun OppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
         val sisteAvsluttetAvklaringsbehov = avklaringsbehov
             .filter { it.status == AvklaringsbehovStatus.AVSLUTTET }
-            .filter { it.sistEndretAv() != null }
             .maxByOrNull { it.sistEndret() }
 
         if (sisteAvsluttetAvklaringsbehov == null) {
             return null
         }
-        return Pair(sisteAvsluttetAvklaringsbehov.avklaringsbehovKode, sisteAvsluttetAvklaringsbehov.sistEndretAv()!!)
+        return Pair(sisteAvsluttetAvklaringsbehov.avklaringsbehovKode, sisteAvsluttetAvklaringsbehov.sistEndretAv())
     }
 
-    private fun AvklaringsbehovHendelse.sistEndretAv(): String? {
+    private fun AvklaringsbehovHendelse.sisteEndring(): Endring {
         return endringer
-            .sortedBy { it.tidsstempel }
-            .filter { it.status == this.status }
-            .map { it.endretAv }
-            .lastOrNull()
+            .sortedBy { it.tidsstempel }.last { it.status == this.status }
     }
 
-    private fun AvklaringsbehovHendelse.sistEndret(): LocalDateTime {
-        return endringer
-            .sortedBy { it.tidsstempel }
-            .filter { it.status == this.status }
-            .map { it.tidsstempel }
-            .last()
-    }
+    private fun AvklaringsbehovHendelse.sistEndretAv() = sisteEndring().endretAv
+    private fun AvklaringsbehovHendelse.sistEndret() = sisteEndring().tidsstempel
+    private fun AvklaringsbehovHendelse.sistePåVentÅrsak() = sisteEndring().påVentÅrsak
+    private fun AvklaringsbehovHendelse.sistePåVentTil() = sisteEndring().påVentTil
 
-    private fun OppgaveOppdatering.opprettNyOppgave(personIdent: String?, avklaringsbehovKode: AvklaringsbehovKode, behandlingstype: Behandlingstype, ident: String, enhet: String, oppfølgingsenhet: String?): OppgaveDto {
+
+    private fun OppgaveOppdatering.opprettNyOppgave(
+        personIdent: String?,
+        avklaringsbehovKode: AvklaringsbehovKode,
+        behandlingstype: Behandlingstype,
+        ident: String,
+        enhet: String,
+        oppfølgingsenhet: String?,
+        påVentTil: LocalDate?,
+        påVentÅrsak: String?
+    ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
             saksnummer = this.saksnummer,
@@ -227,6 +234,8 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
             behandlingstype = behandlingstype,
             opprettetAv = ident,
             opprettetTidspunkt = LocalDateTime.now(),
+            påVentTil = påVentTil,
+            påVentÅrsak = påVentÅrsak
         )
     }
 

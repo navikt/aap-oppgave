@@ -2,6 +2,7 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -21,6 +22,8 @@ data class OppgaveDto(
     val avklaringsbehovKode: String,
     val status: Status = Status.OPPRETTET,
     val behandlingstype: Behandlingstype,
+    val påVentTil: LocalDate? = null,
+    val påVentÅrsak: String? = null,
     val reservertAv: String? = null,
     val reservertTidspunkt: LocalDateTime? = null,
     val opprettetAv: String,
