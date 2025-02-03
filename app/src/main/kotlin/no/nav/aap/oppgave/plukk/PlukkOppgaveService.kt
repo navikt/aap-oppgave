@@ -44,6 +44,10 @@ class PlukkOppgaveService(val connection: DBConnection) {
     fun plukkOppgave(oppgaveId: OppgaveId, ident: String, token: OidcToken): OppgaveDto? {
         val oppgaveRepo = OppgaveRepository(connection)
         val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        if (oppgave.reservertAv == ident) {
+            // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.
+            return oppgave
+        }
         val harTilgang = TilgangGateway.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
         if (harTilgang) {
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
