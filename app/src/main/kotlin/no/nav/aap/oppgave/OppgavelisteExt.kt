@@ -4,7 +4,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import no.nav.aap.oppgave.plukk.TilgangGateway
 
-fun List<OppgaveDto>.medPersonNavn(fjernNavnNårTilgangMangler: Boolean, token: OidcToken): List<OppgaveDto> {
+fun List<OppgaveDto>.medPersonNavn(fjernSensitivInformasjonNårTilgangMangler: Boolean, token: OidcToken): List<OppgaveDto> {
     val identer = mapNotNull { it.personIdent }
     if (identer.isEmpty()) {
         return this
@@ -23,10 +23,10 @@ fun List<OppgaveDto>.medPersonNavn(fjernNavnNårTilgangMangler: Boolean, token: 
         }
         it.copy(personNavn = personNavn)
     }
-    return if (fjernNavnNårTilgangMangler) {
+    return if (fjernSensitivInformasjonNårTilgangMangler) {
         oppgaverMedNavn.map {
-            if (skalFjerneNavnOgFnr(it, token)) {
-                it.copy(personNavn = null, personIdent = null)
+            if (skalFjerneSensitivInformasjon(it, token)) {
+                it.copy(personNavn = null, personIdent = null, enhet = "", oppfølgingsenhet = null)
             } else {
                 it
             }
@@ -36,5 +36,5 @@ fun List<OppgaveDto>.medPersonNavn(fjernNavnNårTilgangMangler: Boolean, token: 
     }
 }
 
-private fun skalFjerneNavnOgFnr(oppgaveDto: OppgaveDto, token: OidcToken) =
-    TilgangGateway.sjekkTilgang(oppgaveDto.tilAvklaringsbehovReferanseDto(), token)
+private fun skalFjerneSensitivInformasjon(oppgaveDto: OppgaveDto, token: OidcToken) =
+    TilgangGateway.sjekkTilgang(oppgaveDto.tilAvklaringsbehovReferanseDto(), token) == false
