@@ -26,6 +26,7 @@ import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterId
+import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
@@ -81,7 +82,7 @@ class OppgaveApiTest {
         assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgave.id)
 
         // Sjekk at oppgave kommer i mine oppgaver listen
-        assertThat(hentMineOppgaver().first().id).isEqualTo(oppgave.id)
+        assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave.id)
 
         // Avslutt oppgave
         oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
@@ -118,7 +119,7 @@ class OppgaveApiTest {
         assertThat(oppgave).isNotNull
 
         // Sjekk at oppgave kommer i mine oppgaver listen
-        assertThat(hentMineOppgaver().first().id).isEqualTo(oppgave!!.id)
+        assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave!!.id)
 
         // Avslutt plukket oppgave
         oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
@@ -444,8 +445,8 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentMineOppgaver(): List<OppgaveDto> {
-        return client.get<List<OppgaveDto>>(
+    private fun hentMineOppgaver(): OppgavelisteRespons {
+        return  client.get<OppgavelisteRespons>(
             URI.create("http://localhost:8080/mine-oppgaver"),
             GetRequest()
         )!!

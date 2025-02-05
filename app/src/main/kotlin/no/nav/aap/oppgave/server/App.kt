@@ -22,7 +22,6 @@ import no.nav.aap.komponenter.server.AZURE
 import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.motor.Motor
 import no.nav.aap.motor.api.motorApi
-import no.nav.aap.oppgave.alleÅpneOppgaverApi
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.enhet.hentEnhetApi
 import no.nav.aap.oppgave.filter.hentFilterApi
@@ -30,12 +29,11 @@ import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
-import no.nav.aap.oppgave.hentOppgavelisteApi
-import no.nav.aap.oppgave.hentOppgaverApi
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
+import no.nav.aap.oppgave.oppgavelisteApi
 import no.nav.aap.oppgave.oppgavesøkApi
 import no.nav.aap.oppgave.plukk.plukkNesteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
@@ -103,10 +101,9 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 flyttOppgave(dataSource, prometheus)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
-                //hentOppgaverApi(dataSource, prometheus)
+                oppgavelisteApi(dataSource, prometheus)
+                oppgavesøkApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
-                alleÅpneOppgaverApi(dataSource, prometheus)
-                hentOppgavelisteApi(dataSource, prometheus)
                 oppgavesøkApi(dataSource, prometheus)
                 søkApi(dataSource, prometheus)
                 // Filter
