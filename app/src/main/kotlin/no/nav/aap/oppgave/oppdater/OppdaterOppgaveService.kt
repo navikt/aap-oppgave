@@ -16,21 +16,21 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
-import tilgang.Rolle
+import no.nav.aap.tilgang.Rolle
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 private val AVKLARINGSBEHOV_FOR_VEILEDER =
     Definisjon.entries
         .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
-        .filter { it.løsesAv.contains(Rolle.VEILEDER) }
+        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_OPPFOLGING) }
         .map { AvklaringsbehovKode(it.kode.name)}
         .toSet()
 
 private val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER =
     Definisjon.entries
         .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER) }
+        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_NASJONAL) }
         .filter { it.løsesISteg != StegType.KVALITETSSIKRING }
         .map { AvklaringsbehovKode(it.kode.name)}
         .toSet()

@@ -13,8 +13,8 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.runBlocking
 import no.nav.aap.oppgave.server.ErrorRespons
-import tilgang.BehandlingTilgangRequest
-import tilgang.TilgangResponse
+import no.nav.aap.tilgang.BehandlingTilgangRequest
+import no.nav.aap.tilgang.TilgangResponse
 import java.util.UUID
 
 fun Application.tilgangFake(fakesConfig: FakesConfig) = runBlocking {

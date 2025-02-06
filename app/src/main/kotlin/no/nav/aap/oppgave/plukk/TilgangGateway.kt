@@ -1,6 +1,6 @@
 package no.nav.aap.oppgave.plukk
 
-import tilgang.TilgangResponse
+import no.nav.aap.tilgang.TilgangResponse
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
@@ -9,9 +9,9 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
-import tilgang.BehandlingTilgangRequest
-import tilgang.JournalpostTilgangRequest
-import tilgang.Operasjon
+import no.nav.aap.tilgang.BehandlingTilgangRequest
+import no.nav.aap.tilgang.JournalpostTilgangRequest
+import no.nav.aap.tilgang.Operasjon
 import java.net.URI
 
 object TilgangGateway {
