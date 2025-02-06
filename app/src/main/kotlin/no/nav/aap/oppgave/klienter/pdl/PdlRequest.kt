@@ -1,6 +1,6 @@
 package no.nav.aap.oppgave.klienter.pdl
 
-import no.nav.aap.postmottak.klient.graphql.asQuery
+import no.nav.aap.oppgave.klienter.graphql.asQuery
 
 internal data class PdlRequest(val query: String, val variables: Variables) {
     data class Variables(val ident: String? = null, val identer: List<String>? = null)

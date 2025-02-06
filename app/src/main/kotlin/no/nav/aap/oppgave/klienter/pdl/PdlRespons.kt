@@ -1,8 +1,8 @@
 package no.nav.aap.oppgave.klienter.pdl
 
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
-import no.nav.aap.postmottak.klient.graphql.GraphQLError
-import no.nav.aap.postmottak.klient.graphql.GraphQLExtensions
+import no.nav.aap.oppgave.klienter.graphql.GraphQLError
+import no.nav.aap.oppgave.klienter.graphql.GraphQLExtensions
 import java.time.LocalDate
 
 internal data class PdlResponse(

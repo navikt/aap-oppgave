@@ -1,6 +1,6 @@
 package no.nav.aap.oppgave.klienter.pdl
 
-import no.nav.aap.postmottak.klient.graphql.GraphQLError
+import no.nav.aap.oppgave.klienter.graphql.GraphQLError
 import no.nav.aap.komponenter.httpklient.httpclient.error.DefaultResponseHandler
 import no.nav.aap.komponenter.httpklient.httpclient.error.RestResponseHandler
 import java.io.InputStream
@@ -25,7 +25,7 @@ class PdlResponseHandler : RestResponseHandler<InputStream> {
                 throw PdlQueryException(
                     String.format(
                         "Feil %s ved GraphQL oppslag mot %s",
-                        respons.errors.map(GraphQLError::message).joinToString(), request.uri()
+                        respons.errors.joinToString(transform = GraphQLError::message), request.uri()
                     )
                 )
             }
