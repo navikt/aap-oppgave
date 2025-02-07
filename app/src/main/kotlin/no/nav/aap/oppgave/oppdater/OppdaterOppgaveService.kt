@@ -79,17 +79,16 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
     ) {
-        val åpneAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter {it.status in ÅPNE_STATUSER}
+        val åpentAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.firstOrNull {it.status in ÅPNE_STATUSER}
         val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter {it.status in AVSLUTTEDE_STATUSER}
 
-        // Opprett nye oppgaver
-        val avklarsbehovSomDetSkalOpprettesOppgaverFor = åpneAvklaringsbehov
-            .filter { oppgaveMap[it.avklaringsbehovKode] == null}
-        opprettOppgaver(oppgaveOppdatering, avklarsbehovSomDetSkalOpprettesOppgaverFor)
-
-        // Gjenåpne avsluttede oppgaver
-        åpneAvklaringsbehov.forEach { avklaringsbehov ->
-            gjenåpneOppgave(oppgaveOppdatering, oppgaveMap, avklaringsbehov)
+        // Opprette eller gjenåpne oppgave
+        if (åpentAvklaringsbehov != null) {
+            if (oppgaveMap[åpentAvklaringsbehov.avklaringsbehovKode] == null) {
+                opprettOppgaver(oppgaveOppdatering, listOf(åpentAvklaringsbehov))
+            } else {
+                gjenåpneOppgave(oppgaveOppdatering, oppgaveMap, åpentAvklaringsbehov)
+            }
         }
 
         // Avslutt oppgaver hvor avklaringsbehovet er lukket
