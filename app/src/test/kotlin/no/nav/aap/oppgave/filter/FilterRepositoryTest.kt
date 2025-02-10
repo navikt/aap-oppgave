@@ -31,6 +31,7 @@ class FilterRepositoryTest {
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now()
             )
+            val antallFilterFørTest = filterRepo.hentAlle().size
             val filterId = filterRepo.opprett(nyttFilter)
 
             val filter = filterRepo.hent(filterId)
@@ -38,8 +39,7 @@ class FilterRepositoryTest {
             assertThat(filter!!.navn).isEqualTo("Basic filter")
 
             val alleFilter = filterRepo.hentAlle()
-            assertThat(alleFilter).hasSize(1)
-            assertThat(alleFilter.first().navn).isEqualTo("Basic filter")
+            assertThat(alleFilter).hasSize(antallFilterFørTest + 1)
         }
     }
 
