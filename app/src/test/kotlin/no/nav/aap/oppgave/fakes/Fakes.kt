@@ -17,6 +17,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
     private val norg = FakeServer(module = { norgFake() })
     private val nom = FakeServer(module = { nomFake() })
     private val veilarbarena = FakeServer(module = { veilarbarenaFake() })
+    private val veilarboppfolging = FakeServer(module = { veilarboppfolgingFake() })
 
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
@@ -44,6 +45,9 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         // Veilarbarena
         System.setProperty("integrasjon.veilarbarena.url", "http://localhost:${veilarbarena.port()}")
         System.setProperty("integrasjon.veilarbarena.scope", "scope")
+        // Veilarboppfolging
+        System.setProperty("integrasjon.veilarboppfolging.url", "http://localhost:${veilarboppfolging.port()}")
+        System.setProperty("integrasjon.veilarboppfolging.scope", "scope")
     }
 
     override fun close() {
@@ -53,6 +57,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         norg.stop()
         nom.stop()
         veilarbarena.stop()
+        veilarboppfolging.stop()
     }
 
 }

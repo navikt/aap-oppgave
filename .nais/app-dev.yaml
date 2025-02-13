@@ -77,6 +77,8 @@ spec:
                 - application: statistikk
                 - application: skjermede-personer-pip
                   namespace: nom
+                - application: veilarboppfolging
+                  namespace: poao
     env:
         - name: INTEGRASJON_TILGANG_URL
           value: http://tilgang
@@ -104,6 +106,10 @@ spec:
           value: https://veilarbarena.dev-fss-pub.nais.io
         - name: INTEGRASJON_VEILARBARENA_SCOPE
           value: api://dev-fss.pto.veilarbarena/.default
+        - name: INTEGRASJON_VEILARBOPPFOLGING_URL
+          value: http://veilarboppfolging.poao
+        - name: INTEGRASJON_VEILARBOPPFOLGING_SCOPE
+          value: api://dev-gcp.poao.veilarboppfolging/.default
     gcp:
         sqlInstances:
             - type: POSTGRES_16
