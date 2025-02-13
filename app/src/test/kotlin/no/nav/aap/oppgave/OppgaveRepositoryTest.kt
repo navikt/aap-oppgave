@@ -218,6 +218,7 @@ class OppgaveRepositoryTest {
         behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
         enhet: String = ENHET_NAV_LØRENSKOG,
         oppfølgingsenhet: String? = null,
+        veileder: String? = null,
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -229,6 +230,7 @@ class OppgaveRepositoryTest {
             status = status,
             behandlingstype = behandlingstype,
             opprettetAv = "bruker1",
+            veileder = veileder,
             opprettetTidspunkt = LocalDateTime.now()
         )
         return InitTestDatabase.dataSource.transaction { connection ->

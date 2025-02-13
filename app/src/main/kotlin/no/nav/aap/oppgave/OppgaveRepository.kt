@@ -31,9 +31,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PAA_VENT_AARSAK,
                 OPPRETTET_AV,
                 OPPRETTET_TIDSPUNKT,
-                PERSON_IDENT
+                PERSON_IDENT,
+                VEILEDER
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -53,15 +54,19 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(12, oppgaveDto.opprettetAv)
                 setLocalDateTime(13, oppgaveDto.opprettetTidspunkt)
                 setString(14, oppgaveDto.personIdent)
+                setString(15, oppgaveDto.veileder)
             }
         }
         return OppgaveId(id, 0L)
     }
 
     fun hentOppgave(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): OppgaveDto? {
-        val saksnummerClause = if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
-        val referanseClause = if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
-        val journalpostIdClause = if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
+        val saksnummerClause =
+            if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
+        val referanseClause =
+            if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
+        val journalpostIdClause =
+            if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
         val oppgaverForReferanseQuery = """
             SELECT 
                 $alleOppgaveFelt
@@ -74,12 +79,15 @@ class OppgaveRepository(private val connection: DBConnection) {
                 AVKLARINGSBEHOV_TYPE = ?
         """.trimIndent()
 
-        val oppgaver =  connection.queryList<OppgaveDto>(oppgaverForReferanseQuery) {
+        val oppgaver = connection.queryList<OppgaveDto>(oppgaverForReferanseQuery) {
             setParams {
                 var index = 1
                 if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
                 if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
-                if (avklaringsbehovReferanse.journalpostId != null ) setLong(index++, avklaringsbehovReferanse.journalpostId)
+                if (avklaringsbehovReferanse.journalpostId != null) setLong(
+                    index++,
+                    avklaringsbehovReferanse.journalpostId
+                )
                 setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
             }
             setRowMapper { row ->
@@ -132,7 +140,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 var index = 1
                 if (saksnummer != null) setString(index++, saksnummer)
                 if (referanse != null) setUUID(index++, referanse)
-                if (journalpostId != null ) setLong(index++, journalpostId)
+                if (journalpostId != null) setLong(index++, journalpostId)
             }
             setRowMapper { row ->
                 oppgaveMapper(row)
@@ -140,7 +148,16 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun oppdatereOppgave(oppgaveId: OppgaveId, ident: String, personIdent: String?, enhet: String, oppfølgingsenhet: String?, påVentTil: LocalDate?, påVentÅrsak: String?) {
+    fun oppdatereOppgave(
+        oppgaveId: OppgaveId,
+        ident: String,
+        personIdent: String?,
+        enhet: String,
+        påVentTil: LocalDate?,
+        påVentÅrsak: String?,
+        oppfølgingsenhet: String?,
+        veileder: String?
+    ) {
         val query = """
             UPDATE 
                 OPPGAVE 
@@ -153,6 +170,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PAA_VENT_TIL = ?,
                 PAA_VENT_AARSAK= ?,
                 PERSON_IDENT = ?,
+                VEILEDER = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -167,8 +185,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDate(4, påVentTil)
                 setString(5, påVentÅrsak)
                 setString(6, personIdent)
-                setLong(7, oppgaveId.id)
-                setLong(8, oppgaveId.versjon)
+                setString(7, veileder)
+                setLong(8, oppgaveId.id)
+                setLong(9, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) }
         }
@@ -379,9 +398,12 @@ class OppgaveRepository(private val connection: DBConnection) {
      * Hent oppgaver som ikke er avsluttet.
      */
     fun hentÅpneOppgaver(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): List<OppgaveId> {
-        val saksnummerClause = if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
-        val referanseClause = if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
-        val journalpostIdClause = if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
+        val saksnummerClause =
+            if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
+        val referanseClause =
+            if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
+        val journalpostIdClause =
+            if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
         val oppgaverForReferanseQuery = """
             SELECT 
                 ID, VERSJON
@@ -395,7 +417,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 STATUS != 'AVSLUTTET'
         """.trimIndent()
 
-        val oppgaver =  connection.queryList<OppgaveId>(oppgaverForReferanseQuery) {
+        val oppgaver = connection.queryList<OppgaveId>(oppgaverForReferanseQuery) {
             setParams {
                 var index = 1
                 if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
@@ -448,6 +470,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
+            veileder = row.getStringOrNull("VEILEDER"),
             behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
             avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
             status = Status.valueOf(row.getString("STATUS")),
@@ -473,6 +496,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             JOURNALPOST_ID,
             ENHET,
             OPPFOLGINGSENHET,
+            VEILEDER,
             BEHANDLING_OPPRETTET,
             AVKLARINGSBEHOV_TYPE,
             STATUS,

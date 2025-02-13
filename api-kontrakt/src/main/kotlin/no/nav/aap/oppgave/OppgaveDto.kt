@@ -8,6 +8,7 @@ import java.util.UUID
 
 /**
  * @param enhet Enhetsnummeret til enheten som er koblet til oppgaven.
+ * TODO: Fjern sensitive felter
  */
 data class OppgaveDto(
     val id: Long? = null,
@@ -18,6 +19,7 @@ data class OppgaveDto(
     val journalpostId: Long? = null,
     val enhet: String,
     val oppfølgingsenhet: String?,
+    val veileder: String? = null,
     val behandlingOpprettet: LocalDateTime,
     val avklaringsbehovKode: String,
     val status: Status = Status.OPPRETTET,
