@@ -150,6 +150,16 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Skal finne oppgaver for angitt veileder`() { opprettOppgave(veileder = "xyz12345")
+        val oppgaveId2 = opprettOppgave(veileder = "xyz54321")
+
+        val oppgaver = finnOppgaver(TransientFilterDto(veileder = "xyz54321"))
+
+        assertThat(oppgaver).hasSize(1)
+        assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
+    }
+
+    @Test
     fun `Skal finne oppgaver knyttet til enhet`() {
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG)

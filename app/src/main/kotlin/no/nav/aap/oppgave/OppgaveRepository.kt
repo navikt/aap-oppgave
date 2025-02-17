@@ -455,6 +455,10 @@ class OppgaveRepository(private val connection: DBConnection) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
             sb.append("(OPPFOLGINGSENHET IN $stringListeEnheter OR (OPPFOLGINGSENHET IS NULL AND ENHET IN $stringListeEnheter)) AND ")
         }
+        //Veileder
+        if (veileder != null) {
+            sb.append("VEILEDER = '$veileder' AND ")
+        }
         //På vent
         sb.append("PAA_VENT_TIL IS NULL AND ")
 

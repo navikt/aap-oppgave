@@ -7,6 +7,7 @@ interface Filter {
     val avklaringsbehovKoder: Set<String>
     val behandlingstyper: Set<Behandlingstype>
     val enheter: Set<String>
+    val veileder: String?
 }
 
 data class FilterDto(
@@ -16,6 +17,7 @@ data class FilterDto(
     override val avklaringsbehovKoder: Set<String> = emptySet(),
     override val behandlingstyper: Set<Behandlingstype> = emptySet(),
     override val enheter: Set<String> = emptySet(),
+    override val veileder: String? = null,
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,
@@ -26,5 +28,6 @@ data class TransientFilterDto(
     override val avklaringsbehovKoder: Set<String> = emptySet(),
     override val behandlingstyper: Set<Behandlingstype> = emptySet(),
     override val enheter: Set<String> = emptySet(),
+    override val veileder: String? = null,
 ): Filter
 

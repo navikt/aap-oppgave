@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.plukk.TilgangGateway
+import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
 
 /**
@@ -25,7 +26,12 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             val filter = FilterRepository(connection).hent(request.filterId)
-            OppgaveRepository(connection).finnOppgaver(filter!!.copy(enheter = request.enheter))
+            val veilederIdent = if (request.veileder) {
+                ident()
+            } else {
+                null
+            }
+            OppgaveRepository(connection).finnOppgaver(filter!!.copy(enheter = request.enheter, veileder = veilederIdent))
         }
 
         val token = token()
