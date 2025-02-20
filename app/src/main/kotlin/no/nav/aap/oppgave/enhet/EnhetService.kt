@@ -26,7 +26,7 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
 
     suspend fun hentEnheter(currentToken: String, ident: String): List<String> {
         val groups = msGraphClient.hentAdGrupper(currentToken, ident).groups
-            .map {it.name}
+            .map { it.name }
         log.info("###### Ident: $ident Groups: $groups")
         return msGraphClient.hentAdGrupper(currentToken, ident).groups
             .filter { it.name.startsWith(ENHET_GROUP_PREFIX) }
@@ -61,10 +61,13 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
         when (geoTilknytning.gtType) {
             GeografiskTilknytningType.KOMMUNE ->
                 geoTilknytning.gtKommune
+
             GeografiskTilknytningType.BYDEL ->
                 geoTilknytning.gtBydel
+
             GeografiskTilknytningType.UTLAND ->
                 geoTilknytning.gtLand
+
             GeografiskTilknytningType.UDEFINERT ->
                 geoTilknytning.gtType.name
         }
@@ -85,7 +88,7 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
                 null
             }
 
-            val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse)
+            val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
             val egenAnsatt = NomKlient().erEgenansatt(fnr)
             return TilknytningOgSkjerming(
                 geografiskTilknytningKode ?: GeografiskTilknytningType.UDEFINERT.name,
@@ -106,8 +109,10 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
             when (it) {
                 Adressebeskyttelseskode.FORTROLIG ->
                     Diskresjonskode.SPFO
+
                 Adressebeskyttelseskode.STRENGT_FORTROLIG, Adressebeskyttelseskode.STRENGT_FORTROLIG_UTLAND ->
                     Diskresjonskode.SPSF
+
                 else -> Diskresjonskode.ANY
             }
         }

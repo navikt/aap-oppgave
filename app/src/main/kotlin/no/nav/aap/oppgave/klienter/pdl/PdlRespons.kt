@@ -44,7 +44,11 @@ data class PdlPerson(
 
 data class HentPersonResult(
     val foedselsdato: List<Fødselsdato>? = null,
-    val adressebeskyttelse: List<Adressebeskyttelseskode>? = null
+    val adressebeskyttelse: List<Gradering>? = null
+)
+
+data class Gradering(
+    val gradering: Adressebeskyttelseskode
 )
 
 data class Fødselsdato(val foedselsdato: LocalDate)

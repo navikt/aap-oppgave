@@ -36,7 +36,7 @@ private fun genererHentAdressebeskytelseOgGeotilknytning(): String {
             {
               "data": {
                 "hentPerson": {
-                  "adressebeskyttelse": ["UGRADERT"]
+                  "adressebeskyttelse": [ {"gradering": "UGRADERT"}]
                 },
                 "hentGeografiskTilknytning": {
                   "gtType": "KOMMUNE",
