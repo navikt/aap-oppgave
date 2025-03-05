@@ -30,6 +30,7 @@ import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
+import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.mineOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
@@ -54,7 +55,7 @@ fun main() {
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
         SECURE_LOGGER.error("Uhåndtert feil", e)
     }
-    embeddedServer(Netty, 8080) { server(DbConfig(), PrometheusMeterRegistry(PrometheusConfig.DEFAULT)) }.start(wait = true)
+    embeddedServer(Netty, 8080) { server(DbConfig(), prometheus) }.start(wait = true)
 }
 
 internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterRegistry) {

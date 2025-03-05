@@ -1,17 +1,18 @@
 package no.nav.aap.oppgave.plukk
 
-import no.nav.aap.tilgang.TilgangResponse
+import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
-import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
+import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.tilgang.BehandlingTilgangRequest
 import no.nav.aap.tilgang.JournalpostTilgangRequest
 import no.nav.aap.tilgang.Operasjon
+import no.nav.aap.tilgang.TilgangResponse
 import java.net.URI
 
 object TilgangGateway {
@@ -21,10 +22,11 @@ object TilgangGateway {
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
         tokenProvider = OnBehalfOfTokenProvider,
+        prometheus = prometheus
     )
 
     fun sjekkTilgang(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, token: OidcToken): Boolean {
-        return  if (avklaringsbehovReferanse.journalpostId != null) {
+        return if (avklaringsbehovReferanse.journalpostId != null) {
             harTilgangTilJournalpost(
                 JournalpostTilgangRequest(
                     journalpostId = avklaringsbehovReferanse.journalpostId!!,
@@ -32,11 +34,10 @@ object TilgangGateway {
                     operasjon = Operasjon.SAKSBEHANDLE
                 ), token
             )
-        }
-        else {
+        } else {
             harTilgangTilBehandling(
                 BehandlingTilgangRequest(
-                    behandlingsreferanse = avklaringsbehovReferanse.referanse.toString(),
+                    behandlingsreferanse = avklaringsbehovReferanse.referanse!!,
                     avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
                     operasjon = Operasjon.SAKSBEHANDLE
                 ), token

@@ -1,10 +1,10 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.1.0"
-val komponenterVersjon = "1.0.152"
-val tilgangVersjon = "1.0.9"
-val behandlingsflytVersjon = "0.0.173"
-val postmottakVersjon = "0.0.51"
+val komponenterVersjon = "1.0.169"
+val tilgangVersjon = "1.0.15"
+val behandlingsflytVersjon = "0.0.184"
+val postmottakVersjon = "0.0.54"
 
 plugins {
     id("oppgave.conventions")

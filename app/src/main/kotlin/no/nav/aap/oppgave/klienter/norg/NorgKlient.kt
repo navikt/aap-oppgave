@@ -8,6 +8,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.NoTokenTokenProvider
+import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 import java.net.URI
 
@@ -34,6 +35,7 @@ class NorgKlient {
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
         tokenProvider = NoTokenTokenProvider(),
+        prometheus = prometheus
     )
 
     fun finnEnhet(geografiskTilknyttning: String?, erNavansatt: Boolean, diskresjonskode: Diskresjonskode): String {

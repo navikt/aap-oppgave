@@ -7,6 +7,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 
 private data class HentVeilederRequest(
@@ -27,9 +28,10 @@ class VeilarbarboppfolgingKlient {
 
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
-        tokenProvider = ClientCredentialsTokenProvider
+        tokenProvider = ClientCredentialsTokenProvider,
+        prometheus = prometheus
     )
-    
+
     fun hentVeileder(personIdent: String): String? {
         val hentVeilederUrl = url.resolve("/veilarboppfolging/api/v3/hent-veileder")
         val request = PostRequest(
@@ -39,7 +41,7 @@ class VeilarbarboppfolgingKlient {
             )
         )
         val resp = client.post<HentVeilederRequest, HentVeilederResponse?>(hentVeilederUrl, request)
-   
+
         return resp?.navIdent
     }
 

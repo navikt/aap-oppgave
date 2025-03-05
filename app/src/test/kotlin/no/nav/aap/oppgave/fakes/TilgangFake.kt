@@ -34,7 +34,7 @@ fun Application.tilgangFake(fakesConfig: FakesConfig) = runBlocking {
     routing {
         post("/tilgang/behandling") {
             val req = call.receive<BehandlingTilgangRequest>()
-            if (UUID.fromString(req.behandlingsreferanse) in fakesConfig.negativtSvarFraTilgangForBehandling)  {
+            if (req.behandlingsreferanse in fakesConfig.negativtSvarFraTilgangForBehandling)  {
                 call.respond(TilgangResponse(false))
             } else {
                 call.respond(TilgangResponse(true))

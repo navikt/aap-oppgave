@@ -9,6 +9,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.oppgave.metrikker.prometheus
 import java.io.InputStream
 import java.net.URI
 
@@ -21,6 +22,7 @@ class PdlGraphqlKlient(
         private fun getClientConfig() = ClientConfig(
             scope = requiredConfigForKey("integrasjon.pdl.scope"),
         )
+
         private const val BEHANDLINGSNUMMER_AAP_SAKSBEHANDLING = "B287"
 
         fun withClientCredentialsRestClient() =
@@ -28,7 +30,8 @@ class PdlGraphqlKlient(
                 RestClient(
                     config = getClientConfig(),
                     tokenProvider = ClientCredentialsTokenProvider,
-                    responseHandler = PdlResponseHandler()
+                    responseHandler = PdlResponseHandler(),
+                    prometheus = prometheus
                 )
             )
 

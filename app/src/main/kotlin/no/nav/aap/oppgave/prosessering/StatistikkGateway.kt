@@ -6,6 +6,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.statistikk.OppgaveHendelse
 import java.net.URI
 
@@ -16,6 +17,7 @@ object StatistikkGateway {
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
         tokenProvider = ClientCredentialsTokenProvider,
+        prometheus = prometheus
     )
 
     fun avgiHendelse(oppgaveHendelse: OppgaveHendelse) {

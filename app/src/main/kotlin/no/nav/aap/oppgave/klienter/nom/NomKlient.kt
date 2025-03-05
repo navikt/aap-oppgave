@@ -6,9 +6,9 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 import java.net.URI
-import kotlin.jvm.java
 
 data class EgenansattRequest(val personident: String)
 
@@ -24,7 +24,8 @@ class NomKlient {
 
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
-        tokenProvider = ClientCredentialsTokenProvider
+        tokenProvider = ClientCredentialsTokenProvider,
+        prometheus = prometheus
     )
 
     fun erEgenansatt(personident: String): Boolean {
