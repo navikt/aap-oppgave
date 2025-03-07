@@ -10,10 +10,6 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import org.slf4j.LoggerFactory
-import kotlin.collections.filter
-import kotlin.collections.map
-import kotlin.text.removePrefix
-import kotlin.text.startsWith
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -24,7 +20,7 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
 
     private val log = LoggerFactory.getLogger(EnhetService::class.java)
 
-    suspend fun hentEnheter(currentToken: String, ident: String): List<String> {
+    fun hentEnheter(currentToken: String, ident: String): List<String> {
         val groups = msGraphClient.hentAdGrupper(currentToken, ident).groups
             .map { it.name }
         log.info("###### Ident: $ident Groups: $groups")

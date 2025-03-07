@@ -14,7 +14,6 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
@@ -85,7 +84,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     val dataSource = initDatasource(dbConfig, prometheus)
     Migrering.migrate(dataSource)
 
-    val iMsGraphClient = MsGraphClient(AzureConfig())
+    val iMsGraphClient = MsGraphClient(prometheus)
 
     val motor = motor(dataSource)
 
