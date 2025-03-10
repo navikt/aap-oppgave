@@ -60,11 +60,8 @@ spec:
             rules:
                 - application: behandlingsflyt
                 - application: postmottak-backend
-                - application: produksjonsstyring
-                - application: oppgavestyring-frontend
                 - application: paw-patrol
                 - application: saksbehandling
-                - application: postmottak
                 - application: azure-token-generator # Ikke i prod :)
                   namespace: aura
                   cluster: dev-gcp
