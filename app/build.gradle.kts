@@ -8,7 +8,7 @@ val postmottakVersjon = "0.0.54"
 
 plugins {
     id("oppgave.conventions")
-    id("io.ktor.plugin") version "3.1.0"
+    id("io.ktor.plugin") version "3.1.1"
 }
 
 application {
