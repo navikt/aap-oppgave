@@ -64,7 +64,7 @@ spec:
         - application: saksbehandling
         - application: saksbehandling-lokal # For lokal utvikling. IKKE kopier denne til prod.yaml
         - application: azure-token-generator # Ikke i prod :)
-          namespace: aura
+          namespace: nais
           cluster: dev-gcp
     outbound:
       external:
