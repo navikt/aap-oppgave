@@ -10,7 +10,7 @@ import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 import java.net.URI
 
-data class EgenansattRequest(val personident: String)
+private data class EgenansattRequest(val personident: String)
 
 class NomKlient {
 
