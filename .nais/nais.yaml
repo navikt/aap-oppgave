@@ -62,10 +62,12 @@ spec:
         - application: postmottak-backend
         - application: paw-patrol
         - application: saksbehandling
+        {{#if isdev}}
         - application: saksbehandling-lokal # For lokal utvikling. IKKE kopier denne til prod.yaml
         - application: azure-token-generator # Ikke i prod :)
           namespace: nais
           cluster: dev-gcp
+        {{/if}}
     outbound:
       external:
         - host: pdl-api.dev-fss-pub.nais.io

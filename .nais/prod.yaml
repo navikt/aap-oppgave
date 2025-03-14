@@ -1,3 +1,4 @@
+isdev: 0
 ingress: https://aap-oppgave.intern.nav.no
 env:
   - name: INTEGRASJON_TILGANG_URL
