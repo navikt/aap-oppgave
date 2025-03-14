@@ -94,3 +94,17 @@ jobs:
             cluster: dev-gcp
             manifest: .nais/nais.yaml
             vars: .nais/dev.yaml
+
+    prod:
+      ## push til main eller etter branch (e.g. dependabot) er merget
+      if: github.event.pull_request.merged || github.event_name == 'push' || github.event.inputs.cluster == 'dev-gcp'
+      permissions:
+        contents: read
+        id-token: write
+      needs: dev
+      uses: navikt/aap-workflows/.github/workflows/deploy.yml@main
+      secrets: inherit
+      with:
+        cluster: prod-gcp
+        manifest: .nais/nais.yaml
+        vars: .nais/prod.yaml
