@@ -30,7 +30,7 @@ jobs:
             publish-typescript: true
             typescript-enums: true
             app-navn: oppgave
-            openapi-test-navn: "*OppgaveApiTest*.*openapi*"
+            generate-openapi-command: gradle genererOpenApiJson
 
     publish-kontrakt:
         needs: gradle

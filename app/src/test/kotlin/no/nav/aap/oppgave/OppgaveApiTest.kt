@@ -39,17 +39,13 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
-import java.io.BufferedWriter
-import java.io.FileWriter
 import java.net.URI
-import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 import kotlin.test.AfterTest
-import kotlin.test.fail
 
 class OppgaveApiTest {
 
@@ -65,11 +61,19 @@ class OppgaveApiTest {
         val referanse = UUID.randomUUID()
 
         // Opprett ny oppgave
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-            ))
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
 
         // Hent oppgaven som ble opprettet
         val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SYKDOM)
@@ -85,12 +89,20 @@ class OppgaveApiTest {
         assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave.id)
 
         // Avslutt oppgave
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET)
-            ))
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET)
+                        )
+                    )
+                )
+            )
+        )
 
         // Sjekk at det ikke er flere oppgaver i køen
         nesteOppgave = hentNesteOppgave()
@@ -104,15 +116,30 @@ class OppgaveApiTest {
         val referanse = UUID.randomUUID()
 
         // Opprett ny oppgave
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_BISTANDSBEHOV, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-            )),
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endretAv = "Lokalsaksbehandler")
-            )),
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_BISTANDSBEHOV,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                            Endring(
+                                no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                                endretAv = "Lokalsaksbehandler"
+                            )
+                        )
+                    ),
+                )
+            )
+        )
 
         // Hent oppgaven som ble opprettet
         val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_BISTANDSBEHOV)
@@ -122,16 +149,34 @@ class OppgaveApiTest {
         assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave!!.id)
 
         // Avslutt plukket oppgave
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_BISTANDSBEHOV, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endretAv = "Lokalsaksbehandler"),
-            )),
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET, endretAv = "Lokalsaksbehandler")
-            )),
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_BISTANDSBEHOV,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                            Endring(
+                                no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                                endretAv = "Lokalsaksbehandler"
+                            ),
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                            Endring(
+                                no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                                endretAv = "Lokalsaksbehandler"
+                            )
+                        )
+                    ),
+                )
+            )
+        )
 
         // Sjekk at det ikke er flere oppgaver i køen
         val nesteOppgave = hentNesteOppgave()
@@ -145,32 +190,48 @@ class OppgaveApiTest {
         val saksnummer = "45937"
         val referanse = UUID.randomUUID()
 
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(
-                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                    påVentTil = LocalDate.now().plusWeeks(2),
-                    påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(
+                                status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                                påVentTil = LocalDate.now().plusWeeks(2),
+                                påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
+                            )
+                        )
+                    )
                 )
-            ))
-        )))
+            )
+        )
 
         var nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNull()
 
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(
-                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                    påVentTil = LocalDate.now().plusWeeks(2),
-                    påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
-                ),
-                Endring(
-                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET
-                )
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(
+                                status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                                påVentTil = LocalDate.now().plusWeeks(2),
+                                påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
+                            ),
+                            Endring(
+                                status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET
+                            )
 
-            ))
-        )))
+                        )
+                    )
+                )
+            )
+        )
 
         nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNotNull()
@@ -183,11 +244,19 @@ class OppgaveApiTest {
         val saksnummer = "100001"
         val referanse = UUID.randomUUID()
 
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-            ))
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         var nesteOppgave = hentNesteOppgave()
@@ -204,20 +273,36 @@ class OppgaveApiTest {
         val saksnummer1 = "100002"
         val referanse1 = UUID.randomUUID()
 
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-            ))
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
 
         val saksnummer2 = "100003"
         val referanse2 = UUID.randomUUID()
 
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-            ))
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse1)
         var nesteOppgave = hentNesteOppgave()
@@ -233,12 +318,14 @@ class OppgaveApiTest {
 
     @Test
     fun `Hente filter`() {
-        opprettEllerOpdaterFilter(FilterDto(
-            navn = "Simpelt filter",
-            beskrivelse ="Et enkelt filter for alle oppgave",
-            opprettetAv = "test",
-            opprettetTidspunkt = LocalDateTime.now(),
-        ))
+        opprettEllerOpdaterFilter(
+            FilterDto(
+                navn = "Simpelt filter",
+                beskrivelse = "Et enkelt filter for alle oppgave",
+                opprettetAv = "test",
+                opprettetTidspunkt = LocalDateTime.now(),
+            )
+        )
 
         val alleFilter = hentAlleFilter()
 
@@ -249,14 +336,16 @@ class OppgaveApiTest {
     @Test
     fun `Endre filter`() {
         // Opprett filter
-        opprettEllerOpdaterFilter(FilterDto(
-            navn = "Avklare sykdom i førstegangsbehandling filter",
-            beskrivelse = "Avklare sykdom i førstegangsbehandling filter",
-            behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
-            avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
-            opprettetAv = "test",
-            opprettetTidspunkt = LocalDateTime.now(),
-        ))
+        opprettEllerOpdaterFilter(
+            FilterDto(
+                navn = "Avklare sykdom i førstegangsbehandling filter",
+                beskrivelse = "Avklare sykdom i førstegangsbehandling filter",
+                behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+                avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
+                opprettetAv = "test",
+                opprettetTidspunkt = LocalDateTime.now(),
+            )
+        )
 
         // Sjekk lagret filter
         val alleFilter = hentAlleFilter()
@@ -266,13 +355,15 @@ class OppgaveApiTest {
         assertThat(hentetFilter.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.AVKLAR_SYKDOM.kode.name))
 
         // Oppdater filter
-        opprettEllerOpdaterFilter(hentetFilter.copy(
-            navn = "Forslå vedtak i revurdering filter",
-            behandlingstyper = setOf(Behandlingstype.REVURDERING),
-            avklaringsbehovKoder = setOf(Definisjon.FORESLÅ_VEDTAK.kode.name),
-            endretAv = "test",
-            endretTidspunkt = LocalDateTime.now(),
-        ))
+        opprettEllerOpdaterFilter(
+            hentetFilter.copy(
+                navn = "Forslå vedtak i revurdering filter",
+                behandlingstyper = setOf(Behandlingstype.REVURDERING),
+                avklaringsbehovKoder = setOf(Definisjon.FORESLÅ_VEDTAK.kode.name),
+                endretAv = "test",
+                endretTidspunkt = LocalDateTime.now(),
+            )
+        )
 
         // Sjekk oppdatert filter
         val alleFilterEtterOppdatering = hentAlleFilter()
@@ -285,12 +376,14 @@ class OppgaveApiTest {
 
     @Test
     fun `Slette filter`() {
-        opprettEllerOpdaterFilter(FilterDto(
-            navn = "Simpelt filter",
-            beskrivelse ="Simpelt filter",
-            opprettetAv = "test",
-            opprettetTidspunkt = LocalDateTime.now(),
-        ))
+        opprettEllerOpdaterFilter(
+            FilterDto(
+                navn = "Simpelt filter",
+                beskrivelse = "Simpelt filter",
+                opprettetAv = "test",
+                opprettetTidspunkt = LocalDateTime.now(),
+            )
+        )
 
         val alleFilter = hentAlleFilter()
         assertThat(alleFilter).hasSize(1)
@@ -308,11 +401,19 @@ class OppgaveApiTest {
         val saksnummer = "100004"
         val referanse = UUID.randomUUID()
 
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer, referanse = referanse, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-            ))
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
 
         val antallOppgaver = hentAntallOppgaver()
         assertThat(antallOppgaver.keys).hasSize(1)
@@ -324,47 +425,43 @@ class OppgaveApiTest {
         val saksnummer1 = "100005"
         val referanse1 = UUID.randomUUID()
 
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-            ))
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
 
         val saksnummer2 = "100006"
         val referanse2 = UUID.randomUUID()
 
-        oppdaterOppgaver(opprettBehandlingshistorikk(saksnummer= saksnummer2, referanse = referanse2, typeBehandling = TypeBehandling.Revurdering, behandlingsbehov = listOf(
-            Behandlingsbehov(definisjon = Definisjon.AVKLAR_STUDENT, status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET, endringer = listOf(
-                Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-            ))
-        )))
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer2,
+                referanse = referanse2,
+                typeBehandling = TypeBehandling.Revurdering,
+                behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_STUDENT,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
 
         val antallOppgaver = hentAntallOppgaver(Behandlingstype.REVURDERING)
         assertThat(antallOppgaver.keys).hasSize(1)
         assertThat(antallOppgaver[Definisjon.AVKLAR_STUDENT.kode.name]).isEqualTo(1)
-    }
-
-    @Test
-    fun `Ekporter openapi typer til json`() {
-        val openApiDoc =
-            requireNotNull(
-                client.get(
-                    URI.create("http://localhost:8080/openapi.json"),
-                    GetRequest()
-                ) { body, _ ->
-                    String(body.readAllBytes(), StandardCharsets.UTF_8)
-                }
-            )
-
-        try {
-            val writer = BufferedWriter(FileWriter("../openapi.json"))
-            writer.write(openApiDoc)
-
-            writer.close()
-        } catch (_: Exception) {
-            fail()
-        }
-
     }
 
     private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
@@ -386,7 +483,14 @@ class OppgaveApiTest {
         val påVentTil: LocalDate? = null,
         val påVentÅrsak: ÅrsakTilSettPåVent? = null,
     )
-    private fun opprettBehandlingshistorikk(saksnummer: String, referanse: UUID, behandlingStatus: Status = Status.OPPRETTET, behandlingsbehov: List<Behandlingsbehov>, typeBehandling: TypeBehandling = TypeBehandling.Førstegangsbehandling): BehandlingFlytStoppetHendelse {
+
+    private fun opprettBehandlingshistorikk(
+        saksnummer: String,
+        referanse: UUID,
+        behandlingStatus: Status = Status.OPPRETTET,
+        behandlingsbehov: List<Behandlingsbehov>,
+        typeBehandling: TypeBehandling = TypeBehandling.Førstegangsbehandling
+    ): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
         val avklaringsbehovHendelseDtoListe = behandlingsbehov.map { avklaringsbehovHendelse ->
             val endringer = avklaringsbehovHendelse.endringer.mapIndexed { i, endring ->
@@ -417,8 +521,8 @@ class OppgaveApiTest {
         )
     }
 
-    private fun oppdaterOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse):Unit? {
-         return client.post(
+    private fun oppdaterOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse): Unit? {
+        return client.post(
             URI.create("http://localhost:8080/oppdater-oppgaver"),
             PostRequest(body = behandlingFlytStoppetHendelse)
         )
@@ -436,17 +540,19 @@ class OppgaveApiTest {
     private fun hentOppgave(saksnummer: String, referanse: UUID, definisjon: Definisjon): OppgaveDto? {
         return client.post(
             URI.create("http://localhost:8080/hent-oppgave"),
-            PostRequest(body = AvklaringsbehovReferanseDto(
-                saksnummer = saksnummer,
-                referanse = referanse,
-                journalpostId = null,
-                avklaringsbehovKode = definisjon.kode.name
-            ))
+            PostRequest(
+                body = AvklaringsbehovReferanseDto(
+                    saksnummer = saksnummer,
+                    referanse = referanse,
+                    journalpostId = null,
+                    avklaringsbehovKode = definisjon.kode.name
+                )
+            )
         )
     }
 
     private fun hentMineOppgaver(): OppgavelisteRespons {
-        return  client.get<OppgavelisteRespons>(
+        return client.get<OppgavelisteRespons>(
             URI.create("http://localhost:8080/mine-oppgaver"),
             GetRequest()
         )!!
