@@ -27,14 +27,14 @@ fun main() {
     }.start(wait = true)
 }
 
-private fun postgreSQLContainer(): PostgreSQLContainer<Nothing> {
+internal fun postgreSQLContainer(): PostgreSQLContainer<Nothing> {
     val postgres = PostgreSQLContainer<Nothing>("postgres:16")
     postgres.waitingFor(HostPortWaitStrategy().withStartupTimeout(Duration.of(60L, ChronoUnit.SECONDS)))
     postgres.start()
     return postgres
 }
 
-private fun Application.module(fakes: Fakes) {
+internal fun Application.module(fakes: Fakes) {
     // Setter opp virtuell sandkasse lokalt
     monitor.subscribe(ApplicationStopped) { application ->
         application.environment.log.info("Server har stoppet")
