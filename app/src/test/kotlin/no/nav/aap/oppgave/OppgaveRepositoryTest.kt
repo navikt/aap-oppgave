@@ -12,7 +12,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.sql.SQLException
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 import kotlin.test.AfterTest
 import kotlin.test.fail
 
@@ -21,6 +21,7 @@ class OppgaveRepositoryTest {
     private val ENHET_NAV_ENEBAKK = "0229"
     private val ENHET_NAV_LØRENSKOG = "0230"
     private val ENHET_NAV_LILLESTRØM = "0231"
+    private val ENHET_NAY = "4491"
 
     @AfterTest
     fun tearDown() {

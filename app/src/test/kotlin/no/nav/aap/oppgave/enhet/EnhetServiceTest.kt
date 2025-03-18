@@ -1,7 +1,5 @@
 package no.nav.aap.oppgave.enhet
 
-import kotlinx.coroutines.runBlocking
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf

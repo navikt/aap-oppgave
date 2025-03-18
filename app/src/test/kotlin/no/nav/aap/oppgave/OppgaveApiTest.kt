@@ -110,6 +110,61 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `hent og oppdater oppgave for NAY`() {
+        leggInnFilterForTest()
+        val saksnummer = "271828"
+        val referanse = UUID.randomUUID()
+
+        // Opprett ny oppgave
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        // Hent oppgaven som ble opprettet
+        val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SAMORDNING_GRADERING)
+        assertThat(oppgave).isNotNull
+        assertThat(oppgave!!.enhet).isEqualTo("4491")
+
+        // Plukk neste oppgave
+        var nesteOppgave = hentNesteOppgaveNAY()
+        assertThat(nesteOppgave).isNotNull()
+        assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgave.id)
+
+        // Sjekk at oppgave kommer i mine oppgaver listen
+        assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave.id)
+
+        // Avslutt oppgave
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        // Sjekk at det ikke er flere oppgaver i køen
+        nesteOppgave = hentNesteOppgave()
+        assertThat(nesteOppgave).isNull()
+    }
+
+    @Test
     fun `Opprett, oppgave ble automatisk plukket og avslutt oppgave`() {
         leggInnFilterForTest()
         val saksnummer = "654321"
@@ -530,6 +585,15 @@ class OppgaveApiTest {
 
     private fun hentNesteOppgave(): NesteOppgaveDto? {
         val alleFilter = hentAlleFilter()
+        val nesteOppgave: NesteOppgaveDto? = client.post(
+            URI.create("http://localhost:8080/neste-oppgave"),
+            PostRequest(body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!))
+        )
+        return nesteOppgave
+    }
+
+    private fun hentNesteOppgaveNAY(): NesteOppgaveDto? {
+        val alleFilter = hentAlleFilter().filter { it.avklaringsbehovKoder.isEmpty() }.filter { it.behandlingstyper.isEmpty() }
         val nesteOppgave: NesteOppgaveDto? = client.post(
             URI.create("http://localhost:8080/neste-oppgave"),
             PostRequest(body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!))

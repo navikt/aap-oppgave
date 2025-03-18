@@ -79,7 +79,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 AVKLARINGSBEHOV_TYPE = ?
         """.trimIndent()
 
-        val oppgaver = connection.queryList<OppgaveDto>(oppgaverForReferanseQuery) {
+        val oppgaver = connection.queryList(oppgaverForReferanseQuery) {
             setParams {
                 var index = 1
                 if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
@@ -444,22 +444,22 @@ class OppgaveRepository(private val connection: DBConnection) {
                 avklaringsbehovKoder.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
             sb.append("AVKLARINGSBEHOV_TYPE IN $stringListeAvklaringsbehovKoder AND ")
         }
-        //Behandlingstyper
+        // Behandlingstyper
         if (behandlingstyper.isNotEmpty()) {
             val stringListeAvBehandlingstyper =
                 behandlingstyper.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
             sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
         }
-        //Enheter
+        // Enheter
         if (enheter.isNotEmpty()) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
             sb.append("(OPPFOLGINGSENHET IN $stringListeEnheter OR (OPPFOLGINGSENHET IS NULL AND ENHET IN $stringListeEnheter)) AND ")
         }
-        //Veileder
+        // Veileder
         if (veileder != null) {
             sb.append("VEILEDER = '$veileder' AND ")
         }
-        //På vent
+        // På vent
         sb.append("PAA_VENT_TIL IS NULL AND ")
 
         return sb.toString()
