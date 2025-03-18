@@ -97,7 +97,7 @@ jobs:
 
     prod:
       ## push til main eller etter branch (e.g. dependabot) er merget
-      if: github.event.pull_request.merged || github.event_name == 'push' || github.event.inputs.cluster == 'dev-gcp'
+      if: github.event.pull_request.merged || github.event_name == 'push' || github.event.inputs.cluster == 'prod-gcp'
       permissions:
         contents: read
         id-token: write
