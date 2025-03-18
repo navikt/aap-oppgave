@@ -1,5 +1,7 @@
 isdev: true
 ingress: https://aap-oppgave.intern.dev.nav.no
+pdl_url: pdl-api.dev-fss-pub.nais.io
+veilarb_arena_url: veilarbarena.dev-fss-pub.nais.io
 env:
     - name: INTEGRASJON_TILGANG_URL
       value: http://tilgang

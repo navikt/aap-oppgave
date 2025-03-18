@@ -68,8 +68,8 @@ spec:
         {{/if}}
     outbound:
       external:
-        - host: pdl-api.dev-fss-pub.nais.io
-        - host: veilarbarena.dev-fss-pub.nais.io
+        - host: {{pdl_url}}
+        - host: {{veilarb_arena_url}}
       rules:
         - application: tilgang
         - application: statistikk
