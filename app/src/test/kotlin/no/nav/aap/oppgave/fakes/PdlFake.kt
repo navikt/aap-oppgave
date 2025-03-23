@@ -24,6 +24,8 @@ fun Application.pdlFake() {
             val body = call.receive<String>()
             if (body.contains("hentGeografiskTilknytning")) {
                 call.respondText(genererHentAdressebeskytelseOgGeotilknytning())
+            } else if (body.contains("hentPersonBolk")) {
+                call.respondText(genererHentPersonBolkRespons(body))
             } else {
                 call.respondText(genererHentPersonRespons())
             }
@@ -49,6 +51,26 @@ private fun genererHentAdressebeskytelseOgGeotilknytning(): String {
         """.trimIndent()
 }
 
+private fun genererHentPersonBolkRespons(body: String): String {
+    val identer = finnIdenterIBody(body)
+    val resultat = identer.joinToString(", ") { ident ->
+        """
+        {
+          "ident": "$ident",
+          "person": {
+            "adressebeskyttelse": ${finnGradering(ident)}
+          },
+          "code": "ok"
+        }
+    """.trimIndent()
+    }
+    return """
+                    { "data":
+                    {"hentPersonBolk": [$resultat]
+                    }}
+                """.trimIndent()
+}
+
 private fun genererHentPersonRespons(): String {
     return """
             { "data":
@@ -60,6 +82,27 @@ private fun genererHentPersonRespons(): String {
             }}
         """.trimIndent()
 }
+
+private fun finnIdenterIBody(body: String): List<String> {
+    return body.substringAfter("\"identer\" :")
+        .substringBefore("}")
+        .substringBefore(",")
+        .replace("[", "")
+        .replace("]", "")
+        .replace("\"", "")
+        .split(",")
+        .map { it.replace("\n", "").trim() }
+        .filter { it != "null" }
+}
+
+private fun finnGradering(ident: String): String {
+    return when (ident) {
+        STRENGT_FORTROLIG_IDENT -> "[{\"gradering\": \"STRENGT_FORTROLIG\"}]"
+        else -> "[{\"gradering\": \"UGRADERT\"}]"
+    }
+}
+
+const val STRENGT_FORTROLIG_IDENT = "11111100000"
 
 internal data class TestToken(
     val access_token: String,

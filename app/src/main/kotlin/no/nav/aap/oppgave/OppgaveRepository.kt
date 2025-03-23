@@ -290,6 +290,48 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
     }
+    
+    data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long)
+    fun finnÅpneOppgaverIkkeVikafossen(): List<IdentMedOppgaveId> {
+        val query = """
+            SELECT 
+                PERSON_IDENT, ID
+            FROM 
+                OPPGAVE 
+            WHERE 
+                ENHET != '2103'
+                AND STATUS != 'AVSLUTTET'
+        """.trimIndent()
+
+        return connection.queryList(query) {
+            setRowMapper { row ->
+                IdentMedOppgaveId(row.getString("PERSON_IDENT"), row.getLong("ID"))
+            }
+        }
+    }
+    
+    fun oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaveIds: List<Long>, enhet: String) {
+        require(oppgaveIds.isNotEmpty()){"Må ha minst en oppgave å oppdatere"}
+        val query = """
+            UPDATE 
+                OPPGAVE 
+            SET 
+                ENHET = ?,
+                RESERVERT_AV = NULL,
+                ENDRET_AV = ?,
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                VERSJON = VERSJON + 1
+            WHERE 
+                ID IN (${oppgaveIds.joinToString(",")})
+        """.trimIndent()
+        
+        connection.execute(query) {
+            setParams {
+                setString(1, enhet)
+                setString(2, "Kelvin") // TODO: Kan øke kolonnestørrelse for å få plass til jobbtype hvis det er interessant
+            }
+        }
+    }
 
     fun finnOppgaverGittSaksnummer(saksnummer: String): List<OppgaveDto> {
         val hentOppgaverGittSaksnummerQuery = """

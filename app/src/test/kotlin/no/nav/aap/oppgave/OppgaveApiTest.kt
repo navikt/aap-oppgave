@@ -22,20 +22,26 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
+import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterId
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
+import no.nav.aap.oppgave.prosessering.NAV_VIKAFOSSEN
+import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
@@ -519,6 +525,25 @@ class OppgaveApiTest {
         assertThat(antallOppgaver[Definisjon.AVKLAR_STUDENT.kode.name]).isEqualTo(1)
     }
 
+    // TODO: Flytt denne i egen klasse når fakes er skrevet om
+    @Test
+    fun `Skal avreservere og flytte oppgaver til Vikafossen dersom person har fått strengt fortrolig adresse`() {
+        val oppgaveId1 = opprettOppgave(personIdent = STRENGT_FORTROLIG_IDENT)
+        val oppgaveId2 = opprettOppgave()
+        val oppgave2Før = hentOppgave(oppgaveId2)
+
+        initDatasource(dbConfig, prometheus).transaction {
+            OppdaterOppgaveEnhetJobb(OppgaveRepository(it)).utfør(JobbInput(OppdaterOppgaveEnhetJobb))
+        }
+
+        val oppgave1 = hentOppgave(oppgaveId1)
+        assertEquals(NAV_VIKAFOSSEN, oppgave1.enhet)
+        assertNull(oppgave1.reservertAv)
+        assertEquals(oppgave1.endretAv, "Kelvin")
+        val oppgave2Etter = hentOppgave(oppgaveId2)
+        assertEquals(oppgave2Før, oppgave2Etter)
+    }
+
     private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
         return client.post(
             URI.create("http://localhost:8080/produksjonsstyring/antall-oppgaver"),
@@ -682,6 +707,41 @@ class OppgaveApiTest {
         private fun leggInnFilterForTest() {
             initDatasource(dbConfig, prometheus).transaction {
                 it.execute("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
+            }
+        }
+
+        private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
+            return initDatasource(dbConfig, prometheus).transaction {connection ->
+                OppgaveRepository(connection).hentOppgave(oppgaveId)
+            }
+        }
+        private fun opprettOppgave(
+            personIdent: String = "12345678901",
+            saksnummer: String = "123",
+            behandlingRef: UUID = UUID.randomUUID(),
+            status: no.nav.aap.oppgave.verdityper.Status = no.nav.aap.oppgave.verdityper.Status.OPPRETTET,
+            avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
+            behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+            enhet: String = "0230",
+            oppfølgingsenhet: String? = null,
+            veileder: String? = null,
+        ): OppgaveId {
+            val oppgaveDto = OppgaveDto(
+                personIdent = personIdent,
+                saksnummer = saksnummer,
+                behandlingRef = behandlingRef,
+                enhet = enhet,
+                oppfølgingsenhet = oppfølgingsenhet,
+                behandlingOpprettet = LocalDateTime.now().minusDays(3),
+                avklaringsbehovKode = avklaringsbehovKode.kode,
+                status = status,
+                behandlingstype = behandlingstype,
+                opprettetAv = "bruker1",
+                veileder = veileder,
+                opprettetTidspunkt = LocalDateTime.now()
+            )
+            return initDatasource(dbConfig, prometheus).transaction { connection ->
+                OppgaveRepository(connection).opprettOppgave(oppgaveDto)
             }
         }
 

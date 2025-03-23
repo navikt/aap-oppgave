@@ -11,7 +11,7 @@ internal data class PdlRequest(val query: String, val variables: Variables) {
             query = ADRESSEBESKYTTELSE_QUERY.asQuery(),
             variables = Variables(ident = ident)
         )
-        
+
         fun hentGeografiskTilknytning(ident: String) = PdlRequest(
             query = GEOGRAFISK_TILKNYTNING_QUERY.asQuery(),
             variables = Variables(ident = ident)
@@ -21,11 +21,30 @@ internal data class PdlRequest(val query: String, val variables: Variables) {
             query = PERSONINFO_BOLK_QUERY.asQuery(),
             variables = Variables(identer = identer)
         )
+
+        fun hentAdressebeskyttelseForIdenter(identer: List<String>) = PdlRequest(
+            query = ADRESSEBESKYTTELSE_BOLK_QUERY.asQuery(),
+            variables = Variables(identer = identer)
+        )
     }
 }
 
 private const val ident = "\$ident"
 private const val identer = "\$identer"
+
+val ADRESSEBESKYTTELSE_BOLK_QUERY = """
+        query($identer: [ID!]!) {
+            hentPersonBolk(identer: $identer) {
+                ident,
+                person {
+                    adressebeskyttelse(historikk: false) {
+                        gradering
+                    }
+                },
+                code
+            }
+        }
+   """.trimIndent()
 
 val ADRESSEBESKYTTELSE_QUERY = """
      query($ident: ID!) {

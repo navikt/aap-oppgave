@@ -39,7 +39,9 @@ enum class GeografiskTilknytningType{
 }
 
 data class PdlPerson(
-    val navn: List<Navn>, val code: Code?     //Denne er påkrevd ved hentPersonBolk
+    val navn: List<Navn>?,
+    val adressebeskyttelse: List<Gradering>?,
+    val code: Code?     //Denne er påkrevd ved hentPersonBolk
 )
 
 data class HentPersonResult(

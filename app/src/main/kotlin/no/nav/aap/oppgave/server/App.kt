@@ -38,6 +38,7 @@ import no.nav.aap.oppgave.oppgavesøkApi
 import no.nav.aap.oppgave.plukk.plukkNesteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
+import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.søkApi
 import org.slf4j.LoggerFactory
@@ -126,7 +127,10 @@ fun Application.motor(dataSource: DataSource): Motor {
     val motor = Motor(
         dataSource = dataSource,
         antallKammer = ANTALL_WORKERS,
-        jobber = listOf(StatistikkHendelseJobb)
+        jobber = listOf(
+            StatistikkHendelseJobb,
+            OppdaterOppgaveEnhetJobb
+        )
     )
 
     monitor.subscribe(ApplicationStarted) {
