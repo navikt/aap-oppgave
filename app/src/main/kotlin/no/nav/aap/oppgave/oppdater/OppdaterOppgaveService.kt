@@ -32,11 +32,18 @@ private val AVKLARINGSBEHOV_FOR_VEILEDER =
 
 private val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER =
     Definisjon.entries
+        .asSequence()
         .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
         .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_NASJONAL) }
         .filter { it.løsesISteg != StegType.KVALITETSSIKRING }
         .map { AvklaringsbehovKode(it.kode.name) }
         .toSet()
+
+private val AVKLARINGSBEHOV_FOR_BESLUTTER = Definisjon.entries
+    .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
+    .filter { it.løsesAv.contains(Rolle.BESLUTTER) }
+    .map { AvklaringsbehovKode(it.kode.name) }
+    .toSet()
 
 // TODO: Forløpig skal alle oppgaver kunne løses av samme saksbehandler. Avklarer dette senere.
 private val AVKLARINGSBEHOV_FOR_POSTMOTTAK =
@@ -200,15 +207,16 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
     private fun enhetForOppgave(
         avklaringsbehovHendelse: AvklaringsbehovHendelse,
         oppgaveOppdatering: OppgaveOppdatering
-    ) = if (avklaringsbehovHendelse.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER) {
-        // Sett til NAY-kø om avklaringsbehovet svarer til en NAY-oppgave
-        EnhetForOppgave(
-            "4491",
-            oppfølgingsenhet = null
-        )
-    } else {
-        enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
-    }
+    ) =
+        if (avklaringsbehovHendelse.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER + AVKLARINGSBEHOV_FOR_BESLUTTER) {
+            // Sett til NAY-kø om avklaringsbehovet svarer til en NAY-oppgave
+            EnhetForOppgave(
+                "4491",
+                oppfølgingsenhet = null
+            )
+        } else {
+            enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
+        }
 
     private fun sammeSaksbehandlerType(
         avklaringsbehovKode1: AvklaringsbehovKode,
