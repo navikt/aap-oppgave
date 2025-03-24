@@ -34,7 +34,7 @@ dependencies {
     implementation("no.nav.aap.kelvin:server:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor-api:$komponenterVersjon")
-    implementation("no.nav:ktor-openapi-generator:1.0.98")
+    implementation("no.nav:ktor-openapi-generator:1.0.99")
     implementation("no.nav.aap.tilgang:api-kontrakt:$tilgangVersjon")
     implementation("no.nav.aap.behandlingsflyt:kontrakt:$behandlingsflytVersjon")
     implementation("no.nav.aap.postmottak:kontrakt:$postmottakVersjon")
