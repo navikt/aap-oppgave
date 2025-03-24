@@ -15,12 +15,14 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
 import no.nav.aap.komponenter.server.AZURE
 import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.motor.Motor
 import no.nav.aap.motor.api.motorApi
+import no.nav.aap.motor.retry.RetryService
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.enhet.hentEnhetApi
 import no.nav.aap.oppgave.filter.hentFilterApi
@@ -132,6 +134,10 @@ fun Application.motor(dataSource: DataSource): Motor {
             OppdaterOppgaveEnhetJobb
         )
     )
+
+    dataSource.transaction { dbConnection ->
+        RetryService(dbConnection).enable()
+    }
 
     monitor.subscribe(ApplicationStarted) {
         motor.start()
