@@ -311,7 +311,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
     
     fun oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaveIds: List<Long>, enhet: String) {
-        require(oppgaveIds.isNotEmpty()){"Må ha minst en oppgave å oppdatere"}
+        require(oppgaveIds.isNotEmpty()) { "Må ha minst en oppgave å oppdatere" }
         val query = """
             UPDATE 
                 OPPGAVE 

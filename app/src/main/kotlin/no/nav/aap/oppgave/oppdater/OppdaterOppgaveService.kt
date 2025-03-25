@@ -197,7 +197,7 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
                         hvemLøsteForrigeIdent
                     )
                     if (reserverteOppgaver.isNotEmpty()) {
-                        log.info("Ny oppgave(id=${oppgaveId.id}) ble automatisk tilordnet: $hvemLøsteForrigeIdent")
+                        log.info("Ny oppgave(id=${oppgaveId.id}) ble automatisk tilordnet: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}")
                     }
                 }
             }

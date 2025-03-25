@@ -45,7 +45,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
     }
 
 /**
- * Søker etter oppgaver med et fritt defininert filter som ikke trenger være lagret i database.
+ * Søker etter oppgaver med et fritt definert filter som ikke trenger være lagret i database.
  */
 fun NormalOpenAPIRoute.oppgavesøkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
