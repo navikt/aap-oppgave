@@ -135,7 +135,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 $journalpostIdClause
         """.trimIndent()
 
-        return connection.queryList<OppgaveDto>(oppgaverForReferanseQuery) {
+        return connection.queryList(oppgaverForReferanseQuery) {
             setParams {
                 var index = 1
                 if (saksnummer != null) setString(index++, saksnummer)

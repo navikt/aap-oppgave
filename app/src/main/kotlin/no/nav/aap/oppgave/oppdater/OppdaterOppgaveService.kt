@@ -45,7 +45,7 @@ private val AVKLARINGSBEHOV_FOR_BESLUTTER = Definisjon.entries
     .map { AvklaringsbehovKode(it.kode.name) }
     .toSet()
 
-// TODO: Forløpig skal alle oppgaver kunne løses av samme saksbehandler. Avklarer dette senere.
+// TODO: Foreløpig skal alle oppgaver kunne løses av samme saksbehandler. Avklarer dette senere.
 private val AVKLARINGSBEHOV_FOR_POSTMOTTAK =
     no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.entries
         .map { AvklaringsbehovKode(it.kode.name) }.toSet()
@@ -156,9 +156,9 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
 
     private fun opprettOppgaver(
         oppgaveOppdatering: OppgaveOppdatering,
-        avklarsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelse>
+        avklaringsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelse>
     ) {
-        avklarsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
+        avklaringsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
             val enhetForOppgave = enhetForOppgave(avklaringsbehovHendelse, oppgaveOppdatering)
             val veileder = if (oppgaveOppdatering.personIdent != null) {
                 veilarbarboppfolgingKlient.hentVeileder(oppgaveOppdatering.personIdent)
@@ -225,6 +225,7 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         return when {
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER -> true
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_VEILEDER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER -> true
+            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_BESLUTTER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_BESLUTTER -> true
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_POSTMOTTAK && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_POSTMOTTAK -> true
             else -> false
         }
