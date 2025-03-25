@@ -6,6 +6,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import java.time.LocalDate
@@ -83,7 +84,15 @@ private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehand
 }
 
 private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
-    this.map { Endring(status = it.status.tilAvklaringsbehovStatus(), tidsstempel = it.tidsstempel, endretAv = it.endretAv, påVentTil = it.frist, påVentÅrsak = it.årsakTilSattPåVent?.name) }
+    this.map {
+        Endring(
+            status = it.status.tilAvklaringsbehovStatus(),
+            tidsstempel = it.tidsstempel,
+            endretAv = it.endretAv,
+            påVentTil = it.frist,
+            påVentÅrsak = it.årsakTilSattPåVent?.name
+        )
+    }
 
 private fun no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.tilBehandlingsstatus(): BehandlingStatus {
     if (this.erAvsluttet()) {
@@ -93,7 +102,7 @@ private fun no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.tilBehandlings
 }
 
 private fun no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
-    return when(this) {
+    return when (this) {
         no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
         no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
         no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.TOTRINNS_VURDERT -> AvklaringsbehovStatus.TOTRINNS_VURDERT
@@ -141,7 +150,7 @@ private fun List<no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelse
 }
 
 private fun Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
-    return when(this) {
+    return when (this) {
         Status.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
         Status.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
         Status.SENDT_TILBAKE_FRA_BESLUTTER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
@@ -151,4 +160,12 @@ private fun Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
 }
 
 private fun List<no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO>.tilEndringerForPostmottak() =
-    this.map { Endring(status = it.status.tilAvklaringsbehovStatus(), tidsstempel = it.tidsstempel, endretAv = it.endretAv, påVentTil = it.frist, påVentÅrsak = null) }
+    this.map {
+        Endring(
+            status = it.status.tilAvklaringsbehovStatus(),
+            tidsstempel = it.tidsstempel,
+            endretAv = it.endretAv,
+            påVentTil = it.frist,
+            påVentÅrsak = null
+        )
+    }

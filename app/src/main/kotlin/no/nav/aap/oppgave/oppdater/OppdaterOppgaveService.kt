@@ -90,7 +90,12 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
     ) {
-        val åpentAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.firstOrNull { it.status in ÅPNE_STATUSER }
+        // Om det er flere åpne avklaringsbehov (f.eks ved tilbakeføring fra beslutter), velger vi det eldste avklaringsbehovet.
+        // Dette burde svare til det første steget i flyten.
+        // På sikt bør vi kanskje se på mer robuste løsninger, f.eks at behandlingsflyt velger ut hvilken avklaringsbehov
+        // som skal løses først, i stedet for alle.
+        val åpentAvklaringsbehov =
+            oppgaveOppdatering.avklaringsbehov.filter { it.status in ÅPNE_STATUSER }.eldsteAvklaringsbehov()
         val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter { it.status in AVSLUTTEDE_STATUSER }
 
         // Opprette eller gjenåpne oppgave
@@ -255,6 +260,14 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
     private fun AvklaringsbehovHendelse.sisteEndring(): Endring {
         return endringer
             .sortedBy { it.tidsstempel }.last { it.status == this.status }
+    }
+
+    private fun AvklaringsbehovHendelse.opprettetTidspunkt(): LocalDateTime {
+        return endringer.minByOrNull { it.tidsstempel }!!.tidsstempel
+    }
+
+    private fun List<AvklaringsbehovHendelse>.eldsteAvklaringsbehov(): AvklaringsbehovHendelse? {
+        return this.minByOrNull { it.opprettetTidspunkt() }
     }
 
     private fun AvklaringsbehovHendelse.sistEndretAv() = sisteEndring().endretAv
