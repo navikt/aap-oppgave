@@ -310,7 +310,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
     
-    fun oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaveIds: List<Long>, enhet: String) {
+    fun oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaveIds: List<Long>, enhet: String): Int {
         require(oppgaveIds.isNotEmpty()) { "Må ha minst en oppgave å oppdatere" }
         val query = """
             UPDATE 
@@ -325,7 +325,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ID IN (${oppgaveIds.joinToString(",")})
         """.trimIndent()
         
-        connection.execute(query) {
+        return connection.executeReturnUpdated(query) {
             setParams {
                 setString(1, enhet)
                 setString(2, "Kelvin") // TODO: Kan øke kolonnestørrelse for å få plass til jobbtype hvis det er interessant
