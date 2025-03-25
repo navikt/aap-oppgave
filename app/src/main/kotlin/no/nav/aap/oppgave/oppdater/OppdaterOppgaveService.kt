@@ -178,7 +178,7 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
                 påVentÅrsak = avklaringsbehovHendelse.sistePåVentÅrsak()
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
-            log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status}")
+            log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
             sendOppgaveStatusOppdatering(connection, oppgaveId, HendelseType.OPPRETTET)
 
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
