@@ -14,16 +14,17 @@ import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentFilterApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
-    route("/filter").get<Unit, List<FilterDto>> {
+    route("/filter").get<FilterRequestDto, List<FilterDto>> { req ->
         prometheus.httpCallCounter("/filter").increment()
         val filterListe = dataSource.transaction(readOnly = true) { connection ->
-            FilterRepository(connection).hentAlle()
+            FilterRepository(connection).hentForEnheter(req.enheter)
         }
         respond(filterListe)
     }
 
 fun NormalOpenAPIRoute.opprettEllerOppdaterFilterApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
+    // TODO: Denne bør ha en egen DTO for å skille mellom opprett og hent
     route("/filter").post<Unit, FilterDto, FilterDto> { _, request ->
         prometheus.httpCallCounter("/filter").increment()
 
@@ -48,6 +49,7 @@ fun NormalOpenAPIRoute.opprettEllerOppdaterFilterApi(dataSource: DataSource, pro
                     behandlingstyper = request.behandlingstyper,
                     opprettetAv = ident(),
                     opprettetTidspunkt = LocalDateTime.now(),
+                    enhetFilter = request.enheter?.map { EnhetFilter(it, Filtermodus.INKLUDER) } // TODO: enhetsfilteret bør inkluderes i dtoen
                 ))
             }
         }

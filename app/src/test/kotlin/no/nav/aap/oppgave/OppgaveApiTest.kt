@@ -379,7 +379,7 @@ class OppgaveApiTest {
 
     @Test
     fun `Hente filter`() {
-        opprettEllerOpdaterFilter(
+        opprettEllerOppdaterFilter(
             FilterDto(
                 navn = "Simpelt filter",
                 beskrivelse = "Et enkelt filter for alle oppgave",
@@ -393,11 +393,41 @@ class OppgaveApiTest {
         assertThat(alleFilter).hasSize(1)
     }
 
+    @Test
+    fun `Hente filter for enhet`() {
+        val filter1 = FilterDto(
+            navn = "Simpelt filter",
+            beskrivelse = "Et enkelt filter for alle oppgave",
+            enheter = setOf("1234"),
+            opprettetAv = "test",
+            opprettetTidspunkt = LocalDateTime.now(),
+        )
+        val id1 = opprettEllerOppdaterFilter(
+            filter1
+        )!!.id
+        
+        val id2 = opprettEllerOppdaterFilter(
+            FilterDto(
+                navn = "Simpelt filter 2",
+                beskrivelse = "Et enkelt filter for alle oppgave",
+                enheter = setOf("6789"),
+                opprettetAv = "test",
+                opprettetTidspunkt = LocalDateTime.now(),
+            )
+        )!!.id
+
+        val filtre = hentFilter(listOf("1234", "1235"))
+
+        assertThat(filtre.size).isEqualTo(1)
+        assertThat(filtre.find{it.id == id1}!!.navn).isEqualTo("Simpelt filter")
+        assertThat(filtre.find{it.id == id2}).isNull()
+    }
+
 
     @Test
     fun `Endre filter`() {
         // Opprett filter
-        opprettEllerOpdaterFilter(
+        opprettEllerOppdaterFilter(
             FilterDto(
                 navn = "Avklare sykdom i førstegangsbehandling filter",
                 beskrivelse = "Avklare sykdom i førstegangsbehandling filter",
@@ -416,7 +446,7 @@ class OppgaveApiTest {
         assertThat(hentetFilter.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.AVKLAR_SYKDOM.kode.name))
 
         // Oppdater filter
-        opprettEllerOpdaterFilter(
+        opprettEllerOppdaterFilter(
             hentetFilter.copy(
                 navn = "Forslå vedtak i revurdering filter",
                 behandlingstyper = setOf(Behandlingstype.REVURDERING),
@@ -437,7 +467,7 @@ class OppgaveApiTest {
 
     @Test
     fun `Slette filter`() {
-        opprettEllerOpdaterFilter(
+        opprettEllerOppdaterFilter(
             FilterDto(
                 navn = "Simpelt filter",
                 beskrivelse = "Simpelt filter",
@@ -618,7 +648,8 @@ class OppgaveApiTest {
     }
 
     private fun hentNesteOppgaveNAY(): NesteOppgaveDto? {
-        val alleFilter = hentAlleFilter().filter { it.avklaringsbehovKoder.isEmpty() }.filter { it.behandlingstyper.isEmpty() }
+        val alleFilter =
+            hentAlleFilter().filter { it.avklaringsbehovKoder.isEmpty() }.filter { it.behandlingstyper.isEmpty() }
         val nesteOppgave: NesteOppgaveDto? = client.post(
             URI.create("http://localhost:8080/neste-oppgave"),
             PostRequest(body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!))
@@ -647,7 +678,7 @@ class OppgaveApiTest {
         )!!
     }
 
-    private fun opprettEllerOpdaterFilter(filter: FilterDto): FilterDto? {
+    private fun opprettEllerOppdaterFilter(filter: FilterDto): FilterDto? {
         return client.post(
             URI.create("http://localhost:8080/filter"),
             PostRequest(body = filter)
@@ -657,6 +688,13 @@ class OppgaveApiTest {
     private fun hentAlleFilter(): List<FilterDto> {
         return client.get<List<FilterDto>>(
             URI.create("http://localhost:8080/filter"),
+            GetRequest()
+        )!!
+    }
+
+    private fun hentFilter(enheter: List<String>): List<FilterDto> {
+        return client.get<List<FilterDto>>(
+            URI.create("http://localhost:8080/filter?enheter=${enheter.joinToString("&enheter=")}"),
             GetRequest()
         )!!
     }
@@ -700,21 +738,29 @@ class OppgaveApiTest {
                 it.execute("DELETE FROM OPPGAVE")
                 it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
                 it.execute("DELETE FROM FILTER_BEHANDLINGSTYPE")
+                it.execute("DELETE FROM FILTER_ENHET")
                 it.execute("DELETE FROM FILTER")
             }
         }
 
         private fun leggInnFilterForTest() {
             initDatasource(dbConfig, prometheus).transaction {
-                it.execute("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
+                val filterId = it.executeReturnKey("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
+                it.execute("INSERT INTO FILTER_ENHET (FILTER_ID, ENHET) VALUES (?, ?)") {
+                    setParams {
+                        setLong(1, filterId)
+                        setString(2, "ALLE")
+                    }
+                }
             }
         }
 
         private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
-            return initDatasource(dbConfig, prometheus).transaction {connection ->
+            return initDatasource(dbConfig, prometheus).transaction { connection ->
                 OppgaveRepository(connection).hentOppgave(oppgaveId)
             }
         }
+
         private fun opprettOppgave(
             personIdent: String = "12345678901",
             saksnummer: String = "123",

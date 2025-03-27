@@ -11,6 +11,12 @@ data class OpprettFilter(
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
+    val enhetFilter: List<EnhetFilter>? = null,
+)
+
+data class EnhetFilter(
+    val enhetNr: String,
+    val filtermodus: Filtermodus
 )
 
 data class OppdaterFilter(
@@ -33,10 +39,15 @@ class FilterRepository(private val connection: DBConnection) {
         return hentFilter(filterId).firstOrNull()
     }
 
+    fun hentForEnheter(enheter: List<String>?): List<FilterDto> {
+        return hentFilterForEnheter(enheter)
+    }
+
     fun opprett(filter: OpprettFilter): Long {
         val filterId = opprettFilter(filter)
         opprettFilterAvklaringsbehovtyper(filterId, filter.avklaringsbehovtyper)
         opprettFilterBehandlingstyper(filterId, filter.behandlingstyper)
+        opprettFilterEnheter(filterId, filter.enhetFilter)
         return filterId
     }
 
@@ -116,6 +127,78 @@ class FilterRepository(private val connection: DBConnection) {
                 setString(2, it.name)
             }
         }
+    }
+
+    fun opprettFilterEnheter(filterId: Long, enhetFilter: List<EnhetFilter>? = null) {
+        val insertFilterEnheterSql = """
+            INSERT INTO FILTER_ENHET (FILTER_ID, ENHET, FILTER_MODUS) VALUES (?, ?, ?)
+        """.trimIndent()
+
+        if (enhetFilter.isNullOrEmpty()) {
+            connection.execute(insertFilterEnheterSql) {
+                setParams {
+                    setLong(1, filterId)
+                    setString(2, "ALLE")
+                    setString(3, Filtermodus.INKLUDER.name)
+                }
+            }
+            return
+        }
+
+        connection.executeBatch(insertFilterEnheterSql, enhetFilter) {
+            setParams {
+                setLong(1, filterId)
+                setString(2, it.enhetNr)
+                setString(3, it.filtermodus.name)
+            }
+        }
+    }
+
+    private fun hentFilterForEnheter(enheter: List<String>?): List<FilterDto> {
+        val enhetsfilter = if (!enheter.isNullOrEmpty())
+            """AND ID IN (SELECT FILTER_ID FROM FILTER_ENHET WHERE FILTER_MODUS = 'INKLUDER' AND (ENHET = 'ALLE' OR ENHET = ANY(?::text[])))
+               AND ID NOT IN (SELECT FILTER_ID FROM FILTER_ENHET WHERE FILTER_MODUS = 'EKSKLUDER' AND (ENHET = 'ALLE' OR ENHET = ANY(?::text[])))""".trimIndent()
+        else ""
+
+        val query = """
+            SELECT 
+                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT
+            FROM 
+                FILTER 
+            WHERE SLETTET = FALSE 
+                $enhetsfilter
+            GROUP BY FILTER.ID
+        """.trimIndent()
+
+        val alleFilter = connection.queryList(query) {
+            setParams {
+                if (!enheter.isNullOrEmpty()) {
+                    setArray(1, enheter)
+                    setArray(2, enheter)
+                }
+            }
+            setRowMapper { row ->
+                FilterDto(
+                    id = row.getLong("ID"),
+                    navn = row.getString("NAVN"),
+                    beskrivelse = row.getString("BESKRIVELSE"),
+                    opprettetAv = row.getString("OPPRETTET_AV"),
+                    opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
+                    endretAv = row.getStringOrNull("ENDRET_AV"),
+                    endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
+                )
+            }
+        }
+
+        val alleFilterAvklaringsbehovtype = hentAlleFilterAvklaringsbehovtype(null)
+        val alleFilterBehandlingstyper = hentAlleFilterBehandlingstyper(null)
+        val alleFilterMedFelter = alleFilter.map { filter ->
+            filter.copy(
+                avklaringsbehovKoder = alleFilterAvklaringsbehovtype[filter.id] ?: emptySet(),
+                behandlingstyper = alleFilterBehandlingstyper[filter.id] ?: emptySet()
+            )
+        }
+        return alleFilterMedFelter
     }
 
 
@@ -216,7 +299,10 @@ class FilterRepository(private val connection: DBConnection) {
                 }
             }
             setRowMapper { row ->
-                Pair<Long, Behandlingstype>(row.getLong("FILTER_ID"), Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE")))
+                Pair(
+                    row.getLong("FILTER_ID"),
+                    Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
+                )
             }
         }
 
@@ -231,5 +317,8 @@ class FilterRepository(private val connection: DBConnection) {
 
 }
 
-
+enum class Filtermodus {
+    INKLUDER,
+    EKSKLUDER
+}
 

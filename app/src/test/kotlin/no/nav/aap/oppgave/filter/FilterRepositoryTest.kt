@@ -17,6 +17,7 @@ class FilterRepositoryTest {
         InitTestDatabase.dataSource.transaction {
             it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
             it.execute("DELETE FROM FILTER_BEHANDLINGSTYPE")
+            it.execute("DELETE FROM FILTER_ENHET")
             it.execute("DELETE FROM FILTER")
         }
     }
@@ -40,6 +41,38 @@ class FilterRepositoryTest {
 
             val alleFilter = filterRepo.hentAlle()
             assertThat(alleFilter).hasSize(antallFilterFørTest + 1)
+        }
+    }
+
+    @Test
+    fun `Kan opprette enhetsspesifikt filter`() {
+        InitTestDatabase.dataSource.transaction { connection ->
+            val filterRepo = FilterRepository(connection)
+            val nyttFilter = OpprettFilter(
+                navn = "Filter for enhet",
+                beskrivelse = "Filter for enhet",
+                opprettetAv = "test",
+                opprettetTidspunkt = LocalDateTime.now(),
+                enhetFilter = listOf(EnhetFilter("1234", Filtermodus.INKLUDER))
+            )
+            val filterId = filterRepo.opprett(nyttFilter)
+
+            val ekskludertFilter = OpprettFilter(
+                navn = "Ikke 1234",
+                beskrivelse = "Filter som ikke 1234 har tilgang til",
+                opprettetAv = "test",
+                opprettetTidspunkt = LocalDateTime.now(),
+                enhetFilter = listOf(
+                    EnhetFilter("ALLE", Filtermodus.INKLUDER),
+                    EnhetFilter("1234", Filtermodus.EKSKLUDER)
+                )
+            )
+            filterRepo.opprett(ekskludertFilter)
+
+            val filtre = filterRepo.hentForEnheter(listOf("1234"))
+            assertThat(filtre).size().isEqualTo(1)
+            assertThat(filtre.first().navn).isEqualTo("Filter for enhet")
+            assertThat(filtre.first().id).isEqualTo(filterId)
         }
     }
 
