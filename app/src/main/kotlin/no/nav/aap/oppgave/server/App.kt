@@ -146,8 +146,8 @@ fun Application.motor(dataSource: DataSource): Motor {
     monitor.subscribe(ApplicationStopPreparing) { application ->
         application.log.info("Server er i ferd med å stoppe")
         motor.stop()
-        // Release resources and unsubscribe from events
-        monitor.unsubscribe(ApplicationStopPreparing) {}
+
+        monitor.unsubscribe(ApplicationStarted) {}
         monitor.unsubscribe(ApplicationStopPreparing) {}
     }
 
