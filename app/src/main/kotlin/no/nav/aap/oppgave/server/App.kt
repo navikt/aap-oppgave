@@ -144,7 +144,7 @@ fun Application.motor(dataSource: DataSource): Motor {
     }
 
     monitor.subscribe(ApplicationStopped) { application ->
-        application.log.info("Server er i ferd med å stoppe")
+        application.log.info("Server har stoppet")
         motor.stop()
 
         monitor.unsubscribe(ApplicationStarted) {}
