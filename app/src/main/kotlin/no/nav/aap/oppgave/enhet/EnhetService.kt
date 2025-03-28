@@ -21,9 +21,6 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
     private val log = LoggerFactory.getLogger(EnhetService::class.java)
 
     fun hentEnheter(currentToken: String, ident: String): List<String> {
-        val groups = msGraphClient.hentAdGrupper(currentToken, ident).groups
-            .map { it.name }
-        log.info("###### Ident: $ident Groups: $groups")
         return msGraphClient.hentAdGrupper(currentToken, ident).groups
             .filter { it.name.startsWith(ENHET_GROUP_PREFIX) }
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
