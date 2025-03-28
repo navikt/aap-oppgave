@@ -28,7 +28,7 @@ fun Application.veilarboppfolgingFake() {
 private fun responsFraVeilarboppfolging(): String {
     return """
             { 
-                "navIdent": "ident"
+                "veilederIdent": "ident"
            
             }
     """.trimIndent()
