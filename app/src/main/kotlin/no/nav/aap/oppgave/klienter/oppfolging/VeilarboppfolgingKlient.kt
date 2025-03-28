@@ -15,7 +15,7 @@ private data class HentVeilederRequest(
 )
 
 private data class HentVeilederResponse(
-    val navIdent: String
+    val veilederIdent: String
 )
 
 class VeilarbarboppfolgingKlient {
@@ -32,6 +32,10 @@ class VeilarbarboppfolgingKlient {
         prometheus = prometheus
     )
 
+    /**
+     * Kildekode for endepunktet: https://github.com/navikt/veilarboppfolging/blob/main/src/main/java/no/nav/veilarboppfolging/controller/v3/VeilederV3Controller.java
+     * Per 28-03-25
+     */
     fun hentVeileder(personIdent: String): String? {
         val hentVeilederUrl = url.resolve("/veilarboppfolging/api/v3/hent-veileder")
         val request = PostRequest(
@@ -42,7 +46,7 @@ class VeilarbarboppfolgingKlient {
         )
         val resp = client.post<HentVeilederRequest, HentVeilederResponse?>(hentVeilederUrl, request)
 
-        return resp?.navIdent
+        return resp?.veilederIdent
     }
 
 }
