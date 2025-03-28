@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
+import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon as PostmottakDefinisjon
 import no.nav.aap.behandlingsflyt.kontrakt.steg.StegType
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.AvklaringsbehovKode
@@ -45,9 +46,26 @@ private val AVKLARINGSBEHOV_FOR_BESLUTTER = Definisjon.entries
     .map { AvklaringsbehovKode(it.kode.name) }
     .toSet()
 
-// TODO: Foreløpig skal alle oppgaver kunne løses av samme saksbehandler. Avklarer dette senere.
-private val AVKLARINGSBEHOV_FOR_POSTMOTTAK =
-    no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.entries
+private val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK =
+    PostmottakDefinisjon.entries
+        .filter {
+            it.type in setOf(
+                PostmottakDefinisjon.BehovType.MANUELT_PÅKREVD,
+                PostmottakDefinisjon.BehovType.MANUELT_FRIVILLIG
+            )
+        }
+        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_NASJONAL) }
+        .map { AvklaringsbehovKode(it.kode.name) }.toSet()
+
+private val AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK =
+    PostmottakDefinisjon.entries
+        .filter {
+            it.type in setOf(
+                PostmottakDefinisjon.BehovType.MANUELT_PÅKREVD,
+                PostmottakDefinisjon.BehovType.MANUELT_FRIVILLIG
+            )
+        }
+        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_OPPFOLGING) }
         .map { AvklaringsbehovKode(it.kode.name) }.toSet()
 
 private val ÅPNE_STATUSER = setOf(
@@ -213,7 +231,9 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         avklaringsbehovHendelse: AvklaringsbehovHendelse,
         oppgaveOppdatering: OppgaveOppdatering
     ) =
-        if (avklaringsbehovHendelse.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER + AVKLARINGSBEHOV_FOR_BESLUTTER) {
+        if (avklaringsbehovHendelse.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER + AVKLARINGSBEHOV_FOR_BESLUTTER
+            + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
+        ) {
             // Sett til NAY-kø om avklaringsbehovet svarer til en NAY-oppgave
             EnhetForOppgave(
                 "4491",
@@ -231,7 +251,8 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER -> true
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_VEILEDER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER -> true
             avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_BESLUTTER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_BESLUTTER -> true
-            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_POSTMOTTAK && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_POSTMOTTAK -> true
+            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK -> true
+            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK -> true
             else -> false
         }
     }
