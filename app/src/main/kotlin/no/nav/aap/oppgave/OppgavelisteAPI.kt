@@ -14,14 +14,15 @@ import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.plukk.TilgangGateway
 import no.nav.aap.oppgave.server.authenticate.ident
+import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
+private val log = LoggerFactory.getLogger("oppgavelisteApi")
 /**
  * Søker etter oppgaver med et predefinert filter angitt med filterId. Det vil bli sjekket om innlogget bruker har tilgang
  * til oppgavene. I tillegg kan det legges på en begrensning på enheter.
  */
 fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
     route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
@@ -37,7 +38,14 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
         val token = token()
         val oppgaverMedTilgang = oppgaver
             .asSequence()
-            .filter { TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token) }
+            .filter { 
+                try {
+                    TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token)
+                } catch (e: Exception) {
+                    log.warn("Feil ved sjekk av tilgang til oppgave ${it.id}", e)
+                    false
+                }
+            }
             .take(request.maxAntall)
             .toList()
 
