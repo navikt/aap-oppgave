@@ -169,8 +169,8 @@ class OppgaveRepositoryTest {
         val oppgaver = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LØRENSKOG)))
 
         assertThat(oppgaver).hasSize(2)
-        assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
-        assertThat(oppgaver.map {it.id}).contains(oppgaveId3.id)
+        assertThat(oppgaver.map {it.id}[0]).isEqualTo(oppgaveId2.id)
+        assertThat(oppgaver.map {it.id}[1]).isEqualTo(oppgaveId3.id)
     }
 
     @Test

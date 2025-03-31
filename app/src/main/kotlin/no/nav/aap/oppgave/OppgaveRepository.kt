@@ -273,7 +273,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnOppgaver(filter: Filter): List<OppgaveDto> {
+    enum class Rekkefølge {asc, desc}
+    fun finnOppgaver(filter: Filter, rekkefølge: Rekkefølge = Rekkefølge.asc): List<OppgaveDto> {
         val hentNesteOppgaveQuery = """
             SELECT 
                    $alleOppgaveFelt
@@ -281,7 +282,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE 
             WHERE 
                 ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
-            ORDER BY BEHANDLING_OPPRETTET
+            ORDER BY BEHANDLING_OPPRETTET ${rekkefølge.name}
         """.trimIndent()
 
         return connection.queryList(hentNesteOppgaveQuery) {

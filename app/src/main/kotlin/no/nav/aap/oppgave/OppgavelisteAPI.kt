@@ -7,6 +7,8 @@ import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
+import no.nav.aap.komponenter.miljo.Miljø
+import no.nav.aap.komponenter.miljo.MiljøKode
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.TransientFilterDto
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("oppgavelisteApi")
+
 /**
  * Søker etter oppgaver med et predefinert filter angitt med filterId. Det vil bli sjekket om innlogget bruker har tilgang
  * til oppgavene. I tillegg kan det legges på en begrensning på enheter.
@@ -32,13 +35,20 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
             } else {
                 null
             }
-            OppgaveRepository(connection).finnOppgaver(filter!!.copy(enheter = request.enheter, veileder = veilederIdent))
+            val rekkefølge = when (Miljø.er()) {
+                MiljøKode.DEV -> OppgaveRepository.Rekkefølge.desc
+                else -> OppgaveRepository.Rekkefølge.asc
+            }
+            OppgaveRepository(connection).finnOppgaver(
+                filter!!.copy(enheter = request.enheter, veileder = veilederIdent),
+                rekkefølge
+            )
         }
 
         val token = token()
         val oppgaverMedTilgang = oppgaver
             .asSequence()
-            .filter { 
+            .filter {
                 try {
                     TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token)
                 } catch (e: Exception) {
@@ -49,7 +59,12 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
             .take(request.maxAntall)
             .toList()
 
-        respond(OppgavelisteRespons(antallTotalt = oppgaver.size, oppgaver = oppgaverMedTilgang.medPersonNavn(false, token())))
+        respond(
+            OppgavelisteRespons(
+                antallTotalt = oppgaver.size,
+                oppgaver = oppgaverMedTilgang.medPersonNavn(false, token())
+            )
+        )
     }
 
 /**
@@ -62,5 +77,10 @@ fun NormalOpenAPIRoute.oppgavesøkApi(dataSource: DataSource, prometheus: Promet
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter)
         }
-        respond(oppgaver.medPersonNavn(true, token())) //TODO: vurder om vi må ha true her, eller om vi må gjøre om dette.
+        respond(
+            oppgaver.medPersonNavn(
+                true,
+                token()
+            )
+        ) //TODO: vurder om vi må ha true her, eller om vi må gjøre om dette.
     }
