@@ -14,6 +14,7 @@ import java.util.*
 
 interface IMsGraphClient {
     fun hentAdGrupper(currentToken: String, ident: String): MemberOf
+    fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf
 }
 
 class MsGraphClient(
@@ -30,14 +31,27 @@ class MsGraphClient(
         prometheus = prometheus,
     )
 
+    // NB: Denne har ikke implementert paginering, og antall roller kan fort overstige default page size
     override fun hentAdGrupper(currentToken: String, ident: String): MemberOf {
         val url = baseUrl.resolve("me/memberOf")
         val respons = httpClient.get<MemberOf>(url, GetRequest(currentToken = OidcToken(currentToken))) ?: MemberOf()
         return respons
     }
 
+    override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
+        val url =
+            baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)})")
+        val respons = httpClient.get<MemberOf>(url, GetRequest(currentToken = OidcToken(currentToken))) ?: MemberOf()
+        return respons
+    }
+
+    private fun starterMedFilter(prefix: String): String {
+        return "startswith(displayName,\'$prefix\')"
+    }
+
     companion object {
         private const val MSGRAPH_PREFIX = "msgraph"
+        const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
     }
 }
 
