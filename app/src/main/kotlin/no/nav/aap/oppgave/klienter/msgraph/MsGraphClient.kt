@@ -40,7 +40,7 @@ class MsGraphClient(
 
     override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
         val url =
-            baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)})")
+            baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)}")
         val respons = httpClient.get<MemberOf>(url, GetRequest(currentToken = OidcToken(currentToken))) ?: MemberOf()
         return respons
     }
