@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
+import no.nav.aap.komponenter.httpklient.httpclient.Header
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
@@ -41,7 +42,13 @@ class MsGraphClient(
     override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
         val url =
             baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)}")
-        val respons = httpClient.get<MemberOf>(url, GetRequest(currentToken = OidcToken(currentToken))) ?: MemberOf()
+        val respons = httpClient.get<MemberOf>(
+            url,
+            GetRequest(
+                currentToken = OidcToken(currentToken),
+                additionalHeaders = listOf(Header("ConsistencyLevel", "eventual"))
+            )
+        ) ?: MemberOf()
         return respons
     }
 
