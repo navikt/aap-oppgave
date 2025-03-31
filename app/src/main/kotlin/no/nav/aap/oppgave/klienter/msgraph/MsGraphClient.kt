@@ -14,7 +14,6 @@ import java.net.URI
 import java.util.*
 
 interface IMsGraphClient {
-    fun hentAdGrupper(currentToken: String, ident: String): MemberOf
     fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf
 }
 
@@ -31,13 +30,6 @@ class MsGraphClient(
         tokenProvider = OnBehalfOfTokenProvider,
         prometheus = prometheus,
     )
-
-    // NB: Denne har ikke implementert paginering, og antall roller kan fort overstige default page size
-    override fun hentAdGrupper(currentToken: String, ident: String): MemberOf {
-        val url = baseUrl.resolve("me/memberOf")
-        val respons = httpClient.get<MemberOf>(url, GetRequest(currentToken = OidcToken(currentToken))) ?: MemberOf()
-        return respons
-    }
 
     override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
         val url =

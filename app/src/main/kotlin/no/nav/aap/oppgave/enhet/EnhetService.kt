@@ -9,7 +9,6 @@ import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
-import org.slf4j.LoggerFactory
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -18,27 +17,10 @@ data class EnhetForOppgave(
 
 class EnhetService(private val msGraphClient: IMsGraphClient) {
 
-    private val log = LoggerFactory.getLogger(EnhetService::class.java)
-
     fun hentEnheter(currentToken: String, ident: String): List<String> {
-        return try {
-            log.info("Henter enheter med filter")
-            val enheter = msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
-                .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
-            if (enheter.isEmpty()) {
-                log.warn("Fant ingen enheter for bruker, henter alle grupper")
-                msGraphClient.hentAdGrupper(currentToken, ident).groups
-                    .filter { it.name.startsWith(ENHET_GROUP_PREFIX) }
-                    .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
-            } else {
-                enheter
-            }
-        } catch (e: Exception) {
-            log.info("Klarte ikke utføre filtrert gruppespørring, henter alle grupper", e)
-            msGraphClient.hentAdGrupper(currentToken, ident).groups
-                .filter { it.name.startsWith(ENHET_GROUP_PREFIX) }
-                .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
-        }
+        return msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
+            .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
+        
     }
 
     fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave {
