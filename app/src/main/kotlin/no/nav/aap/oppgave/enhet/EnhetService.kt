@@ -67,6 +67,12 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
         val diskresjonskode: Diskresjonskode,
         val erNavAnsatt: Boolean
     )
+    
+    fun finnFortroligAdresse(fnr: String): Diskresjonskode {
+        val pdlData = PdlGraphqlKlient.withClientCredentialsRestClient().hentAdressebeskyttelseOgGeolokasjon(fnr)
+        return mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
+        
+    }
 
     private fun finnTilknytningOgSkjerming(fnr: String?): TilknytningOgSkjerming {
         if (fnr != null) {
