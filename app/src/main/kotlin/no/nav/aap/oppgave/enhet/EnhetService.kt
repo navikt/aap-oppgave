@@ -15,15 +15,21 @@ data class EnhetForOppgave(
     val oppfølgingsenhet: String?,
 )
 
-class EnhetService(private val msGraphClient: IMsGraphClient) {
+interface IEnhetService {
+    fun hentEnheter(currentToken: String, ident: String): List<String>
+    fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave
+    fun finnFortroligAdresse(fnr: String): Diskresjonskode
+}
 
-    fun hentEnheter(currentToken: String, ident: String): List<String> {
+class EnhetService(private val msGraphClient: IMsGraphClient): IEnhetService {
+
+    override fun hentEnheter(currentToken: String, ident: String): List<String> {
         return msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
         
     }
 
-    fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave {
+    override fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
         val enhetFraNorg = NorgKlient().finnEnhet(
             tilknytningOgSkjerming.geografiskTilknytningKode,
@@ -68,7 +74,7 @@ class EnhetService(private val msGraphClient: IMsGraphClient) {
         val erNavAnsatt: Boolean
     )
     
-    fun finnFortroligAdresse(fnr: String): Diskresjonskode {
+    override fun finnFortroligAdresse(fnr: String): Diskresjonskode {
         val pdlData = PdlGraphqlKlient.withClientCredentialsRestClient().hentAdressebeskyttelseOgGeolokasjon(fnr)
         return mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
         

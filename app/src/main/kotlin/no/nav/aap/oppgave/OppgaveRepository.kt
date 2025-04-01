@@ -147,6 +147,34 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
     }
+    
+    fun gjenåpneOppgave(
+        oppgaveId: OppgaveId,
+        ident: String
+    ) {
+        val query = """
+            UPDATE 
+                OPPGAVE 
+            SET 
+                STATUS = 'OPPRETTET', 
+                ENDRET_AV = ?,
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                VERSJON = VERSJON + 1
+            WHERE 
+                ID = ? AND
+                STATUS = 'AVSLUTTET' AND
+                VERSJON = ?
+        """.trimIndent()
+        
+        connection.execute(query) {
+            setParams {
+                setString(1, ident)
+                setLong(2, oppgaveId.id)
+                setLong(3, oppgaveId.versjon)
+            }
+            setResultValidator { require(it == 1) }
+        }
+    }
 
     fun oppdatereOppgave(
         oppgaveId: OppgaveId,

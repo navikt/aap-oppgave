@@ -18,7 +18,11 @@ private data class HentVeilederResponse(
     val veilederIdent: String
 )
 
-class VeilarbarboppfolgingKlient {
+interface IVeilarbarboppfolgingKlient {
+    fun hentVeileder(personIdent: String): String?
+}
+
+class VeilarbarboppfolgingKlient: IVeilarbarboppfolgingKlient {
 
     private val url = URI.create(requiredConfigForKey("integrasjon.veilarboppfolging.url"))
 
@@ -36,7 +40,7 @@ class VeilarbarboppfolgingKlient {
      * Kildekode for endepunktet: https://github.com/navikt/veilarboppfolging/blob/main/src/main/java/no/nav/veilarboppfolging/controller/v3/VeilederV3Controller.java
      * Per 28-03-25
      */
-    fun hentVeileder(personIdent: String): String? {
+    override fun hentVeileder(personIdent: String): String? {
         val hentVeilederUrl = url.resolve("/veilarboppfolging/api/v3/hent-veileder")
         val request = PostRequest(
             body = HentVeilederRequest(personIdent),

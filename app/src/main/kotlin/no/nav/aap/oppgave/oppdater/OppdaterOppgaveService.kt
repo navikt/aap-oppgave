@@ -12,8 +12,10 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
+import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.NAV_VIKAFOSSEN
@@ -83,13 +85,16 @@ private val AVSLUTTEDE_STATUSER = setOf(
     AvklaringsbehovStatus.TOTRINNS_VURDERT,
 )
 
-class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient: IMsGraphClient) {
+class OppdaterOppgaveService(
+    private val connection: DBConnection,
+    msGraphClient: IMsGraphClient,
+    private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingKlient = VeilarbarboppfolgingKlient(),
+    private val enhetService: IEnhetService = EnhetService(msGraphClient)
+) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
     private val oppgaveRepository = OppgaveRepository(connection)
-    private val enhetService = EnhetService(msGraphClient)
-    private val veilarbarboppfolgingKlient = VeilarbarboppfolgingKlient()
 
     fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
         val eksisterendeOppgaver = oppgaveRepository.hentOppgaver(
@@ -145,25 +150,16 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
             } else {
                 null
             }
-            oppgaveRepository.oppdatereOppgave(
-                oppgaveId = eksisterendeOppgave.oppgaveId(),
-                ident = "Kelvin",
-                personIdent = oppgaveOppdatering.personIdent,
-                enhet = enhetForOppgave.enhet,
-                oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
-                veileder = veileder,
-                påVentTil = avklaringsbehov.sistePåVentTil(),
-                påVentÅrsak = avklaringsbehov.sistePåVentÅrsak()
-            )
-            log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-            sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.OPPDATERT)
 
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
                 )
             ) {
-                val sistEndretAv = avklaringsbehov.sistEndretAv()
+                log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
+                oppgaveRepository.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin")
+                sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.OPPDATERT)
+                val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
                 if (sistEndretAv != "Kelvin") {
                     val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
                     val oppdatertOppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanse)
@@ -175,6 +171,19 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
                         log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
                     }
                 }
+            } else {
+                oppgaveRepository.oppdatereOppgave(
+                    oppgaveId = eksisterendeOppgave.oppgaveId(),
+                    ident = "Kelvin",
+                    personIdent = oppgaveOppdatering.personIdent,
+                    enhet = enhetForOppgave.enhet,
+                    oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
+                    veileder = veileder,
+                    påVentTil = avklaringsbehov.sistePåVentTil(),
+                    påVentÅrsak = avklaringsbehov.sistePåVentÅrsak()
+                )
+                log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
+                sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.OPPDATERT)
             }
         }
     }
@@ -288,9 +297,10 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         return Pair(sisteAvsluttetAvklaringsbehov.avklaringsbehovKode, sisteAvsluttetAvklaringsbehov.sistEndretAv())
     }
 
-    private fun AvklaringsbehovHendelse.sisteEndring(): Endring {
+    private fun AvklaringsbehovHendelse.sisteEndring(status: AvklaringsbehovStatus = this.status): Endring {
         return endringer
-            .sortedBy { it.tidsstempel }.last { it.status == this.status }
+            .sortedBy { it.tidsstempel }
+            .last { it.status == status }
     }
 
     private fun AvklaringsbehovHendelse.opprettetTidspunkt(): LocalDateTime {
@@ -301,7 +311,9 @@ class OppdaterOppgaveService(private val connection: DBConnection, msGraphClient
         return this.minByOrNull { it.opprettetTidspunkt() }
     }
 
-    private fun AvklaringsbehovHendelse.sistEndretAv() = sisteEndring().endretAv
+    private fun AvklaringsbehovHendelse.sistEndretAv(status: AvklaringsbehovStatus = this.status) =
+        sisteEndring(status).endretAv
+
     private fun AvklaringsbehovHendelse.sistEndret() = sisteEndring().tidsstempel
     private fun AvklaringsbehovHendelse.sistePåVentÅrsak() = sisteEndring().påVentÅrsak
     private fun AvklaringsbehovHendelse.sistePåVentTil() = sisteEndring().påVentTil
