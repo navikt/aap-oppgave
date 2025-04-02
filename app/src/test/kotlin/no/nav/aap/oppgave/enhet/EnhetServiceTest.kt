@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.HentPersonBolkResult
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlData
+import no.nav.aap.oppgave.prosessering.NAV_VIKAFOSSEN
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -39,6 +40,19 @@ class EnhetServiceTest {
         assertThat(res.enhet).isEqualTo("0400")
         assertThat(res.oppfølgingsenhet).isEqualTo(null)
 
+    }
+
+    @Test
+    fun `Skal ikke prøve å omgjøre til fylkesenhet for vikafossen`() {
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (NAV_VIKAFOSSEN))
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaKlient)
+
+        val res = service.finnFylkesEnhet("12345678911")
+        assertThat(res).isNotNull()
+        assertThat(res.enhet).isEqualTo(
+            NAV_VIKAFOSSEN
+        )
+        assertThat(res.oppfølgingsenhet).isEqualTo(null)
     }
 
     companion object {

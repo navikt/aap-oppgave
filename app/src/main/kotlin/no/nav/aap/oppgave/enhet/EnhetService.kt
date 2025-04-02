@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.prosessering.NAV_VIKAFOSSEN
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -42,6 +43,9 @@ class EnhetService(
 
     override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
         val enhet = finnEnhetForOppgave(fnr)
+        if (enhet.enhet == NAV_VIKAFOSSEN) {
+            return enhet
+        }
         return EnhetForOppgave(parseFylkeskontor(enhet.enhet), enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) })
     }
 
