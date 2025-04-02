@@ -10,15 +10,12 @@ import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
-import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
-import no.nav.aap.oppgave.prosessering.NAV_VIKAFOSSEN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -247,17 +244,7 @@ class OppdaterOppgaveService(
             + AVKLARINGSBEHOV_FOR_BESLUTTER
             + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
         ) {
-            // Sett enhet til Vikafossen eller NAY om avklaringsbehovet svarer til en NAY-oppgave
-            val erStrengtFortrolig =
-                enhetService.finnFortroligAdresse(oppgaveOppdatering.personIdent!!) == Diskresjonskode.SPSF
-            val enhet = when (erStrengtFortrolig) {
-                true -> NAV_VIKAFOSSEN
-                false -> "4491"
-            }
-            EnhetForOppgave(
-                enhet,
-                oppfølgingsenhet = null
-            )
+            enhetService.finnNayEnhet(oppgaveOppdatering.personIdent!!)
         } else {
             if (avklaringsbehovHendelse.avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) {
                 enhetService.finnFylkesEnhet(oppgaveOppdatering.personIdent)

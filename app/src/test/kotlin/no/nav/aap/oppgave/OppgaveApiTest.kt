@@ -23,6 +23,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.motor.JobbInput
+import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
@@ -32,7 +33,6 @@ import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
-import no.nav.aap.oppgave.prosessering.NAV_VIKAFOSSEN
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
@@ -567,7 +567,7 @@ class OppgaveApiTest {
         }
 
         val oppgave1 = hentOppgave(oppgaveId1)
-        assertEquals(NAV_VIKAFOSSEN, oppgave1.enhet)
+        assertEquals(Enhet.NAV_VIKAFOSSEN.kode, oppgave1.enhet)
         assertNull(oppgave1.reservertAv)
         assertEquals(oppgave1.endretAv, "Kelvin")
         val oppgave2Etter = hentOppgave(oppgaveId2)

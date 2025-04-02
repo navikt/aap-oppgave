@@ -9,6 +9,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.*
+import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
@@ -48,7 +49,7 @@ class OppdaterOppgaveEnhetJobbTest {
         }
        
         val oppgave1 = hentOppgave(oppgaveId1)
-        assertEquals(NAV_VIKAFOSSEN, oppgave1.enhet)
+        assertEquals(Enhet.NAV_VIKAFOSSEN.kode, oppgave1.enhet)
         assertNull(oppgave1.reservertAv)
         assertEquals(oppgave1.endretAv, "Kelvin")
         val oppgave2Etter = hentOppgave(oppgaveId2)

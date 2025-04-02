@@ -8,12 +8,14 @@ import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.nom.INomKlient
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgKlient
+import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
+import no.nav.aap.oppgave.klienter.pdl.Gradering
 import no.nav.aap.oppgave.klienter.pdl.HentPersonBolkResult
+import no.nav.aap.oppgave.klienter.pdl.HentPersonResult
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlData
-import no.nav.aap.oppgave.prosessering.NAV_VIKAFOSSEN
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -21,7 +23,7 @@ import java.util.*
 class EnhetServiceTest {
     @Test
     fun `lister kun opp enhets-roller`() {
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), veilarbarenaKlient)
+        val service = EnhetService(graphClient, PdlKlientMock(), nomKlient, NorgKlientMock(), veilarbarenaKlient)
 
         val res = service.hentEnheter("xxx", "")
         assertThat(res).isNotEmpty()
@@ -44,13 +46,13 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal ikke prøve å omgjøre til fylkesenhet for vikafossen`() {
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (NAV_VIKAFOSSEN))
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (Enhet.NAV_VIKAFOSSEN.kode))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaKlient)
 
         val res = service.finnFylkesEnhet("12345678911")
         assertThat(res).isNotNull()
         assertThat(res.enhet).isEqualTo(
-            NAV_VIKAFOSSEN
+            Enhet.NAV_VIKAFOSSEN.kode
         )
         assertThat(res.oppfølgingsenhet).isEqualTo(null)
     }
@@ -68,6 +70,35 @@ class EnhetServiceTest {
         )
         assertThat(res.oppfølgingsenhet).isEqualTo(null)
     }
+
+    @Test
+    fun `Skal returnere NAY-kontor for egen ansatt dersom egen ansatt`() {
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
+            )
+        )
+        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
+
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), veilarbarenaKlient)
+        val res = service.finnNayEnhet("any")
+        assertThat(res.enhet).isEqualTo(Enhet.NAY_EGNE_ANSATTE.kode)
+    }
+
+    @Test
+    fun `Vikafossen skal overstyre egne ansatte`() {
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.STRENGT_FORTROLIG)))
+            )
+        )
+        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
+
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), veilarbarenaKlient)
+        val res = service.finnNayEnhet("any")
+        assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
+    }
+
 
     companion object {
         val graphClient = object : IMsGraphClient {
@@ -99,6 +130,38 @@ class EnhetServiceTest {
 
             override fun hentPersoninfoForIdenter(identer: List<String>): PdlData? {
                 TODO("Not yet implemented")
+            }
+
+            override fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult> {
+                TODO("Not yet implemented")
+            }
+        }
+
+        class NomKlientMock(val erEgenansatt: Boolean?) : INomKlient {
+            companion object {
+                fun medRespons(erEgenansatt: Boolean): NomKlientMock {
+                    return NomKlientMock(erEgenansatt)
+                }
+            }
+
+            override fun erEgenansatt(personident: String): Boolean {
+                return erEgenansatt ?: TODO("Not yet implemented")
+            }
+        }
+
+        class PdlKlientMock(val pdlDataRespons: PdlData? = null) : IPdlKlient {
+            companion object {
+                fun medRespons(pdlDataRespons: PdlData): PdlKlientMock {
+                    return PdlKlientMock(pdlDataRespons)
+                }
+            }
+
+            override fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken?): PdlData {
+                return pdlDataRespons ?: TODO("Not yet implemented")
+            }
+
+            override fun hentPersoninfoForIdenter(identer: List<String>): PdlData? {
+                return pdlDataRespons ?: TODO("Not yet implemented")
             }
 
             override fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult> {

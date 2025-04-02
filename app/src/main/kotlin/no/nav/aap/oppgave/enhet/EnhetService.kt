@@ -13,7 +13,6 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
-import no.nav.aap.oppgave.prosessering.NAV_VIKAFOSSEN
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -25,6 +24,7 @@ interface IEnhetService {
     fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave
     fun finnFortroligAdresse(fnr: String): Diskresjonskode
     fun finnFylkesEnhet(fnr: String?): EnhetForOppgave
+    fun finnNayEnhet(fnr: String): EnhetForOppgave
 }
 
 class EnhetService(
@@ -43,7 +43,7 @@ class EnhetService(
 
     override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
         val enhet = finnEnhetForOppgave(fnr)
-        if (enhet.enhet == NAV_VIKAFOSSEN || erEgneAnsatteKontor(enhet.enhet)) {
+        if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
             return enhet
         }
         return EnhetForOppgave(parseFylkeskontor(enhet.enhet), enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) })
@@ -124,6 +124,24 @@ class EnhetService(
                 false
             )
         }
+    }
+
+    override fun finnNayEnhet(fnr: String): EnhetForOppgave {
+        val erStrengtFortrolig = finnFortroligAdresse(fnr) == Diskresjonskode.SPSF
+        val erEgenAnsatt = nomKlient.erEgenansatt(fnr)
+        
+        val enhet = if (erStrengtFortrolig) {
+            Enhet.NAV_VIKAFOSSEN.kode
+        } else if (erEgenAnsatt) {
+            Enhet.NAY_EGNE_ANSATTE.kode
+        } else {
+            Enhet.NAY.kode
+        }
+        
+        return EnhetForOppgave(
+            enhet,
+            oppfølgingsenhet = null
+        )
     }
 
     private fun mapDiskresjonskode(adressebeskyttelsekoder: List<Adressebeskyttelseskode>?) =

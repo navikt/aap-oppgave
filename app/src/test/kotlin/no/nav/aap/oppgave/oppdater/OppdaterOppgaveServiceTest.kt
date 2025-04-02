@@ -172,5 +172,9 @@ class OppdaterOppgaveServiceTest {
         override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
             TODO("Not yet implemented")
         }
+
+        override fun finnNayEnhet(fnr: String): EnhetForOppgave {
+            TODO("Not yet implemented")
+        }
     }
 }

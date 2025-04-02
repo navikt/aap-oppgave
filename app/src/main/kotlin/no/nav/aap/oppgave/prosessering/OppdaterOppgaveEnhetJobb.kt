@@ -6,22 +6,21 @@ import no.nav.aap.motor.JobbInput
 import no.nav.aap.motor.JobbUtfører
 import no.nav.aap.motor.cron.CronExpression
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import org.slf4j.LoggerFactory
 
-const val NAV_VIKAFOSSEN = "2103"
-
 class OppdaterOppgaveEnhetJobb(private val repository: OppgaveRepository) : JobbUtfører {
     private val log = LoggerFactory.getLogger(OppdaterOppgaveEnhetJobb::class.java)
-    
+
     override fun utfør(input: JobbInput) {
         val oppgaverForIdent = repository.finnÅpneOppgaverIkkeVikafossen()
             .groupBy({ it.ident }, { it.oppgaveId })
         if (oppgaverForIdent.isEmpty()) {
             return
         }
-        
+
         val identerMedStrengtFortroligAdresse = PdlGraphqlKlient.withClientCredentialsRestClient()
             .hentAdressebeskyttelseForIdenter(oppgaverForIdent.keys.toList())
             .filter {
@@ -37,7 +36,7 @@ class OppdaterOppgaveEnhetJobb(private val repository: OppgaveRepository) : Jobb
             .flatMap { it.value }
 
         val antallOppdatert = if (oppgaverSomMåOppdateres.isNotEmpty()) {
-            repository.oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaverSomMåOppdateres, NAV_VIKAFOSSEN)
+            repository.oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaverSomMåOppdateres, Enhet.NAV_VIKAFOSSEN.kode)
         } else 0
 
         log.info("Oppdaterte enhet for $antallOppdatert oppgaver")
