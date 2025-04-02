@@ -55,6 +55,20 @@ class EnhetServiceTest {
         assertThat(res.oppfølgingsenhet).isEqualTo(null)
     }
 
+    @Test
+    fun `Skal ikke prøve å omgjøre til fylkesenhet for egne ansatte-enheter`() {
+        val egneAnsatteOslo = "0383"
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaKlient)
+
+        val res = service.finnFylkesEnhet("12345678911")
+        assertThat(res).isNotNull()
+        assertThat(res.enhet).isEqualTo(
+            egneAnsatteOslo
+        )
+        assertThat(res.oppfølgingsenhet).isEqualTo(null)
+    }
+
     companion object {
         val graphClient = object : IMsGraphClient {
             override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {

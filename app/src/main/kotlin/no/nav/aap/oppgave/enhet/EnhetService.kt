@@ -43,7 +43,7 @@ class EnhetService(
 
     override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
         val enhet = finnEnhetForOppgave(fnr)
-        if (enhet.enhet == NAV_VIKAFOSSEN) {
+        if (enhet.enhet == NAV_VIKAFOSSEN || erEgneAnsatteKontor(enhet.enhet)) {
             return enhet
         }
         return EnhetForOppgave(parseFylkeskontor(enhet.enhet), enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) })
@@ -141,6 +141,10 @@ class EnhetService(
 
     private fun parseFylkeskontor(enhet: String): String {
         return enhet.substring(0, 2) + "00"
+    }
+
+    private fun erEgneAnsatteKontor(enhet: String): Boolean {
+        return enhet.endsWith("83")
     }
 
 
