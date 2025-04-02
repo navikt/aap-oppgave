@@ -1,13 +1,17 @@
 package no.nav.aap.oppgave.enhet
 
+import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaClient
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
+import no.nav.aap.oppgave.klienter.nom.INomKlient
 import no.nav.aap.oppgave.klienter.nom.NomKlient
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
+import no.nav.aap.oppgave.klienter.norg.INorgKlient
 import no.nav.aap.oppgave.klienter.norg.NorgKlient
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
+import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 
 data class EnhetForOppgave(
@@ -19,19 +23,31 @@ interface IEnhetService {
     fun hentEnheter(currentToken: String, ident: String): List<String>
     fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave
     fun finnFortroligAdresse(fnr: String): Diskresjonskode
+    fun finnFylkesEnhet(fnr: String?): EnhetForOppgave
 }
 
-class EnhetService(private val msGraphClient: IMsGraphClient): IEnhetService {
+class EnhetService(
+    private val msGraphClient: IMsGraphClient,
+    private val pdlGraphqlKlient: IPdlKlient = PdlGraphqlKlient.withClientCredentialsRestClient(),
+    private val nomKlient: INomKlient = NomKlient(),
+    private val norgKlient: INorgKlient = NorgKlient(),
+    private val veilarbarenaKlient: IVeilarbarenaClient = VeilarbarenaClient()
+) : IEnhetService {
 
     override fun hentEnheter(currentToken: String, ident: String): List<String> {
         return msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
-        
+
+    }
+
+    override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
+        val enhet = finnEnhetForOppgave(fnr)
+        return EnhetForOppgave(parseFylkeskontor(enhet.enhet), enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) })
     }
 
     override fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
-        val enhetFraNorg = NorgKlient().finnEnhet(
+        val enhetFraNorg = norgKlient.finnEnhet(
             tilknytningOgSkjerming.geografiskTilknytningKode,
             tilknytningOgSkjerming.erNavAnsatt,
             tilknytningOgSkjerming.diskresjonskode
@@ -46,7 +62,7 @@ class EnhetService(private val msGraphClient: IMsGraphClient): IEnhetService {
 
     private fun finnOppfølgingsenhet(fnr: String?): String? {
         val enhetFraArena = if (fnr != null) {
-            VeilarbarenaClient().hentOppfølgingsenhet(fnr)
+            veilarbarenaKlient.hentOppfølgingsenhet(fnr)
         } else {
             null
         }
@@ -73,16 +89,16 @@ class EnhetService(private val msGraphClient: IMsGraphClient): IEnhetService {
         val diskresjonskode: Diskresjonskode,
         val erNavAnsatt: Boolean
     )
-    
+
     override fun finnFortroligAdresse(fnr: String): Diskresjonskode {
-        val pdlData = PdlGraphqlKlient.withClientCredentialsRestClient().hentAdressebeskyttelseOgGeolokasjon(fnr)
+        val pdlData = pdlGraphqlKlient.hentAdressebeskyttelseOgGeolokasjon(fnr)
         return mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
-        
+
     }
 
     private fun finnTilknytningOgSkjerming(fnr: String?): TilknytningOgSkjerming {
         if (fnr != null) {
-            val pdlData = PdlGraphqlKlient.withClientCredentialsRestClient().hentAdressebeskyttelseOgGeolokasjon(fnr)
+            val pdlData = pdlGraphqlKlient.hentAdressebeskyttelseOgGeolokasjon(fnr)
             val geografiskTilknytning = pdlData.hentGeografiskTilknytning
             val geografiskTilknytningKode = if (geografiskTilknytning != null) {
                 mapGeografiskTilknytningTilKode(geografiskTilknytning)
@@ -91,7 +107,7 @@ class EnhetService(private val msGraphClient: IMsGraphClient): IEnhetService {
             }
 
             val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
-            val egenAnsatt = NomKlient().erEgenansatt(fnr)
+            val egenAnsatt = nomKlient.erEgenansatt(fnr)
             return TilknytningOgSkjerming(
                 geografiskTilknytningKode ?: GeografiskTilknytningType.UDEFINERT.name,
                 diskresjonskode,
@@ -118,6 +134,10 @@ class EnhetService(private val msGraphClient: IMsGraphClient): IEnhetService {
                 else -> Diskresjonskode.ANY
             }
         }
+
+    private fun parseFylkeskontor(enhet: String): String {
+        return enhet.substring(0, 2) + "00"
+    }
 
 
     companion object {

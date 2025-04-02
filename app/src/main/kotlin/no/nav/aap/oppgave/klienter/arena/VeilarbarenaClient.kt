@@ -19,7 +19,11 @@ private data class HentOppfølgingsenhetResponse(
     val oppfolgingsenhet: String?
 )
 
-class VeilarbarenaClient {
+interface IVeilarbarenaClient {
+    fun hentOppfølgingsenhet(personIdent: String): String?
+}
+
+class VeilarbarenaClient: IVeilarbarenaClient {
 
     private val url = URI.create(requiredConfigForKey("integrasjon.veilarbarena.url"))
 
@@ -33,7 +37,7 @@ class VeilarbarenaClient {
         prometheus = prometheus
     )
 
-    fun hentOppfølgingsenhet(personIdent: String): String? {
+    override fun hentOppfølgingsenhet(personIdent: String): String? {
         val hentStatusUrl = url.resolve("/veilarbarena/api/v2/arena/hent-status")
         val request = PostRequest(
             body = HentOppfølgingsenhetRequest(personIdent),

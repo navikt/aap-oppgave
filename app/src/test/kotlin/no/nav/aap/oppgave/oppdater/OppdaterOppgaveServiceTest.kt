@@ -168,5 +168,9 @@ class OppdaterOppgaveServiceTest {
         override fun finnFortroligAdresse(fnr: String): Diskresjonskode {
             TODO("Not yet implemented")
         }
+
+        override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
+            TODO("Not yet implemented")
+        }
     }
 }

@@ -12,7 +12,10 @@ import java.net.URI
 
 private data class EgenansattRequest(val personident: String)
 
-class NomKlient {
+interface INomKlient {
+    fun erEgenansatt(personident: String): Boolean
+}
+class NomKlient: INomKlient {
 
     private val log = LoggerFactory.getLogger(NomKlient::class.java)
 
@@ -28,7 +31,7 @@ class NomKlient {
         prometheus = prometheus
     )
 
-    fun erEgenansatt(personident: String): Boolean {
+    override fun erEgenansatt(personident: String): Boolean {
         log.info("Sjekker om $personident er egenansatt")
         val egenansattUrl = url.resolve("skjermet")
         val request = PostRequest(

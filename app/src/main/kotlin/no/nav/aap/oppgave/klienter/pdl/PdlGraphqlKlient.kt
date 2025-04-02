@@ -13,9 +13,15 @@ import no.nav.aap.oppgave.metrikker.prometheus
 import java.io.InputStream
 import java.net.URI
 
+interface IPdlKlient {
+    fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
+    fun hentPersoninfoForIdenter(identer: List<String>): PdlData?
+    fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult>
+}
+
 class PdlGraphqlKlient(
     private val restClient: RestClient<InputStream>
-) {
+): IPdlKlient {
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
 
     companion object {
@@ -37,20 +43,20 @@ class PdlGraphqlKlient(
 
     }
 
-    fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData {
+    override fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken?): PdlData {
         val request = PdlRequest.hentAdressebeskyttelseOgGeografiskTilknytning(personident)
         val response = runBlocking { graphqlQuery(request, currentToken) }
 
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
 
-    fun hentPersoninfoForIdenter(identer: List<String>): PdlData? {
+    override fun hentPersoninfoForIdenter(identer: List<String>): PdlData? {
         val request = PdlRequest.hentPersoninfoForIdenter(identer)
         val response = runBlocking { graphqlQuery(request) }
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
     
-    fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult> {
+    override fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult> {
         val request = PdlRequest.hentAdressebeskyttelseForIdenter(identer)
         val response = runBlocking { graphqlQuery(request) }
         return response.data?.hentPersonBolk ?: error("Unexpected response from PDL: ${response.errors}")

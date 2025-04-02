@@ -259,7 +259,11 @@ class OppdaterOppgaveService(
                 oppfølgingsenhet = null
             )
         } else {
-            enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
+            if (avklaringsbehovHendelse.avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) {
+                enhetService.finnFylkesEnhet(oppgaveOppdatering.personIdent)
+            } else {
+                enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
+            }
         }
 
     private fun sammeSaksbehandlerType(
@@ -317,7 +321,6 @@ class OppdaterOppgaveService(
     private fun AvklaringsbehovHendelse.sistEndret() = sisteEndring().tidsstempel
     private fun AvklaringsbehovHendelse.sistePåVentÅrsak() = sisteEndring().påVentÅrsak
     private fun AvklaringsbehovHendelse.sistePåVentTil() = sisteEndring().påVentTil
-
 
     private fun OppgaveOppdatering.opprettNyOppgave(
         personIdent: String?,

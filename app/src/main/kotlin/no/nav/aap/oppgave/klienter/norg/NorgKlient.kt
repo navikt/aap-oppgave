@@ -26,7 +26,12 @@ data class FinnNavenhetRequest(
 
 enum class Diskresjonskode { SPFO, SPSF, ANY }
 
-class NorgKlient {
+interface INorgKlient {
+    fun finnEnhet(geografiskTilknyttning: String?, erNavansatt: Boolean, diskresjonskode: Diskresjonskode): String
+    fun hentEnheter(): Map<String, String>
+}
+
+class NorgKlient: INorgKlient {
 
     private val log = LoggerFactory.getLogger(NorgKlient::class.java)
 
@@ -38,7 +43,7 @@ class NorgKlient {
         prometheus = prometheus
     )
 
-    fun finnEnhet(geografiskTilknyttning: String?, erNavansatt: Boolean, diskresjonskode: Diskresjonskode): String {
+    override fun finnEnhet(geografiskTilknyttning: String?, erNavansatt: Boolean, diskresjonskode: Diskresjonskode): String {
         log.info("Finner enhet for $geografiskTilknyttning")
         val finnEnhetUrl = url.resolve("norg2/api/v1/arbeidsfordeling/enheter/bestmatch")
         val request = PostRequest(
@@ -58,7 +63,7 @@ class NorgKlient {
         return enheter.first().enhetNr
     }
 
-    fun hentEnheter(): Map<String, String> {
+    override fun hentEnheter(): Map<String, String> {
         log.info("Henter enheter")
         val hentEnheterUrl = url.resolve("norg2/api/v1/enhet/simple")
         val enheter = client.get<List<EnhetMedNavn>>(hentEnheterUrl, GetRequest())
