@@ -57,7 +57,13 @@ spec:
     inbound:
       rules:
         - application: behandlingsflyt
+          permissions:
+            roles:
+              - "oppdater-behandlingsflyt-oppgaver"
         - application: postmottak-backend
+          permissions:
+            roles:
+              - "oppdater-postmottak-oppgaver"
         - application: paw-patrol
         - application: saksbehandling
         {{#if isdev}}
