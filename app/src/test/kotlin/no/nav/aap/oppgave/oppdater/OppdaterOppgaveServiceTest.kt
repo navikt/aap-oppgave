@@ -41,12 +41,114 @@ class OppdaterOppgaveServiceTest {
         }
     }
 
+    @Test
+    fun `Ved flere åpne avklaringsbehov skal det opprettes oppgave på behovet som historisk først ble opprettet`() {
+        val (sykdomOppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+        )
+        val (fastsettBeregningstidspunktOppgaveId) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+
+        val hendelse = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(10)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(9)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                            endretAv = "Kvalitetssikrer",
+                            tidsstempel = nå.minusHours(6)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(6)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(5)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                            endretAv = "Kvalitetssikrer",
+                            tidsstempel = nå.minusHours(4)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
+                    status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(8)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(7)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                            endretAv = "Kvalitetssikrer",
+                            tidsstempel = nå.minusHours(4)
+                        )
+                        
+                    )
+                )
+            )
+        )
+        InitTestDatabase.dataSource.transaction { connection ->
+            OppdaterOppgaveService(
+                connection,
+                graphClient,
+                veilarbarboppfolgingKlient,
+                enhetService
+            ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
+        }
+
+        val sykdomOppgave = hentOppgave(sykdomOppgaveId)
+        assertThat(sykdomOppgave.status).isEqualTo(Status.OPPRETTET)
+        val fastsettBeregningstidspunktOppgave = hentOppgave(fastsettBeregningstidspunktOppgaveId)
+        assertThat(fastsettBeregningstidspunktOppgave.status).isEqualTo(Status.AVSLUTTET)
+    }
+
 
     @Test
     fun `Ved gjenåpning skal oppgaven bli reservert på personen som løste avklaringsbehovet`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(status = Status.AVSLUTTET,
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name))
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+        )
 
         val nå = LocalDateTime.now()
 
@@ -109,7 +211,7 @@ class OppdaterOppgaveServiceTest {
         enhet: String = ENHET_NAV_LØRENSKOG,
         oppfølgingsenhet: String? = null,
         veileder: String? = null,
-    ):  Triple<OppgaveId, Saksnummer, BehandlingReferanse> {
+    ): Triple<OppgaveId, Saksnummer, BehandlingReferanse> {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
@@ -155,7 +257,7 @@ class OppdaterOppgaveServiceTest {
     val veilarbarboppfolgingKlient = object : IVeilarbarboppfolgingKlient {
         override fun hentVeileder(personIdent: String) = null
     }
-    
+
     val enhetService = object : IEnhetService {
         override fun hentEnheter(currentToken: String, ident: String): List<String> {
             TODO("Not yet implemented")
