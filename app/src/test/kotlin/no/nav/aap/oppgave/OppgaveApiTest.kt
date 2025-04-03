@@ -21,9 +21,12 @@ import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
+import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
@@ -405,7 +408,7 @@ class OppgaveApiTest {
         val id1 = opprettEllerOppdaterFilter(
             filter1
         )!!.id
-        
+
         val id2 = opprettEllerOppdaterFilter(
             FilterDto(
                 navn = "Simpelt filter 2",
@@ -419,8 +422,8 @@ class OppgaveApiTest {
         val filtre = hentFilter(listOf("1234", "1235"))
 
         assertThat(filtre.size).isEqualTo(1)
-        assertThat(filtre.find{it.id == id1}!!.navn).isEqualTo("Simpelt filter")
-        assertThat(filtre.find{it.id == id2}).isNull()
+        assertThat(filtre.find { it.id == id1 }!!.navn).isEqualTo("Simpelt filter")
+        assertThat(filtre.find { it.id == id2 }).isNull()
     }
 
 
@@ -640,9 +643,12 @@ class OppgaveApiTest {
 
     private fun hentNesteOppgave(): NesteOppgaveDto? {
         val alleFilter = hentAlleFilter()
-        val nesteOppgave: NesteOppgaveDto? = client.post(
+        val nesteOppgave: NesteOppgaveDto? = oboClient.post(
             URI.create("http://localhost:8080/neste-oppgave"),
-            PostRequest(body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!))
+            PostRequest(
+                body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!),
+                currentToken = getOboToken()
+            )
         )
         return nesteOppgave
     }
@@ -650,15 +656,15 @@ class OppgaveApiTest {
     private fun hentNesteOppgaveNAY(): NesteOppgaveDto? {
         val alleFilter =
             hentAlleFilter().filter { it.avklaringsbehovKoder.isEmpty() }.filter { it.behandlingstyper.isEmpty() }
-        val nesteOppgave: NesteOppgaveDto? = client.post(
+        val nesteOppgave: NesteOppgaveDto? = oboClient.post(
             URI.create("http://localhost:8080/neste-oppgave"),
-            PostRequest(body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!))
+            PostRequest(body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!), currentToken = getOboToken())
         )
         return nesteOppgave
     }
 
     private fun hentOppgave(saksnummer: String, referanse: UUID, definisjon: Definisjon): OppgaveDto? {
-        return client.post(
+        return oboClient.post(
             URI.create("http://localhost:8080/hent-oppgave"),
             PostRequest(
                 body = AvklaringsbehovReferanseDto(
@@ -666,43 +672,44 @@ class OppgaveApiTest {
                     referanse = referanse,
                     journalpostId = null,
                     avklaringsbehovKode = definisjon.kode.name
-                )
+                ),
+                currentToken = getOboToken()
             )
         )
     }
 
     private fun hentMineOppgaver(): OppgavelisteRespons {
-        return client.get<OppgavelisteRespons>(
+        return oboClient.get<OppgavelisteRespons>(
             URI.create("http://localhost:8080/mine-oppgaver"),
-            GetRequest()
+            GetRequest(currentToken = getOboToken())
         )!!
     }
 
     private fun opprettEllerOppdaterFilter(filter: FilterDto): FilterDto? {
-        return client.post(
+        return oboClient.post(
             URI.create("http://localhost:8080/filter"),
-            PostRequest(body = filter)
+            PostRequest(body = filter, currentToken = getOboToken())
         )
     }
 
     private fun hentAlleFilter(): List<FilterDto> {
-        return client.get<List<FilterDto>>(
+        return oboClient.get<List<FilterDto>>(
             URI.create("http://localhost:8080/filter"),
-            GetRequest()
+            GetRequest(currentToken = getOboToken())
         )!!
     }
 
     private fun hentFilter(enheter: List<String>): List<FilterDto> {
-        return client.get<List<FilterDto>>(
+        return oboClient.get<List<FilterDto>>(
             URI.create("http://localhost:8080/filter?enheter=${enheter.joinToString("&enheter=")}"),
-            GetRequest()
+            GetRequest(currentToken = getOboToken())
         )!!
     }
 
     private fun slettFilter(filterId: FilterId): Unit? {
-        return client.post(
+        return oboClient.post(
             URI.create("http://localhost:8080/filter/${filterId.filterId}/slett"),
-            PostRequest(body = filterId)
+            PostRequest(body = filterId, currentToken = getOboToken())
         )
     }
 
@@ -721,6 +728,11 @@ class OppgaveApiTest {
         private val client = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
             tokenProvider = ClientCredentialsTokenProvider
+        )
+
+        private val oboClient = RestClient.withDefaultResponseHandler(
+            config = ClientConfig(scope = "oppgave"),
+            tokenProvider = OnBehalfOfTokenProvider
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -745,7 +757,8 @@ class OppgaveApiTest {
 
         private fun leggInnFilterForTest() {
             initDatasource(dbConfig, prometheus).transaction {
-                val filterId = it.executeReturnKey("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
+                val filterId =
+                    it.executeReturnKey("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
                 it.execute("INSERT INTO FILTER_ENHET (FILTER_ID, ENHET) VALUES (?, ?)") {
                     setParams {
                         setLong(1, filterId)
@@ -819,3 +832,6 @@ private fun Application.module(fakes: Fakes) {
     }
 }
 
+private fun getOboToken(): OidcToken {
+    return OidcToken(AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(false))
+}

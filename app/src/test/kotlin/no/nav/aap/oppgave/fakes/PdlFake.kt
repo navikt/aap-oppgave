@@ -103,12 +103,3 @@ private fun finnGradering(ident: String): String {
 }
 
 const val STRENGT_FORTROLIG_IDENT = "11111100000"
-
-internal data class TestToken(
-    val access_token: String,
-    val refresh_token: String = "very.secure.token",
-    val id_token: String = "very.secure.token",
-    val token_type: String = "token-type",
-    val scope: String? = null,
-    val expires_in: Int = 3599,
-)

@@ -7,6 +7,7 @@ import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.*
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -25,7 +26,8 @@ fun Application.azureFake() {
     }
     routing {
         post("/token") {
-            val token = AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate()
+            val body = call.receiveText()
+            val token = AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(body.contains("grant_type=client_credentials"))
             call.respond(TestToken(access_token = token))
         }
         get("/jwks") {
@@ -33,3 +35,12 @@ fun Application.azureFake() {
         }
     }
 }
+internal data class TestToken(
+    val access_token: String,
+    val refresh_token: String = "very.secure.token",
+    val id_token: String = "very.secure.token",
+    val token_type: String = "token-type",
+    val scope: String? = null,
+    val expires_in: Int = 3599,
+)
+

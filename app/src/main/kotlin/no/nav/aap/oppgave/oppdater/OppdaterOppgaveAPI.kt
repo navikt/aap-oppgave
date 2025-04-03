@@ -11,24 +11,43 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
+import no.nav.aap.tilgang.AuthorizationBodyPathConfig
+import no.nav.aap.tilgang.Operasjon
+import no.nav.aap.tilgang.authorizedPost
 import javax.sql.DataSource
 
-fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(dataSource: DataSource, msGraphClient: IMsGraphClient, prometheus: PrometheusMeterRegistry) =
-
-    route("/oppdater-oppgaver").post<Unit, Unit, BehandlingFlytStoppetHendelse> { _, request ->
-        prometheus.httpCallCounter("/oppdater-oppgaver").increment()
-        dataSource.transaction { connection ->
-            OppdaterOppgaveService(connection, msGraphClient).oppdaterOppgaver(request.tilOppgaveOppdatering())
-        }
-        respondWithStatus(HttpStatusCode.OK)
+fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
+    dataSource: DataSource,
+    msGraphClient: IMsGraphClient,
+    prometheus: PrometheusMeterRegistry
+) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
+    routeConfig = AuthorizationBodyPathConfig(
+        operasjon = Operasjon.SAKSBEHANDLE,
+        applicationsOnly = true,
+        applicationRole = "oppdater-behandlingsflyt-oppgaver",
+    )
+) { _, request ->
+    prometheus.httpCallCounter("/oppdater-oppgaver").increment()
+    dataSource.transaction { connection ->
+        OppdaterOppgaveService(connection, msGraphClient).oppdaterOppgaver(request.tilOppgaveOppdatering())
     }
+    respondWithStatus(HttpStatusCode.OK)
+}
 
-fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(dataSource: DataSource, msGraphClient: IMsGraphClient, prometheus: PrometheusMeterRegistry) =
-
-    route("/oppdater-postmottak-oppgaver").post<Unit, Unit, DokumentflytStoppetHendelse> { _, request ->
-        prometheus.httpCallCounter("/oppdater-postmottak-oppgaver").increment()
-        dataSource.transaction { connection ->
-            OppdaterOppgaveService(connection, msGraphClient).oppdaterOppgaver(request.tilOppgaveOppdatering())
-        }
-        respondWithStatus(HttpStatusCode.OK)
+fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
+    dataSource: DataSource,
+    msGraphClient: IMsGraphClient,
+    prometheus: PrometheusMeterRegistry
+) = route("/oppdater-postmottak-oppgaver").authorizedPost<Unit, Unit, DokumentflytStoppetHendelse>(
+    routeConfig = AuthorizationBodyPathConfig(
+        operasjon = Operasjon.SAKSBEHANDLE,
+        applicationsOnly = true,
+        applicationRole = "oppdater-postmottak-oppgaver"
+    )
+) { _, request ->
+    prometheus.httpCallCounter("/oppdater-postmottak-oppgaver").increment()
+    dataSource.transaction { connection ->
+        OppdaterOppgaveService(connection, msGraphClient).oppdaterOppgaver(request.tilOppgaveOppdatering())
     }
+    respondWithStatus(HttpStatusCode.OK)
+}
