@@ -13,13 +13,22 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
+import no.nav.aap.oppgave.tilgang.Beslutter
+import no.nav.aap.oppgave.tilgang.Kvalitetssikrer
+import no.nav.aap.oppgave.tilgang.SaksbehandlerNasjonal
+import no.nav.aap.oppgave.tilgang.SaksbehandlerOppfolging
+import no.nav.aap.tilgang.RollerConfig
+import no.nav.aap.tilgang.authorizedPost
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
-    route("/neste-oppgave").post<Unit, NesteOppgaveDto, FinnNesteOppgaveDto> { _, request ->
+    // Trenger ikke ytterligere tilgangskontroll da tilgang kalles for å finne plukkbar oppgave
+    route("/neste-oppgave").authorizedPost<Unit, NesteOppgaveDto, FinnNesteOppgaveDto>(
+        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
+    ) { _, request ->
         prometheus.httpCallCounter("/neste-oppgave").increment()
-        val nesteOppgave =  dataSource.transaction { connection ->
+        val nesteOppgave = dataSource.transaction { connection ->
             PlukkOppgaveService(connection).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
         }
         if (nesteOppgave != null) {
@@ -31,11 +40,17 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
 
 
 fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
-    route("/plukk-oppgave").post<Unit, OppgaveDto, PlukkOppgaveDto> { _, request ->
+    // Trenger ikke ytterligere tilgangskontroll da tilgang kalles ved plukking
+    route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
+        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging))
+    ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
-        val oppgave =  dataSource.transaction { connection ->
-            PlukkOppgaveService(connection).plukkOppgave(OppgaveId(request.oppgaveId, request.versjon), ident(), token())
+        val oppgave = dataSource.transaction { connection ->
+            PlukkOppgaveService(connection).plukkOppgave(
+                OppgaveId(request.oppgaveId, request.versjon),
+                ident(),
+                token()
+            )
         }
         if (oppgave != null) {
             respond(oppgave)

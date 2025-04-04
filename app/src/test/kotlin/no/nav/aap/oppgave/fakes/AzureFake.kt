@@ -13,6 +13,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import no.nav.aap.oppgave.server.ErrorRespons
+import no.nav.aap.tilgang.groupsClaim
+import no.nav.aap.tilgang.rolesClaim
 
 fun Application.azureFake() {
     install(ContentNegotiation) {
@@ -27,7 +29,9 @@ fun Application.azureFake() {
     routing {
         post("/token") {
             val body = call.receiveText()
-            val token = AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(body.contains("grant_type=client_credentials"))
+            val erCc = body.contains("grant_type=client_credentials")
+            val roller = if (erCc) call.rolesClaim() else emptyList()
+            val token = AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(erCc, roller)
             call.respond(TestToken(access_token = token))
         }
         get("/jwks") {

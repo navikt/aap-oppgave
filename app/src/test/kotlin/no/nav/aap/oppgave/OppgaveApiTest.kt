@@ -16,11 +16,13 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
+import no.nav.aap.komponenter.httpklient.httpclient.Header
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.NoTokenTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
@@ -40,6 +42,8 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
+import no.nav.aap.oppgave.tilgang.SaksbehandlerNasjonal
+import no.nav.aap.oppgave.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -643,11 +647,13 @@ class OppgaveApiTest {
 
     private fun hentNesteOppgave(): NesteOppgaveDto? {
         val alleFilter = hentAlleFilter()
-        val nesteOppgave: NesteOppgaveDto? = oboClient.post(
+        val nesteOppgave: NesteOppgaveDto? = noTokenClient.post(
             URI.create("http://localhost:8080/neste-oppgave"),
             PostRequest(
                 body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!),
-                currentToken = getOboToken()
+                additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
+                )
             )
         )
         return nesteOppgave
@@ -656,9 +662,14 @@ class OppgaveApiTest {
     private fun hentNesteOppgaveNAY(): NesteOppgaveDto? {
         val alleFilter =
             hentAlleFilter().filter { it.avklaringsbehovKoder.isEmpty() }.filter { it.behandlingstyper.isEmpty() }
-        val nesteOppgave: NesteOppgaveDto? = oboClient.post(
+        val nesteOppgave: NesteOppgaveDto? = noTokenClient.post(
             URI.create("http://localhost:8080/neste-oppgave"),
-            PostRequest(body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!), currentToken = getOboToken())
+            PostRequest(
+                body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!),
+                additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerNasjonal.id)).token()}")
+                )
+            )
         )
         return nesteOppgave
     }
@@ -733,6 +744,10 @@ class OppgaveApiTest {
         private val oboClient = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
             tokenProvider = OnBehalfOfTokenProvider
+        )
+        private val noTokenClient = RestClient.withDefaultResponseHandler(
+            config = ClientConfig(scope = "oppgave"),
+            tokenProvider = NoTokenTokenProvider()
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -832,6 +847,6 @@ private fun Application.module(fakes: Fakes) {
     }
 }
 
-private fun getOboToken(): OidcToken {
-    return OidcToken(AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(false))
+private fun getOboToken(roller: List<String> = emptyList()): OidcToken {
+    return OidcToken(AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(false, roller))
 }

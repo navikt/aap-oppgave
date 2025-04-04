@@ -41,6 +41,10 @@ spec:
         extra:
           - "NAVident"
           - "azp_name"
+        groups:
+          {{ #each groups}}
+            - id: {{this.group}}
+          {{/each}}
   liveness:
     path: /actuator/live
     initialDelay: 5

@@ -2,6 +2,15 @@ isdev: 0
 ingress: https://aap-oppgave.intern.nav.no
 pdl_url: pdl-api.prod-fss-pub.nais.io
 veilarb_arena_url: veilarbarena.prod-fss-pub.nais.io
+groups:
+  - name: AAP_SAKSBEHANDLER_OPPFOLGING
+    group: dc8b0182-1449-445a-833c-1a4620b7c2be
+  - name: AAP_SAKSBEHANDLER_NASJONAL
+    group: 3a65f41a-b3f3-4b1c-830a-df20ff020980
+  - name: AAP_KVALITETSSIKRER
+    group: a6bf143f-fee9-41ab-a487-f54503a28de6
+  - name: AAP_BESLUTTER
+    group: 5763b52f-f16a-483d-8f40-25be9de95c0a
 env:
   - name: INTEGRASJON_TILGANG_URL
     value: http://tilgang

@@ -48,6 +48,11 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         // Veilarboppfolging
         System.setProperty("integrasjon.veilarboppfolging.url", "http://localhost:${veilarboppfolging.port()}")
         System.setProperty("integrasjon.veilarboppfolging.scope", "scope")
+        
+        System.setProperty("AAP_SAKSBEHANDLER_NASJONAL", "saksbehandler-rolle")
+        System.setProperty("AAP_SAKSBEHANDLER_OPPFOLGING", "veileder-rolle")
+        System.setProperty("AAP_KVALITETSSIKRER", "kvalitetssikrer-rolle")
+        System.setProperty("AAP_BESLUTTER", "beslutter-rolle")
     }
 
     override fun close() {

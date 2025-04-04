@@ -24,7 +24,7 @@ internal class AzureTokenGen(private val issuer: String, private val audience: S
         return signedJWT
     }
 
-    private fun claims(isApp: Boolean): JWTClaimsSet {
+    private fun claims(isApp: Boolean, roller: List<String>): JWTClaimsSet {
         val builder = JWTClaimsSet
             .Builder()
             .subject(UUID.randomUUID().toString())
@@ -36,14 +36,17 @@ internal class AzureTokenGen(private val issuer: String, private val audience: S
             builder
                 .claim("idtyp", "app")
                 .claim(
-                    "roles",
-                    listOf(
-                        "oppdater-postmottak-oppgaver",
-                        "oppdater-behandlingsflyt-oppgaver"
-                    )
+                    "roles", roller.ifEmpty {
+                        listOf(
+                            "oppdater-postmottak-oppgaver",
+                            "oppdater-behandlingsflyt-oppgaver"
+                        )
+                    }
+
                 )
         } else {
             builder.claim("NAVident", "Lokalsaksbehandler")
+            builder.claim("groups", roller)
         }
 
         return builder.build()
@@ -53,8 +56,8 @@ internal class AzureTokenGen(private val issuer: String, private val audience: S
         return Date.from(this.atZone(ZoneId.systemDefault()).toInstant())
     }
 
-    fun generate(isApp: Boolean): String {
-        return signed(claims(isApp)).serialize()
+    fun generate(isApp: Boolean, roller: List<String> = emptyList()): String {
+        return signed(claims(isApp, roller)).serialize()
     }
 }
 
