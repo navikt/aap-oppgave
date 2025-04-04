@@ -9,8 +9,10 @@ metadata:
     sub: oppgave
 
 spec:
+  {{#if isdev}}
   ingresses:
     - {{ingress}}
+  {{/if}}
   image: {{image}}
   port: 8080
   replicas:

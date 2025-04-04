@@ -1,5 +1,4 @@
 isdev: 0
-ingress: https://aap-oppgave.intern.nav.no
 pdl_url: pdl-api.prod-fss-pub.nais.io
 veilarb_arena_url: veilarbarena.prod-fss-pub.nais.io
 env:
