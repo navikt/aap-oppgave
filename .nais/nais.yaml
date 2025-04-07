@@ -42,7 +42,7 @@ spec:
           - "NAVident"
           - "azp_name"
         groups:
-          {{ #each groups}}
+          {{#each groups}}
             - id: {{this.group}}
           {{/each}}
   liveness:
