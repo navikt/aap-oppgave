@@ -42,7 +42,7 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
 fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
     // Trenger ikke ytterligere tilgangskontroll da tilgang kalles ved plukking
     route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
-        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging))
+        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
         val oppgave = dataSource.transaction { connection ->
