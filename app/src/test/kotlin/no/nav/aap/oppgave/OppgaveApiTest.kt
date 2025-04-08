@@ -42,9 +42,9 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
-import no.nav.aap.oppgave.tilgang.SaksbehandlerNasjonal
-import no.nav.aap.oppgave.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.tilgang.SaksbehandlerNasjonal
+import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
