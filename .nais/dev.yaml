@@ -8,7 +8,7 @@ groups:
     - name: AAP_SAKSBEHANDLER_OPPFOLGING
       group: 33e00155-169b-41e5-8a3f-5582ed975a15
     - name: AAP_KVALITETSSIKRER
-      group: c3e18aef-a7ac-49df-806e-4fe58b8
+      group: c3e18aef-a7ac-49df-806e-4fe58b81460d
     - name: AAP_BESLUTTER
       group: f0f6cad5-e3c0-4308-99a2-3630ac60174a
     - name: AAP_PRODUKSJONSSTYRING
