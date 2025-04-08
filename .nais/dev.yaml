@@ -11,6 +11,8 @@ groups:
       group: c3e18aef-a7ac-49df-806e-4fe58b8
     - name: AAP_BESLUTTER
       group: f0f6cad5-e3c0-4308-99a2-3630ac60174a
+    - name: AAP_PRODUKSJONSSTYRING
+      group: c75883f9-4cb2-42c7-b75c-3f0f29ee3ead
 env:
     - name: INTEGRASJON_TILGANG_URL
       value: http://tilgang
