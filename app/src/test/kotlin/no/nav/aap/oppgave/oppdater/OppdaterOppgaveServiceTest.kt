@@ -263,7 +263,7 @@ class OppdaterOppgaveServiceTest {
             TODO("Not yet implemented")
         }
 
-        override fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave {
+        override fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave {
             return EnhetForOppgave(enhet = ENHET_NAV_LØRENSKOG, null)
         }
 
@@ -277,6 +277,13 @@ class OppdaterOppgaveServiceTest {
 
         override fun finnNayEnhet(fnr: String): EnhetForOppgave {
             TODO("Not yet implemented")
+        }
+
+        override fun utledEnhetForOppgave(
+            avklaringsbehovKode: AvklaringsbehovKode,
+            fnr: String?
+        ): EnhetForOppgave {
+            return EnhetForOppgave(ENHET_NAV_LØRENSKOG, null)
         }
     }
 }

@@ -1,5 +1,10 @@
 package no.nav.aap.oppgave.enhet
 
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
+import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaClient
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
@@ -21,10 +26,11 @@ data class EnhetForOppgave(
 
 interface IEnhetService {
     fun hentEnheter(currentToken: String, ident: String): List<String>
-    fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave
+    fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave
     fun finnFortroligAdresse(fnr: String): Diskresjonskode
     fun finnFylkesEnhet(fnr: String?): EnhetForOppgave
     fun finnNayEnhet(fnr: String): EnhetForOppgave
+    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, fnr: String?): EnhetForOppgave
 }
 
 class EnhetService(
@@ -42,14 +48,30 @@ class EnhetService(
     }
 
     override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
-        val enhet = finnEnhetForOppgave(fnr)
+        val enhet = finnEnhetstilknytningForPerson(fnr)
         if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
             return enhet
         }
         return EnhetForOppgave(parseFylkeskontor(enhet.enhet), enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) })
     }
 
-    override fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave {
+    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, fnr: String?): EnhetForOppgave {
+        return if (avklaringsbehovKode in
+            AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
+            + AVKLARINGSBEHOV_FOR_BESLUTTER
+            + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
+        ) {
+            finnNayEnhet(fnr!!)
+        } else {
+            if (avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) {
+                finnFylkesEnhet(fnr)
+            } else {
+                finnEnhetstilknytningForPerson(fnr)
+            }
+        }
+    }
+
+    override fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
         val enhetFraNorg = norgKlient.finnEnhet(
             tilknytningOgSkjerming.geografiskTilknytningKode,
