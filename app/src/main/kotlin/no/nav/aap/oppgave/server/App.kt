@@ -72,13 +72,8 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
         )
     )
 
-    install(StatusPages) {
-        exception<Throwable> { call, cause ->
-            LoggerFactory.getLogger(App::class.java)
-                .warn("Ukjent feil ved kall til '{}'", call.request.local.uri, cause)
-            call.respond(status = HttpStatusCode.Companion.InternalServerError, message = ErrorRespons(cause.message))
-        }
-    }
+    install(StatusPages, StatusPagesConfigHelper.setup())
+
     install(CORS) {
         anyHost()
         allowHeader(HttpHeaders.ContentType)
