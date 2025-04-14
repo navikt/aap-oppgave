@@ -29,7 +29,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
     route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
-            val filter = FilterRepository(connection).hent(request.filterId)
+            val filter = requireNotNull(FilterRepository(connection).hent(request.filterId))
             val veilederIdent = if (request.veileder) {
                 ident()
             } else {
@@ -40,7 +40,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
                 else -> OppgaveRepository.Rekkefølge.asc
             }
             OppgaveRepository(connection).finnOppgaver(
-                filter!!.copy(enheter = request.enheter, veileder = veilederIdent),
+                filter.copy(enheter = request.enheter, veileder = veilederIdent),
                 rekkefølge
             )
         }
