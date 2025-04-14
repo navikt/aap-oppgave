@@ -27,7 +27,8 @@ graph TD
 
 ### API-dokumentasjon
 
-APIene er dokumentert med Swagger: http://localhost:8080/swagger-ui/index.html
+API-et er dokumentert med Swagger: \
+https://aap-oppgave.intern.dev.nav.no/swagger-ui/index.html
 
 ### Lokalt utviklingsmiljø:
 
