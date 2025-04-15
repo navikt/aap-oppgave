@@ -9,12 +9,13 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.miljo.MiljøKode
+import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.TransientFilterDto
+import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.metrikker.httpCallCounter
-import no.nav.aap.oppgave.plukk.TilgangGateway
 import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
@@ -45,23 +46,16 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
             )
         }
 
+        val enhetService = EnhetService(MsGraphClient(prometheus))
         val token = token()
-        val oppgaverMedTilgang = oppgaver
-            .asSequence()
-            .filter {
-                try {
-                    TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token)
-                } catch (e: Exception) {
-                    log.warn("Feil ved sjekk av tilgang til oppgave ${it.id}", e)
-                    false
-                }
-            }
-            .take(request.maxAntall)
-            .toList()
+        val enhetsGrupper = enhetService.hentEnheter(token.token(), ident())
+        val oppgaverMedTilgang = oppgaver.asSequence().filter {
+            enhetsGrupper.contains(it.enhet)
+        }.take(request.maxAntall).toList()
 
         respond(
             OppgavelisteRespons(
-                antallTotalt = oppgaver.size,
+                antallTotalt = oppgaverMedTilgang.size,
                 oppgaver = oppgaverMedTilgang.medPersonNavn(false, token())
             )
         )
