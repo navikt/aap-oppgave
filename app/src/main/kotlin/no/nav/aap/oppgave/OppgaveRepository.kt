@@ -147,7 +147,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
     }
-    
+
     fun gjenåpneOppgave(
         oppgaveId: OppgaveId,
         ident: String
@@ -172,7 +172,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(2, oppgaveId.id)
                 setLong(3, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) }
+            setResultValidator { require(it == 1) { "Forventer bare at én oppgave gjenåpnes. Fant ${it} oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
     }
 
@@ -301,7 +301,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    enum class Rekkefølge {asc, desc}
+    enum class Rekkefølge { asc, desc }
+
     fun finnOppgaver(filter: Filter, rekkefølge: Rekkefølge = Rekkefølge.asc): List<OppgaveDto> {
         val hentNesteOppgaveQuery = """
             SELECT 
@@ -319,8 +320,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
     }
-    
+
     data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long)
+
     fun finnÅpneOppgaverIkkeVikafossen(): List<IdentMedOppgaveId> {
         val query = """
             SELECT 
@@ -338,7 +340,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
     }
-    
+
     fun oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaveIds: List<Long>, enhet: String): Int {
         require(oppgaveIds.isNotEmpty()) { "Må ha minst en oppgave å oppdatere" }
         val query = """
@@ -353,11 +355,14 @@ class OppgaveRepository(private val connection: DBConnection) {
             WHERE 
                 ID IN (${oppgaveIds.joinToString(",")})
         """.trimIndent()
-        
+
         return connection.executeReturnUpdated(query) {
             setParams {
                 setString(1, enhet)
-                setString(2, "Kelvin") // TODO: Kan øke kolonnestørrelse for å få plass til jobbtype hvis det er interessant
+                setString(
+                    2,
+                    "Kelvin"
+                ) // TODO: Kan øke kolonnestørrelse for å få plass til jobbtype hvis det er interessant
             }
         }
     }
@@ -493,7 +498,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 var index = 1
                 if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
                 if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
-                if (avklaringsbehovReferanse.journalpostId != null ) setLong(index++, avklaringsbehovReferanse.journalpostId)
+                if (avklaringsbehovReferanse.journalpostId != null) setLong(
+                    index++,
+                    avklaringsbehovReferanse.journalpostId
+                )
                 setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
             }
             setRowMapper { row ->
