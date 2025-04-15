@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.plukk
 
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovKode
@@ -10,13 +9,12 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
-import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class PlukkOppgaveService(val connection: DBConnection, val prometheus: PrometheusMeterRegistry) {
+class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetService) {
 
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
@@ -60,9 +58,6 @@ class PlukkOppgaveService(val connection: DBConnection, val prometheus: Promethe
             sendOppgaveStatusOppdatering(connection, oppgaveIdMedVersjon, HendelseType.RESERVERT)
             return oppgave
         }
-        val enhetService = EnhetService(
-            msGraphClient = MsGraphClient(prometheus),
-        )
         val nyEnhet = enhetService.utledEnhetForOppgave(AvklaringsbehovKode(oppgave.avklaringsbehovKode), oppgave.personIdent)
         if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
             oppdaterUtdatertEnhet(oppgave, oppgaveRepo, nyEnhet)
