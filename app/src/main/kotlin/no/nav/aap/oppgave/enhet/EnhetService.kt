@@ -26,10 +26,6 @@ data class EnhetForOppgave(
 
 interface IEnhetService {
     fun hentEnheter(currentToken: String, ident: String): List<String>
-    fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave
-    fun finnFortroligAdresse(fnr: String): Diskresjonskode
-    fun finnFylkesEnhet(fnr: String?): EnhetForOppgave
-    fun finnNayEnhet(fnr: String): EnhetForOppgave
     fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, fnr: String?): EnhetForOppgave
 }
 
@@ -45,14 +41,6 @@ class EnhetService(
         return msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
 
-    }
-
-    override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
-        val enhet = finnEnhetstilknytningForPerson(fnr)
-        if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
-            return enhet
-        }
-        return EnhetForOppgave(parseFylkeskontor(enhet.enhet), enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) })
     }
 
     override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, fnr: String?): EnhetForOppgave {
@@ -71,7 +59,15 @@ class EnhetService(
         }
     }
 
-    override fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave {
+    private fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
+        val enhet = finnEnhetstilknytningForPerson(fnr)
+        if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
+            return enhet
+        }
+        return EnhetForOppgave(parseFylkeskontor(enhet.enhet), enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) })
+    }
+
+    private fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
         val enhetFraNorg = norgKlient.finnEnhet(
             tilknytningOgSkjerming.geografiskTilknytningKode,
@@ -116,7 +112,7 @@ class EnhetService(
         val erNavAnsatt: Boolean
     )
 
-    override fun finnFortroligAdresse(fnr: String): Diskresjonskode {
+    private fun finnFortroligAdresse(fnr: String): Diskresjonskode {
         val pdlData = pdlGraphqlKlient.hentAdressebeskyttelseOgGeolokasjon(fnr)
         return mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
 
@@ -148,7 +144,7 @@ class EnhetService(
         }
     }
 
-    override fun finnNayEnhet(fnr: String): EnhetForOppgave {
+    private fun finnNayEnhet(fnr: String): EnhetForOppgave {
         val erStrengtFortrolig = finnFortroligAdresse(fnr) == Diskresjonskode.SPSF
         val erEgenAnsatt = nomKlient.erEgenansatt(fnr)
         
