@@ -10,6 +10,8 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.tilgang.Beslutter
@@ -21,14 +23,14 @@ import no.nav.aap.tilgang.authorizedPost
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
     // Trenger ikke ytterligere tilgangskontroll da tilgang kalles for å finne plukkbar oppgave
     route("/neste-oppgave").authorizedPost<Unit, NesteOppgaveDto, FinnNesteOppgaveDto>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/neste-oppgave").increment()
+        val enhetService = EnhetService(msGraphClient = MsGraphClient(prometheus))
         val nesteOppgave = dataSource.transaction { connection ->
-            PlukkOppgaveService(connection).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
+            PlukkOppgaveService(connection, enhetService).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
         }
         if (nesteOppgave != null) {
             respond(nesteOppgave)
@@ -37,15 +39,15 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
         }
     }
 
-
 fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
     // Trenger ikke ytterligere tilgangskontroll da tilgang kalles ved plukking
     route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
+        val enhetService = EnhetService(msGraphClient = MsGraphClient(prometheus))
         val oppgave = dataSource.transaction { connection ->
-            PlukkOppgaveService(connection).plukkOppgave(
+            PlukkOppgaveService(connection, enhetService).plukkOppgave(
                 OppgaveId(request.oppgaveId, request.versjon),
                 ident(),
                 token()

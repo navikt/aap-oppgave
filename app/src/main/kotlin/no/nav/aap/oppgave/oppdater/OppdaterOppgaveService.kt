@@ -1,10 +1,11 @@
 package no.nav.aap.oppgave.oppdater
 
-import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
-import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
-import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon as PostmottakDefinisjon
-import no.nav.aap.behandlingsflyt.kontrakt.steg.StegType
 import no.nav.aap.komponenter.dbconnect.DBConnection
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
@@ -20,54 +21,9 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
-import no.nav.aap.tilgang.Rolle
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
-
-private val AVKLARINGSBEHOV_FOR_VEILEDER =
-    Definisjon.entries
-        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_OPPFOLGING) }
-        .map { AvklaringsbehovKode(it.kode.name) }
-        .toSet()
-
-private val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER =
-    Definisjon.entries
-        .asSequence()
-        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_NASJONAL) }
-        .filter { it.løsesISteg != StegType.KVALITETSSIKRING }
-        .map { AvklaringsbehovKode(it.kode.name) }
-        .toSet()
-
-private val AVKLARINGSBEHOV_FOR_BESLUTTER = Definisjon.entries
-    .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
-    .filter { it.løsesAv.contains(Rolle.BESLUTTER) }
-    .map { AvklaringsbehovKode(it.kode.name) }
-    .toSet()
-
-private val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK =
-    PostmottakDefinisjon.entries
-        .filter {
-            it.type in setOf(
-                PostmottakDefinisjon.BehovType.MANUELT_PÅKREVD,
-                PostmottakDefinisjon.BehovType.MANUELT_FRIVILLIG
-            )
-        }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_NASJONAL) }
-        .map { AvklaringsbehovKode(it.kode.name) }.toSet()
-
-private val AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK =
-    PostmottakDefinisjon.entries
-        .filter {
-            it.type in setOf(
-                PostmottakDefinisjon.BehovType.MANUELT_PÅKREVD,
-                PostmottakDefinisjon.BehovType.MANUELT_FRIVILLIG
-            )
-        }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_OPPFOLGING) }
-        .map { AvklaringsbehovKode(it.kode.name) }.toSet()
 
 private val ÅPNE_STATUSER = setOf(
     AvklaringsbehovStatus.OPPRETTET,
@@ -141,7 +97,7 @@ class OppdaterOppgaveService(
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
-            val enhetForOppgave = enhetForOppgave(avklaringsbehov, oppgaveOppdatering)
+            val enhetForOppgave = enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, oppgaveOppdatering.personIdent)
             val veileder = if (oppgaveOppdatering.personIdent != null) {
                 veilarbarboppfolgingKlient.hentVeileder(oppgaveOppdatering.personIdent)
             } else {
@@ -190,7 +146,7 @@ class OppdaterOppgaveService(
         avklaringsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelse>
     ) {
         avklaringsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
-            val enhetForOppgave = enhetForOppgave(avklaringsbehovHendelse, oppgaveOppdatering)
+            val enhetForOppgave = enhetService.utledEnhetForOppgave(avklaringsbehovHendelse.avklaringsbehovKode, oppgaveOppdatering.personIdent)
             val veileder = if (oppgaveOppdatering.personIdent != null) {
                 veilarbarboppfolgingKlient.hentVeileder(oppgaveOppdatering.personIdent)
             } else {
@@ -234,24 +190,6 @@ class OppdaterOppgaveService(
             }
         }
     }
-
-    private fun enhetForOppgave(
-        avklaringsbehovHendelse: AvklaringsbehovHendelse,
-        oppgaveOppdatering: OppgaveOppdatering
-    ) =
-        if (avklaringsbehovHendelse.avklaringsbehovKode in
-            AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
-            + AVKLARINGSBEHOV_FOR_BESLUTTER
-            + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
-        ) {
-            enhetService.finnNayEnhet(oppgaveOppdatering.personIdent!!)
-        } else {
-            if (avklaringsbehovHendelse.avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) {
-                enhetService.finnFylkesEnhet(oppgaveOppdatering.personIdent)
-            } else {
-                enhetService.finnEnhetForOppgave(oppgaveOppdatering.personIdent)
-            }
-        }
 
     private fun sammeSaksbehandlerType(
         avklaringsbehovKode1: AvklaringsbehovKode,

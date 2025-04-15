@@ -21,7 +21,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
-import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
@@ -263,20 +262,11 @@ class OppdaterOppgaveServiceTest {
             TODO("Not yet implemented")
         }
 
-        override fun finnEnhetForOppgave(fnr: String?): EnhetForOppgave {
-            return EnhetForOppgave(enhet = ENHET_NAV_LØRENSKOG, null)
-        }
-
-        override fun finnFortroligAdresse(fnr: String): Diskresjonskode {
-            TODO("Not yet implemented")
-        }
-
-        override fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
-            TODO("Not yet implemented")
-        }
-
-        override fun finnNayEnhet(fnr: String): EnhetForOppgave {
-            TODO("Not yet implemented")
+        override fun utledEnhetForOppgave(
+            avklaringsbehovKode: AvklaringsbehovKode,
+            fnr: String?
+        ): EnhetForOppgave {
+            return EnhetForOppgave(ENHET_NAV_LØRENSKOG, null)
         }
     }
 }

@@ -2,16 +2,19 @@ package no.nav.aap.oppgave.plukk
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.enhet.EnhetForOppgave
+import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class PlukkOppgaveService(val connection: DBConnection) {
+class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetService) {
 
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
@@ -55,7 +58,25 @@ class PlukkOppgaveService(val connection: DBConnection) {
             sendOppgaveStatusOppdatering(connection, oppgaveIdMedVersjon, HendelseType.RESERVERT)
             return oppgave
         }
+        val nyEnhet = enhetService.utledEnhetForOppgave(AvklaringsbehovKode(oppgave.avklaringsbehovKode), oppgave.personIdent)
+        if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
+            oppdaterUtdatertEnhet(oppgave, oppgaveRepo, nyEnhet)
+        }
         return null
     }
 
-}
+    private fun oppdaterUtdatertEnhet(oppgave: OppgaveDto, oppgaveRepo: OppgaveRepository, nyEnhet: EnhetForOppgave) {
+            log.info("Oppdaterer enhet for oppgave ${oppgave.id} etter at tilgang ble avslått på plukk.")
+            oppgaveRepo.oppdatereOppgave(
+                oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
+                ident = "Kelvin",
+                personIdent = oppgave.personIdent,
+                enhet = nyEnhet.enhet,
+                påVentTil = oppgave.påVentTil,
+                påVentÅrsak = oppgave.påVentÅrsak,
+                oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
+                veileder = oppgave.veileder,
+            )
+        }
+    }
+
