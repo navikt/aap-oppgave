@@ -21,14 +21,13 @@ import no.nav.aap.tilgang.authorizedPost
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
     // Trenger ikke ytterligere tilgangskontroll da tilgang kalles for å finne plukkbar oppgave
     route("/neste-oppgave").authorizedPost<Unit, NesteOppgaveDto, FinnNesteOppgaveDto>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/neste-oppgave").increment()
         val nesteOppgave = dataSource.transaction { connection ->
-            PlukkOppgaveService(connection).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
+            PlukkOppgaveService(connection, prometheus).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
         }
         if (nesteOppgave != null) {
             respond(nesteOppgave)
@@ -37,7 +36,6 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
         }
     }
 
-
 fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
     // Trenger ikke ytterligere tilgangskontroll da tilgang kalles ved plukking
     route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
@@ -45,7 +43,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: Prome
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
         val oppgave = dataSource.transaction { connection ->
-            PlukkOppgaveService(connection).plukkOppgave(
+            PlukkOppgaveService(connection, prometheus).plukkOppgave(
                 OppgaveId(request.oppgaveId, request.versjon),
                 ident(),
                 token()
