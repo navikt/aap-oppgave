@@ -20,6 +20,7 @@ import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
 import no.nav.aap.komponenter.server.AZURE
 import no.nav.aap.komponenter.server.commonKtorModule
+import no.nav.aap.komponenter.server.plugins.NavIdentInterceptor
 import no.nav.aap.motor.Motor
 import no.nav.aap.motor.api.motorApi
 import no.nav.aap.motor.retry.RetryService
@@ -88,6 +89,8 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
     routing {
         authenticate(AZURE) {
+            install(NavIdentInterceptor)
+
             apiRouting {
                 // Oppdater oppgaver fra applikasjonene
                 oppdaterBehandlingOppgaverApi(dataSource, iMsGraphClient, prometheus)
