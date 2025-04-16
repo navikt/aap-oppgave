@@ -109,8 +109,13 @@ class OppdaterOppgaveService(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
                 )
             ) {
-                log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-                oppgaveRepository.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin")
+                if (eksisterendeOppgave.status == Status.AVSLUTTET) {
+                    log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
+                    oppgaveRepository.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin")
+                } else {
+                    log.warn("Kan ikke gjenåpne oppgave som er allerede er åpen (id=${eksisterendeOppgave.oppgaveId()}, avklaringsbehov=${avklaringsbehov.avklaringsbehovKode})")
+                    return
+                }
                 sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.OPPDATERT)
                 val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
                 if (sistEndretAv != "Kelvin") {
