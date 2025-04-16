@@ -26,7 +26,8 @@ private val log = LoggerFactory.getLogger("oppgavelisteApi")
  * Søker etter oppgaver med et predefinert filter angitt med filterId. Det vil bli sjekket om innlogget bruker har tilgang
  * til oppgavene. I tillegg kan det legges på en begrensning på enheter.
  */
-fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
+    val enhetService = EnhetService(MsGraphClient(prometheus))
     route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
@@ -46,7 +47,6 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
             )
         }
 
-        val enhetService = EnhetService(MsGraphClient(prometheus))
         val token = token()
         val enhetsGrupper = enhetService.hentEnheter(token.token(), ident())
         val oppgaverMedTilgang = oppgaver.asSequence().filter {
@@ -60,6 +60,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
             )
         )
     }
+}
 
 /**
  * Søker etter oppgaver med et fritt definert filter som ikke trenger være lagret i database.
