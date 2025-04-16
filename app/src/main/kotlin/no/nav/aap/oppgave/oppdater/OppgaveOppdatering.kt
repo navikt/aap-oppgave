@@ -74,13 +74,15 @@ private fun TypeBehandling.tilBehandlingstype() =
     }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
-    return this.map {
-        AvklaringsbehovHendelse(
-            avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
-            status = it.status.tilAvklaringsbehovStatus(),
-            endringer = it.endringer.tilEndringerForBehandlingsflyt()
-        )
-    }
+    return this
+        .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
+        .map {
+            AvklaringsbehovHendelse(
+                avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
+                status = it.status.tilAvklaringsbehovStatus(),
+                endringer = it.endringer.tilEndringerForBehandlingsflyt()
+            )
+        }
 }
 
 private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
