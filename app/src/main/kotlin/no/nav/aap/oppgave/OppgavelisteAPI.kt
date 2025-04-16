@@ -9,12 +9,13 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.miljo.MiljøKode
+import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.TransientFilterDto
+import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.metrikker.httpCallCounter
-import no.nav.aap.oppgave.plukk.TilgangGateway
 import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
@@ -25,7 +26,8 @@ private val log = LoggerFactory.getLogger("oppgavelisteApi")
  * Søker etter oppgaver med et predefinert filter angitt med filterId. Det vil bli sjekket om innlogget bruker har tilgang
  * til oppgavene. I tillegg kan det legges på en begrensning på enheter.
  */
-fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
+    val enhetService = EnhetService(MsGraphClient(prometheus))
     route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
@@ -46,18 +48,10 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
         }
 
         val token = token()
-        val oppgaverMedTilgang = oppgaver
-            .asSequence()
-            .filter {
-                try {
-                    TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token)
-                } catch (e: Exception) {
-                    log.warn("Feil ved sjekk av tilgang til oppgave ${it.id}", e)
-                    false
-                }
-            }
-            .take(request.maxAntall)
-            .toList()
+        val enhetsGrupper = enhetService.hentEnheter(token.token(), ident())
+        val oppgaverMedTilgang = oppgaver.asSequence().filter {
+            enhetsGrupper.contains(it.enhet)
+        }.take(request.maxAntall).toList()
 
         respond(
             OppgavelisteRespons(
@@ -66,6 +60,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
             )
         )
     }
+}
 
 /**
  * Søker etter oppgaver med et fritt definert filter som ikke trenger være lagret i database.
