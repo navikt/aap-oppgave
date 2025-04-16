@@ -55,7 +55,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
 
         respond(
             OppgavelisteRespons(
-                antallTotalt = oppgaverMedTilgang.size,
+                antallTotalt = oppgaver.size,
                 oppgaver = oppgaverMedTilgang.medPersonNavn(false, token())
             )
         )
