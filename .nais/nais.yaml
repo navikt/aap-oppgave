@@ -13,9 +13,6 @@ spec:
     - {{ingress}}
   image: {{image}}
   port: 8080
-  replicas:
-    max: 2
-    min: 1
   resources:
     limits:
       memory: 512Mi
