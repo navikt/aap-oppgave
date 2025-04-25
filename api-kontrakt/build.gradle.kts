@@ -9,7 +9,7 @@ group = "no.nav.aap.oppgave"
 apply(plugin = "maven-publish")
 apply(plugin = "java-library")
 
-val jacksonVersion = "2.18.3"
+val jacksonVersion = "2.19.0"
 
 dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
