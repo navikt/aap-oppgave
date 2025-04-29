@@ -23,6 +23,9 @@ fun Application.norgFake(
 
     routing {
         post("/norg2/api/v1/arbeidsfordeling/enheter/bestmatch", bestMatch)
+        get("/norg2/api/v1/enhet/simple") {
+            call.respond("""[{"enhetNr": "superNav!", "navn": "SuperNav"}]""")
+        }
     }
 
 }
