@@ -18,6 +18,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
     private val nom = FakeServer(module = { nomFake() })
     private val veilarbarena = FakeServer(module = { veilarbarenaFake() })
     private val veilarboppfolging = FakeServer(module = { veilarboppfolgingFake() })
+    private val msGraph = FakeServer(module = { msGraphFake() })
 
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
@@ -40,7 +41,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         System.setProperty("integrasjon.nom.url", "http://localhost:${nom.port()}")
         System.setProperty("integrasjon.nom.scope", "scope")
         // MS GRAPH
-        System.setProperty("MS_GRAPH_BASE_URL", "http://localhost:9999")
+        System.setProperty("MS_GRAPH_BASE_URL", "http://localhost:${msGraph.port()}")
         System.setProperty("MS_GRAPH_SCOPE", "scope")
         // Veilarbarena
         System.setProperty("integrasjon.veilarbarena.url", "http://localhost:${veilarbarena.port()}")
