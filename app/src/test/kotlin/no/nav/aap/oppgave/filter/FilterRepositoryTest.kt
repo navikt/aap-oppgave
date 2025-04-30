@@ -5,16 +5,18 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
-import kotlin.test.AfterTest
 
-class FilterRepositoryTest {
+internal class FilterRepositoryTest {
 
-    @AfterTest
-    fun tearDown() {
+    private val dataSource = InitTestDatabase.freshDatabase()
+
+    @BeforeEach
+    fun setup() {
         @Suppress("SqlWithoutWhere")
-        InitTestDatabase.dataSource.transaction {
+        dataSource.transaction {
             it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
             it.execute("DELETE FROM FILTER_BEHANDLINGSTYPE")
             it.execute("DELETE FROM FILTER_ENHET")
@@ -24,7 +26,7 @@ class FilterRepositoryTest {
 
     @Test
     fun `Opprett enkelt filter og hent det ut igjen`() {
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
                 navn = "Basic filter",
@@ -46,7 +48,7 @@ class FilterRepositoryTest {
 
     @Test
     fun `Kan opprette enhetsspesifikt filter`() {
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
                 navn = "Filter for enhet",
@@ -55,6 +57,7 @@ class FilterRepositoryTest {
                 opprettetTidspunkt = LocalDateTime.now(),
                 enhetFilter = listOf(EnhetFilter("1234", Filtermodus.INKLUDER))
             )
+            val antallFilterFørTest = filterRepo.hentAlle().size
             val filterId = filterRepo.opprett(nyttFilter)
 
             val ekskludertFilter = OpprettFilter(
@@ -70,7 +73,7 @@ class FilterRepositoryTest {
             filterRepo.opprett(ekskludertFilter)
 
             val filtre = filterRepo.hentForEnheter(listOf("1234"))
-            assertThat(filtre).size().isEqualTo(1)
+            assertThat(filtre).hasSize(antallFilterFørTest + 1)
             assertThat(filtre.first().navn).isEqualTo("Filter for enhet")
             assertThat(filtre.first().id).isEqualTo(filterId)
         }
@@ -78,7 +81,7 @@ class FilterRepositoryTest {
 
     @Test
     fun `Opprett filter med avklaringsbehov`() {
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
                 navn = "Filter for avklar sykdom oppgave",
@@ -87,20 +90,20 @@ class FilterRepositoryTest {
                 opprettetTidspunkt = LocalDateTime.now(),
                 avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode.name)
             )
-            filterRepo.opprett(nyttFilter)
+            val antallFilterFørTest = filterRepo.hentAlle().size
+            val opprettetFilterId = filterRepo.opprett(nyttFilter)
 
-            val alleFilter = filterRepo.hentAlle()
-            assertThat(alleFilter).hasSize(1)
-            assertThat(alleFilter.first().navn).isEqualTo("Filter for avklar sykdom oppgave")
-            assertThat(alleFilter.first().behandlingstyper).hasSize(0)
-            assertThat(alleFilter.first().avklaringsbehovKoder).hasSize(1)
-            assertThat(alleFilter.first().avklaringsbehovKoder.contains(Definisjon.AVKLAR_SYKDOM.kode.name)).isTrue()
+            val opprettetFilter = filterRepo.hent(opprettetFilterId)!!
+            assertThat(opprettetFilter.navn).isEqualTo("Filter for avklar sykdom oppgave")
+            assertThat(opprettetFilter.behandlingstyper).hasSize(0)
+            assertThat(opprettetFilter.avklaringsbehovKoder).hasSize(1)
+            assertThat(opprettetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_SYKDOM.kode.name)).isTrue()
         }
     }
 
     @Test
     fun `Opprett filter med behandlingstype'`() {
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
                 navn = "Filter for førstegangsbehandling",
@@ -109,10 +112,11 @@ class FilterRepositoryTest {
                 opprettetTidspunkt = LocalDateTime.now(),
                 behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING)
             )
+            val antallFilterFørTest = filterRepo.hentAlle().size
             filterRepo.opprett(nyttFilter)
 
             val alleFilter = filterRepo.hentAlle()
-            assertThat(alleFilter).hasSize(1)
+            assertThat(alleFilter).hasSize(antallFilterFørTest + 1)
             assertThat(alleFilter.first().navn).isEqualTo("Filter for førstegangsbehandling")
             assertThat(alleFilter.first().avklaringsbehovKoder).hasSize(0)
             assertThat(alleFilter.first().behandlingstyper).hasSize(1)
@@ -122,7 +126,7 @@ class FilterRepositoryTest {
 
     @Test
     fun `Oppdater filter med både behandlingstype og avklaringsbehov`() {
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
                 navn = "Filter for avklar sykdom oppgave og førstegangsbehandling",
@@ -132,10 +136,12 @@ class FilterRepositoryTest {
                 behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
                 avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode.name)
             )
+
+            val antallFilterFørTest = filterRepo.hentAlle().size
             val filterId = filterRepo.opprett(nyttFilter)
 
             var alleFilter = filterRepo.hentAlle()
-            assertThat(alleFilter).hasSize(1)
+            assertThat(alleFilter).hasSize(antallFilterFørTest + 1)
             var hentetFilter = alleFilter.first()
             assertThat(hentetFilter.navn).isEqualTo("Filter for avklar sykdom oppgave og førstegangsbehandling")
             assertThat(hentetFilter.behandlingstyper).hasSize(1)
@@ -167,7 +173,7 @@ class FilterRepositoryTest {
 
     @Test
     fun `Logisk sletting av filter`() {
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
                 navn = "Test filter",

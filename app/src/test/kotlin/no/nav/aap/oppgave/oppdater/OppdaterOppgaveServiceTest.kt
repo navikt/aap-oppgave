@@ -2,10 +2,10 @@ package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
-import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
-import  no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
@@ -13,28 +13,30 @@ import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.enhet.EnhetForOppgave
+import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
-import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
-import no.nav.aap.oppgave.enhet.EnhetForOppgave
-import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.AfterTest
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 
 class OppdaterOppgaveServiceTest {
+
+    private val dataSource = InitTestDatabase.freshDatabase()
 
     @AfterTest
     fun tearDown() {
         @Suppress("SqlWithoutWhere")
-        InitTestDatabase.dataSource.transaction {
+        dataSource.transaction {
             it.execute("DELETE FROM OPPGAVE_HISTORIKK")
             it.execute("DELETE FROM OPPGAVE")
         }
@@ -125,7 +127,7 @@ class OppdaterOppgaveServiceTest {
                 )
             )
         )
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             OppdaterOppgaveService(
                 connection,
                 graphClient,
@@ -187,7 +189,7 @@ class OppdaterOppgaveServiceTest {
 
 
         //Utfør
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             OppdaterOppgaveService(
                 connection,
                 graphClient,
@@ -224,20 +226,14 @@ class OppdaterOppgaveServiceTest {
             veileder = veileder,
             opprettetTidspunkt = LocalDateTime.now(),
         )
-        val oppgaveId = InitTestDatabase.dataSource.transaction { connection ->
+        val oppgaveId = dataSource.transaction { connection ->
             OppgaveRepository(connection).opprettOppgave(oppgaveDto)
         }
         return Triple(oppgaveId, Saksnummer(saksnummer), BehandlingReferanse(behandlingRef))
     }
 
-    private fun reserverOppgave(oppgaveId: OppgaveId, ident: String) {
-        return InitTestDatabase.dataSource.transaction { connection ->
-            OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, ident)
-        }
-    }
-
     private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
-        return InitTestDatabase.dataSource.transaction { connection ->
+        return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentOppgave(oppgaveId)
         }
     }

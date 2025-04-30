@@ -18,6 +18,8 @@ import kotlin.test.fail
 
 class OppgaveRepositoryTest {
 
+    private val dataSource = InitTestDatabase.freshDatabase()
+
     private val ENHET_NAV_ENEBAKK = "0229"
     private val ENHET_NAV_LØRENSKOG = "0230"
     private val ENHET_NAV_LILLESTRØM = "0231"
@@ -25,7 +27,7 @@ class OppgaveRepositoryTest {
     @AfterTest
     fun tearDown() {
         @Suppress("SqlWithoutWhere")
-        InitTestDatabase.dataSource.transaction {
+        dataSource.transaction {
             it.execute("DELETE FROM OPPGAVE_HISTORIKK")
             it.execute("DELETE FROM OPPGAVE")
         }
@@ -52,7 +54,7 @@ class OppgaveRepositoryTest {
     @Test
     fun `Avslutt åpen oppgave`() {
         val oppgaveId = opprettOppgave()
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             OppgaveRepository(connection).avsluttOppgave(oppgaveId, "test")
         }
     }
@@ -60,7 +62,7 @@ class OppgaveRepositoryTest {
     @Test
     fun `Finn neste oppgave finner ingen oppgave fordi opprettet oppgave ikke matcher filter`() {
         opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("1000"))
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter("2000"))
             assertThat(oppgaver).hasSize(0)
         }
@@ -70,7 +72,7 @@ class OppgaveRepositoryTest {
     fun `Finn neste oppgave finner en oppgave fordi en av oppgavene matcher filter`() {
         opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name))
         val oppgaveIdForAvklarStudent = opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_STUDENT.kode.name))
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter(Definisjon.AVKLAR_STUDENT.kode.name))
             assertThat(plukketOppgaver).hasSize(1)
             assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForAvklarStudent.id)
@@ -82,7 +84,7 @@ class OppgaveRepositoryTest {
         opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING)
         val oppgaveIdForDokumentshåndteringsoppgave = opprettOppgave(behandlingstype = Behandlingstype.DOKUMENT_HÅNDTERING)
 
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.DOKUMENT_HÅNDTERING))
             assertThat(plukketOppgaver).hasSize(1)
             assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
@@ -94,7 +96,7 @@ class OppgaveRepositoryTest {
         opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING)
         val oppgaveIdForDokumentshåndteringsoppgave = opprettOppgave(behandlingstype = Behandlingstype.JOURNALFØRING)
 
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.JOURNALFØRING))
             assertThat(plukketOppgaver).hasSize(1)
             assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
@@ -106,7 +108,7 @@ class OppgaveRepositoryTest {
     @Test
     fun `Finn neste oppgave finner ikke en oppgave fordi den er avsluttet`() {
         opprettOppgave(status = Status.AVSLUTTET)
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val oppgaver= OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter())
             assertThat(oppgaver).hasSize(0)
         }
@@ -130,7 +132,7 @@ class OppgaveRepositoryTest {
         val oppgaveSomSkalAvsluttes = mineOppgaverFørAvslutt.first { it.id == oppgaveId4.id }
         avsluttOppgave(OppgaveId(oppgaveSomSkalAvsluttes.id!!, oppgaveSomSkalAvsluttes.versjon))
 
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection).hentMineOppgaver("bruker1")
             assertThat(oppgaver).hasSize(2)
         }
@@ -191,31 +193,31 @@ class OppgaveRepositoryTest {
         FilterDto(1, "Filter for test", "Filter for test", behandlingstyper = behandlingstyper.toSet(), opprettetAv = "test", opprettetTidspunkt = LocalDateTime.now())
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             OppgaveRepository(connection).avsluttOppgave(oppgaveId, "test")
         }
     }
 
     private fun reserverOppgave(oppgaveId: OppgaveId, ident: String) {
-        return InitTestDatabase.dataSource.transaction { connection ->
+        return dataSource.transaction { connection ->
             OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, ident)
         }
     }
 
     private fun avreserverOppgave(oppgaveId: OppgaveId, ident: String) {
-        InitTestDatabase.dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             OppgaveRepository(connection).avreserverOppgave(oppgaveId, ident)
         }
     }
 
     private fun mineOppgave(ident: String): List<OppgaveDto> {
-        return InitTestDatabase.dataSource.transaction { connection ->
+        return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentMineOppgaver(ident)
         }
     }
 
     private fun finnOppgaver(filter: Filter): List<OppgaveDto> {
-        return InitTestDatabase.dataSource.transaction(readOnly = true) { connection ->
+        return dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter)
         }
     }
@@ -243,7 +245,7 @@ class OppgaveRepositoryTest {
             veileder = veileder,
             opprettetTidspunkt = LocalDateTime.now()
         )
-        return InitTestDatabase.dataSource.transaction { connection ->
+        return dataSource.transaction { connection ->
             OppgaveRepository(connection).opprettOppgave(oppgaveDto)
         }
     }

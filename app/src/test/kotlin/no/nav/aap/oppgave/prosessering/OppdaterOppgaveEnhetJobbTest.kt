@@ -8,17 +8,22 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.motor.JobbInput
-import no.nav.aap.oppgave.*
+import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.server.DbConfig
+import no.nav.aap.oppgave.server.postgreSQLContainer
 import no.nav.aap.oppgave.server.server
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Disabled
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
@@ -32,9 +37,14 @@ import kotlin.test.Test
 // Denne testen kjører i OppgaveApiTest inntil videre
 @Disabled("Må skrive om fakes til å bruke singleton - får problemer med parallelle kjøringer")
 class OppdaterOppgaveEnhetJobbTest {
+    private val dataSource = InitTestDatabase.freshDatabase()
+
     @AfterTest
     fun tearDown() {
-        resetDatabase()
+        dataSource.transaction {
+            it.execute("DELETE FROM OPPGAVE_HISTORIKK")
+            it.execute("DELETE FROM OPPGAVE")
+        }
     }
 
     @Test
@@ -44,10 +54,10 @@ class OppdaterOppgaveEnhetJobbTest {
         val oppgave2Før = hentOppgave(oppgaveId2)
 
 
-        InitTestDatabase.dataSource.transaction {
+        dataSource.transaction {
             OppdaterOppgaveEnhetJobb(OppgaveRepository(it)).utfør(JobbInput(OppdaterOppgaveEnhetJobb))
         }
-       
+
         val oppgave1 = hentOppgave(oppgaveId1)
         assertEquals(Enhet.NAV_VIKAFOSSEN.kode, oppgave1.enhet)
         assertNull(oppgave1.reservertAv)
@@ -57,10 +67,11 @@ class OppdaterOppgaveEnhetJobbTest {
     }
 
     companion object {
+        private const val ENHET_NAV_LØRENSKOG = "0230"
+
         private val postgres = postgreSQLContainer()
         val fakesConfig: FakesConfig = FakesConfig()
         private val fakes = Fakes(fakesConfig = fakesConfig)
-
         private val dbConfig = DbConfig(
             database = postgres.databaseName,
             jdbcUrl = postgres.jdbcUrl,
@@ -76,13 +87,6 @@ class OppdaterOppgaveEnhetJobbTest {
             module(fakes)
         }.start()
 
-        private fun resetDatabase() {
-            InitTestDatabase.dataSource.transaction {
-                it.execute("DELETE FROM OPPGAVE_HISTORIKK")
-                it.execute("DELETE FROM OPPGAVE")
-            }
-        }
-
         @JvmStatic
         @AfterAll
         fun afterAll() {
@@ -91,42 +95,41 @@ class OppdaterOppgaveEnhetJobbTest {
             postgres.close()
         }
     }
-}
 
-private const val ENHET_NAV_LØRENSKOG = "0230"
-private fun opprettOppgave(
-    personIdent: String = "12345678901",
-    saksnummer: String = "123",
-    behandlingRef: UUID = UUID.randomUUID(),
-    status: Status = Status.OPPRETTET,
-    avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
-    behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
-    enhet: String = ENHET_NAV_LØRENSKOG,
-    oppfølgingsenhet: String? = null,
-    veileder: String? = null,
-): OppgaveId {
-    val oppgaveDto = OppgaveDto(
-        personIdent = personIdent,
-        saksnummer = saksnummer,
-        behandlingRef = behandlingRef,
-        enhet = enhet,
-        oppfølgingsenhet = oppfølgingsenhet,
-        behandlingOpprettet = LocalDateTime.now().minusDays(3),
-        avklaringsbehovKode = avklaringsbehovKode.kode,
-        status = status,
-        behandlingstype = behandlingstype,
-        opprettetAv = "bruker1",
-        veileder = veileder,
-        opprettetTidspunkt = LocalDateTime.now()
-    )
-    return InitTestDatabase.dataSource.transaction { connection ->
-        OppgaveRepository(connection).opprettOppgave(oppgaveDto)
+    private fun opprettOppgave(
+        personIdent: String = "12345678901",
+        saksnummer: String = "123",
+        behandlingRef: UUID = UUID.randomUUID(),
+        status: Status = Status.OPPRETTET,
+        avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
+        behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+        enhet: String = ENHET_NAV_LØRENSKOG,
+        oppfølgingsenhet: String? = null,
+        veileder: String? = null,
+    ): OppgaveId {
+        val oppgaveDto = OppgaveDto(
+            personIdent = personIdent,
+            saksnummer = saksnummer,
+            behandlingRef = behandlingRef,
+            enhet = enhet,
+            oppfølgingsenhet = oppfølgingsenhet,
+            behandlingOpprettet = LocalDateTime.now().minusDays(3),
+            avklaringsbehovKode = avklaringsbehovKode.kode,
+            status = status,
+            behandlingstype = behandlingstype,
+            opprettetAv = "bruker1",
+            veileder = veileder,
+            opprettetTidspunkt = LocalDateTime.now()
+        )
+        return dataSource.transaction { connection ->
+            OppgaveRepository(connection).opprettOppgave(oppgaveDto)
+        }
     }
-}
 
-private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
-    return InitTestDatabase.dataSource.transaction { connection ->
-        OppgaveRepository(connection).hentOppgave(oppgaveId)
+    private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
+        return dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentOppgave(oppgaveId)
+        }
     }
 }
 
