@@ -19,6 +19,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
     private val veilarbarena = FakeServer(module = { veilarbarenaFake() })
     private val veilarboppfolging = FakeServer(module = { veilarboppfolgingFake() })
     private val msGraph = FakeServer(module = { msGraphFake() })
+    private val statistikkFake = FakeServer(module = { statistikkFake() })
 
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
@@ -54,6 +55,9 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         System.setProperty("AAP_SAKSBEHANDLER_OPPFOLGING", "veileder-rolle")
         System.setProperty("AAP_KVALITETSSIKRER", "kvalitetssikrer-rolle")
         System.setProperty("AAP_BESLUTTER", "beslutter-rolle")
+
+        System.setProperty("integrasjon.statistikk.url", "http://localhost:${statistikkFake.port()}")
+        System.setProperty("integrasjon.statistikk.scope", "scope")
     }
 
     override fun close() {

@@ -6,6 +6,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
@@ -23,6 +24,7 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.AfterTest
@@ -123,24 +125,116 @@ class OppdaterOppgaveServiceTest {
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(4)
                         )
-                        
                     )
                 )
             )
         )
-        dataSource.transaction { connection ->
-            OppdaterOppgaveService(
-                connection,
-                graphClient,
-                veilarbarboppfolgingKlient,
-                enhetService
-            ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
-        }
+        sendBehandlingFlytStoppetHendelse(hendelse)
 
         val sykdomOppgave = hentOppgave(sykdomOppgaveId)
         assertThat(sykdomOppgave.status).isEqualTo(Status.OPPRETTET)
         val fastsettBeregningstidspunktOppgave = hentOppgave(fastsettBeregningstidspunktOppgaveId)
         assertThat(fastsettBeregningstidspunktOppgave.status).isEqualTo(Status.AVSLUTTET)
+    }
+
+    @Test
+    fun `ved ventebehov skal åpne oppgaver markeres med venteårsaker`() {
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val saksnummer = "123".let(::Saksnummer)
+
+        val nå = LocalDateTime.now()
+
+        val hendelse = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(10)
+                        ),
+                    )
+                ),
+            )
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelse)
+
+        val åpneOppgaver = hentOppgaverForBehandling(saksnummer, behandlingsref)
+        assertThat(åpneOppgaver).hasSize(1)
+
+        val venteFrist = LocalDate.now().plusDays(1)
+
+        val hendelse2 = hendelse.copy(
+            erPåVent = true, avklaringsbehov = hendelse.avklaringsbehov + AvklaringsbehovHendelseDto(
+                avklaringsbehovDefinisjon = Definisjon.MANUELT_SATT_PÅ_VENT,
+                status = AvklaringsbehovStatus.OPPRETTET,
+                endringer = listOf(
+                    EndringDTO(
+                        status = AvklaringsbehovStatus.OPPRETTET,
+                        endretAv = "Saksbehandler",
+                        tidsstempel = nå.minusHours(5),
+                        frist = venteFrist,
+                        årsakTilSattPåVent = ÅrsakTilSettPåVent.VENTER_PÅ_UTENLANDSK_VIDEREFORING_AVKLARING
+                    ),
+                ),
+            )
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelse2)
+
+        val oppgaver = hentOppgaverForBehandling(saksnummer, behandlingsref)
+
+        assertThat(oppgaver).hasSize(1).first()
+            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+            .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_UTENLANDSK_VIDEREFORING_AVKLARING.toString(), venteFrist)
+
+        // Ventebehovet avsluttes
+        val hendelse3 = hendelse2.copy(
+            erPåVent = false,
+            avklaringsbehov = hendelse2.avklaringsbehov.map {
+                if (it.avklaringsbehovDefinisjon == Definisjon.MANUELT_SATT_PÅ_VENT) {
+                    it.copy(
+                        endringer = it.endringer + EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(4),
+                            frist = null,
+                            årsakTilSattPåVent = null,
+                        ),
+                    )
+                } else it
+            })
+
+        sendBehandlingFlytStoppetHendelse(hendelse3)
+
+        val oppgaver2 = hentOppgaverForBehandling(saksnummer, behandlingsref)
+
+        assertThat(oppgaver2).hasSize(1).first()
+            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+            .containsExactly(null, null)
+    }
+
+    private fun hentOppgaverForBehandling(
+        saksnummer: Saksnummer,
+        behandlingsref: BehandlingReferanse
+    ): List<OppgaveDto> = dataSource.transaction { connection ->
+        OppgaveRepository(connection).hentOppgaver(
+            saksnummer = saksnummer.toString(),
+            referanse = behandlingsref.referanse,
+            journalpostId = null,
+        )
     }
 
 
@@ -189,8 +283,14 @@ class OppdaterOppgaveServiceTest {
             )
         )
 
-
         //Utfør
+        sendBehandlingFlytStoppetHendelse(hendelse)
+
+        val oppgave = hentOppgave(oppgaveId)
+        assertThat(oppgave.reservertAv).isEqualTo("Saksbehandler")
+    }
+
+    private fun sendBehandlingFlytStoppetHendelse(hendelse: BehandlingFlytStoppetHendelse) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
                 connection,
@@ -199,9 +299,6 @@ class OppdaterOppgaveServiceTest {
                 enhetService
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
-
-        val oppgave = hentOppgave(oppgaveId)
-        assertThat(oppgave.reservertAv).isEqualTo("Saksbehandler")
     }
 
     private val ENHET_NAV_LØRENSKOG = "0230"

@@ -98,7 +98,8 @@ class OppdaterOppgaveService(
     ) {
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
-            val enhetForOppgave = enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, oppgaveOppdatering.personIdent)
+            val enhetForOppgave =
+                enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, oppgaveOppdatering.personIdent)
             val veileder = if (oppgaveOppdatering.personIdent != null) {
                 veilarbarboppfolgingKlient.hentVeileder(oppgaveOppdatering.personIdent)
             } else {
@@ -139,6 +140,7 @@ class OppdaterOppgaveService(
                     }
                 }
             } else {
+                val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
                     ident = "Kelvin",
@@ -146,10 +148,10 @@ class OppdaterOppgaveService(
                     enhet = enhetForOppgave.enhet,
                     oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
                     veileder = veileder,
-                    påVentTil = avklaringsbehov.sistePåVentTil(),
-                    påVentÅrsak = avklaringsbehov.sistePåVentÅrsak()
+                    påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
+                    påVentÅrsak = årsakTilSattPåVent,
                 )
-                log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
+                log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}. Venteårsak: $årsakTilSattPåVent")
                 sendOppgaveStatusOppdatering(
                     eksisterendeOppgave.oppgaveId(),
                     HendelseType.OPPDATERT,
@@ -164,7 +166,10 @@ class OppdaterOppgaveService(
         avklaringsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelse>
     ) {
         avklaringsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
-            val enhetForOppgave = enhetService.utledEnhetForOppgave(avklaringsbehovHendelse.avklaringsbehovKode, oppgaveOppdatering.personIdent)
+            val enhetForOppgave = enhetService.utledEnhetForOppgave(
+                avklaringsbehovHendelse.avklaringsbehovKode,
+                oppgaveOppdatering.personIdent
+            )
             val veileder = if (oppgaveOppdatering.personIdent != null) {
                 veilarbarboppfolgingKlient.hentVeileder(oppgaveOppdatering.personIdent)
             } else {
@@ -179,11 +184,11 @@ class OppdaterOppgaveService(
                 enhet = enhetForOppgave.enhet,
                 oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
                 veileder = veileder,
-                påVentTil = avklaringsbehovHendelse.sistePåVentTil(),
-                påVentÅrsak = avklaringsbehovHendelse.sistePåVentÅrsak()
+                påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
+                påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
-            log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+            log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
             sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, FlytJobbRepository(connection))
 
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
@@ -262,8 +267,6 @@ class OppdaterOppgaveService(
         sisteEndring(status).endretAv
 
     private fun AvklaringsbehovHendelse.sistEndret() = sisteEndring().tidsstempel
-    private fun AvklaringsbehovHendelse.sistePåVentÅrsak() = sisteEndring().påVentÅrsak
-    private fun AvklaringsbehovHendelse.sistePåVentTil() = sisteEndring().påVentTil
 
     private fun OppgaveOppdatering.opprettNyOppgave(
         personIdent: String?,
