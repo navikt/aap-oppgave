@@ -268,9 +268,18 @@ class OppgaveApiTest {
                         endringer = listOf(
                             Endring(
                                 status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            )
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.VENTE_PÅ_FRIST_EFFEKTUER_11_7,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(
+                                status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                                 påVentTil = LocalDate.now().plusWeeks(2),
                                 påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
-                            )
+                            ),
                         )
                     )
                 )
@@ -288,20 +297,27 @@ class OppgaveApiTest {
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                         endringer = listOf(
                             Endring(
+                                status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET
+                            ),
+                        ),
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.MANUELT_SATT_PÅ_VENT,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            Endring(
                                 status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                                 påVentTil = LocalDate.now().plusWeeks(2),
                                 påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
                             ),
                             Endring(
-                                status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET
-                            )
-
+                                status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                            ),
                         )
                     )
                 )
             )
         )
-
         nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNotNull()
         assertThat(nesteOppgave?.avklaringsbehovReferanse?.referanse).isEqualTo(referanse)
@@ -640,7 +656,7 @@ class OppgaveApiTest {
             hendelsesTidspunkt = nå,
             versjon = "1",
             avklaringsbehov = avklaringsbehovHendelseDtoListe,
-            erPåVent = false,
+            erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
         )
     }
 
@@ -656,7 +672,7 @@ class OppgaveApiTest {
         val nesteOppgave: NesteOppgaveDto? = noTokenClient.post(
             URI.create("http://localhost:8080/neste-oppgave"),
             PostRequest(
-                body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!),
+                body = FinnNesteOppgaveDto(filterId = alleFilter.first { it.navn.contains("Alle") }.id!!),
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
                 )

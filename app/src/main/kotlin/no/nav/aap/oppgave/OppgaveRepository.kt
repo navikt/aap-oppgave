@@ -110,7 +110,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ID = ?
         """.trimIndent()
 
-        return connection.queryFirst<OppgaveDto>(oppgaverForIdQuery) {
+        return connection.queryFirst(oppgaverForIdQuery) {
             setParams {
                 setLong(1, oppgaveId.id)
             }

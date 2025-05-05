@@ -140,6 +140,7 @@ class OppdaterOppgaveService(
                     }
                 }
             } else {
+                val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
                     ident = "Kelvin",
@@ -148,9 +149,9 @@ class OppdaterOppgaveService(
                     oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
                     veileder = veileder,
                     påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
-                    påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent,
+                    påVentÅrsak = årsakTilSattPåVent,
                 )
-                log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
+                log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}. Venteårsak: $årsakTilSattPåVent")
                 sendOppgaveStatusOppdatering(
                     eksisterendeOppgave.oppgaveId(),
                     HendelseType.OPPDATERT,
@@ -187,7 +188,7 @@ class OppdaterOppgaveService(
                 påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
-            log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+            log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
             sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, FlytJobbRepository(connection))
 
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
