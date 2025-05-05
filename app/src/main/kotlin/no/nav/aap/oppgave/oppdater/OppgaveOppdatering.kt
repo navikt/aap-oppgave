@@ -6,12 +6,15 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
+import no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent
+import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
+
+private val logger = LoggerFactory.getLogger(OppgaveOppdatering::class.java)
 
 enum class BehandlingStatus {
     ÅPEN,
@@ -36,13 +39,14 @@ data class OppgaveOppdatering(
     val behandlingStatus: BehandlingStatus,
     val behandlingstype: Behandlingstype,
     val opprettetTidspunkt: LocalDateTime,
-    val avklaringsbehov: List<AvklaringsbehovHendelse>
+    val avklaringsbehov: List<AvklaringsbehovHendelse>,
+    val venteInformasjon: VenteInformasjon? = null
 )
 
 data class AvklaringsbehovHendelse(
     val avklaringsbehovKode: AvklaringsbehovKode,
     val status: AvklaringsbehovStatus,
-    val endringer: List<Endring>
+    val endringer: List<Endring>,
 )
 
 data class Endring(
@@ -53,6 +57,9 @@ data class Endring(
     val påVentÅrsak: String?
 )
 
+data class VenteInformasjon(val årsakTilSattPåVent: String, val frist: LocalDate)
+
+
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
         personIdent = this.personIdent,
@@ -61,7 +68,22 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         behandlingStatus = this.status.tilBehandlingsstatus(),
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflyt()
+        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflyt(),
+        venteInformasjon = if (this.erPåVent) {
+            val ventebehov = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }
+            if (ventebehov.size != 1) {
+                logger.warn("Mer enn ett åpent ventebehov. Referanse: ${this.referanse.referanse}. Velger første.")
+            }
+            val førsteVentebehov = ventebehov.first()
+
+            val siste = førsteVentebehov.endringer.tilEndringerForBehandlingsflyt().maxByOrNull { it.tidsstempel }!!
+
+            // Her gjør vi noen antakelser om at åpne ventebehov alltid har årsak og frist.
+            VenteInformasjon(
+                årsakTilSattPåVent = siste.påVentÅrsak!!,
+                frist = siste.påVentTil!!
+            )
+        } else null
     )
 }
 
@@ -80,7 +102,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehand
             AvklaringsbehovHendelse(
                 avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
                 status = it.status.tilAvklaringsbehovStatus(),
-                endringer = it.endringer.tilEndringerForBehandlingsflyt()
+                endringer = it.endringer.tilEndringerForBehandlingsflyt(),
             )
         }
 }
@@ -142,13 +164,15 @@ private fun no.nav.aap.postmottak.kontrakt.behandling.Status.tilBehandlingsstatu
 }
 
 private fun List<no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForPostmottak(): List<AvklaringsbehovHendelse> {
-    return this.map {
-        AvklaringsbehovHendelse(
-            avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
-            status = it.status.tilAvklaringsbehovStatus(),
-            endringer = it.endringer.tilEndringerForPostmottak()
-        )
-    }
+    return this
+        .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
+        .map {
+            AvklaringsbehovHendelse(
+                avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
+                status = it.status.tilAvklaringsbehovStatus(),
+                endringer = it.endringer.tilEndringerForPostmottak(),
+            )
+        }
 }
 
 private fun Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
