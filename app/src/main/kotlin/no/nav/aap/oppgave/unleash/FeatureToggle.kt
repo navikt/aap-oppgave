@@ -5,7 +5,8 @@ interface FeatureToggle {
 }
 
 enum class FeatureToggles(private val toggleKey: String) : FeatureToggle {
-    DummyFeature("DummyFeature");
+    DummyFeature("DummyFeature"),
+    FylkesenhetFraNorgFeature("FylkesenhetFraNorgFeature");
 
     override fun key(): String = toggleKey
 }

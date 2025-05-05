@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.klienter.norg
 
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
+import no.nav.aap.komponenter.httpklient.httpclient.Header
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
@@ -29,6 +30,7 @@ enum class Diskresjonskode { SPFO, SPSF, ANY }
 interface INorgKlient {
     fun finnEnhet(geografiskTilknyttning: String?, erNavansatt: Boolean, diskresjonskode: Diskresjonskode): String
     fun hentEnheter(): Map<String, String>
+    fun hentOverordnetFylkesenhet(enhetsnummer: String): String
 }
 
 class NorgKlient: INorgKlient {
@@ -71,6 +73,17 @@ class NorgKlient: INorgKlient {
             return mapOf()
         }
         return enheter.associate { it.enhetNr to it.navn }
+    }
+
+    override fun hentOverordnetFylkesenhet(enhetsnummer: String): String {
+        log.info("Henter overordnet fylkesenhet for $enhetsnummer")
+        val hentOverordnetFylkesenhetUrl = url.resolve("norg2/api/v1/enhet/$enhetsnummer/overordnet?organiseringsType=FYLKE")
+        val enheter = checkNotNull(client.get<List<EnhetMedNavn>>(hentOverordnetFylkesenhetUrl, GetRequest(
+            additionalHeaders = listOf(
+                Header("Content-Type", "application/json")
+            )
+        )))
+        return enheter.single().enhetNr
     }
 
 }
