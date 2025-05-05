@@ -1,5 +1,8 @@
 package no.nav.aap.oppgave.fakes
 
+import io.getunleash.FakeUnleash
+import no.nav.aap.oppgave.unleash.UnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -23,6 +26,14 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
 
     init {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
+
+        // Unleash
+        UnleashServiceProvider.setUnleashService(
+            UnleashService(FakeUnleash().apply {
+                enableAll()
+            })
+        )
+
         // Azure
         System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azure.port()}/token")
         System.setProperty("azure.app.client.id", "behandlingsflyt")

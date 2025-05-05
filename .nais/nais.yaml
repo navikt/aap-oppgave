@@ -54,6 +54,8 @@ spec:
     failureThreshold: 5
   secureLogs:
     enabled: true
+  envFrom:
+    - secret: kelvin-unleash-api-token
   accessPolicy:
     inbound:
       rules:
@@ -77,6 +79,7 @@ spec:
       external:
         - host: {{pdl_url}}
         - host: {{veilarb_arena_url}}
+        - host: aap-unleash-api.nav.cloud.nais.io
       rules:
         - application: tilgang
         - application: statistikk
