@@ -52,10 +52,12 @@ class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository) :
  * Planlegg jobb for å sende oppgaveoppdatering til statistikk. God ide å alltid legge et kall til denne
  * etter et write-kall til oppgave-repo.
  */
-fun sendOppgaveStatusOppdatering(connection: DBConnection, it: OppgaveId, hendelseType: HendelseType) {
-    FlytJobbRepository(connection).leggTil(
+fun sendOppgaveStatusOppdatering(
+    oppgaveId: OppgaveId, hendelseType: HendelseType, repository: FlytJobbRepository
+) {
+    repository.leggTil(
         JobbInput(StatistikkHendelseJobb).medParameter("hendelsesType", hendelseType.name)
-            .medPayload(DefaultJsonMapper.toJson(it))
+            .medPayload(DefaultJsonMapper.toJson(oppgaveId))
     )
-    logger.info("Sender oppgave-endring til statistikk-jobb. HendelseType: $hendelseType, oppgaveId: $it.")
+    logger.info("Sender oppgave-endring til statistikk-jobb. HendelseType: $hendelseType, oppgaveId: $oppgaveId.")
 }

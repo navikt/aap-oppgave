@@ -1,22 +1,29 @@
 package no.nav.aap.oppgave.prosessering
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
+import no.nav.aap.motor.FlytJobbRepository
+import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.Jobb
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.motor.JobbUtfører
 import no.nav.aap.motor.cron.CronExpression
+import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
 
-class OppdaterOppgaveEnhetJobb(private val repository: OppgaveRepository) : JobbUtfører {
+class OppdaterOppgaveEnhetJobb(
+    private val repository: OppgaveRepository,
+    private val flytJobbRepository: FlytJobbRepository
+) : JobbUtfører {
     private val log = LoggerFactory.getLogger(OppdaterOppgaveEnhetJobb::class.java)
 
     override fun utfør(input: JobbInput) {
         val oppgaverForIdent = repository.finnÅpneOppgaverIkkeVikafossen()
-            .groupBy({ it.ident }, { it.oppgaveId })
+            .groupBy({ it.ident }, { it })
         if (oppgaverForIdent.isEmpty()) {
             return
         }
@@ -36,15 +43,29 @@ class OppdaterOppgaveEnhetJobb(private val repository: OppgaveRepository) : Jobb
             .flatMap { it.value }
 
         val antallOppdatert = if (oppgaverSomMåOppdateres.isNotEmpty()) {
-            repository.oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaverSomMåOppdateres, Enhet.NAV_VIKAFOSSEN.kode)
+            repository.oppdaterOppgaveEnhetOgFjernReservasjonBatch(
+                oppgaverSomMåOppdateres.map { it.oppgaveId },
+                Enhet.NAV_VIKAFOSSEN.kode
+            )
         } else 0
+
+        oppgaverSomMåOppdateres.forEach {
+            sendOppgaveStatusOppdatering(
+                oppgaveId = OppgaveId(
+                    id = it.oppgaveId,
+                    versjon = it.versjon,
+                ),
+                hendelseType = HendelseType.OPPDATERT,
+                repository = flytJobbRepository
+            )
+        }
 
         log.info("Oppdaterte enhet for $antallOppdatert oppgaver")
     }
 
     companion object : Jobb {
         override fun konstruer(connection: DBConnection): JobbUtfører {
-            return OppdaterOppgaveEnhetJobb(OppgaveRepository(connection))
+            return OppdaterOppgaveEnhetJobb(OppgaveRepository(connection), FlytJobbRepositoryImpl(connection))
         }
 
         override fun type() = "oppgave.oppdaterOppgaveEnhet"

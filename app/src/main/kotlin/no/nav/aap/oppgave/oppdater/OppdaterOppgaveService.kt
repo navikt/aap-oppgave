@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
+import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
@@ -116,7 +117,11 @@ class OppdaterOppgaveService(
                     log.warn("Kan ikke gjenåpne oppgave som er allerede er åpen (id=${eksisterendeOppgave.oppgaveId()}, avklaringsbehov=${avklaringsbehov.avklaringsbehovKode})")
                     return
                 }
-                sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.OPPDATERT)
+                sendOppgaveStatusOppdatering(
+                    eksisterendeOppgave.oppgaveId(),
+                    HendelseType.OPPDATERT,
+                    FlytJobbRepository(connection)
+                )
                 val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
                 if (sistEndretAv != "Kelvin") {
                     val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
@@ -124,7 +129,11 @@ class OppdaterOppgaveService(
                     if (oppdatertOppgave != null) {
                         oppgaveRepository.reserverOppgave(oppdatertOppgave.oppgaveId(), "Kelvin", sistEndretAv)
                         log.info("Reserverer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-                        sendOppgaveStatusOppdatering(connection, oppdatertOppgave.oppgaveId(), HendelseType.RESERVERT)
+                        sendOppgaveStatusOppdatering(
+                            oppdatertOppgave.oppgaveId(),
+                            HendelseType.RESERVERT,
+                            FlytJobbRepository(connection)
+                        )
                     } else {
                         log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
                     }
@@ -141,7 +150,11 @@ class OppdaterOppgaveService(
                     påVentÅrsak = avklaringsbehov.sistePåVentÅrsak()
                 )
                 log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-                sendOppgaveStatusOppdatering(connection, eksisterendeOppgave.oppgaveId(), HendelseType.OPPDATERT)
+                sendOppgaveStatusOppdatering(
+                    eksisterendeOppgave.oppgaveId(),
+                    HendelseType.OPPDATERT,
+                    FlytJobbRepository(connection)
+                )
             }
         }
     }
@@ -171,7 +184,7 @@ class OppdaterOppgaveService(
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
-            sendOppgaveStatusOppdatering(connection, oppgaveId, HendelseType.OPPRETTET)
+            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, FlytJobbRepository(connection))
 
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
             if (hvemLøsteForrigeAvklaringsbehov != null) {
@@ -216,7 +229,7 @@ class OppdaterOppgaveService(
             .forEach {
                 oppgaveRepository.avsluttOppgave(it.oppgaveId(), "Kelvin")
                 log.info("AVsluttet oppgave med ID ${it.oppgaveId()}.")
-                sendOppgaveStatusOppdatering(connection, it.oppgaveId(), HendelseType.LUKKET)
+                sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, FlytJobbRepository(connection))
             }
     }
 

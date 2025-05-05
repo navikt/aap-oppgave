@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.plukk
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveId
@@ -27,7 +28,7 @@ class ReserverOppgaveService(val connection: DBConnection) {
         if (harTilgang) {
             oppgaverSomSkalReserveres.forEach {
                 oppgaveRepository.reserverOppgave(it, ident, ident)
-                sendOppgaveStatusOppdatering(connection, it, HendelseType.RESERVERT)
+                sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, FlytJobbRepository(connection))
             }
             return oppgaverSomSkalReserveres
         }
@@ -39,7 +40,7 @@ class ReserverOppgaveService(val connection: DBConnection) {
         ident: String,
     ) {
         oppgaveRepository.avreserverOppgave(oppgaveId, ident)
-        sendOppgaveStatusOppdatering(connection, oppgaveId, HendelseType.AVRESERVERT)
+        sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, FlytJobbRepository(connection))
     }
 
     /**
@@ -50,7 +51,7 @@ class ReserverOppgaveService(val connection: DBConnection) {
         val oppgaverSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
         oppgaverSomSkalReserveres.forEach {
             oppgaveRepository.reserverOppgave(it, ident, ident)
-            sendOppgaveStatusOppdatering(connection, it, HendelseType.RESERVERT)
+            sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, FlytJobbRepository(connection))
         }
         return oppgaverSomSkalReserveres
     }

@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.plukk
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
@@ -18,7 +19,13 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetS
 
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
-    fun plukkNesteOppgave(filterId: Long, enheter: Set<String>, ident: String, token: OidcToken, maksAntallForsøk: Int = 10): NesteOppgaveDto? {
+    fun plukkNesteOppgave(
+        filterId: Long,
+        enheter: Set<String>,
+        ident: String,
+        token: OidcToken,
+        maksAntallForsøk: Int = 10
+    ): NesteOppgaveDto? {
         val filterRepo = FilterRepository(connection)
         val filter = filterRepo.hent(filterId)
         if (filter == null) {
@@ -35,7 +42,7 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetS
             if (harTilgang) {
                 val oppgaveId = OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon)
                 oppgaveRepo.reserverOppgave(oppgaveId, ident, ident)
-                sendOppgaveStatusOppdatering(connection, oppgaveId, HendelseType.RESERVERT)
+                sendOppgaveStatusOppdatering(oppgaveId, HendelseType.RESERVERT, FlytJobbRepository(connection))
                 log.info("Fant neste oppgave med id ${nesteOppgave.oppgaveId} etter ${i + 1} forsøk for filterId $filterId")
                 return nesteOppgave
             }
@@ -55,10 +62,11 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetS
         if (harTilgang) {
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
             oppgaveRepo.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
-            sendOppgaveStatusOppdatering(connection, oppgaveIdMedVersjon, HendelseType.RESERVERT)
+            sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, FlytJobbRepository(connection))
             return oppgave
         }
-        val nyEnhet = enhetService.utledEnhetForOppgave(AvklaringsbehovKode(oppgave.avklaringsbehovKode), oppgave.personIdent)
+        val nyEnhet =
+            enhetService.utledEnhetForOppgave(AvklaringsbehovKode(oppgave.avklaringsbehovKode), oppgave.personIdent)
         if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
             oppdaterUtdatertEnhet(oppgave, oppgaveRepo, nyEnhet)
         }
@@ -66,17 +74,17 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetS
     }
 
     private fun oppdaterUtdatertEnhet(oppgave: OppgaveDto, oppgaveRepo: OppgaveRepository, nyEnhet: EnhetForOppgave) {
-            log.info("Oppdaterer enhet for oppgave ${oppgave.id} etter at tilgang ble avslått på plukk.")
-            oppgaveRepo.oppdatereOppgave(
-                oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
-                ident = "Kelvin",
-                personIdent = oppgave.personIdent,
-                enhet = nyEnhet.enhet,
-                påVentTil = oppgave.påVentTil,
-                påVentÅrsak = oppgave.påVentÅrsak,
-                oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
-                veileder = oppgave.veileder,
-            )
-        }
+        log.info("Oppdaterer enhet for oppgave ${oppgave.id} etter at tilgang ble avslått på plukk.")
+        oppgaveRepo.oppdatereOppgave(
+            oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
+            ident = "Kelvin",
+            personIdent = oppgave.personIdent,
+            enhet = nyEnhet.enhet,
+            påVentTil = oppgave.påVentTil,
+            påVentÅrsak = oppgave.påVentÅrsak,
+            oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
+            veileder = oppgave.veileder,
+        )
     }
+}
 

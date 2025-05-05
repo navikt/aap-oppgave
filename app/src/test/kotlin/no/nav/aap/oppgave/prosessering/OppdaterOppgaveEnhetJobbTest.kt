@@ -7,6 +7,7 @@ import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
@@ -55,7 +56,11 @@ class OppdaterOppgaveEnhetJobbTest {
 
 
         dataSource.transaction {
-            OppdaterOppgaveEnhetJobb(OppgaveRepository(it)).utfør(JobbInput(OppdaterOppgaveEnhetJobb))
+            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it)).utfør(
+                JobbInput(
+                    OppdaterOppgaveEnhetJobb
+                )
+            )
         }
 
         val oppgave1 = hentOppgave(oppgaveId1)

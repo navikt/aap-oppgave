@@ -66,6 +66,7 @@ class OppdaterOppgaveServiceTest {
             behandlingType = TypeBehandling.Førstegangsbehandling,
             versjon = "Kelvin 1.0",
             hendelsesTidspunkt = nå,
+            erPåVent = false,
             avklaringsbehov = listOf(
                 AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
@@ -162,6 +163,7 @@ class OppdaterOppgaveServiceTest {
             behandlingType = TypeBehandling.Førstegangsbehandling,
             versjon = "Kelvin 1.0",
             hendelsesTidspunkt = nå,
+            erPåVent = false,
             avklaringsbehov = listOf(
                 AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,

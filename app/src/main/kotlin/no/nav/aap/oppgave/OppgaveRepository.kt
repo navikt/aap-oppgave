@@ -165,7 +165,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 STATUS = 'AVSLUTTET' AND
                 VERSJON = ?
         """.trimIndent()
-        
+
         connection.execute(query) {
             setParams {
                 setString(1, ident)
@@ -321,12 +321,12 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long)
+    data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long, val versjon: Long)
 
     fun finnÅpneOppgaverIkkeVikafossen(): List<IdentMedOppgaveId> {
         val query = """
             SELECT 
-                PERSON_IDENT, ID
+                PERSON_IDENT, ID, VERSJON
             FROM 
                 OPPGAVE 
             WHERE 
@@ -336,7 +336,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         return connection.queryList(query) {
             setRowMapper { row ->
-                IdentMedOppgaveId(row.getString("PERSON_IDENT"), row.getLong("ID"))
+                IdentMedOppgaveId(row.getString("PERSON_IDENT"), row.getLong("ID"), row.getLong("VERSJON"))
             }
         }
     }

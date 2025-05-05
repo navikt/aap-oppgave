@@ -26,6 +26,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.NoTokenTokenPr
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
+import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.fakes.AzureTokenGen
@@ -570,7 +571,11 @@ class OppgaveApiTest {
         val oppgave2Før = hentOppgave(oppgaveId2)
 
         initDatasource(dbConfig, prometheus).transaction {
-            OppdaterOppgaveEnhetJobb(OppgaveRepository(it)).utfør(JobbInput(OppdaterOppgaveEnhetJobb))
+            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it)).utfør(
+                JobbInput(
+                    OppdaterOppgaveEnhetJobb
+                )
+            )
         }
 
         val oppgave1 = hentOppgave(oppgaveId1)
@@ -635,6 +640,7 @@ class OppgaveApiTest {
             hendelsesTidspunkt = nå,
             versjon = "1",
             avklaringsbehov = avklaringsbehovHendelseDtoListe,
+            erPåVent = false,
         )
     }
 
