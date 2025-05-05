@@ -54,17 +54,20 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetS
     fun plukkOppgave(oppgaveId: OppgaveId, ident: String, token: OidcToken): OppgaveDto? {
         val oppgaveRepo = OppgaveRepository(connection)
         val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
-        if (oppgave.reservertAv == ident) {
-            // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.
-            return oppgave
-        }
+
         val harTilgang = TilgangGateway.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
         if (harTilgang) {
+            if (oppgave.reservertAv == ident) {
+                // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.
+                return oppgave
+            }
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
             oppgaveRepo.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
             sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, FlytJobbRepository(connection))
             return oppgave
         }
+
+        // Sjekk om enhet må oppdateres dersom tilgang blir avslått
         val nyEnhet =
             enhetService.utledEnhetForOppgave(AvklaringsbehovKode(oppgave.avklaringsbehovKode), oppgave.personIdent)
         if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
