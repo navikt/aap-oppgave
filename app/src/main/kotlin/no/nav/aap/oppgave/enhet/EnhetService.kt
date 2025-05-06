@@ -68,7 +68,7 @@ class EnhetService(
         if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
             return enhet
         }
-        if(unleashService.isEnabled(FeatureToggles.FylkesenhetFraNorgFeature)) {
+        if (unleashService.isEnabled(FeatureToggles.FylkesenhetFraNorgFeature)) {
             return EnhetForOppgave(
                 enhet = norgKlient.hentOverordnetFylkesenhet(enhet.enhet),
                 oppfølgingsenhet = enhet.oppfølgingsenhet?.let { norgKlient.hentOverordnetFylkesenhet(it) }
