@@ -18,6 +18,9 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -34,7 +37,8 @@ class EnhetService(
     private val pdlGraphqlKlient: IPdlKlient = PdlGraphqlKlient.withClientCredentialsRestClient(),
     private val nomKlient: INomKlient = NomKlient(),
     private val norgKlient: INorgKlient = NorgKlient(),
-    private val veilarbarenaKlient: IVeilarbarenaClient = VeilarbarenaClient()
+    private val veilarbarenaKlient: IVeilarbarenaClient = VeilarbarenaClient(),
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 ) : IEnhetService {
 
     override fun hentEnheter(currentToken: String, ident: String): List<String> {
@@ -64,7 +68,16 @@ class EnhetService(
         if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
             return enhet
         }
-        return EnhetForOppgave(parseFylkeskontor(enhet.enhet), enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) })
+        if (unleashService.isEnabled(FeatureToggles.FylkesenhetFraNorgFeature)) {
+            return EnhetForOppgave(
+                enhet = norgKlient.hentOverordnetFylkesenhet(enhet.enhet),
+                oppfølgingsenhet = enhet.oppfølgingsenhet?.let { norgKlient.hentOverordnetFylkesenhet(it) }
+            )
+        }
+        return EnhetForOppgave(
+            enhet = parseFylkeskontor(enhet.enhet),
+            oppfølgingsenhet = enhet.oppfølgingsenhet?.let { parseFylkeskontor(it) }
+        )
     }
 
     private fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave {
