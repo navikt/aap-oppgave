@@ -8,7 +8,6 @@ import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
-import no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -78,11 +77,16 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
 
             val siste = førsteVentebehov.endringer.tilEndringerForBehandlingsflyt().maxByOrNull { it.tidsstempel }!!
 
-            // Her gjør vi noen antakelser om at åpne ventebehov alltid har årsak og frist.
-            VenteInformasjon(
-                årsakTilSattPåVent = siste.påVentÅrsak!!,
-                frist = siste.påVentTil!!
-            )
+            if (siste.påVentÅrsak == null || siste.påVentTil == null) {
+                logger.warn("Behandlingen er markert som påVent, men ventebehovet mangler årsak eller first. Behov $førsteVentebehov.")
+                null
+            } else {
+                // Her gjør vi noen antakelser om at åpne ventebehov alltid har årsak og frist.
+                VenteInformasjon(
+                    årsakTilSattPåVent = siste.påVentÅrsak,
+                    frist = siste.påVentTil
+                )
+            }
         } else null
     )
 }
