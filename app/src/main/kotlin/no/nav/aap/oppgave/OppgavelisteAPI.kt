@@ -49,9 +49,9 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
 
         val token = token()
         val enhetsGrupper = enhetService.hentEnheter(token.token(), ident())
-        val oppgaverMedTilgang = oppgaver.asSequence().filter {
-            enhetsGrupper.contains(it.enhet)
-        }.take(request.maxAntall).toList()
+        val oppgaverMedTilgang = oppgaver.asSequence()
+            .filter { enhetsGrupper.contains(it.enhetForKø()) }
+            .take(request.maxAntall).toList()
 
         respond(
             OppgavelisteRespons(

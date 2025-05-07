@@ -51,4 +51,8 @@ data class OppgaveDto(
         )
     }
 
+    fun enhetForKø(): String {
+        return this.oppfølgingsenhet ?: this.enhet
+    }
+
 }
