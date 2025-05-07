@@ -4,7 +4,6 @@ import com.papsign.ktor.openapigen.model.info.InfoModel
 import com.papsign.ktor.openapigen.route.apiRouting
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.getunleash.FakeUnleash
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -19,7 +18,6 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
-import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.server.AZURE
 import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.komponenter.server.plugins.NavIdentInterceptor
@@ -46,8 +44,6 @@ import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.søkApi
-import no.nav.aap.oppgave.unleash.UnleashService
-import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -57,18 +53,6 @@ private const val ANTALL_WORKERS = 5
 class App
 
 fun main() {
-    /**
-     * Temporary way to disable unleash in production to test integration.
-     * Should be deleted as soon as code if verified to be working
-     */
-    if(Miljø.erProd()) {
-        UnleashServiceProvider.setUnleashService(
-            UnleashService(FakeUnleash().apply {
-                disableAll()
-            })
-        )
-    }
-
     Thread.currentThread().setUncaughtExceptionHandler { _, e ->
         LoggerFactory.getLogger("App")
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
