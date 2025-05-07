@@ -217,7 +217,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(8, oppgaveId.id)
                 setLong(9, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) }
+            setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
     }
 
