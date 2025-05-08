@@ -15,12 +15,19 @@ import javax.sql.DataSource
 /**
  * Hent oppgaver reserver at innlogget bruker.
  */
-fun NormalOpenAPIRoute.mineOppgaverApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
-    route("/mine-oppgaver").get<Unit, OppgavelisteRespons> {
-        prometheus.httpCallCounter("/mine-oppgaver").increment()
-        val mineOppgaver = dataSource.transaction(readOnly = true) { connection ->
+fun NormalOpenAPIRoute.mineOppgaverApi(
+    dataSource: DataSource,
+    prometheus: PrometheusMeterRegistry
+) = route("/mine-oppgaver").get<Unit, OppgavelisteRespons> {
+    prometheus.httpCallCounter("/mine-oppgaver").increment()
+    val mineOppgaver =
+        dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).hentMineOppgaver(ident())
         }
-        respond(OppgavelisteRespons(antallTotalt = mineOppgaver.size, oppgaver = mineOppgaver.medPersonNavn(true, token())))
-    }
+    respond(
+        OppgavelisteRespons(
+            antallTotalt = mineOppgaver.size,
+            oppgaver = mineOppgaver.medPersonNavn(fjernSensitivInformasjonNårTilgangMangler = false, token = token())
+        )
+    )
+}
