@@ -127,7 +127,7 @@ class OppgaveRepositoryTest {
         reserverOppgave(oppgaveId3, "bruker1")
         reserverOppgave(oppgaveId4, "bruker1")
 
-        val mineOppgaverFørAvslutt = mineOppgave("bruker1")
+        val mineOppgaverFørAvslutt = mineOppgaver("bruker1")
         assertThat(mineOppgaverFørAvslutt).hasSize(3)
 
         val oppgaveSomSkalAvsluttes = mineOppgaverFørAvslutt.first { it.id == oppgaveId4.id }
@@ -144,11 +144,11 @@ class OppgaveRepositoryTest {
         val oppgaveId = opprettOppgave()
 
         reserverOppgave(oppgaveId, "saksbehandler1")
-        var mineOppgaver  = mineOppgave("saksbehandler1")
+        var mineOppgaver  = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(1)
 
         avreserverOppgave(OppgaveId(mineOppgaver.first().id!!, mineOppgaver.first().versjon), "saksbehandler1")
-        mineOppgaver  = mineOppgave("saksbehandler1")
+        mineOppgaver  = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(0)
     }
 
@@ -177,10 +177,11 @@ class OppgaveRepositoryTest {
 
     @Test
     fun `Kan bruke paging`() {
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        val bruker = "user"
+        val oppgave1 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        val oppgave2 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        val oppgave3 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        val oppgave4 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
 
         val søkUtenPaging = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)))
         assertThat(søkUtenPaging).hasSize(4)
@@ -190,6 +191,17 @@ class OppgaveRepositoryTest {
 
         val søkMedPagingPå10 = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 10))
         assertThat(søkMedPagingPå10).hasSize(4)
+
+        reserverOppgave(oppgave1, bruker)
+        reserverOppgave(oppgave2, bruker)
+        reserverOppgave(oppgave3, bruker)
+        reserverOppgave(oppgave4, bruker)
+
+        val mineOppgaver = mineOppgaver(bruker)
+        assertThat(mineOppgaver).hasSize(4)
+
+        val mineOppgaverPaged = mineOppgaver(bruker, Paging(1, 2))
+        assertThat(mineOppgaverPaged).hasSize(2)
     }
 
     @Test
@@ -228,9 +240,9 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun mineOppgave(ident: String): List<OppgaveDto> {
+    private fun mineOppgaver(ident: String, paging: Paging? = null): List<OppgaveDto> {
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).hentMineOppgaver(ident)
+            OppgaveRepository(connection).hentMineOppgaver(ident, paging)
         }
     }
 

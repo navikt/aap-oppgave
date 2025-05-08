@@ -315,7 +315,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         } else {
             0
         }
-        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern denne når vi har paging i FE
+        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
 
         val hentNesteOppgaveQuery = """
             SELECT 
@@ -449,7 +449,14 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentMineOppgaver(ident: String): List<OppgaveDto> {
+    fun hentMineOppgaver(ident: String, paging: Paging? = null): List<OppgaveDto> {
+        val offset = if (paging != null) {
+            (paging.side - 1) * paging.antallPerSide
+        } else {
+            0
+        }
+        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
+
         val query = """
             SELECT 
                 $alleOppgaveFelt
@@ -458,6 +465,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             WHERE
                 RESERVERT_AV = ? AND
                 STATUS != 'AVSLUTTET'
+            OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
         return connection.queryList<OppgaveDto>(query) {
