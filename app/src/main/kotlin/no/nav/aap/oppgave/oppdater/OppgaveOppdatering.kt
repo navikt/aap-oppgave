@@ -56,7 +56,7 @@ data class Endring(
     val påVentÅrsak: String?
 )
 
-data class VenteInformasjon(val årsakTilSattPåVent: String, val frist: LocalDate)
+data class VenteInformasjon(val årsakTilSattPåVent: String?, val frist: LocalDate)
 
 
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
@@ -77,8 +77,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
 
             val siste = førsteVentebehov.endringer.tilEndringerForBehandlingsflyt().maxByOrNull { it.tidsstempel }!!
 
-            if (siste.påVentÅrsak == null || siste.påVentTil == null) {
-                logger.warn("Behandlingen er markert som påVent, men ventebehovet mangler årsak eller first. Behov $førsteVentebehov.")
+            if (siste.påVentTil == null) {
+                logger.warn("Behandlingen er markert som påVent, men ventebehovet mangler frist. Behov $førsteVentebehov.")
                 null
             } else {
                 // Her gjør vi noen antakelser om at åpne ventebehov alltid har årsak og frist.
