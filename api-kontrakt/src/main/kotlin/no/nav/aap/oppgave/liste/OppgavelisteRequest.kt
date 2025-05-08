@@ -5,4 +5,5 @@ data class OppgavelisteRequest(
     val enheter: Set<String> = emptySet(),
     val veileder: Boolean = false,
     val maxAntall: Int = 10,
+    val paging: Paging? = null
 )

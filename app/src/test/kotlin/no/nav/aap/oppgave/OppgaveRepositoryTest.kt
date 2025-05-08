@@ -6,6 +6,7 @@ import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
+import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
@@ -175,6 +176,23 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Kan bruke paging`() {
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+
+        val søkUtenPaging = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)))
+        assertThat(søkUtenPaging).hasSize(4)
+
+        val søkMedPaging = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 1))
+        assertThat(søkMedPaging).hasSize(1)
+
+        val søkMedPagingPå10 = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 10))
+        assertThat(søkMedPagingPå10).hasSize(4)
+    }
+
+    @Test
     fun `Skal finne oppgaver knyttet til oppfølgingsenhet dersom den er satt`() {
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG, oppfølgingsenhet = ENHET_NAV_LILLESTRØM)
@@ -216,9 +234,9 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun finnOppgaver(filter: Filter): List<OppgaveDto> {
+    private fun finnOppgaver(filter: Filter, paging: Paging? = null): List<OppgaveDto> {
         return dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).finnOppgaver(filter)
+            OppgaveRepository(connection).finnOppgaver(filter, paging = paging)
         }
     }
 

@@ -4,6 +4,7 @@ import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
@@ -308,7 +309,14 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     enum class Rekkefølge { asc, desc }
 
-    fun finnOppgaver(filter: Filter, rekkefølge: Rekkefølge = Rekkefølge.asc): List<OppgaveDto> {
+    fun finnOppgaver(filter: Filter, rekkefølge: Rekkefølge = Rekkefølge.asc, paging: Paging? = null): List<OppgaveDto> {
+        val offset = if (paging != null) {
+            (paging.side - 1) * paging.antallPerSide
+        } else {
+            0
+        }
+        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern denne når vi har paging i FE
+
         val hentNesteOppgaveQuery = """
             SELECT 
                    $alleOppgaveFelt
@@ -317,6 +325,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             WHERE 
                 ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET ${rekkefølge.name}
+            OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
         return connection.queryList(hentNesteOppgaveQuery) {

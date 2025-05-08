@@ -43,7 +43,8 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
             }
             OppgaveRepository(connection).finnOppgaver(
                 filter.copy(enheter = request.enheter, veileder = veilederIdent),
-                rekkefølge
+                rekkefølge,
+                request.paging
             )
         }
 
