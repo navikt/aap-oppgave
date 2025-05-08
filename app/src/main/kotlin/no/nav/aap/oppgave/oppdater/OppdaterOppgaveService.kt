@@ -150,6 +150,7 @@ class OppdaterOppgaveService(
                     veileder = veileder,
                     påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
                     påVentÅrsak = årsakTilSattPåVent,
+                    årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling
                 )
                 log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}. Venteårsak: $årsakTilSattPåVent")
                 sendOppgaveStatusOppdatering(
@@ -185,7 +186,8 @@ class OppdaterOppgaveService(
                 oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
                 veileder = veileder,
                 påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
-                påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
+                påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent,
+                årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
@@ -277,7 +279,8 @@ class OppdaterOppgaveService(
         oppfølgingsenhet: String?,
         veileder: String?,
         påVentTil: LocalDate?,
-        påVentÅrsak: String?
+        påVentÅrsak: String?,
+        årsakerTilBehandling: List<String>
     ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
@@ -293,7 +296,8 @@ class OppdaterOppgaveService(
             opprettetAv = ident,
             opprettetTidspunkt = LocalDateTime.now(),
             påVentTil = påVentTil,
-            påVentÅrsak = påVentÅrsak
+            påVentÅrsak = påVentÅrsak,
+            årsakerTilBehandling = årsakerTilBehandling
         )
     }
 

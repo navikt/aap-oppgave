@@ -32,9 +32,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPRETTET_AV,
                 OPPRETTET_TIDSPUNKT,
                 PERSON_IDENT,
-                VEILEDER
+                VEILEDER,
+                AARSAKER_TIL_BEHANDLING
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -55,6 +56,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDateTime(13, oppgaveDto.opprettetTidspunkt)
                 setString(14, oppgaveDto.personIdent)
                 setString(15, oppgaveDto.veileder)
+                setArray(16, oppgaveDto.årsakerTilBehandling)
             }
         }
         return OppgaveId(id, 0L)
@@ -184,7 +186,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         påVentTil: LocalDate?,
         påVentÅrsak: String?,
         oppfølgingsenhet: String?,
-        veileder: String?
+        veileder: String?,
+        årsakerTilBehandling: List<String>
     ) {
         val query = """
             UPDATE 
@@ -199,6 +202,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PAA_VENT_AARSAK= ?,
                 PERSON_IDENT = ?,
                 VEILEDER = ?,
+                AARSAKER_TIL_BEHANDLING = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -214,8 +218,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(5, påVentÅrsak)
                 setString(6, personIdent)
                 setString(7, veileder)
-                setLong(8, oppgaveId.id)
-                setLong(9, oppgaveId.versjon)
+                setArray(8, årsakerTilBehandling)
+                setLong(9, oppgaveId.id)
+                setLong(10, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
@@ -454,6 +459,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    /**
+     * Brukes i test.
+     */
+    @Suppress("unused")
     fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
         val query = """
             SELECT 
@@ -560,6 +569,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE")),
             påVentTil = row.getLocalDateOrNull("PAA_VENT_TIL"),
             påVentÅrsak = row.getStringOrNull("PAA_VENT_AARSAK"),
+            årsakerTilBehandling = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
             reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
             opprettetAv = row.getString("OPPRETTET_AV"),
@@ -592,7 +602,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPRETTET_TIDSPUNKT,
             ENDRET_AV,
             ENDRET_TIDSPUNKT,
-            VERSJON            
+            VERSJON,
+            AARSAKER_TIL_BEHANDLING
         """.trimIndent()
     }
 

@@ -26,6 +26,7 @@ data class OppgaveDto(
     val behandlingstype: Behandlingstype,
     val påVentTil: LocalDate? = null,
     val påVentÅrsak: String? = null,
+    val årsakerTilBehandling: List<String> = emptyList(),
     val reservertAv: String? = null,
     val reservertTidspunkt: LocalDateTime? = null,
     val opprettetAv: String,

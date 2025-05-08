@@ -39,7 +39,8 @@ data class OppgaveOppdatering(
     val behandlingstype: Behandlingstype,
     val opprettetTidspunkt: LocalDateTime,
     val avklaringsbehov: List<AvklaringsbehovHendelse>,
-    val venteInformasjon: VenteInformasjon? = null
+    val venteInformasjon: VenteInformasjon? = null,
+    val årsakerTilBehandling: List<String>
 )
 
 data class AvklaringsbehovHendelse(
@@ -64,6 +65,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         personIdent = this.personIdent,
         saksnummer = this.saksnummer.toString(),
         referanse = this.referanse.referanse,
+        årsakerTilBehandling = this.årsakerTilBehandling,
         behandlingStatus = this.status.tilBehandlingsstatus(),
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
@@ -149,7 +151,8 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         behandlingStatus = this.status.tilBehandlingsstatus(),
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForPostmottak()
+        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForPostmottak(),
+        årsakerTilBehandling = emptyList()
     )
 }
 

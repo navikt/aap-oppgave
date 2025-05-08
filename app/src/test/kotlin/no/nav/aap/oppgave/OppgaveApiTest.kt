@@ -99,6 +99,10 @@ class OppgaveApiTest {
         assertThat(nesteOppgave).isNotNull()
         assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgave.id)
 
+        // Hent hele oppgaven
+        val oppgaven = hentOppgave(OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon))
+        assertThat(oppgaven.årsakerTilBehandling).containsExactly("SØKNAD")
+
         // Sjekk at oppgave kommer i mine oppgaver listen
         assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave.id)
 
@@ -656,6 +660,7 @@ class OppgaveApiTest {
             hendelsesTidspunkt = nå,
             versjon = "1",
             avklaringsbehov = avklaringsbehovHendelseDtoListe,
+            årsakerTilBehandling = listOf("SØKNAD"),
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
         )
     }
