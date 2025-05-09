@@ -4,6 +4,5 @@ data class OppgavelisteRequest(
     val filterId: Long,
     val enheter: Set<String> = emptySet(),
     val veileder: Boolean = false,
-    val maxAntall: Int = 10,
-    val paging: Paging? = null
+    val paging: Paging
 )

@@ -28,6 +28,8 @@ private val log = LoggerFactory.getLogger("oppgavelisteApi")
  */
 fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
     val enhetService = EnhetService(MsGraphClient(prometheus))
+    val maxRequests = 25
+
     route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
@@ -52,7 +54,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
         val enhetsGrupper = enhetService.hentEnheter(token.token(), ident())
         val oppgaverMedTilgang = oppgaver.asSequence()
             .filter { enhetsGrupper.contains(it.enhetForKø()) }
-            .take(request.maxAntall).toList()
+            .take(maxRequests).toList()
 
         respond(
             OppgavelisteRespons(
