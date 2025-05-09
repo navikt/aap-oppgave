@@ -70,17 +70,17 @@ class EnhetService(
             return enhet
         }
 
-        // Hvis enheten er NAV-Utland, så skal også kvalitetssikrer være NAV-Utland
-        // Dette er et unntak fra hovedregel om at vi skal bruke overordnet enhet fra NORG
-        // og må derfor spesialhåndteres
-        if (enhet.enhet == Enhet.NAV_UTLAND.kode) {
-            return EnhetForOppgave(
-                enhet = Enhet.NAV_UTLAND.kode,
-                oppfølgingsenhet = Enhet.NAV_UTLAND.kode
-            )
-        }
-
         if (unleashService.isEnabled(FeatureToggles.FylkesenhetFraNorgFeature)) {
+            // Hvis enheten er NAV-Utland, så skal også kvalitetssikrer være NAV-Utland
+            // Dette er et unntak fra hovedregel om at vi skal bruke overordnet enhet fra NORG
+            // og må derfor spesialhåndteres
+            if (enhet.enhet == Enhet.NAV_UTLAND.kode) {
+                return EnhetForOppgave(
+                    enhet = Enhet.NAV_UTLAND.kode,
+                    oppfølgingsenhet = enhet.oppfølgingsenhet?.let { norgKlient.hentOverordnetFylkesenhet(it) }
+                )
+            }
+
             return EnhetForOppgave(
                 enhet = norgKlient.hentOverordnetFylkesenhet(enhet.enhet),
                 oppfølgingsenhet = enhet.oppfølgingsenhet?.let { norgKlient.hentOverordnetFylkesenhet(it) }
