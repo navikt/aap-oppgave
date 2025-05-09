@@ -21,7 +21,6 @@ fun main() {
     val fakes = Fakes()
     val server = embeddedServer(Netty, port = 0) {
         val dbConfig = DbConfig(
-            database = postgres.databaseName,
             username = postgres.username,
             password = postgres.password,
             jdbcUrl = postgres.jdbcUrl,
