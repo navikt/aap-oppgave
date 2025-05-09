@@ -121,7 +121,7 @@ class EnhetServiceTest {
             )
         )
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
-        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
+        val nomKlient = NomKlientMock.medRespons(erEgenansatt = false)
 
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaKlient, unleashServiceMock)
@@ -141,6 +141,66 @@ class EnhetServiceTest {
         val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), veilarbarenaKlient, unleashServiceMock)
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any")
         assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
+    }
+
+    @Test
+    fun `Skal sette veileders enhet til NAV_UTLAND for saker knyttet til brukere fra Danmark`() {
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
+                hentGeografiskTilknytning = GeografiskTilknytning(
+                    gtType = GeografiskTilknytningType.UTLAND,
+                    gtLand = "DNK"
+                )
+            )
+        )
+
+        val norgKlient = NorgKlientMock.medRespons()
+
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaKlient, unleashServiceMock)
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any")
+
+        assertThat(res.enhet).isEqualTo(Enhet.NAV_UTLAND.kode)
+    }
+
+    @Test
+    fun `Skal sette kvalitetssikrers enhet til NAV_UTLAND for saker knyttet til brukere fra Danmark`() {
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
+                hentGeografiskTilknytning = GeografiskTilknytning(
+                    gtType = GeografiskTilknytningType.UTLAND,
+                    gtLand = "DNK"
+                )
+            )
+        )
+
+        val norgKlient = NorgKlientMock.medRespons()
+
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaKlient, unleashServiceMock)
+        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any")
+
+        assertThat(res.enhet).isEqualTo(Enhet.NAV_UTLAND.kode)
+    }
+
+    @Test
+    fun `Skal sette NAYs enhet til NAY_UTLAND for saker knyttet til brukere fra Danmark`() {
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
+                hentGeografiskTilknytning = GeografiskTilknytning(
+                    gtType = GeografiskTilknytningType.UTLAND,
+                    gtLand = "DNK"
+                )
+            )
+        )
+
+        val norgKlient = NorgKlientMock.medRespons()
+
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaKlient, unleashServiceMock)
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any")
+
+        assertThat(res.enhet).isEqualTo(Enhet.NAY_UTLAND.kode)
     }
 
     companion object {
