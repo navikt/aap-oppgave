@@ -342,9 +342,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             OFFSET $offset
         """.trimIndent()
 
-        val offsetOppgaver = connection.queryFirst(countQuery) {
+        val offsetOppgaver = connection.queryFirstOrNull(countQuery) {
             setRowMapper {it.getInt("count")}
-        }
+        } ?: 0
 
         val gjenstaaendeOppgaverAntall = offsetOppgaver - oppgaver.size
 
