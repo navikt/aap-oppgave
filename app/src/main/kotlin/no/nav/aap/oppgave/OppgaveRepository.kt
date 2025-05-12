@@ -344,9 +344,8 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val offsetOppgaver = connection.queryFirstOrNull(countQuery) {
             setRowMapper {it.getInt("count")}
-        } ?: 0
-
-        val gjenstaaendeOppgaverAntall = offsetOppgaver - oppgaver.size
+        }
+        val gjenstaaendeOppgaverAntall = if (offsetOppgaver != null) offsetOppgaver - oppgaver.size else 0
 
         return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall)
     }
