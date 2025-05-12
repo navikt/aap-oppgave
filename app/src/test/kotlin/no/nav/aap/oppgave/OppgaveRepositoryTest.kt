@@ -199,6 +199,10 @@ class OppgaveRepositoryTest {
         assertThat(søkMedPagingPå10.oppgaver).hasSize(4)
         assertThat(søkMedPagingPå10.antallGjenstaaende).isEqualTo(0)
 
+        val søkMedPagingSomIkkeFinnes = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(2, 25))
+        assertThat(søkMedPagingSomIkkeFinnes.oppgaver).hasSize(0)
+        assertThat(søkMedPagingSomIkkeFinnes.antallGjenstaaende).isEqualTo(0)
+
         reserverOppgave(oppgave1, bruker)
         reserverOppgave(oppgave2, bruker)
         reserverOppgave(oppgave3, bruker)
