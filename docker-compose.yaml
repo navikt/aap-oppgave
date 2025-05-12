@@ -1,0 +1,9 @@
+services:
+  postgres:
+    restart: always
+    container_name: oppgave-postgres
+    image: postgres
+    ports:
+      - '5439:5432'
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust

@@ -78,7 +78,6 @@ class OppdaterOppgaveEnhetJobbTest {
         val fakesConfig: FakesConfig = FakesConfig()
         private val fakes = Fakes(fakesConfig = fakesConfig)
         private val dbConfig = DbConfig(
-            database = postgres.databaseName,
             jdbcUrl = postgres.jdbcUrl,
             username = postgres.username,
             password = postgres.password
