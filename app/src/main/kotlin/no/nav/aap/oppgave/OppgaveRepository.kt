@@ -339,13 +339,14 @@ class OppgaveRepository(private val connection: DBConnection) {
         val countQuery = """
             SELECT COUNT(*) count FROM OPPGAVE
             WHERE ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
-            OFFSET $offset
         """.trimIndent()
 
-        val offsetOppgaver = connection.queryFirstOrNull(countQuery) {
-            setRowMapper {it.getInt("count")}
+        val alleOppgaverCount = connection.queryFirstOrNull(countQuery) {
+            setRowMapper { it.getInt("count") }
         }
-        val gjenstaaendeOppgaverAntall = if (offsetOppgaver != null) offsetOppgaver - oppgaver.size else 0
+        val gjenstaaendeOppgaverAntall = if (alleOppgaverCount != null) {
+            maxOf(0, alleOppgaverCount - (offset + oppgaver.size))
+        } else 0
 
         return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall)
     }
