@@ -1,0 +1,58 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="dev-gcp" type="KtorApplicationConfigurationType" factoryName="Ktor">
+    <envs>
+      <env name="NAIS_APP_NAME" value="oppgave" />
+      <env name="NAIS_CLUSTER_NAME" value="LOCAL" />
+      <env name="NAIS_DATABASE_OPPGAVE_OPPGAVE_JDBC_URL" value="jdbc:postgresql://localhost:5439/postgres" />
+      <env name="NAIS_DATABASE_OPPGAVE_OPPGAVE_USERNAME" value="postgres" />
+      <env name="NAIS_DATABASE_OPPGAVE_OPPGAVE_PASSWORD" value="" />
+      <env name="HTTP_PORT" value="8081" />
+      <env name="AAP_SAKSBEHANDLER_NASJONAL" value="3377dc51-ca61-4e36-b812-21b5fc34474f" />
+      <env name="AAP_SAKSBEHANDLER_OPPFOLGING" value="33e00155-169b-41e5-8a3f-5582ed975a15" />
+      <env name="AAP_KVALITETSSIKRER" value="c3e18aef-a7ac-49df-806e-4fe58b81460d" />
+      <env name="AAP_BESLUTTER" value="f0f6cad5-e3c0-4308-99a2-3630ac60174a" />
+      <env name="AAP_PRODUKSJONSSTYRING" value="c75883f9-4cb2-42c7-b75c-3f0f29ee3ead" />
+      <env name="INTEGRASJON_TILGANG_URL" value="https://aap-tilgang.intern.dev.nav.no" />
+      <env name="INTEGRASJON_TILGANG_SCOPE" value="api://dev-gcp.aap.tilgang/.default" />
+      <env name="INTEGRASJON_TILGANG_AZP" value="0612f13d-08fb-44ff-a5ac-1233e2fec0fc" />
+      <env name="INTEGRASJON_STATISTIKK_URL" value="https://aap-statistikk.intern.dev.nav.no" />
+      <env name="INTEGRASJON_STATISTIKK_SCOPE" value="api://dev-gcp.aap.statistikk/.default" />
+      <env name="INTEGRASJON_PDL_URL" value="https://pdl-api.dev-fss-pub.nais.io" />
+      <env name="INTEGRASJON_PDL_SCOPE" value="api://dev-fss.pdl.pdl-api/.default" />
+      <env name="INTEGRASJON_NORG_URL" value="https://norg2.dev-fss-pub.nais.io" />
+      <env name="INTEGRASJON_NOM_URL" value="https://skjermede-personer-pip.intern.dev.nav.no" />
+      <env name="INTEGRASJON_NOM_SCOPE" value="api://dev-gcp.nom.skjermede-personer-pip/.default" />
+      <env name="MS_GRAPH_BASE_URL" value="https://graph.microsoft.com/v1.0/" />
+      <env name="MS_GRAPH_SCOPE" value="https://graph.microsoft.com/.default" />
+      <env name="INTEGRASJON_VEILARBARENA_URL" value="https://veilarbarena.dev-fss-pub.nais.io" />
+      <env name="INTEGRASJON_VEILARBARENA_SCOPE" value="api://dev-fss.pto.veilarbarena/.default" />
+      <env name="INTEGRASJON_VEILARBOPPFOLGING_URL" value="https://veilarboppfolging.intern.dev.nav.no" />
+      <env name="INTEGRASJON_VEILARBOPPFOLGING_SCOPE" value="api://dev-gcp.poao.veilarboppfolging/.default" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="no.nav.aap.oppgave.server.AppKt" />
+    <module name="aap-oppgave.app.main" />
+    <extension name="net.ashald.envfile">
+      <option name="IS_ENABLED" value="true" />
+      <option name="IS_SUBST" value="false" />
+      <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+      <option name="IS_IGNORE_MISSING_FILES" value="false" />
+      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+      <ENTRIES>
+        <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
+        <ENTRY IS_ENABLED="true" PARSER="env" IS_EXECUTABLE="false" PATH=".env.dev-gcp" />
+      </ENTRIES>
+    </extension>
+    <option name="alternativeJrePath" />
+    <option name="alternativeJrePathEnabled" value="false" />
+    <option name="includeProvidedScope" value="false" />
+    <option name="mainClass" value="no.nav.aap.oppgave.server.AppKt" />
+    <option name="passParentEnvs" value="true" />
+    <option name="programParameters" value="" />
+    <option name="shortenCommandLine" />
+    <option name="vmParameters" />
+    <option name="workingDirectory" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

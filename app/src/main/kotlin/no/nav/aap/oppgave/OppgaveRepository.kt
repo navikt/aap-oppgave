@@ -309,7 +309,11 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     enum class Rekkefølge { asc, desc }
 
-    fun finnOppgaver(filter: Filter, rekkefølge: Rekkefølge = Rekkefølge.asc, paging: Paging? = null): FinnOppgaverDto {
+    fun finnOppgaver(
+        filter: Filter,
+        rekkefølge: Rekkefølge = Rekkefølge.asc,
+        paging: Paging? = null
+    ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
         } else {
@@ -462,7 +466,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentMineOppgaver(ident: String, paging: Paging? = null): List<OppgaveDto> {
+    fun hentMineOppgaver(ident: String, paging: Paging? = null, kunPåVent: Boolean = false): List<OppgaveDto> {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
         } else {
@@ -470,18 +474,17 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
 
+        val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
+
         val query = """
-            SELECT 
-                $alleOppgaveFelt
-            FROM
-                OPPGAVE    
-            WHERE
-                RESERVERT_AV = ? AND
-                STATUS != 'AVSLUTTET'
+            SELECT $alleOppgaveFelt
+            FROM OPPGAVE
+            WHERE RESERVERT_AV = ?
+              AND STATUS != 'AVSLUTTET' $kunPåVentQuery
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
-        return connection.queryList<OppgaveDto>(query) {
+        return connection.queryList(query) {
             setParams {
                 setString(1, ident)
             }

@@ -1,10 +1,10 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.1.3"
-val komponenterVersjon = "1.0.238"
+val komponenterVersjon = "1.0.242"
 val tilgangVersjon = "1.0.64"
 val behandlingsflytVersjon = "0.0.289"
-val postmottakVersjon = "0.0.88"
+val postmottakVersjon = "0.0.90"
 
 plugins {
     id("oppgave.conventions")
@@ -67,7 +67,7 @@ dependencies {
     implementation("io.getunleash:unleash-client-java:10.2.2")
     runtimeOnly("org.postgresql:postgresql:42.7.5")
 
-    testImplementation("com.nimbusds:nimbus-jose-jwt:10.2")
+    testImplementation("com.nimbusds:nimbus-jose-jwt:10.3")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.12.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.12.2")
     testImplementation("org.assertj:assertj-core:3.27.3")

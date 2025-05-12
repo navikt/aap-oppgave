@@ -58,7 +58,8 @@ fun main() {
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
         SECURE_LOGGER.error("Uhåndtert feil", e)
     }
-    embeddedServer(Netty, 8080) { server(DbConfig(), prometheus) }.start(wait = true)
+    val serverPort = System.getenv("HTTP_PORT")?.toInt() ?: 8080
+    embeddedServer(Netty, serverPort) { server(DbConfig(), prometheus) }.start(wait = true)
 }
 
 internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterRegistry) {
@@ -153,7 +154,6 @@ fun Application.motor(dataSource: DataSource): Motor {
 }
 
 class DbConfig(
-    val database: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_DATABASE"),
     val jdbcUrl: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_JDBC_URL"),
     val username: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_USERNAME"),
     val password: String = System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_PASSWORD")
