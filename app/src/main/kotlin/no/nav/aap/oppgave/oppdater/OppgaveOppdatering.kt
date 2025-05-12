@@ -146,6 +146,7 @@ private fun no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.tilAvklar
 fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
         personIdent = this.ident,
+        saksnummer = this.saksnummer,
         referanse = this.referanse,
         journalpostId = this.journalpostId.referanse,
         behandlingStatus = this.status.tilBehandlingsstatus(),
