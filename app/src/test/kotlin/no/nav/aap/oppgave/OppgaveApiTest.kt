@@ -325,6 +325,9 @@ class OppgaveApiTest {
         nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNotNull()
         assertThat(nesteOppgave?.avklaringsbehovReferanse?.referanse).isEqualTo(referanse)
+
+        val påVentOppgaver = hentMineOppgaver(true)
+        assertThat(påVentOppgaver.oppgaver).isNotEmpty
     }
 
     @Test
@@ -716,9 +719,10 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentMineOppgaver(): OppgavelisteRespons {
+    private fun hentMineOppgaver(kunPåVent: Boolean = false): OppgavelisteRespons {
+        val s = if (kunPåVent) "?kunPåVent=true" else ""
         return oboClient.get<OppgavelisteRespons>(
-            URI.create("http://localhost:8080/mine-oppgaver"),
+            URI.create("http://localhost:8080/mine-oppgaver$s"),
             GetRequest(currentToken = getOboToken())
         )!!
     }
