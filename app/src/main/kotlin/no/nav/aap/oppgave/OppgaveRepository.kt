@@ -309,7 +309,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     enum class Rekkefølge { asc, desc }
 
-    fun finnOppgaver(filter: Filter, rekkefølge: Rekkefølge = Rekkefølge.asc, paging: Paging? = null): List<OppgaveDto> {
+    fun finnOppgaver(filter: Filter, rekkefølge: Rekkefølge = Rekkefølge.asc, paging: Paging? = null): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
         } else {
@@ -328,14 +328,27 @@ class OppgaveRepository(private val connection: DBConnection) {
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
-        return connection.queryList(hentNesteOppgaveQuery) {
-            setRowMapper {
-                oppgaveMapper(it)
-            }
+        val oppgaver = connection.queryList(hentNesteOppgaveQuery) {
+            setRowMapper { oppgaveMapper(it) }
         }
+
+        val countQuery = """
+            SELECT COUNT(*) count FROM OPPGAVE
+            WHERE ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+            OFFSET $offset
+        """.trimIndent()
+
+        val offsetOppgaver = connection.queryFirst(countQuery) {
+            setRowMapper {it.getInt("count")}
+        }
+
+        val gjenstaaendeOppgaverAntall = offsetOppgaver - oppgaver.size
+
+        return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall)
     }
 
     data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long, val versjon: Long)
+    data class FinnOppgaverDto(val oppgaver: List<OppgaveDto>, val antallGjenstaaende: Int)
 
     fun finnÅpneOppgaverIkkeVikafossen(): List<IdentMedOppgaveId> {
         val query = """
