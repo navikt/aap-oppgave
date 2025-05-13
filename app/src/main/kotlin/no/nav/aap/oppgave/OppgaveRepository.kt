@@ -284,7 +284,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+                ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET' AND PAA_VENT_TIL IS NULL
             ORDER BY BEHANDLING_OPPRETTET
             LIMIT $limit
             FOR UPDATE
@@ -580,8 +580,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         if (veileder != null) {
             sb.append("VEILEDER = '$veileder' AND ")
         }
-        // På vent
-        sb.append("PAA_VENT_TIL IS NULL AND ")
+        // Vis/skjul oppgaver som er på vent fra oppgaveliste
+        // sb.append("PAA_VENT_TIL IS NULL AND ")
 
         return sb.toString()
     }
