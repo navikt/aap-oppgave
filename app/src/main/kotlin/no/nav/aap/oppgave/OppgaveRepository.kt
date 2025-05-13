@@ -313,7 +313,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         filter: Filter,
         rekkefølge: Rekkefølge = Rekkefølge.asc,
         paging: Paging? = null,
-        kunLedigeOppgaver: Boolean = true,
+        kunLedigeOppgaver: Boolean? = true,
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
@@ -321,7 +321,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             0
         }
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
-        val kunLedigeQuery = if (kunLedigeOppgaver) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
+        val kunLedigeQuery = if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
 
         val hentNesteOppgaveQuery = """
             SELECT 

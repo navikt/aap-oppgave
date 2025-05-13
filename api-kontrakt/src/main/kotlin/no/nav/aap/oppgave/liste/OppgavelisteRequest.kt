@@ -5,5 +5,5 @@ data class OppgavelisteRequest(
     val enheter: Set<String> = emptySet(),
     val veileder: Boolean = false,
     val paging: Paging,
-    val kunLedigeOppgaver: Boolean = true,
+    val kunLedigeOppgaver: Boolean? = true,
 )
