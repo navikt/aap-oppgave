@@ -156,7 +156,7 @@ class OppgaveRepositoryTest {
     fun `Skal finne oppgaver for angitt veileder`() { opprettOppgave(veileder = "xyz12345")
         val oppgaveId2 = opprettOppgave(veileder = "xyz54321")
 
-        val oppgaver = finnOppgaver(TransientFilterDto(veileder = "xyz54321")).oppgaver
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = "xyz54321")).oppgaver
 
         assertThat(oppgaver).hasSize(1)
         assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
@@ -168,7 +168,7 @@ class OppgaveRepositoryTest {
         val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG)
         val oppgaveId3 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG)
 
-        val oppgaver = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
 
         assertThat(oppgaver).hasSize(2)
         assertThat(oppgaver.map {it.id}[0]).isEqualTo(oppgaveId2.id)
@@ -177,7 +177,7 @@ class OppgaveRepositoryTest {
 
     @Test
     fun `Kan bruke paging`() {
-        val søkUtenTreff = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LILLESTRØM)))
+        val søkUtenTreff = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LILLESTRØM)))
         assertThat(søkUtenTreff.oppgaver).hasSize(0)
         assertThat(søkUtenTreff.antallGjenstaaende).isEqualTo(0)
 
@@ -187,19 +187,19 @@ class OppgaveRepositoryTest {
         val oppgave3 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgave4 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
 
-        val søkUtenPaging = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)))
+        val søkUtenPaging = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)))
         assertThat(søkUtenPaging.oppgaver).hasSize(4)
         assertThat(søkUtenPaging.antallGjenstaaende).isEqualTo(0)
 
-        val søkMedPaging = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 1))
+        val søkMedPaging = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 1))
         assertThat(søkMedPaging.oppgaver).hasSize(1)
         assertThat(søkMedPaging.antallGjenstaaende).isEqualTo(3)
 
-        val søkMedPagingPå10 = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 10))
+        val søkMedPagingPå10 = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 10))
         assertThat(søkMedPagingPå10.oppgaver).hasSize(4)
         assertThat(søkMedPagingPå10.antallGjenstaaende).isEqualTo(0)
 
-        val søkMedPagingSomIkkeFinnes = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(2, 25))
+        val søkMedPagingSomIkkeFinnes = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(2, 25))
         assertThat(søkMedPagingSomIkkeFinnes.oppgaver).hasSize(0)
         assertThat(søkMedPagingSomIkkeFinnes.antallGjenstaaende).isEqualTo(0)
 
@@ -216,12 +216,32 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Kan vise både ledige og alle oppgaver`() {
+        val reservertOppgaveId = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        reserverOppgave(reservertOppgaveId, "saksbehandler")
+        val ledigOppgaveId = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+
+        val ledigeOppgaver = finnLedigeOppgaver(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+        )
+        assertThat(ledigeOppgaver.oppgaver.first().id == ledigOppgaveId.id)
+        assertThat(ledigeOppgaver.oppgaver).hasSize(1)
+
+        val alleOppgaver = finnAlleOppgaver(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+        )
+        assertThat(alleOppgaver.oppgaver).hasSize(2)
+        assertThat(reservertOppgaveId.id in alleOppgaver.oppgaver.map { it.id })
+        assertThat(ledigOppgaveId.id in alleOppgaver.oppgaver.map { it.id })
+    }
+
+    @Test
     fun `Skal finne oppgaver knyttet til oppfølgingsenhet dersom den er satt`() {
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG, oppfølgingsenhet = ENHET_NAV_LILLESTRØM)
         opprettOppgave(enhet = ENHET_NAV_LØRENSKOG)
 
-        val oppgaver = finnOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LILLESTRØM))).oppgaver
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LILLESTRØM))).oppgaver
 
         assertThat(oppgaver).hasSize(1)
         assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
@@ -257,9 +277,15 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun finnOppgaver(filter: Filter, paging: Paging? = null): OppgaveRepository.FinnOppgaverDto {
+    private fun finnLedigeOppgaver(filter: Filter, paging: Paging? = null): OppgaveRepository.FinnOppgaverDto {
         return dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter, paging = paging)
+        }
+    }
+
+    private fun finnAlleOppgaver(filter: Filter, paging: Paging? = null): OppgaveRepository.FinnOppgaverDto {
+        return dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = false)
         }
     }
 
