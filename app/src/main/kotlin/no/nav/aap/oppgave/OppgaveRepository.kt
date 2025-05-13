@@ -312,7 +312,8 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun finnOppgaver(
         filter: Filter,
         rekkefølge: Rekkefølge = Rekkefølge.asc,
-        paging: Paging? = null
+        paging: Paging? = null,
+        kunLedigeOppgaver: Boolean = true,
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
@@ -320,6 +321,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             0
         }
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
+        val kunLedigeQuery = if (kunLedigeOppgaver) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
 
         val hentNesteOppgaveQuery = """
             SELECT 
@@ -327,7 +329,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+                ${filter.whereClause()} STATUS != 'AVSLUTTET' $kunLedigeQuery
             ORDER BY BEHANDLING_OPPRETTET ${rekkefølge.name}
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
