@@ -96,6 +96,9 @@ class OppdaterOppgaveService(
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
+        // TODO: rydd opp i logikk her, trekk ut metoder osv
+        // Send oppdatering til statistikk på slutten, så man ikke får 3 forskjellige oppdateringer
+        // å forholde seg til
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
             val enhetForOppgave =
@@ -150,6 +153,7 @@ class OppdaterOppgaveService(
                     veileder = veileder,
                     påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
                     påVentÅrsak = årsakTilSattPåVent,
+                    påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                     årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling
                 )
                 log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}. Venteårsak: $årsakTilSattPåVent")
@@ -187,6 +191,7 @@ class OppdaterOppgaveService(
                 veileder = veileder,
                 påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
                 påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent,
+                venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                 årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
@@ -280,6 +285,7 @@ class OppdaterOppgaveService(
         veileder: String?,
         påVentTil: LocalDate?,
         påVentÅrsak: String?,
+        venteBegrunnelse: String?,
         årsakerTilBehandling: List<String>
     ): OppgaveDto {
         return OppgaveDto(
@@ -297,6 +303,7 @@ class OppdaterOppgaveService(
             opprettetTidspunkt = LocalDateTime.now(),
             påVentTil = påVentTil,
             påVentÅrsak = påVentÅrsak,
+            venteBegrunnelse = venteBegrunnelse,
             årsakerTilBehandling = årsakerTilBehandling
         )
     }
