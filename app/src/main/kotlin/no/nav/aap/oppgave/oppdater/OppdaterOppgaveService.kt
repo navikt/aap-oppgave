@@ -171,12 +171,12 @@ class OppdaterOppgaveService(
         venteInformasjon: VenteInformasjon
     ) {
         val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
-        val endretAv = venteInformasjon.endretAv
+        val endretAv = venteInformasjon.sattPåVentAv
         val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgaveUtenTilgangskontroll(
             avklaringsbehovReferanse,
             endretAv
         )
-        log.info("Oppgave ${reserverteOppgaver.joinToString { it.id.toString() }} reservert $endretAv")
+        log.info("Oppgave ${reserverteOppgaver.joinToString(", ")} reservert $endretAv")
     }
 
     private fun opprettOppgaver(

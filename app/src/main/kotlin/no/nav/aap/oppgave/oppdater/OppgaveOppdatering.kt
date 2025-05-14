@@ -57,7 +57,7 @@ data class Endring(
     val påVentÅrsak: String?
 )
 
-data class VenteInformasjon(val årsakTilSattPåVent: String?, val frist: LocalDate, val endretAv: String)
+data class VenteInformasjon(val årsakTilSattPåVent: String?, val frist: LocalDate, val sattPåVentAv: String)
 
 
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
@@ -87,7 +87,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
                 VenteInformasjon(
                     årsakTilSattPåVent = siste.påVentÅrsak,
                     frist = siste.påVentTil,
-                    endretAv = siste.endretAv,
+                    sattPåVentAv = siste.endretAv,
                 )
             }
         } else null
