@@ -57,7 +57,7 @@ data class Endring(
     val påVentÅrsak: String?
 )
 
-data class VenteInformasjon(val årsakTilSattPåVent: String?, val frist: LocalDate)
+data class VenteInformasjon(val årsakTilSattPåVent: String?, val frist: LocalDate, val endretAv: String)
 
 
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
@@ -86,7 +86,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
                 // Her gjør vi noen antakelser om at åpne ventebehov alltid har årsak og frist.
                 VenteInformasjon(
                     årsakTilSattPåVent = siste.påVentÅrsak,
-                    frist = siste.påVentTil
+                    frist = siste.påVentTil,
+                    endretAv = siste.endretAv,
                 )
             }
         } else null

@@ -158,8 +158,25 @@ class OppdaterOppgaveService(
                     HendelseType.OPPDATERT,
                     FlytJobbRepository(connection)
                 )
+
+                if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.reservertAv == null) {
+                    reserverOppgave(eksisterendeOppgave, oppgaveOppdatering.venteInformasjon)
+                }
             }
         }
+    }
+
+    private fun reserverOppgave(
+        eksisterendeOppgave: OppgaveDto,
+        venteInformasjon: VenteInformasjon
+    ) {
+        val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
+        val endretAv = venteInformasjon.endretAv
+        val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgaveUtenTilgangskontroll(
+            avklaringsbehovReferanse,
+            endretAv
+        )
+        log.info("Oppgave ${reserverteOppgaver.joinToString { it.id.toString() }} reservert $endretAv")
     }
 
     private fun opprettOppgaver(
