@@ -303,6 +303,20 @@ class OppgaveApiTest {
             .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::venteBegrunnelse)
             .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name, "Bedre ting å gjøre")
 
+        val uthentetPåVent = hentOppgave(
+            OppgaveId(
+                påVentOppgaver.id!!,
+                påVentOppgaver.versjon
+            )
+        )
+        assertThat(uthentetPåVent)
+            .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
+            .containsExactly(
+                "Bedre ting å gjøre",
+                LocalDate.now().plusWeeks(2),
+                ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name
+            )
+
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
                 saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
@@ -335,6 +349,16 @@ class OppgaveApiTest {
         nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNotNull()
         assertThat(nesteOppgave?.avklaringsbehovReferanse?.referanse).isEqualTo(referanse)
+
+        val uthentet = hentOppgave(
+            OppgaveId(
+                nesteOppgave!!.oppgaveId,
+                versjon = nesteOppgave.oppgaveVersjon
+            )
+        )
+        assertThat(uthentet)
+            .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
+            .containsOnlyNulls()
 
         val påVentOppgaverEtterPå = hentMineOppgaver(kunPåVent = true)
         assertThat(påVentOppgaverEtterPå.oppgaver).isEmpty()
