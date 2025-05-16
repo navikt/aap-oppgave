@@ -5,6 +5,7 @@ import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.get
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
+import io.ktor.client.request.request
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
@@ -21,11 +22,11 @@ data class MineOppgaverRequest(@QueryParam("Vis kun på vent-oppgaver.") val kun
 fun NormalOpenAPIRoute.mineOppgaverApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry
-) = route("/mine-oppgaver").get<MineOppgaverRequest, OppgavelisteRespons> {
+) = route("/mine-oppgaver").get<MineOppgaverRequest, OppgavelisteRespons> { req ->
     prometheus.httpCallCounter("/mine-oppgaver").increment()
     val mineOppgaver =
         dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).hentMineOppgaver(ident())
+            OppgaveRepository(connection).hentMineOppgaver(ident(), kunPåVent = req.kunPaaVent ?: false)
         }
     respond(
         OppgavelisteRespons(

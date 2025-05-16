@@ -17,8 +17,6 @@ import no.nav.aap.oppgave.klienter.pdl.HentPersonBolkResult
 import no.nav.aap.oppgave.klienter.pdl.HentPersonResult
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlData
-import no.nav.aap.oppgave.unleash.FeatureToggle
-import no.nav.aap.oppgave.unleash.IUnleashService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -31,7 +29,7 @@ class EnhetServiceTest {
 
     @Test
     fun `lister kun opp enhets-roller`() {
-        val service = EnhetService(graphClient, PdlKlientMock(), nomKlient, NorgKlientMock(), VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, PdlKlientMock(), nomKlient, NorgKlientMock(), VeilarbarenaKlientMock())
 
         val res = service.hentEnheter("xxx", "")
         assertThat(res).isNotEmpty()
@@ -44,7 +42,7 @@ class EnhetServiceTest {
     fun `Skal utlede riktig enhet basert på avklaringsbehovkode`() {
         val nomKlient = NomKlientMock.medRespons(erEgenansatt = false)
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnhet = "0400")
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
         val utledetEnhetFylke = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
         assertThat(utledetEnhetFylke).isNotNull()
@@ -63,7 +61,7 @@ class EnhetServiceTest {
     @Test
     fun `Skal kunne hente fylkeskontor for enhet`() {
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnhet = "0400")
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
         val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
         assertThat(utledetEnhet).isNotNull()
@@ -75,7 +73,7 @@ class EnhetServiceTest {
     @Test
     fun `Skal ikke prøve å omgjøre til fylkesenhet for vikafossen`() {
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = (Enhet.NAV_VIKAFOSSEN.kode))
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
         val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911")
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(
@@ -100,7 +98,7 @@ class EnhetServiceTest {
             )
         )
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient, unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient)
         val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911")
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(overordnetEnhet)
@@ -111,7 +109,7 @@ class EnhetServiceTest {
     fun `Skal ikke prøve å omgjøre til fylkesenhet for egne ansatte-enheter`() {
         val egneAnsatteOslo = "0383"
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
         val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911")
         assertThat(utledetEnhet).isNotNull()
@@ -130,7 +128,7 @@ class EnhetServiceTest {
         )
         val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), VeilarbarenaKlientMock())
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any")
         assertThat(res.enhet).isEqualTo(Enhet.NAY_EGNE_ANSATTE.kode)
     }
@@ -147,7 +145,7 @@ class EnhetServiceTest {
         val nomKlient = NomKlientMock.medRespons(erEgenansatt = false)
 
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
         val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any")
         assertThat(res.enhet).isEqualTo(egneAnsatteOslo)
     }
@@ -161,7 +159,7 @@ class EnhetServiceTest {
         )
         val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), VeilarbarenaKlientMock())
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any")
         assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
     }
@@ -180,7 +178,7 @@ class EnhetServiceTest {
 
         val norgKlient = NorgKlientMock.medRespons()
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
         val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any")
 
         assertThat(res.enhet).isEqualTo(Enhet.NAV_UTLAND.kode)
@@ -200,7 +198,7 @@ class EnhetServiceTest {
 
         val norgKlient = NorgKlientMock.medRespons()
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
         val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any")
 
         assertThat(res.enhet).isEqualTo(Enhet.NAV_UTLAND.kode)
@@ -220,7 +218,7 @@ class EnhetServiceTest {
 
         val norgKlient = NorgKlientMock.medRespons()
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashServiceMock)
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any")
 
         assertThat(res.enhet).isEqualTo(Enhet.NAY_UTLAND.kode)
@@ -342,12 +340,6 @@ class EnhetServiceTest {
 
             override fun hentOppfølgingsenhet(personIdent: String): String? {
                 return oppfølgingsenhet
-            }
-        }
-
-        val unleashServiceMock = object : IUnleashService {
-            override fun isEnabled(featureToggle: FeatureToggle): Boolean {
-                return true
             }
         }
     }

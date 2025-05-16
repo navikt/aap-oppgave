@@ -34,9 +34,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPRETTET_TIDSPUNKT,
                 PERSON_IDENT,
                 VEILEDER,
-                AARSAKER_TIL_BEHANDLING
+                AARSAKER_TIL_BEHANDLING,
+                VENTE_BEGRUNNELSE
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -58,6 +59,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(14, oppgaveDto.personIdent)
                 setString(15, oppgaveDto.veileder)
                 setArray(16, oppgaveDto.årsakerTilBehandling)
+                setString(17, oppgaveDto.venteBegrunnelse)
             }
         }
         return OppgaveId(id, 0L)
@@ -186,6 +188,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         enhet: String,
         påVentTil: LocalDate?,
         påVentÅrsak: String?,
+        påVentBegrunnelse: String?,
         oppfølgingsenhet: String?,
         veileder: String?,
         årsakerTilBehandling: List<String>
@@ -201,6 +204,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPFOLGINGSENHET = ?,
                 PAA_VENT_TIL = ?,
                 PAA_VENT_AARSAK= ?,
+                VENTE_BEGRUNNELSE = ?,
                 PERSON_IDENT = ?,
                 VEILEDER = ?,
                 AARSAKER_TIL_BEHANDLING = ?,
@@ -217,11 +221,12 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(3, oppfølgingsenhet)
                 setLocalDate(4, påVentTil)
                 setString(5, påVentÅrsak)
-                setString(6, personIdent)
-                setString(7, veileder)
-                setArray(8, årsakerTilBehandling)
-                setLong(9, oppgaveId.id)
-                setLong(10, oppgaveId.versjon)
+                setString(6, påVentBegrunnelse)
+                setString(7, personIdent)
+                setString(8, veileder)
+                setArray(9, årsakerTilBehandling)
+                setLong(10, oppgaveId.id)
+                setLong(11, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
@@ -284,7 +289,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+                ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET' AND PAA_VENT_TIL IS NULL
             ORDER BY BEHANDLING_OPPRETTET
             LIMIT $limit
             FOR UPDATE
@@ -312,14 +317,16 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun finnOppgaver(
         filter: Filter,
         rekkefølge: Rekkefølge = Rekkefølge.asc,
-        paging: Paging? = null
-    ): List<OppgaveDto> {
+        paging: Paging? = null,
+        kunLedigeOppgaver: Boolean? = true,
+    ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
         } else {
             0
         }
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
+        val kunLedigeQuery = if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
 
         val hentNesteOppgaveQuery = """
             SELECT 
@@ -327,19 +334,32 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+                ${filter.whereClause()} STATUS != 'AVSLUTTET' $kunLedigeQuery
             ORDER BY BEHANDLING_OPPRETTET ${rekkefølge.name}
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
-        return connection.queryList(hentNesteOppgaveQuery) {
-            setRowMapper {
-                oppgaveMapper(it)
-            }
+        val oppgaver = connection.queryList(hentNesteOppgaveQuery) {
+            setRowMapper { oppgaveMapper(it) }
         }
+
+        val countQuery = """
+            SELECT COUNT(*) count FROM OPPGAVE
+            WHERE ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+        """.trimIndent()
+
+        val alleOppgaverCount = connection.queryFirstOrNull(countQuery) {
+            setRowMapper { it.getInt("count") }
+        }
+        val gjenstaaendeOppgaverAntall = if (alleOppgaverCount != null) {
+            maxOf(0, alleOppgaverCount - (offset + oppgaver.size))
+        } else 0
+
+        return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall)
     }
 
     data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long, val versjon: Long)
+    data class FinnOppgaverDto(val oppgaver: List<OppgaveDto>, val antallGjenstaaende: Int)
 
     fun finnÅpneOppgaverIkkeVikafossen(): List<IdentMedOppgaveId> {
         val query = """
@@ -567,8 +587,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         if (veileder != null) {
             sb.append("VEILEDER = '$veileder' AND ")
         }
-        // På vent
-        sb.append("PAA_VENT_TIL IS NULL AND ")
+        // Vis/skjul oppgaver som er på vent fra oppgaveliste
+        // sb.append("PAA_VENT_TIL IS NULL AND ")
 
         return sb.toString()
     }
@@ -589,6 +609,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE")),
             påVentTil = row.getLocalDateOrNull("PAA_VENT_TIL"),
             påVentÅrsak = row.getStringOrNull("PAA_VENT_AARSAK"),
+            venteBegrunnelse = row.getStringOrNull("VENTE_BEGRUNNELSE"),
             årsakerTilBehandling = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
             reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
@@ -616,6 +637,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             BEHANDLINGSTYPE,
             PAA_VENT_TIL,
             PAA_VENT_AARSAK,
+            VENTE_BEGRUNNELSE,
             RESERVERT_AV,
             RESERVERT_TIDSPUNKT,
             OPPRETTET_AV,

@@ -1,9 +1,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.1.3"
-val komponenterVersjon = "1.0.242"
-val tilgangVersjon = "1.0.64"
-val behandlingsflytVersjon = "0.0.289"
+val komponenterVersjon = "1.0.247"
+val tilgangVersjon = "1.0.67"
+val behandlingsflytVersjon = "0.0.297"
 val postmottakVersjon = "0.0.90"
 
 plugins {
@@ -34,7 +34,7 @@ dependencies {
     implementation("no.nav.aap.kelvin:server:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor-api:$komponenterVersjon")
-    implementation("no.nav:ktor-openapi-generator:1.0.108")
+    implementation("no.nav:ktor-openapi-generator:1.0.109")
     implementation("no.nav.aap.tilgang:api-kontrakt:$tilgangVersjon")
     implementation("no.nav.aap.tilgang:plugin:$tilgangVersjon")
     implementation("no.nav.aap.behandlingsflyt:kontrakt:$behandlingsflytVersjon")
@@ -58,12 +58,12 @@ dependencies {
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.19.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.0")
-    implementation("io.micrometer:micrometer-registry-prometheus:1.14.6")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.15.0")
     implementation("ch.qos.logback:logback-classic:1.5.18")
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
 
     implementation("com.zaxxer:HikariCP:6.3.0")
-    implementation("org.flywaydb:flyway-database-postgresql:11.8.0")
+    implementation("org.flywaydb:flyway-database-postgresql:11.8.2")
     implementation("io.getunleash:unleash-client-java:10.2.2")
     runtimeOnly("org.postgresql:postgresql:42.7.5")
 

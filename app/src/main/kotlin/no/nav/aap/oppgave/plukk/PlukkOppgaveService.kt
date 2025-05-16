@@ -8,14 +8,14 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
-import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetService) {
+class PlukkOppgaveService(val connection: DBConnection, val enhetService: IEnhetService) {
 
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
@@ -85,6 +85,7 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: EnhetS
             enhet = nyEnhet.enhet,
             påVentTil = oppgave.påVentTil,
             påVentÅrsak = oppgave.påVentÅrsak,
+            påVentBegrunnelse = oppgave.venteBegrunnelse,
             oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
             veileder = oppgave.veileder,
             årsakerTilBehandling = oppgave.årsakerTilBehandling

@@ -54,10 +54,11 @@ data class Endring(
     val tidsstempel: LocalDateTime = LocalDateTime.now(),
     val endretAv: String,
     val påVentTil: LocalDate?,
-    val påVentÅrsak: String?
+    val påVentÅrsak: String?,
+    val begrunnelse: String? = null,
 )
 
-data class VenteInformasjon(val årsakTilSattPåVent: String?, val frist: LocalDate, val sattPåVentAv: String)
+data class VenteInformasjon(val årsakTilSattPåVent: String?, val frist: LocalDate, val sattPåVentAv: String,  val begrunnelse: String?)
 
 
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
@@ -88,6 +89,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
                     årsakTilSattPåVent = siste.påVentÅrsak,
                     frist = siste.påVentTil,
                     sattPåVentAv = siste.endretAv,
+                    begrunnelse = siste.begrunnelse.nullIfBlank()
                 )
             }
         } else null
@@ -121,9 +123,12 @@ private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
             tidsstempel = it.tidsstempel,
             endretAv = it.endretAv,
             påVentTil = it.frist,
-            påVentÅrsak = it.årsakTilSattPåVent?.name
+            påVentÅrsak = it.årsakTilSattPåVent?.name,
+            begrunnelse = it.begrunnelse.nullIfBlank(),
         )
     }
+
+private fun String?.nullIfBlank() = if (this.isNullOrBlank()) null else this
 
 private fun no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.tilBehandlingsstatus(): BehandlingStatus {
     if (this.erAvsluttet()) {
@@ -201,6 +206,6 @@ private fun List<no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO>.tilEndringe
             tidsstempel = it.tidsstempel,
             endretAv = it.endretAv,
             påVentTil = it.frist,
-            påVentÅrsak = null
+            påVentÅrsak = null,
         )
     }

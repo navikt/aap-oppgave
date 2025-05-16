@@ -282,7 +282,8 @@ class OppgaveApiTest {
                             Endring(
                                 status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
                                 påVentTil = LocalDate.now().plusWeeks(2),
-                                påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER
+                                påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER,
+                                begrunnelse = "Bedre ting å gjøre"
                             ),
                         )
                     )
@@ -292,6 +293,29 @@ class OppgaveApiTest {
 
         var nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNull()
+
+        val påVentOppgaver = hentOppgave(
+            saksnummer = saksnummer,
+            referanse = referanse,
+            definisjon = Definisjon.AVKLAR_SYKDOM
+        )!!
+        assertThat(påVentOppgaver)
+            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::venteBegrunnelse)
+            .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name, "Bedre ting å gjøre")
+
+        val uthentetPåVent = hentOppgave(
+            OppgaveId(
+                påVentOppgaver.id!!,
+                påVentOppgaver.versjon
+            )
+        )
+        assertThat(uthentetPåVent)
+            .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
+            .containsExactly(
+                "Bedre ting å gjøre",
+                LocalDate.now().plusWeeks(2),
+                ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name
+            )
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
@@ -326,8 +350,18 @@ class OppgaveApiTest {
         assertThat(nesteOppgave).isNotNull()
         assertThat(nesteOppgave?.avklaringsbehovReferanse?.referanse).isEqualTo(referanse)
 
-        val påVentOppgaver = hentMineOppgaver(true)
-        assertThat(påVentOppgaver.oppgaver).isNotEmpty
+        val uthentet = hentOppgave(
+            OppgaveId(
+                nesteOppgave!!.oppgaveId,
+                versjon = nesteOppgave.oppgaveVersjon
+            )
+        )
+        assertThat(uthentet)
+            .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
+            .containsOnlyNulls()
+
+        val påVentOppgaverEtterPå = hentMineOppgaver(kunPåVent = true)
+        assertThat(påVentOppgaverEtterPå.oppgaver).isEmpty()
     }
 
     @Test
@@ -627,6 +661,7 @@ class OppgaveApiTest {
         val endretAv: String = "Kelvin",
         val påVentTil: LocalDate? = null,
         val påVentÅrsak: ÅrsakTilSettPåVent? = null,
+        val begrunnelse: String? = null,
     )
 
     private fun opprettBehandlingshistorikk(
@@ -644,7 +679,8 @@ class OppgaveApiTest {
                     tidsstempel = nå.minusMinutes(avklaringsbehovHendelse.endringer.size.toLong() - i),
                     endretAv = endring.endretAv,
                     frist = endring.påVentTil,
-                    årsakTilSattPåVent = endring.påVentÅrsak
+                    årsakTilSattPåVent = endring.påVentÅrsak,
+                    begrunnelse = endring.begrunnelse,
                 )
             }
             AvklaringsbehovHendelseDto(
@@ -720,7 +756,7 @@ class OppgaveApiTest {
     }
 
     private fun hentMineOppgaver(kunPåVent: Boolean = false): OppgavelisteRespons {
-        val s = if (kunPåVent) "?kunPåVent=true" else ""
+        val s = if (kunPåVent) "?kunPaaVent=true" else ""
         return oboClient.get<OppgavelisteRespons>(
             URI.create("http://localhost:8080/mine-oppgaver$s"),
             GetRequest(currentToken = getOboToken())
