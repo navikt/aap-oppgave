@@ -18,6 +18,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
+import no.nav.aap.komponenter.httpklient.httpclient.error.ManglerTilgangException
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
@@ -38,6 +39,7 @@ import no.nav.aap.oppgave.filter.FilterId
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
+import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
@@ -47,6 +49,7 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -59,6 +62,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
+import kotlin.collections.listOf
 import kotlin.test.AfterTest
 
 class OppgaveApiTest {
@@ -394,6 +398,102 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `Oppgave skal avreserveres dersom tilgang nektes`() {
+        leggInnFilterForTest()
+        val saksnummer = "4567"
+        val referanse = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        // reserverer oppgave
+        hentNesteOppgave()
+        val reservertOppgaveMedTilgang = hentOppgave(
+            saksnummer = saksnummer, referanse = referanse,
+            definisjon = Definisjon.AVKLAR_SYKDOM,
+        )
+        assertThat(reservertOppgaveMedTilgang).isNotNull()
+        assertThat(reservertOppgaveMedTilgang?.reservertAv).isNotNull()
+        assertThat(reservertOppgaveMedTilgang?.reservertTidspunkt).isNotNull()
+
+        // plukk uten tilgang
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
+        assertThatThrownBy { plukkOppgave(OppgaveId(reservertOppgaveMedTilgang?.id!!, reservertOppgaveMedTilgang.versjon)) }
+            .isInstanceOf(ManglerTilgangException::class.java)
+
+        // sjekk at reservasjon er fjernet
+        val oppgaveUtenReservasjon = hentOppgave(OppgaveId(reservertOppgaveMedTilgang?.id!!, reservertOppgaveMedTilgang.versjon))
+        assertThat(oppgaveUtenReservasjon).isNotNull()
+        assertThat(oppgaveUtenReservasjon.reservertAv == null)
+        assertThat(oppgaveUtenReservasjon.reservertTidspunkt == null)
+    }
+
+    @Test
+    fun `Oppdaterer enhet på mislykket forsøk på plukk`() {
+        val saksnummer = "8910"
+        val referanse = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+
+        val oppgaveMedGammelEnhet = hentOppgave(saksnummer, referanse, definisjon = Definisjon.AVKLAR_SYKDOM)
+        assertThat(oppgaveMedGammelEnhet).isNotNull()
+
+        // oppdater enhet på oppgave
+        val oppgaveMedNyEnhet = oppdaterOgHentOppgave(OppgaveDto(
+            id = oppgaveMedGammelEnhet!!.id,
+            saksnummer = oppgaveMedGammelEnhet.saksnummer,
+            behandlingRef = oppgaveMedGammelEnhet.behandlingRef,
+            enhet = "nyEnhet",
+            oppfølgingsenhet = "nyOppfølgingsenhet",
+            veileder = oppgaveMedGammelEnhet.veileder,
+            behandlingOpprettet = oppgaveMedGammelEnhet.behandlingOpprettet,
+            avklaringsbehovKode = oppgaveMedGammelEnhet.avklaringsbehovKode,
+            status = oppgaveMedGammelEnhet.status,
+            behandlingstype = oppgaveMedGammelEnhet.behandlingstype,
+            opprettetAv = oppgaveMedGammelEnhet.opprettetAv,
+            opprettetTidspunkt = oppgaveMedGammelEnhet.opprettetTidspunkt,
+            versjon = oppgaveMedGammelEnhet.versjon,
+        ))
+        assertThat(oppgaveMedNyEnhet.enhet).isEqualTo("nyEnhet")
+        assertThat(oppgaveMedNyEnhet.oppfølgingsenhet).isEqualTo("nyOppfølgingsenhet")
+
+        // plukk uten tilgang
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
+        assertThatThrownBy { plukkOppgave(OppgaveId(oppgaveMedNyEnhet.id!!, oppgaveMedNyEnhet.versjon)) }.isInstanceOf(
+            ManglerTilgangException::class.java)
+
+        // enhet skal ha blitt oppdatert etter mislykket plukk
+        val oppgaveEtterOppdatering = hentOppgave(OppgaveId(oppgaveMedNyEnhet.id!!, oppgaveMedNyEnhet.versjon))
+        assertThat(oppgaveEtterOppdatering).isNotNull()
+        assertThat(oppgaveEtterOppdatering.enhet).isEqualTo("superNav!")
+        assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
+    }
+
+    @Test
     fun `Skal forsøke å reservere flere oppgaver dersom bruker ikke har tilgang på den første`() {
         leggInnFilterForTest()
         val saksnummer1 = "100002"
@@ -711,6 +811,16 @@ class OppgaveApiTest {
         )
     }
 
+    private fun plukkOppgave(oppgaveId: OppgaveId): OppgaveDto? {
+        return client.post(
+            URI.create("http://localhost:8080/plukk-oppgave"),
+            PostRequest(body = PlukkOppgaveDto(oppgaveId.id, oppgaveId.versjon),
+                    additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
+                    ))
+        )
+    }
+
     private fun hentNesteOppgave(): NesteOppgaveDto? {
         val alleFilter = hentAlleFilter()
         val nesteOppgave: NesteOppgaveDto? = noTokenClient.post(
@@ -853,6 +963,24 @@ class OppgaveApiTest {
             return initDatasource(dbConfig, prometheus).transaction { connection ->
                 OppgaveRepository(connection).hentOppgave(oppgaveId)
             }
+        }
+
+        private fun oppdaterOgHentOppgave(oppgave: OppgaveDto): OppgaveDto {
+             initDatasource(dbConfig, prometheus).transaction { connection ->
+                OppgaveRepository(connection).oppdatereOppgave(
+                    oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
+                    ident = "Kelvin",
+                    personIdent = oppgave.personIdent,
+                    enhet = oppgave.enhet,
+                    påVentTil = oppgave.påVentTil,
+                    påVentÅrsak = oppgave.påVentÅrsak,
+                    påVentBegrunnelse = oppgave.venteBegrunnelse,
+                    oppfølgingsenhet = oppgave.oppfølgingsenhet,
+                    veileder = oppgave.veileder,
+                    årsakerTilBehandling = oppgave.årsakerTilBehandling
+                )
+            }
+            return hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
         }
 
         private fun opprettOppgave(
