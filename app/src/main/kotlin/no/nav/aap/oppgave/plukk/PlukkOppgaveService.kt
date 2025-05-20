@@ -15,8 +15,10 @@ import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class PlukkOppgaveService(val connection: DBConnection, val enhetService: IEnhetService) {
-
+class PlukkOppgaveService(
+    val connection: DBConnection,
+    val enhetService: IEnhetService
+) {
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
     fun plukkNesteOppgave(
@@ -34,24 +36,36 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: IEnhet
         val oppgaveRepo = OppgaveRepository(connection)
         val nesteOppgaver = oppgaveRepo.finnNesteOppgaver(filter.copy(enheter = enheter), maksAntallForsøk)
         for ((i, nesteOppgave) in nesteOppgaver.withIndex()) {
-            require(nesteOppgave.avklaringsbehovReferanse.referanse != null || nesteOppgave.avklaringsbehovReferanse.journalpostId != null) {
+            require(
+                nesteOppgave.avklaringsbehovReferanse.referanse != null ||
+                    nesteOppgave.avklaringsbehovReferanse.journalpostId != null
+            ) {
                 "AvklaringsbehovReferanse må ha referanse til enten behandling eller journalpost"
             }
 
+            val oppgaveId = OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon)
             val harTilgang = TilgangGateway.sjekkTilgang(nesteOppgave.avklaringsbehovReferanse, token)
             if (harTilgang) {
-                val oppgaveId = OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon)
                 oppgaveRepo.reserverOppgave(oppgaveId, ident, ident)
                 sendOppgaveStatusOppdatering(oppgaveId, HendelseType.RESERVERT, FlytJobbRepository(connection))
-                log.info("Fant neste oppgave med id ${nesteOppgave.oppgaveId} etter ${i + 1} forsøk for filterId $filterId")
+                log.info(
+                    "Fant neste oppgave med id ${nesteOppgave.oppgaveId} etter ${i + 1} forsøk for filterId $filterId"
+                )
                 return nesteOppgave
+            } else {
+                avreserverHvisTilgangAvslått(oppgaveId = oppgaveId, ident = ident, oppgaveRepo = oppgaveRepo)
+                oppdaterUtdatertEnhet(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepo)
             }
         }
         log.info("Fant ikke neste oppgave etter å ha forsøkt ${nesteOppgaver.size} oppgaver for filterId $filterId")
         return null
     }
 
-    fun plukkOppgave(oppgaveId: OppgaveId, ident: String, token: OidcToken): OppgaveDto? {
+    fun plukkOppgave(
+        oppgaveId: OppgaveId,
+        ident: String,
+        token: OidcToken
+    ): OppgaveDto? {
         val oppgaveRepo = OppgaveRepository(connection)
         val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
 
@@ -65,31 +79,53 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: IEnhet
             oppgaveRepo.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
             sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, FlytJobbRepository(connection))
             return oppgave
-        }
-
-        // Sjekk om enhet må oppdateres dersom tilgang blir avslått
-        val nyEnhet =
-            enhetService.utledEnhetForOppgave(AvklaringsbehovKode(oppgave.avklaringsbehovKode), oppgave.personIdent)
-        if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
-            oppdaterUtdatertEnhet(oppgave, oppgaveRepo, nyEnhet)
+        } else {
+            avreserverHvisTilgangAvslått(oppgaveId = oppgaveId, ident = ident, oppgaveRepo = oppgaveRepo)
+            oppdaterUtdatertEnhet(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepo)
         }
         return null
     }
 
-    private fun oppdaterUtdatertEnhet(oppgave: OppgaveDto, oppgaveRepo: OppgaveRepository, nyEnhet: EnhetForOppgave) {
-        log.info("Oppdaterer enhet for oppgave ${oppgave.id} etter at tilgang ble avslått på plukk.")
-        oppgaveRepo.oppdatereOppgave(
-            oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
-            ident = "Kelvin",
-            personIdent = oppgave.personIdent,
-            enhet = nyEnhet.enhet,
-            påVentTil = oppgave.påVentTil,
-            påVentÅrsak = oppgave.påVentÅrsak,
-            påVentBegrunnelse = oppgave.venteBegrunnelse,
-            oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
-            veileder = oppgave.veileder,
-            årsakerTilBehandling = oppgave.årsakerTilBehandling
-        )
+    private fun avreserverHvisTilgangAvslått(
+        oppgaveId: OppgaveId,
+        ident: String,
+        oppgaveRepo: OppgaveRepository
+    ) {
+        val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        if (oppgave.reservertAv == ident) {
+            log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
+            oppgaveRepo.avreserverOppgave(oppgaveId, ident)
+            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, FlytJobbRepository(connection))
+        }
+    }
+
+    private fun oppdaterUtdatertEnhet(
+        oppgaveId: OppgaveId,
+        oppgaveRepo: OppgaveRepository
+    ) {
+        val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        val oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon)
+
+        val nyEnhet =
+            enhetService.utledEnhetForOppgave(
+                AvklaringsbehovKode(oppgave.avklaringsbehovKode),
+                oppgave.personIdent
+            )
+        if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
+            log.info("Oppdaterer enhet for oppgave $oppgaveId etter at tilgang ble avslått på plukk.")
+            oppgaveRepo.oppdatereOppgave(
+                oppgaveId = oppgaveId,
+                ident = "Kelvin",
+                personIdent = oppgave.personIdent,
+                enhet = nyEnhet.enhet,
+                påVentTil = oppgave.påVentTil,
+                påVentÅrsak = oppgave.påVentÅrsak,
+                påVentBegrunnelse = oppgave.venteBegrunnelse,
+                oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
+                veileder = oppgave.veileder,
+                årsakerTilBehandling = oppgave.årsakerTilBehandling
+            )
+            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, FlytJobbRepository(connection))
+        }
     }
 }
-
