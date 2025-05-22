@@ -44,7 +44,7 @@ fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMet
             if (søketekst.length >= 11) {
                 oppgaveRepo.finnOppgaverGittPersonident(søketekst)
             } else {
-                oppgaveRepo.finnOppgaverGittSaksnummer(søketekst.uppercase())
+                oppgaveRepo.finnOppgaverGittSaksnummer(søketekst)
             }
         }
         respond(oppgaver.medPersonNavn(true, token()))
