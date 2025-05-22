@@ -412,13 +412,13 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                SAKSNUMMER = ? AND STATUS != 'AVSLUTTET'
+                UPPER(SAKSNUMMER) = ? AND STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
         """.trimIndent()
 
         return connection.queryList(hentOppgaverGittSaksnummerQuery) {
             setParams {
-                setString(1, saksnummer)
+                setString(1, saksnummer.uppercase())
             }
             setRowMapper {
                 oppgaveMapper(it)
