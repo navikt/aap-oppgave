@@ -346,6 +346,9 @@ class OppdaterOppgaveServiceTest {
             )
         }
 
+        override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
+            TODO("Not yet implemented")
+        }
     }
 
     val veilarbarboppfolgingKlient = object : IVeilarbarboppfolgingKlient {
@@ -362,6 +365,10 @@ class OppdaterOppgaveServiceTest {
             fnr: String?
         ): EnhetForOppgave {
             return EnhetForOppgave(ENHET_NAV_LØRENSKOG, null)
+        }
+
+        override fun harFortroligAdresse(personIdent: String?): Boolean {
+            return false
         }
     }
 }

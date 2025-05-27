@@ -197,7 +197,7 @@ class OppdaterOppgaveService(
             } else {
                 null
             }
-
+            val harFortroligAdresse = enhetService.harFortroligAdresse(oppgaveOppdatering.personIdent)
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
                 personIdent = oppgaveOppdatering.personIdent,
                 avklaringsbehovKode = avklaringsbehovHendelse.avklaringsbehovKode,
@@ -209,7 +209,8 @@ class OppdaterOppgaveService(
                 påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
                 påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent,
                 venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
-                årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling
+                årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
+                harFortroligAdresse = harFortroligAdresse,
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
@@ -303,7 +304,8 @@ class OppdaterOppgaveService(
         påVentTil: LocalDate?,
         påVentÅrsak: String?,
         venteBegrunnelse: String?,
-        årsakerTilBehandling: List<String>
+        årsakerTilBehandling: List<String>,
+        harFortroligAdresse: Boolean,
     ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
@@ -321,7 +323,8 @@ class OppdaterOppgaveService(
             påVentTil = påVentTil,
             påVentÅrsak = påVentÅrsak,
             venteBegrunnelse = venteBegrunnelse,
-            årsakerTilBehandling = årsakerTilBehandling
+            årsakerTilBehandling = årsakerTilBehandling,
+            harFortroligAdresse = harFortroligAdresse,
         )
     }
 

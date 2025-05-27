@@ -15,6 +15,7 @@ import java.util.*
 
 interface IMsGraphClient {
     fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf
+    fun hentFortroligAdresseGruppe(currentToken: String): MemberOf
 }
 
 class MsGraphClient(
@@ -44,13 +45,26 @@ class MsGraphClient(
         return respons
     }
 
+    override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
+        val url =
+            baseUrl.resolve("me/memberOf?\$count=true&\$top=1&\$filter=${starterMedFilter(FORTROLIG_ADRESSE_GROUP)}")
+        val respons = httpClient.get<MemberOf>(
+            url,
+            GetRequest(
+                currentToken = OidcToken(currentToken),
+                additionalHeaders = listOf(Header("ConsistencyLevel", "eventual"))
+            )
+        ) ?: MemberOf()
+        return respons
+    }
+
     private fun starterMedFilter(prefix: String): String {
         return "startswith(displayName,\'$prefix\')"
     }
 
     companion object {
-        private const val MSGRAPH_PREFIX = "msgraph"
         const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
+        const val FORTROLIG_ADRESSE_GROUP = "0000-GA-Fortrolig_Adresse"
     }
 }
 

@@ -494,6 +494,39 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `Kan oppdatere oppgave til fortrolig adresse`() {
+        leggInnFilterForTest()
+        val saksnummer1 = "100002"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val oppgaveUtenFortroligAdresse = hentOppgave(saksnummer1, referanse1, definisjon = Definisjon.AVKLAR_SYKDOM)
+        assertThat(oppgaveUtenFortroligAdresse).isNotNull()
+
+        // sett fortrolig adresse
+        settFortroligAdresseForOppgave(oppgaveId = OppgaveId(
+            oppgaveUtenFortroligAdresse?.id!!, oppgaveUtenFortroligAdresse.versjon), skalHaFortroligAdresse = true)
+
+        // hent på nytt
+        val oppgaveMedFortroligAdresse = hentOppgave(OppgaveId(
+            oppgaveUtenFortroligAdresse.id!!, oppgaveUtenFortroligAdresse.versjon))
+        assertThat(oppgaveMedFortroligAdresse.harFortroligAdresse).isTrue()
+    }
+
+    @Test
     fun `Skal forsøke å reservere flere oppgaver dersom bruker ikke har tilgang på den første`() {
         leggInnFilterForTest()
         val saksnummer1 = "100002"
@@ -962,6 +995,12 @@ class OppgaveApiTest {
         private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
             return initDatasource(dbConfig, prometheus).transaction { connection ->
                 OppgaveRepository(connection).hentOppgave(oppgaveId)
+            }
+        }
+
+        private fun settFortroligAdresseForOppgave(oppgaveId: OppgaveId, skalHaFortroligAdresse: Boolean) {
+            return initDatasource(dbConfig, prometheus).transaction { connection ->
+                OppgaveRepository(connection).settFortroligAdresse(oppgaveId = oppgaveId, harFortroligAdresse = skalHaFortroligAdresse)
             }
         }
 
