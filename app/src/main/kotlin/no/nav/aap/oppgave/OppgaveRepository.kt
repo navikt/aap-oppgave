@@ -35,9 +35,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PERSON_IDENT,
                 VEILEDER,
                 AARSAKER_TIL_BEHANDLING,
-                VENTE_BEGRUNNELSE
+                VENTE_BEGRUNNELSE,
+                FORTROLIG_ADRESSE
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -60,6 +61,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(15, oppgaveDto.veileder)
                 setArray(16, oppgaveDto.årsakerTilBehandling)
                 setString(17, oppgaveDto.venteBegrunnelse)
+                setBoolean(18, oppgaveDto.harFortroligAdresse)
             }
         }
         return OppgaveId(id, 0L)
@@ -191,7 +193,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         påVentBegrunnelse: String?,
         oppfølgingsenhet: String?,
         veileder: String?,
-        årsakerTilBehandling: List<String>
+        årsakerTilBehandling: List<String>,
+        harFortroligAdresse: Boolean? = false,
     ) {
         val query = """
             UPDATE 
@@ -208,6 +211,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PERSON_IDENT = ?,
                 VEILEDER = ?,
                 AARSAKER_TIL_BEHANDLING = ?,
+                FORTROLIG_ADRESSE = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -225,8 +229,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(7, personIdent)
                 setString(8, veileder)
                 setArray(9, årsakerTilBehandling)
-                setLong(10, oppgaveId.id)
-                setLong(11, oppgaveId.versjon)
+                setBoolean(10, harFortroligAdresse)
+                setLong(11, oppgaveId.id)
+                setLong(12, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
@@ -309,6 +314,29 @@ class OppgaveRepository(private val connection: DBConnection) {
                     )
                 )
             }
+        }
+    }
+
+    fun settFortroligAdresse(oppgaveId: OppgaveId, harFortroligAdresse: Boolean) {
+        val query = """
+            UPDATE 
+                OPPGAVE 
+            SET 
+                FORTROLIG_ADRESSE = ?,
+                VERSJON = VERSJON + 1
+            WHERE 
+                ID = ? AND
+                STATUS != 'AVSLUTTET' AND
+                VERSJON = ?
+        """.trimIndent()
+
+        connection.execute(query) {
+            setParams {
+                setBoolean(1, harFortroligAdresse)
+                setLong(2, oppgaveId.id)
+                setLong(3, oppgaveId.versjon)
+            }
+            setResultValidator { require(it == 1) }
         }
     }
 
@@ -618,6 +646,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             endretAv = row.getStringOrNull("ENDRET_AV"),
             endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
             versjon = row.getLong("VERSJON"),
+            harFortroligAdresse = row.getBoolean("FORTROLIG_ADRESSE"),
         )
     }
 
@@ -645,7 +674,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             ENDRET_AV,
             ENDRET_TIDSPUNKT,
             VERSJON,
-            AARSAKER_TIL_BEHANDLING
+            AARSAKER_TIL_BEHANDLING,
+            FORTROLIG_ADRESSE
         """.trimIndent()
     }
 

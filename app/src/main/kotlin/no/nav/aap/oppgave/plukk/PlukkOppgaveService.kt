@@ -54,6 +54,7 @@ class PlukkOppgaveService(
                 return nesteOppgave
             } else {
                 avreserverHvisTilgangAvslått(oppgaveId = oppgaveId, ident = ident, oppgaveRepo = oppgaveRepo)
+                sjekkFortroligAdresse(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepo)
                 oppdaterUtdatertEnhet(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepo)
             }
         }
@@ -81,6 +82,7 @@ class PlukkOppgaveService(
             return oppgave
         } else {
             avreserverHvisTilgangAvslått(oppgaveId = oppgaveId, ident = ident, oppgaveRepo = oppgaveRepo)
+            sjekkFortroligAdresse(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepo)
             oppdaterUtdatertEnhet(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepo)
         }
         return null
@@ -96,6 +98,17 @@ class PlukkOppgaveService(
             log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
             oppgaveRepo.avreserverOppgave(oppgaveId, ident)
             sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, FlytJobbRepository(connection))
+        }
+    }
+
+    private fun sjekkFortroligAdresse(
+        oppgaveId: OppgaveId,
+        oppgaveRepo: OppgaveRepository
+    ) {
+        val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        val harFortroligAdresse = enhetService.harFortroligAdresse(oppgave.personIdent)
+        if (harFortroligAdresse != (oppgave.harFortroligAdresse == true)) {
+            oppgaveRepo.settFortroligAdresse(OppgaveId(oppgave.id!!, oppgave.versjon), harFortroligAdresse)
         }
     }
 
@@ -123,7 +136,7 @@ class PlukkOppgaveService(
                 påVentBegrunnelse = oppgave.venteBegrunnelse,
                 oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
                 veileder = oppgave.veileder,
-                årsakerTilBehandling = oppgave.årsakerTilBehandling
+                årsakerTilBehandling = oppgave.årsakerTilBehandling,
             )
             sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, FlytJobbRepository(connection))
         }
