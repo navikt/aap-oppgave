@@ -36,9 +36,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VEILEDER,
                 AARSAKER_TIL_BEHANDLING,
                 VENTE_BEGRUNNELSE,
-                FORTROLIG_ADRESSE
+                FORTROLIG_ADRESSE,
+                RETUR_AARSAK
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -62,6 +63,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setArray(16, oppgaveDto.årsakerTilBehandling)
                 setString(17, oppgaveDto.venteBegrunnelse)
                 setBoolean(18, oppgaveDto.harFortroligAdresse)
+                setEnumName(19, oppgaveDto.returStatus)
             }
         }
         return OppgaveId(id, 0L)
@@ -157,7 +159,8 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun gjenåpneOppgave(
         oppgaveId: OppgaveId,
-        ident: String
+        ident: String,
+        returStatus: ReturStatus?
     ) {
         val query = """
             UPDATE 
@@ -166,6 +169,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 STATUS = 'OPPRETTET', 
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                RETUR_AARSAK = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -176,10 +180,11 @@ class OppgaveRepository(private val connection: DBConnection) {
         connection.execute(query) {
             setParams {
                 setString(1, ident)
-                setLong(2, oppgaveId.id)
-                setLong(3, oppgaveId.versjon)
+                setEnumName(2, returStatus)
+                setLong(3, oppgaveId.id)
+                setLong(4, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) { "Forventer bare at én oppgave gjenåpnes. Fant ${it} oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
+            setResultValidator { require(it == 1) { "Forventer bare at én oppgave gjenåpnes. Fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
     }
 
@@ -195,6 +200,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         veileder: String?,
         årsakerTilBehandling: List<String>,
         harFortroligAdresse: Boolean? = false,
+        returStatus: ReturStatus?
     ) {
         val query = """
             UPDATE 
@@ -212,6 +218,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VEILEDER = ?,
                 AARSAKER_TIL_BEHANDLING = ?,
                 FORTROLIG_ADRESSE = ?,
+                RETUR_AARSAK = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -230,8 +237,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(8, veileder)
                 setArray(9, årsakerTilBehandling)
                 setBoolean(10, harFortroligAdresse)
-                setLong(11, oppgaveId.id)
-                setLong(12, oppgaveId.versjon)
+                setEnumName(11, returStatus)
+                setLong(12, oppgaveId.id)
+                setLong(13, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
@@ -354,7 +362,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             0
         }
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
-        val kunLedigeQuery = if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
+        val kunLedigeQuery =
+            if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
 
         val hentNesteOppgaveQuery = """
             SELECT 
@@ -647,6 +656,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
             versjon = row.getLong("VERSJON"),
             harFortroligAdresse = row.getBoolean("FORTROLIG_ADRESSE"),
+            returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")
         )
     }
 
@@ -675,7 +685,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             ENDRET_TIDSPUNKT,
             VERSJON,
             AARSAKER_TIL_BEHANDLING,
-            FORTROLIG_ADRESSE
+            FORTROLIG_ADRESSE,
+            RETUR_AARSAK
         """.trimIndent()
     }
 

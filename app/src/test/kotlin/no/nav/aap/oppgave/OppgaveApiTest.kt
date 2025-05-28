@@ -429,11 +429,19 @@ class OppgaveApiTest {
 
         // plukk uten tilgang
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
-        assertThatThrownBy { plukkOppgave(OppgaveId(reservertOppgaveMedTilgang?.id!!, reservertOppgaveMedTilgang.versjon)) }
+        assertThatThrownBy {
+            plukkOppgave(
+                OppgaveId(
+                    reservertOppgaveMedTilgang?.id!!,
+                    reservertOppgaveMedTilgang.versjon
+                )
+            )
+        }
             .isInstanceOf(ManglerTilgangException::class.java)
 
         // sjekk at reservasjon er fjernet
-        val oppgaveUtenReservasjon = hentOppgave(OppgaveId(reservertOppgaveMedTilgang?.id!!, reservertOppgaveMedTilgang.versjon))
+        val oppgaveUtenReservasjon =
+            hentOppgave(OppgaveId(reservertOppgaveMedTilgang?.id!!, reservertOppgaveMedTilgang.versjon))
         assertThat(oppgaveUtenReservasjon).isNotNull()
         assertThat(oppgaveUtenReservasjon.reservertAv == null)
         assertThat(oppgaveUtenReservasjon.reservertTidspunkt == null)
@@ -463,28 +471,31 @@ class OppgaveApiTest {
         assertThat(oppgaveMedGammelEnhet).isNotNull()
 
         // oppdater enhet på oppgave
-        val oppgaveMedNyEnhet = oppdaterOgHentOppgave(OppgaveDto(
-            id = oppgaveMedGammelEnhet!!.id,
-            saksnummer = oppgaveMedGammelEnhet.saksnummer,
-            behandlingRef = oppgaveMedGammelEnhet.behandlingRef,
-            enhet = "nyEnhet",
-            oppfølgingsenhet = "nyOppfølgingsenhet",
-            veileder = oppgaveMedGammelEnhet.veileder,
-            behandlingOpprettet = oppgaveMedGammelEnhet.behandlingOpprettet,
-            avklaringsbehovKode = oppgaveMedGammelEnhet.avklaringsbehovKode,
-            status = oppgaveMedGammelEnhet.status,
-            behandlingstype = oppgaveMedGammelEnhet.behandlingstype,
-            opprettetAv = oppgaveMedGammelEnhet.opprettetAv,
-            opprettetTidspunkt = oppgaveMedGammelEnhet.opprettetTidspunkt,
-            versjon = oppgaveMedGammelEnhet.versjon,
-        ))
+        val oppgaveMedNyEnhet = oppdaterOgHentOppgave(
+            OppgaveDto(
+                id = oppgaveMedGammelEnhet!!.id,
+                saksnummer = oppgaveMedGammelEnhet.saksnummer,
+                behandlingRef = oppgaveMedGammelEnhet.behandlingRef,
+                enhet = "nyEnhet",
+                oppfølgingsenhet = "nyOppfølgingsenhet",
+                veileder = oppgaveMedGammelEnhet.veileder,
+                behandlingOpprettet = oppgaveMedGammelEnhet.behandlingOpprettet,
+                avklaringsbehovKode = oppgaveMedGammelEnhet.avklaringsbehovKode,
+                status = oppgaveMedGammelEnhet.status,
+                behandlingstype = oppgaveMedGammelEnhet.behandlingstype,
+                opprettetAv = oppgaveMedGammelEnhet.opprettetAv,
+                opprettetTidspunkt = oppgaveMedGammelEnhet.opprettetTidspunkt,
+                versjon = oppgaveMedGammelEnhet.versjon,
+            )
+        )
         assertThat(oppgaveMedNyEnhet.enhet).isEqualTo("nyEnhet")
         assertThat(oppgaveMedNyEnhet.oppfølgingsenhet).isEqualTo("nyOppfølgingsenhet")
 
         // plukk uten tilgang
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         assertThatThrownBy { plukkOppgave(OppgaveId(oppgaveMedNyEnhet.id!!, oppgaveMedNyEnhet.versjon)) }.isInstanceOf(
-            ManglerTilgangException::class.java)
+            ManglerTilgangException::class.java
+        )
 
         // enhet skal ha blitt oppdatert etter mislykket plukk
         val oppgaveEtterOppdatering = hentOppgave(OppgaveId(oppgaveMedNyEnhet.id!!, oppgaveMedNyEnhet.versjon))
@@ -517,12 +528,18 @@ class OppgaveApiTest {
         assertThat(oppgaveUtenFortroligAdresse).isNotNull()
 
         // sett fortrolig adresse
-        settFortroligAdresseForOppgave(oppgaveId = OppgaveId(
-            oppgaveUtenFortroligAdresse?.id!!, oppgaveUtenFortroligAdresse.versjon), skalHaFortroligAdresse = true)
+        settFortroligAdresseForOppgave(
+            oppgaveId = OppgaveId(
+                oppgaveUtenFortroligAdresse?.id!!, oppgaveUtenFortroligAdresse.versjon
+            ), skalHaFortroligAdresse = true
+        )
 
         // hent på nytt
-        val oppgaveMedFortroligAdresse = hentOppgave(OppgaveId(
-            oppgaveUtenFortroligAdresse.id!!, oppgaveUtenFortroligAdresse.versjon))
+        val oppgaveMedFortroligAdresse = hentOppgave(
+            OppgaveId(
+                oppgaveUtenFortroligAdresse.id!!, oppgaveUtenFortroligAdresse.versjon
+            )
+        )
         assertThat(oppgaveMedFortroligAdresse.harFortroligAdresse).isTrue()
     }
 
@@ -753,6 +770,72 @@ class OppgaveApiTest {
         assertThat(antallOppgaver[Definisjon.AVKLAR_STUDENT.kode.name]).isEqualTo(1)
     }
 
+    @Test
+    fun `oppgaver skal merkes med returstatus`() {
+        leggInnFilterForTest()
+
+        val saksnummer1 = "1023005"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                        )
+                    )
+                )
+            )
+        )
+
+        assertThat(hentAntallOppgaver().keys).hasSize(1)
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET),
+                        )
+                    )
+                )
+            )
+        )
+
+        // Verifiser at oppgaven ble løst
+        assertThat(hentAntallOppgaver().keys).hasSize(0)
+
+        // Den ble returnert fra kvalitetssikrer
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET),
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER),
+                        )
+                    )
+                )
+            )
+        )
+
+        // Oppgaven er gjenopprettet
+        assertThat(hentAntallOppgaver().keys).hasSize(1)
+
+        val oppgaven = hentOppgave(saksnummer1, referanse1, Definisjon.AVKLAR_SYKDOM)!!
+
+        assertThat(oppgaven).extracting(OppgaveDto::returStatus).isEqualTo(ReturStatus.RETUR_FRA_KVALITETSSIKRER)
+    }
+
     // TODO: Flytt denne i egen klasse når fakes er skrevet om
     @Test
     fun `Skal avreservere og flytte oppgaver til Vikafossen dersom person har fått strengt fortrolig adresse`() {
@@ -847,10 +930,12 @@ class OppgaveApiTest {
     private fun plukkOppgave(oppgaveId: OppgaveId): OppgaveDto? {
         return client.post(
             URI.create("http://localhost:8080/plukk-oppgave"),
-            PostRequest(body = PlukkOppgaveDto(oppgaveId.id, oppgaveId.versjon),
-                    additionalHeaders = listOf(
+            PostRequest(
+                body = PlukkOppgaveDto(oppgaveId.id, oppgaveId.versjon),
+                additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
-                    ))
+                )
+            )
         )
     }
 
@@ -1000,12 +1085,15 @@ class OppgaveApiTest {
 
         private fun settFortroligAdresseForOppgave(oppgaveId: OppgaveId, skalHaFortroligAdresse: Boolean) {
             return initDatasource(dbConfig, prometheus).transaction { connection ->
-                OppgaveRepository(connection).settFortroligAdresse(oppgaveId = oppgaveId, harFortroligAdresse = skalHaFortroligAdresse)
+                OppgaveRepository(connection).settFortroligAdresse(
+                    oppgaveId = oppgaveId,
+                    harFortroligAdresse = skalHaFortroligAdresse
+                )
             }
         }
 
         private fun oppdaterOgHentOppgave(oppgave: OppgaveDto): OppgaveDto {
-             initDatasource(dbConfig, prometheus).transaction { connection ->
+            initDatasource(dbConfig, prometheus).transaction { connection ->
                 OppgaveRepository(connection).oppdatereOppgave(
                     oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
                     ident = "Kelvin",
@@ -1016,7 +1104,8 @@ class OppgaveApiTest {
                     påVentBegrunnelse = oppgave.venteBegrunnelse,
                     oppfølgingsenhet = oppgave.oppfølgingsenhet,
                     veileder = oppgave.veileder,
-                    årsakerTilBehandling = oppgave.årsakerTilBehandling
+                    årsakerTilBehandling = oppgave.årsakerTilBehandling,
+                    returStatus = oppgave.returStatus
                 )
             }
             return hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))

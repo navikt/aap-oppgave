@@ -9,9 +9,7 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 
-class ReserverOppgaveService(val connection: DBConnection) {
-
-    private val oppgaveRepository = OppgaveRepository(connection)
+class ReserverOppgaveService(val connection: DBConnection, private val oppgaveRepository: OppgaveRepository) {
 
     fun reserverOppgave(
         avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
@@ -47,7 +45,10 @@ class ReserverOppgaveService(val connection: DBConnection) {
      * Reserver oppgave uten kall mot tilgangkontroll - brukes når oppgave skal reserveres av behandlingsprosess uten
      * uten noen innloggingskontekst.
      */
-    fun reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, ident: String): List<OppgaveId> {
+    fun reserverOppgaveUtenTilgangskontroll(
+        avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
+        ident: String
+    ): List<OppgaveId> {
         val oppgaverSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
         oppgaverSomSkalReserveres.forEach {
             oppgaveRepository.reserverOppgave(it, ident, ident)

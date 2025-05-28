@@ -4,7 +4,12 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
+
+enum class ReturStatus {
+    RETUR_FRA_BESLUTTER,
+    RETUR_FRA_KVALITETSSIKRER,
+}
 
 /**
  * @param enhet Enhetsnummeret til enheten som er koblet til oppgaven.
@@ -27,6 +32,7 @@ data class OppgaveDto(
     val påVentTil: LocalDate? = null,
     val påVentÅrsak: String? = null,
     val venteBegrunnelse: String? = null,
+    val returStatus: ReturStatus? = null,
     val årsakerTilBehandling: List<String> = emptyList(),
     val reservertAv: String? = null,
     val reservertTidspunkt: LocalDateTime? = null,
