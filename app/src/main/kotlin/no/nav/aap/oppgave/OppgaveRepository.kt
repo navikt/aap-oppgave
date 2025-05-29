@@ -33,11 +33,12 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPRETTET_AV,
                 OPPRETTET_TIDSPUNKT,
                 PERSON_IDENT,
-                VEILEDER,
+                VEILEDER_ARBEID,
+                VEILEDER_SYKDOM,
                 AARSAKER_TIL_BEHANDLING,
                 VENTE_BEGRUNNELSE
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -57,9 +58,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(12, oppgaveDto.opprettetAv)
                 setLocalDateTime(13, oppgaveDto.opprettetTidspunkt)
                 setString(14, oppgaveDto.personIdent)
-                setString(15, oppgaveDto.veileder)
-                setArray(16, oppgaveDto.årsakerTilBehandling)
-                setString(17, oppgaveDto.venteBegrunnelse)
+                setString(15, oppgaveDto.veilederArbeid)
+                setString(16, oppgaveDto.veilederSykdom)
+                setArray(17, oppgaveDto.årsakerTilBehandling)
+                setString(18, oppgaveDto.venteBegrunnelse)
             }
         }
         return OppgaveId(id, 0L)
@@ -190,7 +192,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         påVentÅrsak: String?,
         påVentBegrunnelse: String?,
         oppfølgingsenhet: String?,
-        veileder: String?,
+        veilederArbeid: String?,
+        veilederSykdom: String?,
         årsakerTilBehandling: List<String>
     ) {
         val query = """
@@ -206,7 +209,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PAA_VENT_AARSAK= ?,
                 VENTE_BEGRUNNELSE = ?,
                 PERSON_IDENT = ?,
-                VEILEDER = ?,
+                VEILEDER_ARBEID = ?,
+                VEILEDER_SYKDOM = ?,
                 AARSAKER_TIL_BEHANDLING = ?,
                 VERSJON = VERSJON + 1
             WHERE 
@@ -223,10 +227,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(5, påVentÅrsak)
                 setString(6, påVentBegrunnelse)
                 setString(7, personIdent)
-                setString(8, veileder)
-                setArray(9, årsakerTilBehandling)
-                setLong(10, oppgaveId.id)
-                setLong(11, oppgaveId.versjon)
+                setString(8, veilederArbeid)
+                setString(9, veilederSykdom)
+                setArray(10, årsakerTilBehandling)
+                setLong(11, oppgaveId.id)
+                setLong(12, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
@@ -585,7 +590,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
         // Veileder
         if (veileder != null) {
-            sb.append("VEILEDER = '$veileder' AND ")
+            sb.append("(VEILEDER_ARBEID = '$veileder' OR ")
+            sb.append("VEILEDER_SYKDOM = '$veileder') AND ")
         }
         // Vis/skjul oppgaver som er på vent fra oppgaveliste
         // sb.append("PAA_VENT_TIL IS NULL AND ")
@@ -602,7 +608,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
-            veileder = row.getStringOrNull("VEILEDER"),
+            veilederArbeid = row.getStringOrNull("VEILEDER_ARBEID"),
+            veilederSykdom = row.getStringOrNull("VEILEDER_SYKDOM"),
             behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
             avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
             status = Status.valueOf(row.getString("STATUS")),
@@ -630,7 +637,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             JOURNALPOST_ID,
             ENHET,
             OPPFOLGINGSENHET,
-            VEILEDER,
+            VEILEDER_ARBEID,
+            VEILEDER_SYKDOM,
             BEHANDLING_OPPRETTET,
             AVKLARINGSBEHOV_TYPE,
             STATUS,

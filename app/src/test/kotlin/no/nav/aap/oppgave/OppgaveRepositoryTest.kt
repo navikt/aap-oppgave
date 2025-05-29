@@ -25,6 +25,9 @@ class OppgaveRepositoryTest {
     private val ENHET_NAV_LØRENSKOG = "0230"
     private val ENHET_NAV_LILLESTRØM = "0231"
 
+    private val VEILEDER_IDENT_1 = "Z999999"
+    private val VEILEDER_IDENT_2 = "Z111111"
+
     @AfterTest
     fun tearDown() {
         @Suppress("SqlWithoutWhere")
@@ -153,13 +156,37 @@ class OppgaveRepositoryTest {
     }
 
     @Test
-    fun `Skal finne oppgaver for angitt veileder`() { opprettOppgave(veileder = "xyz12345")
-        val oppgaveId2 = opprettOppgave(veileder = "xyz54321")
+    fun `Skal finne oppgaver for angitt veileder for arbeidsoppfølging`() {
+        opprettOppgave(veilederArbeid = VEILEDER_IDENT_2)
+        val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
 
-        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = "xyz54321")).oppgaver
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
 
         assertThat(oppgaver).hasSize(1)
         assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
+    }
+
+    @Test
+    fun `Skal finne oppgaver for angitt veileder for sykefraværsoppfølging`() {
+        opprettOppgave(veilederSykdom = VEILEDER_IDENT_2)
+        val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
+
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
+
+        assertThat(oppgaver).hasSize(1)
+        assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
+    }
+
+    @Test
+    fun `Skal finne oppgaver for angitt veileder for både arbeidsoppfølging og sykefraværsoppfølging`() {
+        opprettOppgave(veilederSykdom = VEILEDER_IDENT_2)
+        val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
+        val oppgaveId3 = opprettOppgave(veilederSykdom = VEILEDER_IDENT_1)
+
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
+
+        assertThat(oppgaver).hasSize(2)
+        assertThat(oppgaver.map {it.id}).containsAll(setOf(oppgaveId2.id, oppgaveId3.id))
     }
 
     @Test
@@ -297,7 +324,8 @@ class OppgaveRepositoryTest {
         behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
         enhet: String = ENHET_NAV_LØRENSKOG,
         oppfølgingsenhet: String? = null,
-        veileder: String? = null,
+        veilederArbeid: String? = null,
+        veilederSykdom: String? = null,
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -309,7 +337,8 @@ class OppgaveRepositoryTest {
             status = status,
             behandlingstype = behandlingstype,
             opprettetAv = "bruker1",
-            veileder = veileder,
+            veilederArbeid = veilederArbeid,
+            veilederSykdom = veilederSykdom,
             opprettetTidspunkt = LocalDateTime.now()
         )
         return dataSource.transaction { connection ->

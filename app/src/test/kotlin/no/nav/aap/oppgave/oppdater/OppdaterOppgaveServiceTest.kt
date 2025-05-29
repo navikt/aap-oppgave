@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.oppdater
 
+import io.getunleash.FakeUnleash
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
@@ -19,7 +20,9 @@ import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
+import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
+import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
@@ -295,7 +298,11 @@ class OppdaterOppgaveServiceTest {
             OppdaterOppgaveService(
                 connection,
                 graphClient,
+                UnleashService(FakeUnleash().apply {
+                    enableAll()
+                }),
                 veilarbarboppfolgingKlient,
+                sykefravarsoppfolgingKlient,
                 enhetService
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
@@ -310,7 +317,8 @@ class OppdaterOppgaveServiceTest {
         behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
         enhet: String = ENHET_NAV_LØRENSKOG,
         oppfølgingsenhet: String? = null,
-        veileder: String? = null,
+        veilederArbeid: String? = null,
+        veilederSykdom: String? = null,
     ): Triple<OppgaveId, Saksnummer, BehandlingReferanse> {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -322,7 +330,8 @@ class OppdaterOppgaveServiceTest {
             status = status,
             behandlingstype = behandlingstype,
             opprettetAv = "Kelvin",
-            veileder = veileder,
+            veilederArbeid = veilederArbeid,
+            veilederSykdom = veilederSykdom,
             opprettetTidspunkt = LocalDateTime.now(),
         )
         val oppgaveId = dataSource.transaction { connection ->
@@ -349,6 +358,10 @@ class OppdaterOppgaveServiceTest {
     }
 
     val veilarbarboppfolgingKlient = object : IVeilarbarboppfolgingKlient {
+        override fun hentVeileder(personIdent: String) = null
+    }
+
+    val sykefravarsoppfolgingKlient = object : ISykefravarsoppfolgingKlient {
         override fun hentVeileder(personIdent: String) = null
     }
 

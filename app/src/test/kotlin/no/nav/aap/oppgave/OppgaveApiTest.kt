@@ -864,7 +864,8 @@ class OppgaveApiTest {
             behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
             enhet: String = "0230",
             oppfølgingsenhet: String? = null,
-            veileder: String? = null,
+            veilederArbeid: String? = null,
+            veilederSykdom: String? = null,
         ): OppgaveId {
             val oppgaveDto = OppgaveDto(
                 personIdent = personIdent,
@@ -877,7 +878,8 @@ class OppgaveApiTest {
                 status = status,
                 behandlingstype = behandlingstype,
                 opprettetAv = "bruker1",
-                veileder = veileder,
+                veilederArbeid = veilederArbeid,
+                veilederSykdom = veilederSykdom,
                 opprettetTidspunkt = LocalDateTime.now()
             )
             return initDatasource(dbConfig, prometheus).transaction { connection ->

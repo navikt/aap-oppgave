@@ -87,6 +87,8 @@ spec:
           namespace: nom
         - application: veilarboppfolging
           namespace: poao
+        - application: syfooversiktsrv
+          namespace: teamsykefravr
   env:
   {{#each env}}
      - name: {{this.name}}

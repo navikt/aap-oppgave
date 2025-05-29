@@ -87,7 +87,8 @@ class PlukkOppgaveService(val connection: DBConnection, val enhetService: IEnhet
             påVentÅrsak = oppgave.påVentÅrsak,
             påVentBegrunnelse = oppgave.venteBegrunnelse,
             oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
-            veileder = oppgave.veileder,
+            veilederArbeid = oppgave.veilederArbeid,
+            veilederSykdom = oppgave.veilederSykdom,
             årsakerTilBehandling = oppgave.årsakerTilBehandling
         )
     }
