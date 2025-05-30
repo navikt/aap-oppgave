@@ -16,8 +16,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class PlukkOppgaveService(
-    val connection: DBConnection,
-    val enhetService: IEnhetService
+    val enhetService: IEnhetService,
+    val oppgaveRepository: OppgaveRepository,
+    val flytJobbRepository: FlytJobbRepository,
+    val filterRepository: FilterRepository
 ) {
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
@@ -28,17 +30,16 @@ class PlukkOppgaveService(
         token: OidcToken,
         maksAntallForsøk: Int = 10
     ): NesteOppgaveDto? {
-        val filterRepo = FilterRepository(connection)
-        val filter = filterRepo.hent(filterId)
+        val filter = filterRepository.hent(filterId)
         if (filter == null) {
             throw IllegalArgumentException("Finner ikke filter med id: $filterId")
         }
-        val oppgaveRepo = OppgaveRepository(connection)
+        val oppgaveRepo = oppgaveRepository
         val nesteOppgaver = oppgaveRepo.finnNesteOppgaver(filter.copy(enheter = enheter), maksAntallForsøk)
         for ((i, nesteOppgave) in nesteOppgaver.withIndex()) {
             require(
                 nesteOppgave.avklaringsbehovReferanse.referanse != null ||
-                    nesteOppgave.avklaringsbehovReferanse.journalpostId != null
+                        nesteOppgave.avklaringsbehovReferanse.journalpostId != null
             ) {
                 "AvklaringsbehovReferanse må ha referanse til enten behandling eller journalpost"
             }
@@ -47,7 +48,7 @@ class PlukkOppgaveService(
             val harTilgang = TilgangGateway.sjekkTilgang(nesteOppgave.avklaringsbehovReferanse, token)
             if (harTilgang) {
                 oppgaveRepo.reserverOppgave(oppgaveId, ident, ident)
-                sendOppgaveStatusOppdatering(oppgaveId, HendelseType.RESERVERT, FlytJobbRepository(connection))
+                sendOppgaveStatusOppdatering(oppgaveId, HendelseType.RESERVERT, flytJobbRepository)
                 log.info(
                     "Fant neste oppgave med id ${nesteOppgave.oppgaveId} etter ${i + 1} forsøk for filterId $filterId"
                 )
@@ -67,8 +68,7 @@ class PlukkOppgaveService(
         ident: String,
         token: OidcToken
     ): OppgaveDto? {
-        val oppgaveRepo = OppgaveRepository(connection)
-        val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        val oppgave = oppgaveRepository.hentOppgave(oppgaveId)
 
         val harTilgang = TilgangGateway.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
         if (harTilgang) {
@@ -77,13 +77,13 @@ class PlukkOppgaveService(
                 return oppgave
             }
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
-            oppgaveRepo.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
-            sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, FlytJobbRepository(connection))
+            oppgaveRepository.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
+            sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
             return oppgave
         } else {
-            avreserverHvisTilgangAvslått(oppgaveId = oppgaveId, ident = ident, oppgaveRepo = oppgaveRepo)
-            sjekkFortroligAdresse(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepo)
-            oppdaterUtdatertEnhet(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepo)
+            avreserverHvisTilgangAvslått(oppgaveId = oppgaveId, ident = ident, oppgaveRepo = oppgaveRepository)
+            sjekkFortroligAdresse(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepository)
+            oppdaterUtdatertEnhet(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepository)
         }
         return null
     }
@@ -97,7 +97,7 @@ class PlukkOppgaveService(
         if (oppgave.reservertAv == ident) {
             log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
             oppgaveRepo.avreserverOppgave(oppgaveId, ident)
-            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, FlytJobbRepository(connection))
+            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, flytJobbRepository)
         }
     }
 
@@ -139,7 +139,7 @@ class PlukkOppgaveService(
                 årsakerTilBehandling = oppgave.årsakerTilBehandling,
                 returStatus = oppgave.returStatus
             )
-            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, FlytJobbRepository(connection))
+            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, flytJobbRepository)
         }
     }
 }

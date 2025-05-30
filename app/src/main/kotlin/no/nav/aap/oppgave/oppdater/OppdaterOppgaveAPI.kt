@@ -1,13 +1,14 @@
 package no.nav.aap.oppgave.oppdater
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
-import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.motor.FlytJobbRepositoryImpl
+import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
@@ -29,7 +30,13 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-oppgaver").increment()
     dataSource.transaction { connection ->
-        OppdaterOppgaveService(connection, msGraphClient).oppdaterOppgaver(request.tilOppgaveOppdatering())
+        OppdaterOppgaveService(
+            msGraphClient,
+            oppgaveRepository = OppgaveRepository(connection),
+            flytJobbRepository = FlytJobbRepositoryImpl(connection)
+        ).oppdaterOppgaver(
+            request.tilOppgaveOppdatering()
+        )
     }
     respondWithStatus(HttpStatusCode.OK)
 }
@@ -47,7 +54,11 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-postmottak-oppgaver").increment()
     dataSource.transaction { connection ->
-        OppdaterOppgaveService(connection, msGraphClient).oppdaterOppgaver(request.tilOppgaveOppdatering())
+        OppdaterOppgaveService(
+            msGraphClient,
+            oppgaveRepository = OppgaveRepository(connection),
+            flytJobbRepository = FlytJobbRepositoryImpl(connection)
+        ).oppdaterOppgaver(request.tilOppgaveOppdatering())
     }
     respondWithStatus(HttpStatusCode.OK)
 }

@@ -9,7 +9,10 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 
-class ReserverOppgaveService(val connection: DBConnection, private val oppgaveRepository: OppgaveRepository) {
+class ReserverOppgaveService(
+    private val oppgaveRepository: OppgaveRepository,
+    val flytJobbRepository: FlytJobbRepository
+) {
 
     fun reserverOppgave(
         avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
@@ -26,7 +29,7 @@ class ReserverOppgaveService(val connection: DBConnection, private val oppgaveRe
         if (harTilgang) {
             oppgaverSomSkalReserveres.forEach {
                 oppgaveRepository.reserverOppgave(it, ident, ident)
-                sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, FlytJobbRepository(connection))
+                sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
             }
             return oppgaverSomSkalReserveres
         }
@@ -38,7 +41,7 @@ class ReserverOppgaveService(val connection: DBConnection, private val oppgaveRe
         ident: String,
     ) {
         oppgaveRepository.avreserverOppgave(oppgaveId, ident)
-        sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, FlytJobbRepository(connection))
+        sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, flytJobbRepository)
     }
 
     /**
@@ -52,7 +55,7 @@ class ReserverOppgaveService(val connection: DBConnection, private val oppgaveRe
         val oppgaverSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
         oppgaverSomSkalReserveres.forEach {
             oppgaveRepository.reserverOppgave(it, ident, ident)
-            sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, FlytJobbRepository(connection))
+            sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
         }
         return oppgaverSomSkalReserveres
     }

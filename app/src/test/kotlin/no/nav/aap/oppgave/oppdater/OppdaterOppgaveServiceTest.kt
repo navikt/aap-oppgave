@@ -10,6 +10,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
@@ -293,10 +294,11 @@ class OppdaterOppgaveServiceTest {
     private fun sendBehandlingFlytStoppetHendelse(hendelse: BehandlingFlytStoppetHendelse) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                connection,
                 graphClient,
                 veilarbarboppfolgingKlient,
-                enhetService
+                enhetService,
+                OppgaveRepository(connection),
+                FlytJobbRepository(connection)
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }

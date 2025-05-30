@@ -41,15 +41,14 @@ private val AVSLUTTEDE_STATUSER = setOf(
 )
 
 class OppdaterOppgaveService(
-    private val connection: DBConnection,
     msGraphClient: IMsGraphClient,
     private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingKlient = VeilarbarboppfolgingKlient(),
-    private val enhetService: IEnhetService = EnhetService(msGraphClient)
+    private val enhetService: IEnhetService = EnhetService(msGraphClient),
+    private val oppgaveRepository: OppgaveRepository,
+    private val flytJobbRepository: FlytJobbRepository
 ) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
-
-    private val oppgaveRepository = OppgaveRepository(connection)
 
     fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
         val eksisterendeOppgaver = oppgaveRepository.hentOppgaver(
@@ -127,7 +126,7 @@ class OppdaterOppgaveService(
                 sendOppgaveStatusOppdatering(
                     eksisterendeOppgave.oppgaveId(),
                     HendelseType.OPPDATERT,
-                    FlytJobbRepository(connection)
+                    flytJobbRepository
                 )
                 val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
                 if (sistEndretAv != "Kelvin") {
@@ -139,7 +138,7 @@ class OppdaterOppgaveService(
                         sendOppgaveStatusOppdatering(
                             oppdatertOppgave.oppgaveId(),
                             HendelseType.RESERVERT,
-                            FlytJobbRepository(connection)
+                            flytJobbRepository
                         )
                     } else {
                         log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
@@ -165,7 +164,7 @@ class OppdaterOppgaveService(
                 sendOppgaveStatusOppdatering(
                     eksisterendeOppgave.oppgaveId(),
                     HendelseType.OPPDATERT,
-                    FlytJobbRepository(connection)
+                    flytJobbRepository
                 )
 
                 if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.reservertAv == null) {
@@ -188,7 +187,10 @@ class OppdaterOppgaveService(
         val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
         val endretAv = venteInformasjon.sattPåVentAv
         val reserverteOppgaver =
-            ReserverOppgaveService(connection, OppgaveRepository(connection)).reserverOppgaveUtenTilgangskontroll(
+            ReserverOppgaveService(
+                oppgaveRepository,
+                flytJobbRepository
+            ).reserverOppgaveUtenTilgangskontroll(
                 avklaringsbehovReferanse,
                 endretAv
             )
@@ -227,7 +229,7 @@ class OppdaterOppgaveService(
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
-            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, FlytJobbRepository(connection))
+            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
 
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
             if (hvemLøsteForrigeAvklaringsbehov != null) {
@@ -241,8 +243,8 @@ class OppdaterOppgaveService(
                         nyttAvklaringsbehov.avklaringsbehovKode.kode
                     )
                     val reserverteOppgaver = ReserverOppgaveService(
-                        connection,
-                        OppgaveRepository(connection)
+                        oppgaveRepository,
+                        flytJobbRepository
                     ).reserverOppgaveUtenTilgangskontroll(
                         avklaringsbehovReferanse,
                         hvemLøsteForrigeIdent
@@ -275,7 +277,7 @@ class OppdaterOppgaveService(
             .forEach {
                 oppgaveRepository.avsluttOppgave(it.oppgaveId(), "Kelvin")
                 log.info("AVsluttet oppgave med ID ${it.oppgaveId()}.")
-                sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, FlytJobbRepository(connection))
+                sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, flytJobbRepository)
             }
     }
 
