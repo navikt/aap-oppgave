@@ -44,3 +44,7 @@ env:
     value: http://veilarboppfolging.poao
   - name: INTEGRASJON_VEILARBOPPFOLGING_SCOPE
     value: api://prod-gcp.poao.veilarboppfolging/.default
+  - name: INTEGRASJON_SYFO_URL
+    value: http://syfooversiktsrv.teamsykefravr
+  - name: INTEGRASJON_SYFO_SCOPE
+    value: api://prod-gcp.teamsykefravr.syfooversiktsrv/.default
