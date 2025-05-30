@@ -7,8 +7,8 @@ import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
@@ -33,7 +33,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
         OppdaterOppgaveService(
             msGraphClient,
             oppgaveRepository = OppgaveRepository(connection),
-            flytJobbRepository = FlytJobbRepositoryImpl(connection)
+            flytJobbRepository = FlytJobbRepository(connection)
         ).oppdaterOppgaver(
             request.tilOppgaveOppdatering()
         )
@@ -57,7 +57,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
         OppdaterOppgaveService(
             msGraphClient,
             oppgaveRepository = OppgaveRepository(connection),
-            flytJobbRepository = FlytJobbRepositoryImpl(connection)
+            flytJobbRepository = FlytJobbRepository(connection)
         ).oppdaterOppgaver(request.tilOppgaveOppdatering())
     }
     respondWithStatus(HttpStatusCode.OK)

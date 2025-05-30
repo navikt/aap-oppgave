@@ -359,12 +359,14 @@ class OppdaterOppgaveService(
             årsakerTilBehandling = årsakerTilBehandling,
             harFortroligAdresse = harFortroligAdresse,
             returStatus = returInformasjon?.status,
-            returInformasjon = returInformasjon?.let { ReturInformasjon(
-                status = it.status,
-                årsaker = it.årsaker,
-                begrunnelse = it.begrunnelse,
-                endretAv = it.endretAv
-            ) }
+            returInformasjon = returInformasjon?.let {
+                ReturInformasjon(
+                    status = it.status,
+                    årsaker = it.årsaker,
+                    begrunnelse = it.begrunnelse,
+                    endretAv = it.endretAv
+                )
+            }
         )
     }
 

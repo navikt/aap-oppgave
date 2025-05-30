@@ -6,6 +6,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilRetur
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
@@ -23,6 +24,7 @@ import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import no.nav.aap.oppgave.ÅrsakTilReturKode
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -89,7 +91,12 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(6),
-                            begrunnelse = "Fordi det er en feil"
+                            begrunnelse = "Fordi det er en feil",
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                )
+                            )
                         ),
                         EndringDTO(
                             status = AvklaringsbehovStatus.OPPRETTET,
@@ -105,7 +112,12 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(4),
-                            begrunnelse = "Fordi det er en feil"
+                            begrunnelse = "Fordi det er en feil",
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                )
+                            )
                         )
                     )
                 ),
@@ -128,6 +140,11 @@ class OppdaterOppgaveServiceTest {
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(4),
                             begrunnelse = "Fordi det er en feil",
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                )
+                            )
                         )
                     )
                 )
@@ -279,6 +296,11 @@ class OppdaterOppgaveServiceTest {
                         ),
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
+                                )
+                            ),
                             begrunnelse = "xxx",
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå

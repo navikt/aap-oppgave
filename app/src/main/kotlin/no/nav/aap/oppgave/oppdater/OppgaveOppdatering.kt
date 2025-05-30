@@ -132,6 +132,7 @@ private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
             påVentTil = it.frist,
             påVentÅrsak = it.årsakTilSattPåVent?.name,
             begrunnelse = it.begrunnelse.nullIfBlank(),
+            årsakTilRetur = it.årsakTilRetur.map { årsak -> ÅrsakTilReturKode.valueOf(årsak.årsak.name) }
         )
     }
 

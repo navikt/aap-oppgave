@@ -843,12 +843,14 @@ class OppgaveApiTest {
 
         assertThat(oppgaven).extracting(OppgaveDto::returInformasjon)
             .isNotNull
-            .isEqualTo(ReturInformasjon(
-                status = ReturStatus.RETUR_FRA_KVALITETSSIKRER,
-                årsaker = listOf(),
-                begrunnelse = "xxx",
-                endretAv = "Johannes Johannesen",
-            ))
+            .isEqualTo(
+                ReturInformasjon(
+                    status = ReturStatus.RETUR_FRA_KVALITETSSIKRER,
+                    årsaker = listOf(ÅrsakTilReturKode.FEIL_LOVANVENDELSE),
+                    begrunnelse = "xxx",
+                    endretAv = "Johannes Johannesen",
+                )
+            )
     }
 
     // TODO: Flytt denne i egen klasse når fakes er skrevet om
@@ -913,6 +915,13 @@ class OppgaveApiTest {
                     frist = endring.påVentTil,
                     årsakTilSattPåVent = endring.påVentÅrsak,
                     begrunnelse = endring.begrunnelse,
+                    årsakTilRetur = endring.årsakTilRetur.map {
+                        ÅrsakTilRetur(
+                            no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.valueOf(
+                                it.name
+                            )
+                        )
+                    }
                 )
             }
             AvklaringsbehovHendelseDto(
