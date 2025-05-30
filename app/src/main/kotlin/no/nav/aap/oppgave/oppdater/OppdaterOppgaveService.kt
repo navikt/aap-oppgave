@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.oppdater
 
-import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER

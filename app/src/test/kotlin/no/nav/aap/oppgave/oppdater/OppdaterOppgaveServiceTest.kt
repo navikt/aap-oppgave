@@ -24,7 +24,6 @@ import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
-import no.nav.aap.oppgave.ÅrsakTilReturKode
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate

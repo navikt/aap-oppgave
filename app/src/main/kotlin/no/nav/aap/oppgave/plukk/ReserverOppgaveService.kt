@@ -1,17 +1,16 @@
 package no.nav.aap.oppgave.plukk
 
-import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
-import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 
 class ReserverOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
-    val flytJobbRepository: FlytJobbRepository
+    private val flytJobbRepository: FlytJobbRepository
 ) {
 
     fun reserverOppgave(
