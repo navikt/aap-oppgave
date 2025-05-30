@@ -118,7 +118,7 @@ class OppdaterOppgaveService(
                 if (eksisterendeOppgave.status == Status.AVSLUTTET) {
                     log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
                     oppgaveRepository.gjenåpneOppgave(
-                        eksisterendeOppgave.oppgaveId(), "Kelvin", tilReturStatus(avklaringsbehov)
+                        eksisterendeOppgave.oppgaveId(), "Kelvin", tilReturInformasjon(avklaringsbehov)
                     )
                 } else {
                     log.warn("Kan ikke gjenåpne oppgave som er allerede er åpen (id=${eksisterendeOppgave.oppgaveId()}, avklaringsbehov=${avklaringsbehov.avklaringsbehovKode})")
@@ -159,7 +159,7 @@ class OppdaterOppgaveService(
                     påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                     årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
                     // Setter til null for å fjerne evt tidligere status
-                    returStatus = null
+                    returInformasjon = null
                 )
                 log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}. Venteårsak: $årsakTilSattPåVent")
                 sendOppgaveStatusOppdatering(
@@ -175,7 +175,7 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun tilReturStatus(avklaringsbehov: AvklaringsbehovHendelse): ReturInformasjon? {
+    private fun tilReturInformasjon(avklaringsbehov: AvklaringsbehovHendelse): ReturInformasjon? {
         val status = when (avklaringsbehov.status) {
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER -> ReturStatus.RETUR_FRA_BESLUTTER
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER -> ReturStatus.RETUR_FRA_KVALITETSSIKRER
@@ -238,7 +238,7 @@ class OppdaterOppgaveService(
                 venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                 årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
                 harFortroligAdresse = harFortroligAdresse,
-                returInformasjon = tilReturStatus(avklaringsbehovHendelse)
+                returInformasjon = tilReturInformasjon(avklaringsbehovHendelse)
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")

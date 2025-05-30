@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.plukk
 
-import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
@@ -137,7 +136,7 @@ class PlukkOppgaveService(
                 oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
                 veileder = oppgave.veileder,
                 årsakerTilBehandling = oppgave.årsakerTilBehandling,
-                returStatus = oppgave.returInformasjon
+                returInformasjon = oppgave.returInformasjon
             )
             sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, flytJobbRepository)
         }

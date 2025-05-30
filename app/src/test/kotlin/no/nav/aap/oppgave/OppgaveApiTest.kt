@@ -51,8 +51,6 @@ import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.assertj.core.api.Assertions.tuple
-import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -1130,7 +1128,7 @@ class OppgaveApiTest {
                     oppfølgingsenhet = oppgave.oppfølgingsenhet,
                     veileder = oppgave.veileder,
                     årsakerTilBehandling = oppgave.årsakerTilBehandling,
-                    returStatus = oppgave.returInformasjon,
+                    returInformasjon = oppgave.returInformasjon,
                 )
             }
             return hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))

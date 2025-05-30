@@ -40,7 +40,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 RETUR_AARSAK,
                 retur_begrunnelse,
                 retur_aarsaker,
-                returnert_av
+                retur_returnert_av
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
@@ -176,7 +176,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 RETUR_AARSAK = ?,
-                returnert_av = ?,
+                retur_returnert_av = ?,
                 retur_aarsaker = ?,
                 retur_begrunnelse = ?,
                 VERSJON = VERSJON + 1
@@ -212,7 +212,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         veileder: String?,
         årsakerTilBehandling: List<String>,
         harFortroligAdresse: Boolean? = false,
-        returStatus: ReturInformasjon?
+        returInformasjon: ReturInformasjon?
     ) {
         val query = """
             UPDATE 
@@ -231,7 +231,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 AARSAKER_TIL_BEHANDLING = ?,
                 FORTROLIG_ADRESSE = ?,
                 RETUR_AARSAK = ?,
-                returnert_av = ?,
+                retur_returnert_av = ?,
                 retur_aarsaker = ?,
                 RETUR_BEGRUNNELSE = ?,
                 VERSJON = VERSJON + 1
@@ -252,10 +252,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(8, veileder)
                 setArray(9, årsakerTilBehandling)
                 setBoolean(10, harFortroligAdresse)
-                setEnumName(11, returStatus?.status)
-                setString(12, returStatus?.endretAv)
-                setArray(13, returStatus?.årsaker?.map { it.name } ?: emptyList())
-                setString(14, returStatus?.begrunnelse)
+                setEnumName(11, returInformasjon?.status)
+                setString(12, returInformasjon?.endretAv)
+                setArray(13, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(14, returInformasjon?.begrunnelse)
                 setLong(15, oppgaveId.id)
                 setLong(16, oppgaveId.versjon)
             }
@@ -682,7 +682,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                     årsaker = row.getArray("RETUR_AARSAKER", String::class)
                         .map { årsak -> ÅrsakTilReturKode.valueOf(årsak) },
                     begrunnelse = row.getStringOrNull("RETUR_BEGRUNNELSE") ?: "",
-                    endretAv = row.getStringOrNull("returnert_av") ?: "UKJENT",
+                    endretAv = row.getStringOrNull("retur_returnert_av") ?: "UKJENT",
                 )
             }
         )
@@ -717,7 +717,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             RETUR_AARSAK,
             RETUR_BEGRUNNELSE,
             retur_aarsaker,
-            returnert_av
+            retur_returnert_av
         """.trimIndent()
     }
 
