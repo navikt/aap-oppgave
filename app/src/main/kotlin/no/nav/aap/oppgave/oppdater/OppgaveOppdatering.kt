@@ -4,6 +4,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status
@@ -56,9 +57,15 @@ data class Endring(
     val påVentTil: LocalDate?,
     val påVentÅrsak: String?,
     val begrunnelse: String? = null,
+    val årsakTilRetur: List<ÅrsakTilReturKode> = emptyList()
 )
 
-data class VenteInformasjon(val årsakTilSattPåVent: String?, val frist: LocalDate, val sattPåVentAv: String,  val begrunnelse: String?)
+data class VenteInformasjon(
+    val årsakTilSattPåVent: String?,
+    val frist: LocalDate,
+    val sattPåVentAv: String,
+    val begrunnelse: String?
+)
 
 
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
@@ -125,6 +132,7 @@ private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
             påVentTil = it.frist,
             påVentÅrsak = it.årsakTilSattPåVent?.name,
             begrunnelse = it.begrunnelse.nullIfBlank(),
+            årsakTilRetur = it.årsakTilRetur.map { årsak -> ÅrsakTilReturKode.valueOf(årsak.årsak.name) }
         )
     }
 

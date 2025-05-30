@@ -12,6 +12,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilRetur
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
@@ -821,7 +822,12 @@ class OppgaveApiTest {
                         endringer = listOf(
                             Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
                             Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET),
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER),
+                            Endring(
+                                no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                                begrunnelse = "xxx",
+                                endretAv = "Johannes Johannesen",
+                                årsakTilRetur = listOf(ÅrsakTilReturKode.FEIL_LOVANVENDELSE)
+                            ),
                         )
                     )
                 )
@@ -833,7 +839,16 @@ class OppgaveApiTest {
 
         val oppgaven = hentOppgave(saksnummer1, referanse1, Definisjon.AVKLAR_SYKDOM)!!
 
-        assertThat(oppgaven).extracting(OppgaveDto::returStatus).isEqualTo(ReturStatus.RETUR_FRA_KVALITETSSIKRER)
+        assertThat(oppgaven).extracting(OppgaveDto::returInformasjon)
+            .isNotNull
+            .isEqualTo(
+                ReturInformasjon(
+                    status = ReturStatus.RETUR_FRA_KVALITETSSIKRER,
+                    årsaker = listOf(ÅrsakTilReturKode.FEIL_LOVANVENDELSE),
+                    begrunnelse = "xxx",
+                    endretAv = "Johannes Johannesen",
+                )
+            )
     }
 
     // TODO: Flytt denne i egen klasse når fakes er skrevet om
@@ -878,6 +893,7 @@ class OppgaveApiTest {
         val påVentTil: LocalDate? = null,
         val påVentÅrsak: ÅrsakTilSettPåVent? = null,
         val begrunnelse: String? = null,
+        val årsakTilRetur: List<ÅrsakTilReturKode> = emptyList(),
     )
 
     private fun opprettBehandlingshistorikk(
@@ -897,6 +913,13 @@ class OppgaveApiTest {
                     frist = endring.påVentTil,
                     årsakTilSattPåVent = endring.påVentÅrsak,
                     begrunnelse = endring.begrunnelse,
+                    årsakTilRetur = endring.årsakTilRetur.map {
+                        ÅrsakTilRetur(
+                            no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.valueOf(
+                                it.name
+                            )
+                        )
+                    }
                 )
             }
             AvklaringsbehovHendelseDto(
@@ -1105,7 +1128,7 @@ class OppgaveApiTest {
                     oppfølgingsenhet = oppgave.oppfølgingsenhet,
                     veileder = oppgave.veileder,
                     årsakerTilBehandling = oppgave.årsakerTilBehandling,
-                    returStatus = oppgave.returStatus
+                    returInformasjon = oppgave.returInformasjon,
                 )
             }
             return hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
