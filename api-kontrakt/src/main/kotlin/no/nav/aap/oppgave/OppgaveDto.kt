@@ -11,6 +11,20 @@ enum class ReturStatus {
     RETUR_FRA_KVALITETSSIKRER,
 }
 
+data class ReturInformasjon(
+    val status: ReturStatus,
+    val årsaker: List<ÅrsakTilReturKode>,
+    val begrunnelse: String,
+    val endretAv: String,
+)
+
+enum class ÅrsakTilReturKode {
+    MANGELFULL_BEGRUNNELSE,
+    MANGLENDE_UTREDNING,
+    FEIL_LOVANVENDELSE,
+    ANNET
+}
+
 /**
  * @param enhet Enhetsnummeret til enheten som er koblet til oppgaven.
  * TODO: Fjern sensitive felter
@@ -32,7 +46,9 @@ data class OppgaveDto(
     val påVentTil: LocalDate? = null,
     val påVentÅrsak: String? = null,
     val venteBegrunnelse: String? = null,
+    @Deprecated("Bruk returInformasjon")
     val returStatus: ReturStatus? = null,
+    val returInformasjon: ReturInformasjon? = null,
     val årsakerTilBehandling: List<String> = emptyList(),
     val reservertAv: String? = null,
     val reservertTidspunkt: LocalDateTime? = null,

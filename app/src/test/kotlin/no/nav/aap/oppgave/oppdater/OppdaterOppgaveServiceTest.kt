@@ -88,7 +88,8 @@ class OppdaterOppgaveServiceTest {
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusHours(6)
+                            tidsstempel = nå.minusHours(6),
+                            begrunnelse = "Fordi det er en feil"
                         ),
                         EndringDTO(
                             status = AvklaringsbehovStatus.OPPRETTET,
@@ -103,7 +104,8 @@ class OppdaterOppgaveServiceTest {
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusHours(4)
+                            tidsstempel = nå.minusHours(4),
+                            begrunnelse = "Fordi det er en feil"
                         )
                     )
                 ),
@@ -124,7 +126,8 @@ class OppdaterOppgaveServiceTest {
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusHours(4)
+                            tidsstempel = nå.minusHours(4),
+                            begrunnelse = "Fordi det er en feil",
                         )
                     )
                 )
@@ -276,6 +279,7 @@ class OppdaterOppgaveServiceTest {
                         ),
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                            begrunnelse = "xxx",
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå
                         )

@@ -12,6 +12,7 @@ import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.ReturInformasjon
 import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.IEnhetService
@@ -23,6 +24,7 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import no.nav.aap.oppgave.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -174,10 +176,22 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun tilReturStatus(avklaringsbehov: AvklaringsbehovHendelse): ReturStatus? = when (avklaringsbehov.status) {
-        AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER -> ReturStatus.RETUR_FRA_BESLUTTER
-        AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER -> ReturStatus.RETUR_FRA_KVALITETSSIKRER
-        else -> null
+    private fun tilReturStatus(avklaringsbehov: AvklaringsbehovHendelse): ReturInformasjon? {
+        val status = when (avklaringsbehov.status) {
+            AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER -> ReturStatus.RETUR_FRA_BESLUTTER
+            AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER -> ReturStatus.RETUR_FRA_KVALITETSSIKRER
+            else -> null
+        }
+        if (status == null) return null
+
+        val sisteEndring = avklaringsbehov.sisteEndring()
+
+        return ReturInformasjon(
+            status = status,
+            årsaker = sisteEndring.årsakTilRetur.map { ÅrsakTilReturKode.valueOf(it.name) },
+            begrunnelse = requireNotNull(sisteEndring.begrunnelse) { "Det skal alltid finnes begrunnelse for retur." },
+            endretAv = sisteEndring.endretAv,
+        )
     }
 
     private fun reserverOppgave(
@@ -225,7 +239,7 @@ class OppdaterOppgaveService(
                 venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                 årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
                 harFortroligAdresse = harFortroligAdresse,
-                returStatus = tilReturStatus(avklaringsbehovHendelse)
+                returInformasjon = tilReturStatus(avklaringsbehovHendelse)
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
@@ -324,7 +338,7 @@ class OppdaterOppgaveService(
         venteBegrunnelse: String?,
         årsakerTilBehandling: List<String>,
         harFortroligAdresse: Boolean,
-        returStatus: ReturStatus?
+        returInformasjon: ReturInformasjon?
     ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
@@ -344,7 +358,13 @@ class OppdaterOppgaveService(
             venteBegrunnelse = venteBegrunnelse,
             årsakerTilBehandling = årsakerTilBehandling,
             harFortroligAdresse = harFortroligAdresse,
-            returStatus = returStatus
+            returStatus = returInformasjon?.status,
+            returInformasjon = returInformasjon?.let { ReturInformasjon(
+                status = it.status,
+                årsaker = it.årsaker,
+                begrunnelse = it.begrunnelse,
+                endretAv = it.endretAv
+            ) }
         )
     }
 
