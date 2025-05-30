@@ -1,0 +1,2 @@
+ALTER TABLE oppgave
+    ADD COLUMN fortrolig_adresse BOOLEAN NOT NULL DEFAULT FALSE;

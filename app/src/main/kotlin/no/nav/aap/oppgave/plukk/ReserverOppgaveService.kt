@@ -1,17 +1,17 @@
 package no.nav.aap.oppgave.plukk
 
-import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
-import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 
-class ReserverOppgaveService(val connection: DBConnection) {
-
-    private val oppgaveRepository = OppgaveRepository(connection)
+class ReserverOppgaveService(
+    private val oppgaveRepository: OppgaveRepository,
+    private val flytJobbRepository: FlytJobbRepository
+) {
 
     fun reserverOppgave(
         avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
@@ -28,7 +28,7 @@ class ReserverOppgaveService(val connection: DBConnection) {
         if (harTilgang) {
             oppgaverSomSkalReserveres.forEach {
                 oppgaveRepository.reserverOppgave(it, ident, ident)
-                sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, FlytJobbRepository(connection))
+                sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
             }
             return oppgaverSomSkalReserveres
         }
@@ -40,18 +40,21 @@ class ReserverOppgaveService(val connection: DBConnection) {
         ident: String,
     ) {
         oppgaveRepository.avreserverOppgave(oppgaveId, ident)
-        sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, FlytJobbRepository(connection))
+        sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, flytJobbRepository)
     }
 
     /**
      * Reserver oppgave uten kall mot tilgangkontroll - brukes når oppgave skal reserveres av behandlingsprosess uten
      * uten noen innloggingskontekst.
      */
-    fun reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, ident: String): List<OppgaveId> {
+    fun reserverOppgaveUtenTilgangskontroll(
+        avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
+        ident: String
+    ): List<OppgaveId> {
         val oppgaverSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
         oppgaverSomSkalReserveres.forEach {
             oppgaveRepository.reserverOppgave(it, ident, ident)
-            sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, FlytJobbRepository(connection))
+            sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
         }
         return oppgaverSomSkalReserveres
     }

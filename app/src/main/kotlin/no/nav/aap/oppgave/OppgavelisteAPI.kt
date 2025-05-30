@@ -52,20 +52,33 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
         }
 
         val token = token()
+        val oppgaver = sjekkTilgangTilFortroligAdresse(enhetService, token.token(), data.oppgaver)
+
         val enhetsGrupper = enhetService.hentEnheter(token.token(), ident())
-        val oppgaverMedTilgang = data.oppgaver.asSequence()
+        val oppgaverMedTilgang = oppgaver.asSequence()
             .filter { enhetsGrupper.contains(it.enhetForKø()) }
             .take(maxRequests).toList()
 
         respond(
             OppgavelisteRespons(
-                antallTotalt = data.oppgaver.size,
+                antallTotalt = oppgaver.size,
                 oppgaver = oppgaverMedTilgang.medPersonNavn(false, token()),
                 antallGjenstaaende = data.antallGjenstaaende
             )
         )
     }
 }
+
+private fun sjekkTilgangTilFortroligAdresse(
+    enhetService: EnhetService,
+    token: String,
+    oppgaver: List<OppgaveDto>
+): List<OppgaveDto> =
+    if (!enhetService.kanSaksbehandleFortroligAdresse(token)) {
+        oppgaver.filterNot { it.harFortroligAdresse == true }
+    } else {
+        oppgaver
+    }
 
 /**
  * Søker etter oppgaver med et fritt definert filter som ikke trenger være lagret i database.

@@ -190,6 +190,21 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Skal finne oppgaver basert på saksnummer uavhengig av store og små bokstaver i saksnummeret`() {
+        val saksnummerMixCase = "ABC123o"
+        val saksnummerUppercase = "ABC123D"
+        opprettOppgave(saksnummer = saksnummerMixCase)
+        opprettOppgave(saksnummer = saksnummerUppercase)
+
+        assertThat(finnOppgaverForSak(saksnummerMixCase)).hasSize(1)
+        assertThat(finnOppgaverForSak(saksnummerMixCase.uppercase())).hasSize(1)
+        assertThat(finnOppgaverForSak(saksnummerMixCase.lowercase())).hasSize(1)
+        assertThat(finnOppgaverForSak(saksnummerUppercase)).hasSize(1)
+        assertThat(finnOppgaverForSak(saksnummerUppercase.uppercase())).hasSize(1)
+        assertThat(finnOppgaverForSak(saksnummerUppercase.lowercase())).hasSize(1)
+    }
+
+    @Test
     fun `Skal finne oppgaver knyttet til enhet`() {
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG)
@@ -313,6 +328,12 @@ class OppgaveRepositoryTest {
     private fun finnAlleOppgaver(filter: Filter, paging: Paging? = null): OppgaveRepository.FinnOppgaverDto {
         return dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = false)
+        }
+    }
+
+    private fun finnOppgaverForSak(saksnummer: String): List<OppgaveDto> {
+        return dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).finnOppgaverGittSaksnummer(saksnummer)
         }
     }
 

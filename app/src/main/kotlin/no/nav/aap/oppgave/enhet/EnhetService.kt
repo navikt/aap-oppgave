@@ -28,6 +28,7 @@ data class EnhetForOppgave(
 interface IEnhetService {
     fun hentEnheter(currentToken: String, ident: String): List<String>
     fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, fnr: String?): EnhetForOppgave
+    fun harFortroligAdresse(personIdent: String?): Boolean
 }
 
 class EnhetService(
@@ -58,6 +59,17 @@ class EnhetService(
                 finnEnhetstilknytningForPerson(fnr)
             }
         }
+    }
+
+    override fun harFortroligAdresse(personIdent: String?): Boolean {
+        return finnTilknytningOgSkjerming(personIdent).diskresjonskode == Diskresjonskode.SPFO
+    }
+
+    fun kanSaksbehandleFortroligAdresse(
+        currentToken: String
+    ): Boolean {
+        return msGraphClient.hentFortroligAdresseGruppe(currentToken).groups
+            .map { it.name }.contains(FORTROLIG_ADRESSE_GROUP)
     }
 
     private fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
@@ -196,10 +208,6 @@ class EnhetService(
             }
         }
 
-    private fun parseFylkeskontor(enhet: String): String {
-        return enhet.substring(0, 2) + "00"
-    }
-
     private fun erEgneAnsatteKontor(enhet: String): Boolean {
         return enhet.endsWith("83")
     }
@@ -207,6 +215,7 @@ class EnhetService(
 
     companion object {
         const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
+        const val FORTROLIG_ADRESSE_GROUP = "0000-GA-Fortrolig_Adresse"
     }
 
 }

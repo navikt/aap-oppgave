@@ -234,6 +234,9 @@ class EnhetServiceTest {
                 )
             }
 
+            override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
+                return MemberOf()
+            }
         }
 
         val nomKlient = object : INomKlient {

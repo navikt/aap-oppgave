@@ -36,9 +36,14 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VEILEDER_ARBEID,
                 VEILEDER_SYKDOM,
                 AARSAKER_TIL_BEHANDLING,
-                VENTE_BEGRUNNELSE
+                VENTE_BEGRUNNELSE,
+                FORTROLIG_ADRESSE,
+                RETUR_AARSAK,
+                retur_begrunnelse,
+                retur_aarsaker,
+                retur_returnert_av
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -62,6 +67,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(16, oppgaveDto.veilederSykdom)
                 setArray(17, oppgaveDto.årsakerTilBehandling)
                 setString(18, oppgaveDto.venteBegrunnelse)
+                setBoolean(19, oppgaveDto.harFortroligAdresse)
+                setEnumName(20, oppgaveDto.returInformasjon?.status)
+                setString(21, oppgaveDto.returInformasjon?.begrunnelse)
+                setArray(22, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(23, oppgaveDto.returInformasjon?.endretAv)
             }
         }
         return OppgaveId(id, 0L)
@@ -157,7 +167,8 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun gjenåpneOppgave(
         oppgaveId: OppgaveId,
-        ident: String
+        ident: String,
+        returInformasjon: ReturInformasjon?
     ) {
         val query = """
             UPDATE 
@@ -166,6 +177,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 STATUS = 'OPPRETTET', 
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                RETUR_AARSAK = ?,
+                retur_returnert_av = ?,
+                retur_aarsaker = ?,
+                retur_begrunnelse = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -176,10 +191,14 @@ class OppgaveRepository(private val connection: DBConnection) {
         connection.execute(query) {
             setParams {
                 setString(1, ident)
-                setLong(2, oppgaveId.id)
-                setLong(3, oppgaveId.versjon)
+                setEnumName(2, returInformasjon?.status)
+                setString(3, returInformasjon?.endretAv)
+                setArray(4, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(5, returInformasjon?.begrunnelse)
+                setLong(6, oppgaveId.id)
+                setLong(7, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) { "Forventer bare at én oppgave gjenåpnes. Fant ${it} oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
+            setResultValidator { require(it == 1) { "Forventer bare at én oppgave gjenåpnes. Fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
     }
 
@@ -194,7 +213,9 @@ class OppgaveRepository(private val connection: DBConnection) {
         oppfølgingsenhet: String?,
         veilederArbeid: String?,
         veilederSykdom: String?,
-        årsakerTilBehandling: List<String>
+        årsakerTilBehandling: List<String>,
+        harFortroligAdresse: Boolean? = false,
+        returInformasjon: ReturInformasjon?
     ) {
         val query = """
             UPDATE 
@@ -212,6 +233,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VEILEDER_ARBEID = ?,
                 VEILEDER_SYKDOM = ?,
                 AARSAKER_TIL_BEHANDLING = ?,
+                FORTROLIG_ADRESSE = ?,
+                RETUR_AARSAK = ?,
+                retur_returnert_av = ?,
+                retur_aarsaker = ?,
+                RETUR_BEGRUNNELSE = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -230,8 +256,13 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(8, veilederArbeid)
                 setString(9, veilederSykdom)
                 setArray(10, årsakerTilBehandling)
-                setLong(11, oppgaveId.id)
-                setLong(12, oppgaveId.versjon)
+                setBoolean(11, harFortroligAdresse)
+                setEnumName(12, returInformasjon?.status)
+                setString(13, returInformasjon?.endretAv)
+                setArray(14, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(15, returInformasjon?.begrunnelse)
+                setLong(16, oppgaveId.id)
+                setLong(17, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
@@ -317,6 +348,29 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    fun settFortroligAdresse(oppgaveId: OppgaveId, harFortroligAdresse: Boolean) {
+        val query = """
+            UPDATE 
+                OPPGAVE 
+            SET 
+                FORTROLIG_ADRESSE = ?,
+                VERSJON = VERSJON + 1
+            WHERE 
+                ID = ? AND
+                STATUS != 'AVSLUTTET' AND
+                VERSJON = ?
+        """.trimIndent()
+
+        connection.execute(query) {
+            setParams {
+                setBoolean(1, harFortroligAdresse)
+                setLong(2, oppgaveId.id)
+                setLong(3, oppgaveId.versjon)
+            }
+            setResultValidator { require(it == 1) }
+        }
+    }
+
     enum class Rekkefølge { asc, desc }
 
     fun finnOppgaver(
@@ -331,7 +385,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             0
         }
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
-        val kunLedigeQuery = if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
+        val kunLedigeQuery =
+            if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
 
         val hentNesteOppgaveQuery = """
             SELECT 
@@ -417,13 +472,13 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                SAKSNUMMER = ? AND STATUS != 'AVSLUTTET'
+                UPPER(SAKSNUMMER) = ? AND STATUS != 'AVSLUTTET'
             ORDER BY BEHANDLING_OPPRETTET
         """.trimIndent()
 
         return connection.queryList(hentOppgaverGittSaksnummerQuery) {
             setParams {
-                setString(1, saksnummer)
+                setString(1, saksnummer.uppercase())
             }
             setRowMapper {
                 oppgaveMapper(it)
@@ -518,7 +573,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 STATUS != 'AVSLUTTET'
         """.trimIndent()
 
-        return connection.queryList<OppgaveDto>(query) {
+        return connection.queryList(query) {
             setRowMapper { row -> oppgaveMapper(row) }
         }
     }
@@ -556,6 +611,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                     index++,
                     avklaringsbehovReferanse.journalpostId
                 )
+                @Suppress("AssignedValueIsNeverRead")
                 setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
             }
             setRowMapper { row ->
@@ -625,6 +681,17 @@ class OppgaveRepository(private val connection: DBConnection) {
             endretAv = row.getStringOrNull("ENDRET_AV"),
             endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
             versjon = row.getLong("VERSJON"),
+            harFortroligAdresse = row.getBoolean("FORTROLIG_ADRESSE"),
+            returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK"),
+            returInformasjon = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")?.let {
+                ReturInformasjon(
+                    status = it,
+                    årsaker = row.getArray("RETUR_AARSAKER", String::class)
+                        .map { årsak -> ÅrsakTilReturKode.valueOf(årsak) },
+                    begrunnelse = row.getStringOrNull("RETUR_BEGRUNNELSE") ?: "",
+                    endretAv = row.getStringOrNull("retur_returnert_av") ?: "UKJENT",
+                )
+            }
         )
     }
 
@@ -653,7 +720,12 @@ class OppgaveRepository(private val connection: DBConnection) {
             ENDRET_AV,
             ENDRET_TIDSPUNKT,
             VERSJON,
-            AARSAKER_TIL_BEHANDLING
+            AARSAKER_TIL_BEHANDLING,
+            FORTROLIG_ADRESSE,
+            RETUR_AARSAK,
+            RETUR_BEGRUNNELSE,
+            retur_aarsaker,
+            retur_returnert_av
         """.trimIndent()
     }
 

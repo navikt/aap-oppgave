@@ -8,9 +8,12 @@ import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
+import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
@@ -30,7 +33,12 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
         prometheus.httpCallCounter("/neste-oppgave").increment()
         val enhetService = EnhetService(msGraphClient = MsGraphClient(prometheus))
         val nesteOppgave = dataSource.transaction { connection ->
-            PlukkOppgaveService(connection, enhetService).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
+            PlukkOppgaveService(
+                enhetService,
+                OppgaveRepository(connection),
+                FlytJobbRepository(connection),
+                FilterRepository(connection)
+            ).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
         }
         if (nesteOppgave != null) {
             respond(nesteOppgave)
@@ -47,7 +55,12 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: Prome
         prometheus.httpCallCounter("/plukk-oppgave").increment()
         val enhetService = EnhetService(msGraphClient = MsGraphClient(prometheus))
         val oppgave = dataSource.transaction { connection ->
-            PlukkOppgaveService(connection, enhetService).plukkOppgave(
+            PlukkOppgaveService(
+                enhetService,
+                OppgaveRepository(connection),
+                FlytJobbRepository(connection),
+                FilterRepository(connection)
+            ).plukkOppgave(
                 OppgaveId(request.oppgaveId, request.versjon),
                 ident(),
                 token()

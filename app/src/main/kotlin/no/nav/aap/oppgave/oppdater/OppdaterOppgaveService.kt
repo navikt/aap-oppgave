@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.oppdater
 
-import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
@@ -12,6 +11,8 @@ import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.ReturInformasjon
+import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
@@ -27,6 +28,7 @@ import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import no.nav.aap.oppgave.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -45,17 +47,16 @@ private val AVSLUTTEDE_STATUSER = setOf(
 )
 
 class OppdaterOppgaveService(
-    private val connection: DBConnection,
     msGraphClient: IMsGraphClient,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingKlient = VeilarbarboppfolgingKlient(),
     private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient = SykefravarsoppfolgingKlient(),
-    private val enhetService: IEnhetService = EnhetService(msGraphClient)
+    private val enhetService: IEnhetService = EnhetService(msGraphClient),
+    private val oppgaveRepository: OppgaveRepository,
+    private val flytJobbRepository: FlytJobbRepository
 ) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
-
-    private val oppgaveRepository = OppgaveRepository(connection)
 
     fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
         val eksisterendeOppgaver = oppgaveRepository.hentOppgaver(
@@ -120,7 +121,9 @@ class OppdaterOppgaveService(
             ) {
                 if (eksisterendeOppgave.status == Status.AVSLUTTET) {
                     log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-                    oppgaveRepository.gjenåpneOppgave(eksisterendeOppgave.oppgaveId(), "Kelvin")
+                    oppgaveRepository.gjenåpneOppgave(
+                        eksisterendeOppgave.oppgaveId(), "Kelvin", tilReturInformasjon(avklaringsbehov)
+                    )
                 } else {
                     log.warn("Kan ikke gjenåpne oppgave som er allerede er åpen (id=${eksisterendeOppgave.oppgaveId()}, avklaringsbehov=${avklaringsbehov.avklaringsbehovKode})")
                     return
@@ -128,7 +131,7 @@ class OppdaterOppgaveService(
                 sendOppgaveStatusOppdatering(
                     eksisterendeOppgave.oppgaveId(),
                     HendelseType.OPPDATERT,
-                    FlytJobbRepository(connection)
+                    flytJobbRepository
                 )
                 val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
                 if (sistEndretAv != "Kelvin") {
@@ -140,7 +143,7 @@ class OppdaterOppgaveService(
                         sendOppgaveStatusOppdatering(
                             oppdatertOppgave.oppgaveId(),
                             HendelseType.RESERVERT,
-                            FlytJobbRepository(connection)
+                            flytJobbRepository
                         )
                     } else {
                         log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
@@ -159,13 +162,15 @@ class OppdaterOppgaveService(
                     påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
                     påVentÅrsak = årsakTilSattPåVent,
                     påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
-                    årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling
+                    årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
+                    // Setter til null for å fjerne evt tidligere status
+                    returInformasjon = null
                 )
                 log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}. Venteårsak: $årsakTilSattPåVent")
                 sendOppgaveStatusOppdatering(
                     eksisterendeOppgave.oppgaveId(),
                     HendelseType.OPPDATERT,
-                    FlytJobbRepository(connection)
+                    flytJobbRepository
                 )
 
                 if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.reservertAv == null) {
@@ -175,16 +180,38 @@ class OppdaterOppgaveService(
         }
     }
 
+    private fun tilReturInformasjon(avklaringsbehov: AvklaringsbehovHendelse): ReturInformasjon? {
+        val status = when (avklaringsbehov.status) {
+            AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER -> ReturStatus.RETUR_FRA_BESLUTTER
+            AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER -> ReturStatus.RETUR_FRA_KVALITETSSIKRER
+            else -> null
+        }
+        if (status == null) return null
+
+        val sisteEndring = avklaringsbehov.sisteEndring()
+
+        return ReturInformasjon(
+            status = status,
+            årsaker = sisteEndring.årsakTilRetur.map { ÅrsakTilReturKode.valueOf(it.name) },
+            begrunnelse = requireNotNull(sisteEndring.begrunnelse) { "Det skal alltid finnes begrunnelse for retur." },
+            endretAv = sisteEndring.endretAv,
+        )
+    }
+
     private fun reserverOppgave(
         eksisterendeOppgave: OppgaveDto,
         venteInformasjon: VenteInformasjon
     ) {
         val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
         val endretAv = venteInformasjon.sattPåVentAv
-        val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgaveUtenTilgangskontroll(
-            avklaringsbehovReferanse,
-            endretAv
-        )
+        val reserverteOppgaver =
+            ReserverOppgaveService(
+                oppgaveRepository,
+                flytJobbRepository
+            ).reserverOppgaveUtenTilgangskontroll(
+                avklaringsbehovReferanse,
+                endretAv
+            )
         log.info("Oppgave ${reserverteOppgaver.joinToString(", ")} reservert $endretAv")
     }
 
@@ -199,6 +226,7 @@ class OppdaterOppgaveService(
             )
             val veilederArbeid = hentVeilederArbeidsoppfølging(oppgaveOppdatering.personIdent)
             val veilederSykdom = hentVeilederSykefraværoppfølging(oppgaveOppdatering.personIdent)
+            val harFortroligAdresse = enhetService.harFortroligAdresse(oppgaveOppdatering.personIdent)
 
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
                 personIdent = oppgaveOppdatering.personIdent,
@@ -212,11 +240,13 @@ class OppdaterOppgaveService(
                 påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
                 påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent,
                 venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
-                årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling
+                årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
+                harFortroligAdresse = harFortroligAdresse,
+                returInformasjon = tilReturInformasjon(avklaringsbehovHendelse)
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
-            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, FlytJobbRepository(connection))
+            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
 
             val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
             if (hvemLøsteForrigeAvklaringsbehov != null) {
@@ -229,7 +259,10 @@ class OppdaterOppgaveService(
                         null,
                         nyttAvklaringsbehov.avklaringsbehovKode.kode
                     )
-                    val reserverteOppgaver = ReserverOppgaveService(connection).reserverOppgaveUtenTilgangskontroll(
+                    val reserverteOppgaver = ReserverOppgaveService(
+                        oppgaveRepository,
+                        flytJobbRepository
+                    ).reserverOppgaveUtenTilgangskontroll(
                         avklaringsbehovReferanse,
                         hvemLøsteForrigeIdent
                     )
@@ -274,7 +307,7 @@ class OppdaterOppgaveService(
             .forEach {
                 oppgaveRepository.avsluttOppgave(it.oppgaveId(), "Kelvin")
                 log.info("AVsluttet oppgave med ID ${it.oppgaveId()}.")
-                sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, FlytJobbRepository(connection))
+                sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, flytJobbRepository)
             }
     }
 
@@ -320,7 +353,9 @@ class OppdaterOppgaveService(
         påVentTil: LocalDate?,
         påVentÅrsak: String?,
         venteBegrunnelse: String?,
-        årsakerTilBehandling: List<String>
+        årsakerTilBehandling: List<String>,
+        harFortroligAdresse: Boolean,
+        returInformasjon: ReturInformasjon?
     ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
@@ -339,7 +374,17 @@ class OppdaterOppgaveService(
             påVentTil = påVentTil,
             påVentÅrsak = påVentÅrsak,
             venteBegrunnelse = venteBegrunnelse,
-            årsakerTilBehandling = årsakerTilBehandling
+            årsakerTilBehandling = årsakerTilBehandling,
+            harFortroligAdresse = harFortroligAdresse,
+            returStatus = returInformasjon?.status,
+            returInformasjon = returInformasjon?.let {
+                ReturInformasjon(
+                    status = it.status,
+                    årsaker = it.årsaker,
+                    begrunnelse = it.begrunnelse,
+                    endretAv = it.endretAv
+                )
+            }
         )
     }
 

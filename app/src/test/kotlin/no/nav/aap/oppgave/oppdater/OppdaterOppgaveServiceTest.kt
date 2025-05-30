@@ -7,10 +7,12 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilRetur
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
@@ -90,7 +92,13 @@ class OppdaterOppgaveServiceTest {
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusHours(6)
+                            tidsstempel = nå.minusHours(6),
+                            begrunnelse = "Fordi det er en feil",
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                )
+                            )
                         ),
                         EndringDTO(
                             status = AvklaringsbehovStatus.OPPRETTET,
@@ -105,7 +113,13 @@ class OppdaterOppgaveServiceTest {
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusHours(4)
+                            tidsstempel = nå.minusHours(4),
+                            begrunnelse = "Fordi det er en feil",
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                )
+                            )
                         )
                     )
                 ),
@@ -126,7 +140,13 @@ class OppdaterOppgaveServiceTest {
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusHours(4)
+                            tidsstempel = nå.minusHours(4),
+                            begrunnelse = "Fordi det er en feil",
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                )
+                            )
                         )
                     )
                 )
@@ -278,6 +298,12 @@ class OppdaterOppgaveServiceTest {
                         ),
                         EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
+                                )
+                            ),
+                            begrunnelse = "xxx",
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå
                         )
@@ -296,14 +322,15 @@ class OppdaterOppgaveServiceTest {
     private fun sendBehandlingFlytStoppetHendelse(hendelse: BehandlingFlytStoppetHendelse) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                connection,
                 graphClient,
                 UnleashService(FakeUnleash().apply {
                     enableAll()
                 }),
                 veilarbarboppfolgingKlient,
                 sykefravarsoppfolgingKlient,
-                enhetService
+                enhetService,
+                OppgaveRepository(connection),
+                FlytJobbRepository(connection)
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }
@@ -355,6 +382,9 @@ class OppdaterOppgaveServiceTest {
             )
         }
 
+        override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
+            TODO("Not yet implemented")
+        }
     }
 
     val veilarbarboppfolgingKlient = object : IVeilarbarboppfolgingKlient {
@@ -375,6 +405,10 @@ class OppdaterOppgaveServiceTest {
             fnr: String?
         ): EnhetForOppgave {
             return EnhetForOppgave(ENHET_NAV_LØRENSKOG, null)
+        }
+
+        override fun harFortroligAdresse(personIdent: String?): Boolean {
+            return false
         }
     }
 }
