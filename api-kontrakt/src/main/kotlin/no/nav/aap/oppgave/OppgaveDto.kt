@@ -38,6 +38,7 @@ data class OppgaveDto(
     val journalpostId: Long? = null,
     val enhet: String,
     val oppfølgingsenhet: String?,
+    val veileder: String? = null, // TODO fjernes når kontrakt i frontend er oppdatert
     val veilederArbeid: String? = null,
     val veilederSykdom: String? = null,
     val behandlingOpprettet: LocalDateTime,

@@ -664,6 +664,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
+            veileder = row.getStringOrNull("VEILEDER_ARBEID"),
             veilederArbeid = row.getStringOrNull("VEILEDER_ARBEID"),
             veilederSykdom = row.getStringOrNull("VEILEDER_SYKDOM"),
             behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
