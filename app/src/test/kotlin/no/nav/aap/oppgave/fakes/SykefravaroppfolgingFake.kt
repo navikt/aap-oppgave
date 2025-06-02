@@ -7,10 +7,9 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
-import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 
-fun Application.sykefravarfolgingFake() {
+fun Application.sykefravaroppfolgingFake() {
 
     install(ContentNegotiation) {
         jackson {

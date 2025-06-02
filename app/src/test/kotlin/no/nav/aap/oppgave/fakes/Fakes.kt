@@ -21,7 +21,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
     private val nom = FakeServer(module = { nomFake() })
     private val veilarbarena = FakeServer(module = { veilarbarenaFake() })
     private val veilarboppfolging = FakeServer(module = { veilarboppfolgingFake() })
-    private val sykefravavaroppfolging = FakeServer(module = { sykefravarfolgingFake() })
+    private val sykefravavaroppfolging = FakeServer(module = { sykefravaroppfolgingFake() })
     private val msGraph = FakeServer(module = { msGraphFake() })
     private val statistikkFake = FakeServer(module = { statistikkFake() })
 
