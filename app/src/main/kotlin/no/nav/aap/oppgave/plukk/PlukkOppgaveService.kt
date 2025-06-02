@@ -138,6 +138,7 @@ class PlukkOppgaveService(
                 veilederArbeid = oppgave.veilederArbeid,
                 veilederSykdom = oppgave.veilederSykdom,
                 årsakerTilBehandling = oppgave.årsakerTilBehandling,
+                harFortroligAdresse = oppgave.harFortroligAdresse,
                 returInformasjon = oppgave.returInformasjon
             )
             sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, flytJobbRepository)

@@ -152,6 +152,7 @@ class OppdaterOppgaveService(
                 }
             } else {
                 val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
+                val harFortroligAdresse = enhetService.harFortroligAdresse(oppgaveOppdatering.personIdent)
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
                     ident = "Kelvin",
@@ -164,6 +165,7 @@ class OppdaterOppgaveService(
                     påVentÅrsak = årsakTilSattPåVent,
                     påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                     årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
+                    harFortroligAdresse = harFortroligAdresse,
                     // Setter til null for å fjerne evt tidligere status
                     returInformasjon = null
                 )
