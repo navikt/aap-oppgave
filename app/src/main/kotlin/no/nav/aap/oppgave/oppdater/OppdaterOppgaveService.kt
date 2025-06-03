@@ -324,9 +324,16 @@ class OppdaterOppgaveService(
     }
 
     private fun AvklaringsbehovHendelse.sisteEndring(status: AvklaringsbehovStatus = this.status): Endring {
-        return endringer
-            .sortedBy { it.tidsstempel }
-            .last { it.status == status }
+        return try {
+            endringer
+                .sortedBy { it.tidsstempel }
+                .last { it.status == status }
+        } catch (e: NoSuchElementException) {
+            throw IllegalStateException(
+                "Ingen endringer med status $status. Endringer: ${this.endringer}. Avklaringsbehovkode: ${this.avklaringsbehovKode}",
+                e
+            )
+        }
     }
 
     private fun AvklaringsbehovHendelse.opprettetTidspunkt(): LocalDateTime {
