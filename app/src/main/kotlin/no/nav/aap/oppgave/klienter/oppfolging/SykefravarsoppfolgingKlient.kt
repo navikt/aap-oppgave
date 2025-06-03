@@ -10,9 +10,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.Client
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 
+private data class PersonIdent(val value: String)
 
 private data class HentVeilederSykefravarsoppfolgingResponse(
-    val personident: String,
+    val personident: PersonIdent,
     val tildeltVeilederident: String?,
     val tildeltEnhet: String?,
 )

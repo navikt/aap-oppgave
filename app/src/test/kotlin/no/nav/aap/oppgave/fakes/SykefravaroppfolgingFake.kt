@@ -28,7 +28,9 @@ fun Application.sykefravaroppfolgingFake() {
 private fun responsFraSykefravaroppfolging(): String {
     return """
             { 
-                "personident": "ident",
+                "personident": { 
+                    "value": "ident" 
+                },
                 "tildeltVeilederident": "ident",
                 "tildeltEnhet": "1234"
             }
