@@ -479,7 +479,7 @@ class OppgaveApiTest {
                 behandlingRef = oppgaveMedGammelEnhet.behandlingRef,
                 enhet = "nyEnhet",
                 oppfølgingsenhet = "nyOppfølgingsenhet",
-                veileder = oppgaveMedGammelEnhet.veileder,
+                veilederArbeid = oppgaveMedGammelEnhet.veilederArbeid,
                 behandlingOpprettet = oppgaveMedGammelEnhet.behandlingOpprettet,
                 avklaringsbehovKode = oppgaveMedGammelEnhet.avklaringsbehovKode,
                 status = oppgaveMedGammelEnhet.status,
@@ -1126,7 +1126,8 @@ class OppgaveApiTest {
                     påVentÅrsak = oppgave.påVentÅrsak,
                     påVentBegrunnelse = oppgave.venteBegrunnelse,
                     oppfølgingsenhet = oppgave.oppfølgingsenhet,
-                    veileder = oppgave.veileder,
+                    veilederArbeid = oppgave.veilederArbeid,
+                    veilederSykdom = oppgave.veilederSykdom,
                     årsakerTilBehandling = oppgave.årsakerTilBehandling,
                     returInformasjon = oppgave.returInformasjon,
                 )
@@ -1143,7 +1144,8 @@ class OppgaveApiTest {
             behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
             enhet: String = "0230",
             oppfølgingsenhet: String? = null,
-            veileder: String? = null,
+            veilederArbeid: String? = null,
+            veilederSykdom: String? = null,
         ): OppgaveId {
             val oppgaveDto = OppgaveDto(
                 personIdent = personIdent,
@@ -1156,7 +1158,8 @@ class OppgaveApiTest {
                 status = status,
                 behandlingstype = behandlingstype,
                 opprettetAv = "bruker1",
-                veileder = veileder,
+                veilederArbeid = veilederArbeid,
+                veilederSykdom = veilederSykdom,
                 opprettetTidspunkt = LocalDateTime.now()
             )
             return initDatasource(dbConfig, prometheus).transaction { connection ->

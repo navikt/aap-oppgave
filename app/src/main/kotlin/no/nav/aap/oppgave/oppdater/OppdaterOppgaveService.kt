@@ -16,11 +16,16 @@ import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
+import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
+import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.ÅrsakTilReturKode
@@ -43,7 +48,9 @@ private val AVSLUTTEDE_STATUSER = setOf(
 
 class OppdaterOppgaveService(
     msGraphClient: IMsGraphClient,
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingKlient = VeilarbarboppfolgingKlient(),
+    private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient = SykefravarsoppfolgingKlient(),
     private val enhetService: IEnhetService = EnhetService(msGraphClient),
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository
@@ -100,15 +107,13 @@ class OppdaterOppgaveService(
         // TODO: rydd opp i logikk her, trekk ut metoder osv
         // Send oppdatering til statistikk på slutten, så man ikke får 3 forskjellige oppdateringer
         // å forholde seg til
+        val personIdent = oppgaveOppdatering.personIdent
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
             val enhetForOppgave =
-                enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, oppgaveOppdatering.personIdent)
-            val veileder = if (oppgaveOppdatering.personIdent != null) {
-                veilarbarboppfolgingKlient.hentVeileder(oppgaveOppdatering.personIdent)
-            } else {
-                null
-            }
+                enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, personIdent)
+            val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
+            val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
 
             if (avklaringsbehov.status in setOf(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
@@ -151,10 +156,11 @@ class OppdaterOppgaveService(
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
                     ident = "Kelvin",
-                    personIdent = oppgaveOppdatering.personIdent,
+                    personIdent = personIdent,
                     enhet = enhetForOppgave.enhet,
                     oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
-                    veileder = veileder,
+                    veilederArbeid = veilederArbeid,
+                    veilederSykdom = veilederSykdom,
                     påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
                     påVentÅrsak = årsakTilSattPåVent,
                     påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
@@ -217,24 +223,25 @@ class OppdaterOppgaveService(
         avklaringsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelse>
     ) {
         avklaringsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
+            val personIdent = oppgaveOppdatering.personIdent
             val enhetForOppgave = enhetService.utledEnhetForOppgave(
                 avklaringsbehovHendelse.avklaringsbehovKode,
-                oppgaveOppdatering.personIdent
+                personIdent
             )
-            val veileder = if (oppgaveOppdatering.personIdent != null) {
-                veilarbarboppfolgingKlient.hentVeileder(oppgaveOppdatering.personIdent)
-            } else {
-                null
-            }
-            val harFortroligAdresse = enhetService.harFortroligAdresse(oppgaveOppdatering.personIdent)
+
+            val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
+            val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
+            val harFortroligAdresse = enhetService.harFortroligAdresse(personIdent)
+
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
-                personIdent = oppgaveOppdatering.personIdent,
+                personIdent = personIdent,
                 avklaringsbehovKode = avklaringsbehovHendelse.avklaringsbehovKode,
                 behandlingstype = oppgaveOppdatering.behandlingstype,
                 ident = "Kelvin",
                 enhet = enhetForOppgave.enhet,
                 oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
-                veileder = veileder,
+                veilederArbeid = veilederArbeid,
+                veilederSykdom = veilederSykdom,
                 påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
                 påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent,
                 venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
@@ -271,6 +278,15 @@ class OppdaterOppgaveService(
             }
         }
     }
+
+    private fun hentVeilederSykefraværoppfølging(personIdent: String): String? =
+        if (unleashService.isEnabled(FeatureToggles.HentVeilederSykefraværsoppfølging)) {
+            sykefravarsoppfolgingKlient.hentVeileder(personIdent)
+        } else {
+            null
+        }
+
+    private fun hentVeilederArbeidsoppfølging(personIdent: String): String? = veilarbarboppfolgingKlient.hentVeileder(personIdent)
 
     private fun sammeSaksbehandlerType(
         avklaringsbehovKode1: AvklaringsbehovKode,
@@ -333,7 +349,8 @@ class OppdaterOppgaveService(
         ident: String,
         enhet: String,
         oppfølgingsenhet: String?,
-        veileder: String?,
+        veilederArbeid: String?,
+        veilederSykdom: String?,
         påVentTil: LocalDate?,
         påVentÅrsak: String?,
         venteBegrunnelse: String?,
@@ -348,7 +365,9 @@ class OppdaterOppgaveService(
             journalpostId = this.journalpostId,
             enhet = enhet,
             oppfølgingsenhet = oppfølgingsenhet,
-            veileder = veileder,
+            veileder = veilederArbeid,
+            veilederArbeid = veilederArbeid,
+            veilederSykdom = veilederSykdom,
             behandlingOpprettet = this.opprettetTidspunkt,
             avklaringsbehovKode = avklaringsbehovKode.kode,
             behandlingstype = behandlingstype,

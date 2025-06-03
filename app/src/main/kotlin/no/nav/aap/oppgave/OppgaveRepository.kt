@@ -33,7 +33,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPRETTET_AV,
                 OPPRETTET_TIDSPUNKT,
                 PERSON_IDENT,
-                VEILEDER,
+                VEILEDER_ARBEID,
+                VEILEDER_SYKDOM,
                 AARSAKER_TIL_BEHANDLING,
                 VENTE_BEGRUNNELSE,
                 FORTROLIG_ADRESSE,
@@ -42,7 +43,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 retur_aarsaker,
                 retur_returnert_av
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -62,14 +63,15 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(12, oppgaveDto.opprettetAv)
                 setLocalDateTime(13, oppgaveDto.opprettetTidspunkt)
                 setString(14, oppgaveDto.personIdent)
-                setString(15, oppgaveDto.veileder)
-                setArray(16, oppgaveDto.årsakerTilBehandling)
-                setString(17, oppgaveDto.venteBegrunnelse)
-                setBoolean(18, oppgaveDto.harFortroligAdresse)
-                setEnumName(19, oppgaveDto.returInformasjon?.status)
-                setString(20, oppgaveDto.returInformasjon?.begrunnelse)
-                setArray(21, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(22, oppgaveDto.returInformasjon?.endretAv)
+                setString(15, oppgaveDto.veilederArbeid)
+                setString(16, oppgaveDto.veilederSykdom)
+                setArray(17, oppgaveDto.årsakerTilBehandling)
+                setString(18, oppgaveDto.venteBegrunnelse)
+                setBoolean(19, oppgaveDto.harFortroligAdresse)
+                setEnumName(20, oppgaveDto.returInformasjon?.status)
+                setString(21, oppgaveDto.returInformasjon?.begrunnelse)
+                setArray(22, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(23, oppgaveDto.returInformasjon?.endretAv)
             }
         }
         return OppgaveId(id, 0L)
@@ -209,7 +211,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         påVentÅrsak: String?,
         påVentBegrunnelse: String?,
         oppfølgingsenhet: String?,
-        veileder: String?,
+        veilederArbeid: String?,
+        veilederSykdom: String?,
         årsakerTilBehandling: List<String>,
         harFortroligAdresse: Boolean? = false,
         returInformasjon: ReturInformasjon?
@@ -227,7 +230,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PAA_VENT_AARSAK= ?,
                 VENTE_BEGRUNNELSE = ?,
                 PERSON_IDENT = ?,
-                VEILEDER = ?,
+                VEILEDER_ARBEID = ?,
+                VEILEDER_SYKDOM = ?,
                 AARSAKER_TIL_BEHANDLING = ?,
                 FORTROLIG_ADRESSE = ?,
                 RETUR_AARSAK = ?,
@@ -249,15 +253,16 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(5, påVentÅrsak)
                 setString(6, påVentBegrunnelse)
                 setString(7, personIdent)
-                setString(8, veileder)
-                setArray(9, årsakerTilBehandling)
-                setBoolean(10, harFortroligAdresse)
-                setEnumName(11, returInformasjon?.status)
-                setString(12, returInformasjon?.endretAv)
-                setArray(13, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(14, returInformasjon?.begrunnelse)
-                setLong(15, oppgaveId.id)
-                setLong(16, oppgaveId.versjon)
+                setString(8, veilederArbeid)
+                setString(9, veilederSykdom)
+                setArray(10, årsakerTilBehandling)
+                setBoolean(11, harFortroligAdresse)
+                setEnumName(12, returInformasjon?.status)
+                setString(13, returInformasjon?.endretAv)
+                setArray(14, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(15, returInformasjon?.begrunnelse)
+                setLong(16, oppgaveId.id)
+                setLong(17, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
@@ -641,7 +646,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
         // Veileder
         if (veileder != null) {
-            sb.append("VEILEDER = '$veileder' AND ")
+            sb.append("(VEILEDER_ARBEID = '$veileder' OR ")
+            sb.append("VEILEDER_SYKDOM = '$veileder') AND ")
         }
         // Vis/skjul oppgaver som er på vent fra oppgaveliste
         // sb.append("PAA_VENT_TIL IS NULL AND ")
@@ -658,7 +664,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
-            veileder = row.getStringOrNull("VEILEDER"),
+            veileder = row.getStringOrNull("VEILEDER_ARBEID"),
+            veilederArbeid = row.getStringOrNull("VEILEDER_ARBEID"),
+            veilederSykdom = row.getStringOrNull("VEILEDER_SYKDOM"),
             behandlingOpprettet = row.getLocalDateTime("BEHANDLING_OPPRETTET"),
             avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
             status = Status.valueOf(row.getString("STATUS")),
@@ -697,7 +705,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             JOURNALPOST_ID,
             ENHET,
             OPPFOLGINGSENHET,
-            VEILEDER,
+            VEILEDER_ARBEID,
+            VEILEDER_SYKDOM,
             BEHANDLING_OPPRETTET,
             AVKLARINGSBEHOV_TYPE,
             STATUS,

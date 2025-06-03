@@ -109,7 +109,8 @@ class OppdaterOppgaveEnhetJobbTest {
         behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
         enhet: String = ENHET_NAV_LØRENSKOG,
         oppfølgingsenhet: String? = null,
-        veileder: String? = null,
+        veilederArbeid: String? = null,
+        veilederSykdom: String? = null,
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             personIdent = personIdent,
@@ -122,7 +123,8 @@ class OppdaterOppgaveEnhetJobbTest {
             status = status,
             behandlingstype = behandlingstype,
             opprettetAv = "bruker1",
-            veileder = veileder,
+            veilederArbeid = veilederArbeid,
+            veilederSykdom = veilederSykdom,
             opprettetTidspunkt = LocalDateTime.now()
         )
         return dataSource.transaction { connection ->

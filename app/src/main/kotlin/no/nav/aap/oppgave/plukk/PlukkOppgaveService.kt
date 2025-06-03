@@ -123,6 +123,7 @@ class PlukkOppgaveService(
                 AvklaringsbehovKode(oppgave.avklaringsbehovKode),
                 oppgave.personIdent
             )
+
         if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
             log.info("Oppdaterer enhet for oppgave $oppgaveId etter at tilgang ble avslått på plukk.")
             oppgaveRepo.oppdatereOppgave(
@@ -134,7 +135,8 @@ class PlukkOppgaveService(
                 påVentÅrsak = oppgave.påVentÅrsak,
                 påVentBegrunnelse = oppgave.venteBegrunnelse,
                 oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
-                veileder = oppgave.veileder,
+                veilederArbeid = oppgave.veilederArbeid,
+                veilederSykdom = oppgave.veilederSykdom,
                 årsakerTilBehandling = oppgave.årsakerTilBehandling,
                 harFortroligAdresse = oppgave.harFortroligAdresse,
                 returInformasjon = oppgave.returInformasjon

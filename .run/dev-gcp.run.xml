@@ -28,6 +28,8 @@
       <env name="INTEGRASJON_VEILARBARENA_SCOPE" value="api://dev-fss.pto.veilarbarena/.default" />
       <env name="INTEGRASJON_VEILARBOPPFOLGING_URL" value="https://veilarboppfolging.intern.dev.nav.no" />
       <env name="INTEGRASJON_VEILARBOPPFOLGING_SCOPE" value="api://dev-gcp.poao.veilarboppfolging/.default" />
+      <env name="INTEGRASJON_SYFO_URL" value="https://syfooversiktsrv.intern.dev.nav.no" />
+      <env name="INTEGRASJON_SYFO_SCOPE" value="api://dev-gcp.teamsykefravr.syfooversiktsrv/.default" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="no.nav.aap.oppgave.server.AppKt" />
     <module name="aap-oppgave.app.main" />

@@ -43,3 +43,4 @@ build/
 .gradle
 .java-version
 openapi.json
+.kotlin/

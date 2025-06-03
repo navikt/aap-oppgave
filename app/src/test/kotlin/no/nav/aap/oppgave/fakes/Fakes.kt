@@ -21,6 +21,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
     private val nom = FakeServer(module = { nomFake() })
     private val veilarbarena = FakeServer(module = { veilarbarenaFake() })
     private val veilarboppfolging = FakeServer(module = { veilarboppfolgingFake() })
+    private val sykefravavaroppfolging = FakeServer(module = { sykefravaroppfolgingFake() })
     private val msGraph = FakeServer(module = { msGraphFake() })
     private val statistikkFake = FakeServer(module = { statistikkFake() })
 
@@ -61,6 +62,9 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         // Veilarboppfolging
         System.setProperty("integrasjon.veilarboppfolging.url", "http://localhost:${veilarboppfolging.port()}")
         System.setProperty("integrasjon.veilarboppfolging.scope", "scope")
+        // Sykefraværoppfølging
+        System.setProperty("integrasjon.syfo.url", "http://localhost:${sykefravavaroppfolging.port()}")
+        System.setProperty("integrasjon.syfo.scope", "scope")
         
         System.setProperty("AAP_SAKSBEHANDLER_NASJONAL", "saksbehandler-rolle")
         System.setProperty("AAP_SAKSBEHANDLER_OPPFOLGING", "veileder-rolle")
