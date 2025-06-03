@@ -43,7 +43,7 @@ class SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
         val hentVeilederUrl = url.resolve("/api/v1/system/persontildeling/personer/single")
         val request = GetRequest(
             additionalHeaders = listOf(
-                Header("NAV_PERSONIDENT_HEADER", personIdent),
+                Header("nav-personident", personIdent),
                 Header("Nav-Consumer-Id", "aap-oppgave"),
             )
         )
