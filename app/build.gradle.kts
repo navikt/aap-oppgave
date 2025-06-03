@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.1.3"
 val komponenterVersjon = "1.0.247"
-val tilgangVersjon = "1.0.69"
+val tilgangVersjon = "1.0.70"
 val behandlingsflytVersjon = "0.0.305"
 val postmottakVersjon = "0.0.92"
 
@@ -34,7 +34,7 @@ dependencies {
     implementation("no.nav.aap.kelvin:server:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor-api:$komponenterVersjon")
-    implementation("no.nav:ktor-openapi-generator:1.0.109")
+    implementation("no.nav:ktor-openapi-generator:1.0.110")
     implementation("no.nav.aap.tilgang:api-kontrakt:$tilgangVersjon")
     implementation("no.nav.aap.tilgang:plugin:$tilgangVersjon")
     implementation("no.nav.aap.behandlingsflyt:kontrakt:$behandlingsflytVersjon")
@@ -63,7 +63,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
 
     implementation("com.zaxxer:HikariCP:6.3.0")
-    implementation("org.flywaydb:flyway-database-postgresql:11.8.2")
+    implementation("org.flywaydb:flyway-database-postgresql:11.9.0")
     implementation("io.getunleash:unleash-client-java:10.2.2")
     runtimeOnly("org.postgresql:postgresql:42.7.6")
 
