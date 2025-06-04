@@ -46,6 +46,8 @@ private val AVSLUTTEDE_STATUSER = setOf(
     AvklaringsbehovStatus.TOTRINNS_VURDERT,
 )
 
+private const val KELVIN = "Kelvin"
+
 class OppdaterOppgaveService(
     msGraphClient: IMsGraphClient,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
@@ -123,7 +125,7 @@ class OppdaterOppgaveService(
                 if (eksisterendeOppgave.status == Status.AVSLUTTET) {
                     log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
                     oppgaveRepository.gjenåpneOppgave(
-                        eksisterendeOppgave.oppgaveId(), "Kelvin", tilReturInformasjon(avklaringsbehov)
+                        eksisterendeOppgave.oppgaveId(), KELVIN, tilReturInformasjon(avklaringsbehov)
                     )
                 } else {
                     log.warn("Kan ikke gjenåpne oppgave som er allerede er åpen (id=${eksisterendeOppgave.oppgaveId()}, avklaringsbehov=${avklaringsbehov.avklaringsbehovKode})")
@@ -135,11 +137,11 @@ class OppdaterOppgaveService(
                     flytJobbRepository
                 )
                 val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
-                if (sistEndretAv != "Kelvin") {
+                if (sistEndretAv != KELVIN) {
                     val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
                     val oppdatertOppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanse)
                     if (oppdatertOppgave != null) {
-                        oppgaveRepository.reserverOppgave(oppdatertOppgave.oppgaveId(), "Kelvin", sistEndretAv)
+                        oppgaveRepository.reserverOppgave(oppdatertOppgave.oppgaveId(), KELVIN, sistEndretAv)
                         log.info("Reserverer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
                         sendOppgaveStatusOppdatering(
                             oppdatertOppgave.oppgaveId(),
@@ -155,7 +157,7 @@ class OppdaterOppgaveService(
                 val harFortroligAdresse = enhetService.harFortroligAdresse(oppgaveOppdatering.personIdent)
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
-                    ident = "Kelvin",
+                    ident = KELVIN,
                     personIdent = personIdent,
                     enhet = enhetForOppgave.enhet,
                     oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
