@@ -25,9 +25,11 @@ import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.unleash.UnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -39,6 +41,19 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 class OppdaterOppgaveServiceTest {
 
     private val dataSource = InitTestDatabase.freshDatabase()
+
+    companion object {
+        @BeforeAll
+        @JvmStatic
+        fun beforeAll() {
+            // Unleash
+            UnleashServiceProvider.setUnleashService(
+                UnleashService(FakeUnleash().apply {
+                    enableAll()
+                })
+            )
+        }
+    }
 
     @AfterTest
     fun tearDown() {

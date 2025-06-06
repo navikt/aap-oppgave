@@ -6,6 +6,9 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
@@ -138,8 +141,16 @@ private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
 
 private fun String?.nullIfBlank() = if (this.isNullOrBlank()) null else this
 
+private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
+
+
 private fun no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.tilBehandlingsstatus(): BehandlingStatus {
-    if (this == no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.AVSLUTTET) {
+    val erAvsluttet = if (unleashService.isEnabled(FeatureToggles.OpprettBrevOppgaver)) {
+        this == no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.AVSLUTTET
+    } else {
+        this.erAvsluttet()
+    }
+    if (erAvsluttet) {
         return BehandlingStatus.LUKKET
     }
     return BehandlingStatus.ÅPEN
