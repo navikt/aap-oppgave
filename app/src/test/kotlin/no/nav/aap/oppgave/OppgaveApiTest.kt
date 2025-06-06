@@ -881,6 +881,49 @@ class OppgaveApiTest {
         )!!
     }
 
+    @Test
+    fun `oppgaver skal opprettes også når behandlingen har status IVERKSETTES, men ikke når status er AVSLUTTET`() {
+        leggInnFilterForTest()
+
+        val saksnummer1 = "1023005"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.SKRIV_VEDTAKSBREV,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                        )
+                    )
+                ),
+                behandlingStatus = Status.IVERKSETTES
+            )
+        )
+
+        assertThat(hentAntallOppgaver().keys).hasSize(1)
+
+        // Behandlingen er AVSLUTTET, da skal åpne oppgaver lukkes
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.SKRIV_VEDTAKSBREV,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                        )
+                    )
+                ),
+                behandlingStatus = Status.AVSLUTTET
+            )
+        )
+
+        assertThat(hentAntallOppgaver().keys).hasSize(0)
+    }
+
     private data class Behandlingsbehov(
         val definisjon: Definisjon,
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
