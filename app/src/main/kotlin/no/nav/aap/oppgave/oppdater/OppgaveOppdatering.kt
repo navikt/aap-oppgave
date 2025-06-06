@@ -139,7 +139,7 @@ private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
 private fun String?.nullIfBlank() = if (this.isNullOrBlank()) null else this
 
 private fun no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.tilBehandlingsstatus(): BehandlingStatus {
-    if (this.erAvsluttet()) {
+    if (this == no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.AVSLUTTET) {
         return BehandlingStatus.LUKKET
     }
     return BehandlingStatus.ÅPEN
