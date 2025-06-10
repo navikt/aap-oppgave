@@ -106,7 +106,6 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 oppgavelisteApi(dataSource, prometheus)
                 oppgavesøkApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
-                oppgavesøkApi(dataSource, prometheus)
                 søkApi(dataSource, prometheus)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
