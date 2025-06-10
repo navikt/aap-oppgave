@@ -82,7 +82,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflyt(),
         venteInformasjon = if (this.erPåVent) {
-            val ventebehov = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }
+            val ventebehov =
+                this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() && it.status.erÅpent() }
             if (ventebehov.size != 1) {
                 logger.warn("Mer enn ett åpent ventebehov. Referanse: ${this.referanse.referanse}. Velger første.")
             }
