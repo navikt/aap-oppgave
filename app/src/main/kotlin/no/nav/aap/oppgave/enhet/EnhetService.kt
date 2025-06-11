@@ -108,7 +108,7 @@ class EnhetService(
                 tilknytningOgSkjerming.diskresjonskode
             )
         }
-        val enhetFraArena = if (tilknytningOgSkjerming.diskresjonskode != Diskresjonskode.SPSF) {
+        val enhetFraArena = if (tilknytningOgSkjerming.diskresjonskode != Diskresjonskode.SPSF && !tilknytningOgSkjerming.erNavAnsatt) {
             finnOppfølgingsenhet(fnr)
         } else {
             null

@@ -142,12 +142,34 @@ class EnhetServiceTest {
             )
         )
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
-        val nomKlient = NomKlientMock.medRespons(erEgenansatt = false)
+        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
 
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
         val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any")
         assertThat(res.enhet).isEqualTo(egneAnsatteOslo)
+    }
+
+    @Test
+    fun `Skal ikke sette oppfølgingsenhet for egen ansatt`() {
+        val egneAnsatteOslo = "0383"
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
+            )
+        )
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
+        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
+        val veilarbarenaClient = VeilarbarenaKlientMock(oppfølgingsenhet = "1111")
+
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient)
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any")
+        assertThat(res.enhet).isEqualTo(egneAnsatteOslo)
+        assertThat(res.oppfølgingsenhet).isNull()
+
+        val res2 = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any")
+        assertThat(res2.enhet).isEqualTo(egneAnsatteOslo)
+        assertThat(res2.oppfølgingsenhet).isNull()
     }
 
     @Test
