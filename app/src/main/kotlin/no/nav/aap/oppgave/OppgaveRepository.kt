@@ -5,11 +5,14 @@ import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.Paging
+import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
@@ -373,11 +376,38 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     enum class Rekkefølge { asc, desc }
 
+    private fun utvidetFilterQuery(utvidetFilter: UtvidetOppgavelisteFilter): String {
+        val sb = StringBuilder()
+
+        if (utvidetFilter.årsaker.isNotEmpty()) {
+            val stringListeÅrsaker =
+                utvidetFilter.årsaker.joinToString(prefix = "('{", postfix = "}')", separator = ", ") { it }
+            sb.append(" AND AARSAKER_TIL_BEHANDLING && $stringListeÅrsaker")
+        }
+
+        if (utvidetFilter.statuser.isNotEmpty()) {
+            val stringListeStatuser =
+                utvidetFilter.statuser.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
+            sb.append(" AND PAA_VENT_AARSAK IN $stringListeStatuser")
+        }
+
+        if (utvidetFilter.fom != null) {
+            sb.append(" AND OPPRETTET_TIDSPUNKT >= '${utvidetFilter.fom}'")
+        }
+
+        if (utvidetFilter.tom != null) {
+            sb.append(" AND OPPRETTET_TIDSPUNKT <= '${utvidetFilter.tom}'")
+        }
+
+        return sb.toString()
+    }
+
     fun finnOppgaver(
         filter: Filter,
         rekkefølge: Rekkefølge = Rekkefølge.asc,
         paging: Paging? = null,
         kunLedigeOppgaver: Boolean? = true,
+        utvidetFilter: UtvidetOppgavelisteFilter? = null
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
@@ -387,6 +417,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
         val kunLedigeQuery =
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
+        val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
 
         val hentNesteOppgaveQuery = """
             SELECT 
@@ -394,7 +425,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE 
             WHERE 
-                ${filter.whereClause()} STATUS != 'AVSLUTTET' $kunLedigeQuery
+                ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
             ORDER BY BEHANDLING_OPPRETTET ${rekkefølge.name}
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
@@ -651,7 +682,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
         // Vis/skjul oppgaver som er på vent fra oppgaveliste
         // sb.append("PAA_VENT_TIL IS NULL AND ")
-
         return sb.toString()
     }
 

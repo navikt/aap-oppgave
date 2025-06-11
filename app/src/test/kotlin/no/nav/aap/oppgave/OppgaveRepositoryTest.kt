@@ -7,11 +7,13 @@ import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
 import no.nav.aap.oppgave.liste.Paging
+import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.sql.SQLException
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.AfterTest
@@ -278,6 +280,34 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Kan bruke utvidet filter`() {
+        val oppgave1 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        val oppgave2 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, avklaringsbehovKode = AvklaringsbehovKode("5003"))
+
+        val utvidetFilter = UtvidetOppgavelisteFilter(
+            årsaker = setOf(),
+            behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+            fom = LocalDate.of(2020, 1, 1),
+            tom = LocalDate.now().plusDays(1),
+            avklaringsbehovKoder = setOf("5003", "12341234")
+        )
+
+        val søkMedUtvidetFilter = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(),
+            paging = null,
+            utvidetOppgavelisteFilter = utvidetFilter,
+        )
+
+        val alleOppgaver = finnAlleOppgaver(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)
+            )
+        )
+
+        assertThat(alleOppgaver.oppgaver).hasSize(2)
+        assertThat(søkMedUtvidetFilter.oppgaver).hasSize(1)
+    }
+
+    @Test
     fun `Skal finne oppgaver knyttet til oppfølgingsenhet dersom den er satt`() {
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG, oppfølgingsenhet = ENHET_NAV_LILLESTRØM)
@@ -328,6 +358,16 @@ class OppgaveRepositoryTest {
     private fun finnAlleOppgaver(filter: Filter, paging: Paging? = null): OppgaveRepository.FinnOppgaverDto {
         return dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = false)
+        }
+    }
+
+    private fun finnAlleOppgaverMedUtvidetFilter(filter: Filter, paging: Paging? = null, utvidetOppgavelisteFilter: UtvidetOppgavelisteFilter): OppgaveRepository.FinnOppgaverDto {
+        val kombinertFilter = (filter as TransientFilterDto).copy(
+            behandlingstyper = utvidetOppgavelisteFilter.behandlingstyper,
+            avklaringsbehovKoder = utvidetOppgavelisteFilter.avklaringsbehovKoder,
+        )
+        return dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).finnOppgaver(filter = kombinertFilter, paging = paging, kunLedigeOppgaver = false, utvidetFilter = utvidetOppgavelisteFilter)
         }
     }
 

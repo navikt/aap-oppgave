@@ -91,14 +91,9 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
 
 private fun settFilter(filter: FilterDto, utvidetFilter: UtvidetOppgavelisteFilter?): FilterDto {
     if (utvidetFilter == null) return filter
-
     return filter.copy(
-        årsak = utvidetFilter.årsak,
         behandlingstyper = utvidetFilter.behandlingstyper,
-        fom = utvidetFilter.fom,
-        tom = utvidetFilter.tom,
         avklaringsbehovKoder = utvidetFilter.avklaringsbehovKoder,
-        status = utvidetFilter.status
     )
 }
 
