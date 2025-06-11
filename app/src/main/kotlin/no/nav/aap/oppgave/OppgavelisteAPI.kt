@@ -10,17 +10,23 @@ import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.miljo.MiljøKode
 import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.TransientFilterDto
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
+import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("oppgavelisteApi")
+private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 
 /**
  * Søker etter oppgaver med et predefinert filter angitt med filterId. Det vil bli sjekket om innlogget bruker har tilgang
@@ -43,12 +49,26 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
                 MiljøKode.DEV -> OppgaveRepository.Rekkefølge.desc
                 else -> OppgaveRepository.Rekkefølge.asc
             }
-            OppgaveRepository(connection).finnOppgaver(
-                filter = filter.copy(enheter = request.enheter, veileder = veilederIdent),
-                rekkefølge = rekkefølge,
-                paging = request.paging,
-                kunLedigeOppgaver = request.kunLedigeOppgaver
-            )
+
+            if (unleashService.isEnabled(FeatureToggles.UtvidetOppgaveFilter)) {
+                val kombinertFilter = settFilter(filter, request.utvidetFilter)
+                OppgaveRepository(connection).finnOppgaver(
+                    filter = kombinertFilter.copy(
+                        enheter = request.enheter,
+                        veileder = veilederIdent
+                    ),
+                    rekkefølge = rekkefølge,
+                    paging = request.paging,
+                    kunLedigeOppgaver = request.kunLedigeOppgaver
+                )
+            } else {
+                OppgaveRepository(connection).finnOppgaver(
+                    filter = filter.copy(enheter = request.enheter, veileder = veilederIdent),
+                    rekkefølge = rekkefølge,
+                    paging = request.paging,
+                    kunLedigeOppgaver = request.kunLedigeOppgaver
+                )
+            }
         }
 
         val token = token()
@@ -67,6 +87,19 @@ fun NormalOpenAPIRoute.oppgavelisteApi(dataSource: DataSource, prometheus: Prome
             )
         )
     }
+}
+
+private fun settFilter(filter: FilterDto, utvidetFilter: UtvidetOppgavelisteFilter?): FilterDto {
+    if (utvidetFilter == null) return filter
+
+    return filter.copy(
+        årsak = utvidetFilter.årsak,
+        behandlingstyper = utvidetFilter.behandlingstyper,
+        fom = utvidetFilter.fom,
+        tom = utvidetFilter.tom,
+        avklaringsbehovKoder = utvidetFilter.avklaringsbehovKoder,
+        status = utvidetFilter.status
+    )
 }
 
 private fun sjekkTilgangTilFortroligAdresse(

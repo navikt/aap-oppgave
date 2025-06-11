@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.filter
 
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 interface Filter {
@@ -22,7 +23,11 @@ data class FilterDto(
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
-): Filter
+    val årsak: Set<String> = emptySet(),
+    val fom: LocalDate? = null,
+    val tom: LocalDate? = null,
+    val status: Set<String> = emptySet(),
+    ): Filter
 
 data class TransientFilterDto(
     override val avklaringsbehovKoder: Set<String> = emptySet(),
