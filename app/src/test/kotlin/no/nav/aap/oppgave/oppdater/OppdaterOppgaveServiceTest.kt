@@ -8,6 +8,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilRetur
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
@@ -28,6 +29,8 @@ import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
+import no.nav.aap.postmottak.kontrakt.journalpost.JournalpostId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -111,7 +114,7 @@ class OppdaterOppgaveServiceTest {
                             begrunnelse = "Fordi det er en feil",
                             årsakTilRetur = listOf(
                                 ÅrsakTilRetur(
-                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                    ÅrsakTilReturKode.MANGLENDE_UTREDNING
                                 )
                             )
                         ),
@@ -132,7 +135,7 @@ class OppdaterOppgaveServiceTest {
                             begrunnelse = "Fordi det er en feil",
                             årsakTilRetur = listOf(
                                 ÅrsakTilRetur(
-                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                    ÅrsakTilReturKode.MANGLENDE_UTREDNING
                                 )
                             )
                         )
@@ -159,7 +162,7 @@ class OppdaterOppgaveServiceTest {
                             begrunnelse = "Fordi det er en feil",
                             årsakTilRetur = listOf(
                                 ÅrsakTilRetur(
-                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGLENDE_UTREDNING
+                                    ÅrsakTilReturKode.MANGLENDE_UTREDNING
                                 )
                             )
                         )
@@ -173,6 +176,76 @@ class OppdaterOppgaveServiceTest {
         assertThat(sykdomOppgave.status).isEqualTo(Status.OPPRETTET)
         val fastsettBeregningstidspunktOppgave = hentOppgave(fastsettBeregningstidspunktOppgaveId)
         assertThat(fastsettBeregningstidspunktOppgave.status).isEqualTo(Status.AVSLUTTET)
+    }
+
+    @Test
+    fun `oppgaver fra postmottak lukkes etter at saksnummer er satt`() {
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val saksnummer = "123".let(::Saksnummer)
+
+        val nå = LocalDateTime.now()
+
+        val hendelse = DokumentflytStoppetHendelse(
+            journalpostId = JournalpostId(123),
+            ident = "personIdent",
+            referanse = behandlingsref.referanse,
+            behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
+            status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            avklaringsbehov = listOf(
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(1)
+                        ),
+                    )
+                )
+            ),
+            opprettetTidspunkt = nå.minusHours(1),
+            saksnummer = null,
+            hendelsesTidspunkt = nå.minusHours(1),
+        )
+        sendDokumentFlytStoppetHendelse(hendelse)
+
+        val oppgaverPåBehandling = hentOppgaverForBehandling(behandlingsref = behandlingsref)
+        assertThat(oppgaverPåBehandling).hasSize(1)
+        assertThat(oppgaverPåBehandling.first().status).isEqualTo(Status.OPPRETTET)
+        assertThat(oppgaverPåBehandling.first().avklaringsbehovKode).isEqualTo("1340")
+
+        val hendelse2 = DokumentflytStoppetHendelse(
+            journalpostId = JournalpostId(123),
+            ident = "personIdent",
+            referanse = behandlingsref.referanse,
+            behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
+            status = no.nav.aap.postmottak.kontrakt.behandling.Status.AVSLUTTET,
+            avklaringsbehov = listOf(
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå
+                        ),
+                    )
+                )
+            ),
+            opprettetTidspunkt = nå,
+            saksnummer = saksnummer.toString(),
+            hendelsesTidspunkt = nå,
+        )
+        sendDokumentFlytStoppetHendelse(hendelse2)
+
+        val oppgaverPåBehandling2 = hentOppgaverForBehandling(behandlingsref)
+        assertThat(oppgaverPåBehandling2).hasSize(1)
+        assertThat(oppgaverPåBehandling2.first().status).isEqualTo(Status.AVSLUTTET)
+        assertThat(oppgaverPåBehandling2.first().avklaringsbehovKode).isEqualTo("1340")
+
+
     }
 
     @Test
@@ -209,7 +282,7 @@ class OppdaterOppgaveServiceTest {
 
         sendBehandlingFlytStoppetHendelse(hendelse)
 
-        val åpneOppgaver = hentOppgaverForBehandling(saksnummer, behandlingsref)
+        val åpneOppgaver = hentOppgaverForBehandling(behandlingsref)
         assertThat(åpneOppgaver).hasSize(1)
 
         val venteFrist = LocalDate.now().plusDays(1)
@@ -232,7 +305,7 @@ class OppdaterOppgaveServiceTest {
 
         sendBehandlingFlytStoppetHendelse(hendelse2)
 
-        val oppgaver = hentOppgaverForBehandling(saksnummer, behandlingsref)
+        val oppgaver = hentOppgaverForBehandling(behandlingsref)
 
         assertThat(oppgaver).hasSize(1).first()
             .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
@@ -257,7 +330,7 @@ class OppdaterOppgaveServiceTest {
 
         sendBehandlingFlytStoppetHendelse(hendelse3)
 
-        val oppgaver2 = hentOppgaverForBehandling(saksnummer, behandlingsref)
+        val oppgaver2 = hentOppgaverForBehandling(behandlingsref)
 
         assertThat(oppgaver2).hasSize(1).first()
             .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
@@ -265,13 +338,10 @@ class OppdaterOppgaveServiceTest {
     }
 
     private fun hentOppgaverForBehandling(
-        saksnummer: Saksnummer,
         behandlingsref: BehandlingReferanse
     ): List<OppgaveDto> = dataSource.transaction { connection ->
         OppgaveRepository(connection).hentOppgaver(
-            saksnummer = saksnummer.toString(),
             referanse = behandlingsref.referanse,
-            journalpostId = null,
         )
     }
 
@@ -315,7 +385,7 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                             årsakTilRetur = listOf(
                                 ÅrsakTilRetur(
-                                    no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
+                                    ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
                                 )
                             ),
                             begrunnelse = "xxx",
@@ -349,6 +419,23 @@ class OppdaterOppgaveServiceTest {
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }
+
+    private fun sendDokumentFlytStoppetHendelse(hendelse: DokumentflytStoppetHendelse) {
+        dataSource.transaction { connection ->
+            OppdaterOppgaveService(
+                graphClient,
+                UnleashService(FakeUnleash().apply {
+                    enableAll()
+                }),
+                veilarbarboppfolgingKlient,
+                sykefravarsoppfolgingKlient,
+                enhetService,
+                OppgaveRepository(connection),
+                FlytJobbRepository(connection)
+            ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
+        }
+    }
+
 
     private val ENHET_NAV_LØRENSKOG = "0230"
     private fun opprettOppgave(

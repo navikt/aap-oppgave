@@ -11,8 +11,6 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
@@ -140,27 +138,19 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentOppgaver(saksnummer: String?, referanse: UUID?, journalpostId: Long?): List<OppgaveDto> {
-        val saksnummerClause = if (saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
-        val referanseClause = if (referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
-        val journalpostIdClause = if (journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
+    fun hentOppgaver(referanse: UUID): List<OppgaveDto> {
         val oppgaverForReferanseQuery = """
-            SELECT 
-                $alleOppgaveFelt
-            FROM 
-                OPPGAVE 
-            WHERE 
-                $saksnummerClause AND
-                $referanseClause AND
-                $journalpostIdClause
-        """.trimIndent()
+        SELECT 
+            $alleOppgaveFelt
+        FROM 
+            OPPGAVE 
+        WHERE 
+            BEHANDLING_REF = ?
+    """.trimIndent()
 
         return connection.queryList(oppgaverForReferanseQuery) {
             setParams {
-                var index = 1
-                if (saksnummer != null) setString(index++, saksnummer)
-                if (referanse != null) setUUID(index++, referanse)
-                if (journalpostId != null) setLong(index++, journalpostId)
+                setUUID(1, referanse)
             }
             setRowMapper { row ->
                 oppgaveMapper(row)

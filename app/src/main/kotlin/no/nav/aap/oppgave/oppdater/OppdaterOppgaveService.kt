@@ -61,11 +61,7 @@ class OppdaterOppgaveService(
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
     fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
-        val eksisterendeOppgaver = oppgaveRepository.hentOppgaver(
-            oppgaveOppdatering.saksnummer,
-            oppgaveOppdatering.referanse,
-            oppgaveOppdatering.journalpostId
-        )
+        val eksisterendeOppgaver = oppgaveRepository.hentOppgaver(referanse = oppgaveOppdatering.referanse)
 
         val oppgaveMap = eksisterendeOppgaver.associateBy({ AvklaringsbehovKode(it.avklaringsbehovKode) }, { it })
 
