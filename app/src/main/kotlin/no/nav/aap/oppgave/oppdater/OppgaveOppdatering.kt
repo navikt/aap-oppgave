@@ -37,7 +37,8 @@ enum class AvklaringsbehovStatus {
 data class OppgaveOppdatering(
     val personIdent: String? = null,
     val saksnummer: String? = null,
-    val referanse: UUID? = null,
+    // antagelse om at referanse aldri er null
+    val referanse: UUID,
     val journalpostId: Long? = null,
     val behandlingStatus: BehandlingStatus,
     val behandlingstype: Behandlingstype,
