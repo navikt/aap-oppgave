@@ -11,6 +11,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.plukk.TilgangGateway
 import javax.sql.DataSource
 
 /**
@@ -34,12 +35,12 @@ fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: Promet
  * Fritekstsøk etter oppgave. Hvis søketekster er 11 tegn så søkes det etter oppgaver knyttet til fødselsnummer.
  * Ellers søkers det etter oppgave knyttet til saksnummer.
  */
-fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
 
     route("/sok").post<Unit, List<OppgaveDto>, SøkDto> { _, søk ->
         prometheus.httpCallCounter("/sok").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
-            val søketekst =  søk.søketekst.trim()
+            val søketekst = søk.søketekst.trim()
             val oppgaveRepo = OppgaveRepository(connection)
             if (søketekst.length >= 11) {
                 oppgaveRepo.finnOppgaverGittPersonident(søketekst)
@@ -49,6 +50,22 @@ fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMet
         }
         respond(oppgaver.medPersonNavn(true, token()))
     }
+
+    route("/sok/v2").post<Unit, SøkResponse, SøkDto> { _, søk ->
+        prometheus.httpCallCounter("/sok").increment()
+        val oppgaver = dataSource.transaction(readOnly = true) { connection ->
+            val søketekst = søk.søketekst.trim()
+            val oppgaveRepo = OppgaveRepository(connection)
+            if (søketekst.length >= 11) {
+                oppgaveRepo.finnOppgaverGittPersonident(søketekst)
+            } else {
+                oppgaveRepo.finnOppgaverGittSaksnummer(søketekst)
+            }
+        }
+        val harTilgang = oppgaver.all { TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token()) }
+        respond(SøkResponse(oppgaver.medPersonNavn(true, token()), harTilgang))
+    }
+}
 
 
 private fun OppgaveDto.medPersonNavn(token: OidcToken): OppgaveDto {
