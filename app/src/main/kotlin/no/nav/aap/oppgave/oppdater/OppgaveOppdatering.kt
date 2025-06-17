@@ -114,6 +114,7 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.Revurdering -> Behandlingstype.REVURDERING
         TypeBehandling.Tilbakekreving -> Behandlingstype.TILBAKEKREVING
         TypeBehandling.Klage -> Behandlingstype.KLAGE
+        TypeBehandling.SvarFraAndreinstans -> Behandlingstype.SVAR_FRA_ANDREINSTANS
     }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {

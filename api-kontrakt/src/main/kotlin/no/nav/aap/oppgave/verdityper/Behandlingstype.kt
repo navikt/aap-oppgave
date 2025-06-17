@@ -6,6 +6,7 @@ enum class Behandlingstype {
     REVURDERING,
     TILBAKEKREVING,
     KLAGE,
+    SVAR_FRA_ANDREINSTANS,
 
     // Fra postmottak
     DOKUMENT_HÅNDTERING,
