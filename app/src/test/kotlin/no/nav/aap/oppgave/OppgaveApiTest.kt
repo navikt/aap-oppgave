@@ -506,6 +506,45 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `Søkeresultat skal sensureres når saksbehandler mangler tilgang`() {
+        leggInnFilterForTest()
+        val saksnummer1 = "100002"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        // søk med tilgang
+        val søkResponseTilgang = søkEtterOppgaver(SøkDto(saksnummer1))
+        assertThat(søkResponseTilgang?.harTilgang).isTrue()
+        assertThat(søkResponseTilgang?.oppgaver).hasSize(1)
+        assertThat(søkResponseTilgang?.oppgaver?.first()?.saksnummer).isEqualTo(saksnummer1)
+
+
+        // søk uten tilgang
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse1)
+        val søkResponseUtenTilgang = søkEtterOppgaver(SøkDto(saksnummer1))
+        assertThat(søkResponseUtenTilgang?.harTilgang).isEqualTo(false)
+
+        // all info sensureres bort
+        assertThat(søkResponseUtenTilgang?.oppgaver?.all{ it.enhet === "" }).isTrue()
+        assertThat(søkResponseUtenTilgang?.oppgaver?.all{ it.personIdent === null }).isTrue()
+        assertThat(søkResponseUtenTilgang?.oppgaver?.all{ it.personNavn === null }).isTrue()
+
+    }
+
+    @Test
     fun `Kan oppdatere oppgave til fortrolig adresse`() {
         leggInnFilterForTest()
         val saksnummer1 = "100002"
@@ -1061,6 +1100,13 @@ class OppgaveApiTest {
         return oboClient.post(
             URI.create("http://localhost:8080/filter"),
             PostRequest(body = filter, currentToken = getOboToken())
+        )
+    }
+
+    private fun søkEtterOppgaver(søkDto: SøkDto): SøkResponse? {
+        return oboClient.post(
+            URI.create("http://localhost:8080/sok"),
+            PostRequest(body = søkDto, currentToken = getOboToken())
         )
     }
 
