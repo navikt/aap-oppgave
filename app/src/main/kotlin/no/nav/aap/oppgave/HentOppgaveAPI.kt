@@ -17,57 +17,45 @@ import javax.sql.DataSource
 /**
  * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en joournalpost i postmottk.
  */
-fun NormalOpenAPIRoute.hentOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
-    route("/hent-oppgave").post<Unit, OppgaveDto, AvklaringsbehovReferanseDto> { _, request ->
-        prometheus.httpCallCounter("/hent-oppgave").increment()
-        val oppgave = dataSource.transaction(readOnly = true) { connection ->
+fun NormalOpenAPIRoute.hentOppgaveApi(
+    dataSource: DataSource,
+    prometheus: PrometheusMeterRegistry
+) = route("/hent-oppgave").post<Unit, OppgaveDto, AvklaringsbehovReferanseDto> { _, request ->
+    prometheus.httpCallCounter("/hent-oppgave").increment()
+    val oppgave =
+        dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).hentOppgave(request)
         }
-        if (oppgave != null) {
-            respond(oppgave.medPersonNavn(token()))
-        } else {
-            respondWithStatus(HttpStatusCode.NoContent)
-        }
+    if (oppgave != null) {
+        respond(oppgave.medPersonNavn(token()))
+    } else {
+        respondWithStatus(HttpStatusCode.NoContent)
     }
+}
 
 /**
  * Fritekstsøk etter oppgave. Hvis søketekster er 11 tegn så søkes det etter oppgaver knyttet til fødselsnummer.
  * Ellers søkers det etter oppgave knyttet til saksnummer.
  */
-fun NormalOpenAPIRoute.søkApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
-
-    route("/sok").post<Unit, List<OppgaveDto>, SøkDto> { _, søk ->
+fun NormalOpenAPIRoute.søkApi(
+    dataSource: DataSource,
+    prometheus: PrometheusMeterRegistry
+) {
+    route("/sok").post<Unit, SøkResponse, SøkDto> { _, søk ->
         prometheus.httpCallCounter("/sok").increment()
-        val oppgaver = dataSource.transaction(readOnly = true) { connection ->
-            val søketekst = søk.søketekst.trim()
-            val oppgaveRepo = OppgaveRepository(connection)
-            if (søketekst.length >= 11) {
-                oppgaveRepo.finnOppgaverGittPersonident(søketekst)
-            } else {
-                oppgaveRepo.finnOppgaverGittSaksnummer(søketekst)
+        val oppgaver =
+            dataSource.transaction(readOnly = true) { connection ->
+                val søketekst = søk.søketekst.trim()
+                val oppgaveRepo = OppgaveRepository(connection)
+                if (søketekst.length >= 11) {
+                    oppgaveRepo.finnOppgaverGittPersonident(søketekst)
+                } else {
+                    oppgaveRepo.finnOppgaverGittSaksnummer(søketekst)
+                }
             }
-        }
-        respond(oppgaver.medPersonNavn(true, token()))
-    }
-
-    route("/sok/v2").post<Unit, SøkResponse, SøkDto> { _, søk ->
-        prometheus.httpCallCounter("/sok").increment()
-        val oppgaver = dataSource.transaction(readOnly = true) { connection ->
-            val søketekst = søk.søketekst.trim()
-            val oppgaveRepo = OppgaveRepository(connection)
-            if (søketekst.length >= 11) {
-                oppgaveRepo.finnOppgaverGittPersonident(søketekst)
-            } else {
-                oppgaveRepo.finnOppgaverGittSaksnummer(søketekst)
-            }
-        }
         val harTilgang = oppgaver.all { TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token()) }
         respond(SøkResponse(oppgaver.medPersonNavn(true, token()), harTilgang))
     }
 }
 
-
-private fun OppgaveDto.medPersonNavn(token: OidcToken): OppgaveDto {
-    return listOf(this).medPersonNavn(true, token).first()
-}
+private fun OppgaveDto.medPersonNavn(token: OidcToken): OppgaveDto = listOf(this).medPersonNavn(true, token).first()
