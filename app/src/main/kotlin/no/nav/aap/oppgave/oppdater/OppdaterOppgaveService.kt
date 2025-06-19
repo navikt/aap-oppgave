@@ -370,7 +370,6 @@ class OppdaterOppgaveService(
             journalpostId = this.journalpostId,
             enhet = enhet,
             oppfølgingsenhet = oppfølgingsenhet,
-            veileder = veilederArbeid,
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
             behandlingOpprettet = this.opprettetTidspunkt,
