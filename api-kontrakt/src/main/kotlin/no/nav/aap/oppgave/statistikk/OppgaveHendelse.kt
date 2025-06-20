@@ -24,7 +24,7 @@ data class OppgaveHendelse(
     val hendelse: HendelseType,
     @Deprecated("Bruk oppgaveTilStatistikkDto i stedet")
     val oppgaveDto: OppgaveDto,
-    val oppgaveTilStatistikkDto: OppgaveTilStatistikkDto? = null
+    val oppgaveTilStatistikkDto: OppgaveTilStatistikkDto
 )
 
 /**
