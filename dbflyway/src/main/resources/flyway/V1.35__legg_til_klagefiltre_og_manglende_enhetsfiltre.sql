@@ -1,9 +1,9 @@
 insert into filter (navn, beskrivelse, opprettet_av, opprettet_tidspunkt)
-values ('Klagebehandling kontor', 'Behandle klage - Nav-kontor', 'L149075', current_timestamp);
+values ('Klagebehandling kontor', 'Behandle klage - Nav-kontor', 'Kelvin', current_timestamp);
 insert into filter (navn, beskrivelse, opprettet_av, opprettet_tidspunkt)
-values ('NAY klagebehandling', 'Behandle klage - NAY', 'L149075', current_timestamp);
+values ('NAY klagebehandling', 'Behandle klage - NAY', 'Kelvin', current_timestamp);
 insert into filter (navn, beskrivelse, opprettet_av, opprettet_tidspunkt)
-values ('Beslutter - klage', 'Beslutte klage', 'L149075', current_timestamp);
+values ('Beslutter - klage', 'Beslutte klage', 'Kelvin', current_timestamp);
 
 insert into filter_behandlingstype (filter_id, behandlingstype)
 values ((select id from filter where navn = 'Klagebehandling kontor'), 'KLAGE'),
