@@ -53,8 +53,9 @@ fun NormalOpenAPIRoute.søkApi(
                     oppgaveRepo.finnOppgaverGittSaksnummer(søketekst)
                 }
             }
+        val harAdressebeskyttelse = oppgaver.all { harAdressebeskyttelse(it) }
         val harTilgang = oppgaver.all { TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token()) }
-        respond(SøkResponse(oppgaver.medPersonNavn(true, token()), harTilgang))
+        respond(SøkResponse(oppgaver.medPersonNavn(true, token()), harTilgang, harAdressebeskyttelse))
     }
 }
 
