@@ -545,6 +545,100 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `Utleder adressebeskyttelse riktig i søk`() {
+        leggInnFilterForTest()
+        val saksnummer1 = "100002"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val opprettetOppgave = hentOppgave(
+            referanse = referanse1,
+            saksnummer = saksnummer1,
+            definisjon = Definisjon.AVKLAR_SYKDOM,
+        )
+
+        // sett strengt fortrolig adresse
+        oppdaterOgHentOppgave(
+            OppgaveDto(
+                id = opprettetOppgave!!.id,
+                saksnummer = opprettetOppgave.saksnummer,
+                behandlingRef = opprettetOppgave.behandlingRef,
+                enhet = Enhet.NAV_VIKAFOSSEN.kode,
+                oppfølgingsenhet = null,
+                veilederArbeid = opprettetOppgave.veilederArbeid,
+                behandlingOpprettet = opprettetOppgave.behandlingOpprettet,
+                avklaringsbehovKode = opprettetOppgave.avklaringsbehovKode,
+                status = opprettetOppgave.status,
+                behandlingstype = opprettetOppgave.behandlingstype,
+                opprettetAv = opprettetOppgave.opprettetAv,
+                opprettetTidspunkt = opprettetOppgave.opprettetTidspunkt,
+                versjon = opprettetOppgave.versjon,
+                )
+        )
+
+        val søkResponseStrengtFortrolig = søkEtterOppgaver(SøkDto(saksnummer1))
+        assertThat(søkResponseStrengtFortrolig?.harAdressebeskyttelse).isTrue()
+
+        // sett fortrolig adresse
+        oppdaterOgHentOppgave(
+            OppgaveDto(
+                id = opprettetOppgave.id,
+                saksnummer = opprettetOppgave.saksnummer,
+                behandlingRef = opprettetOppgave.behandlingRef,
+                enhet = Enhet.NAV_VIKAFOSSEN.kode,
+                oppfølgingsenhet = null,
+                veilederArbeid = opprettetOppgave.veilederArbeid,
+                behandlingOpprettet = opprettetOppgave.behandlingOpprettet,
+                avklaringsbehovKode = opprettetOppgave.avklaringsbehovKode,
+                status = opprettetOppgave.status,
+                behandlingstype = opprettetOppgave.behandlingstype,
+                opprettetAv = opprettetOppgave.opprettetAv,
+                opprettetTidspunkt = opprettetOppgave.opprettetTidspunkt,
+                versjon = opprettetOppgave.versjon + 1,
+                )
+        )
+
+        val søkResponseFortroligAdresse = søkEtterOppgaver(SøkDto(saksnummer1))
+        assertThat(søkResponseFortroligAdresse?.harAdressebeskyttelse).isTrue()
+
+        // sett egen ansatt
+        oppdaterOgHentOppgave(
+            OppgaveDto(
+                id = opprettetOppgave.id,
+                saksnummer = opprettetOppgave.saksnummer,
+                behandlingRef = opprettetOppgave.behandlingRef,
+                enhet = Enhet.NAY_EGNE_ANSATTE.kode,
+                oppfølgingsenhet = null,
+                veilederArbeid = opprettetOppgave.veilederArbeid,
+                behandlingOpprettet = opprettetOppgave.behandlingOpprettet,
+                avklaringsbehovKode = opprettetOppgave.avklaringsbehovKode,
+                status = opprettetOppgave.status,
+                behandlingstype = opprettetOppgave.behandlingstype,
+                opprettetAv = opprettetOppgave.opprettetAv,
+                opprettetTidspunkt = opprettetOppgave.opprettetTidspunkt,
+                versjon = opprettetOppgave.versjon + 2,
+                )
+        )
+
+        val søkResponseEgenAnsatt = søkEtterOppgaver(SøkDto(saksnummer1))
+        assertThat(søkResponseEgenAnsatt?.harAdressebeskyttelse).isTrue()
+
+    }
+
+    @Test
     fun `Kan oppdatere oppgave til fortrolig adresse`() {
         leggInnFilterForTest()
         val saksnummer1 = "100002"
