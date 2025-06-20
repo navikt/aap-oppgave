@@ -43,6 +43,6 @@ private fun skalFjerneSensitivInformasjon(oppgaveDto: OppgaveDto, token: OidcTok
 fun harAdressebeskyttelse(oppgave: OppgaveDto): Boolean =
     (
         oppgave.enhet == Enhet.NAV_VIKAFOSSEN.kode ||
-            oppgave.enhet.endsWith("83") ||
+            oppgave.enhet.endsWith("83") || // alle kontorer for egen ansatt slutter på 83
             oppgave.harFortroligAdresse == true
     )
