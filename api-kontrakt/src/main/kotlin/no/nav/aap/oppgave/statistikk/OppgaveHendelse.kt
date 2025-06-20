@@ -23,7 +23,7 @@ enum class HendelseType {
 data class OppgaveHendelse(
     val hendelse: HendelseType,
     @Deprecated("Bruk oppgaveTilStatistikkDto i stedet")
-    val oppgaveDto: OppgaveDto,
+    val oppgaveDto: OppgaveDto? = null,
     val oppgaveTilStatistikkDto: OppgaveTilStatistikkDto
 )
 
