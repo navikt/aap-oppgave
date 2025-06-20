@@ -51,7 +51,8 @@ class EnhetService(
             + AVKLARINGSBEHOV_FOR_BESLUTTER
             + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
         ) {
-            finnNayEnhet(fnr!!)
+            requireNotNull(fnr) { "fødselsnummer trenges for utlede enhet for ikke-kvalitetssikringsoppgaver" }
+            finnNayEnhet(fnr)
         } else {
             if (avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) {
                 finnFylkesEnhet(fnr)

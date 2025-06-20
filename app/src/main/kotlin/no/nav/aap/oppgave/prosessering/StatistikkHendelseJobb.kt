@@ -6,10 +6,12 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.motor.Jobb
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.motor.JobbUtfører
+import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.statistikk.OppgaveHendelse
+import no.nav.aap.oppgave.statistikk.OppgaveTilStatistikkDto
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("prosessering.StatistikkHendelseJobb")
@@ -23,7 +25,8 @@ class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository) :
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,
-                    oppgaveDto = oppgaveDto
+                    oppgaveDto = oppgaveDto,
+                    oppgaveTilStatistikkDto = OppgaveTilStatistikkDto.fraOppgaveDto(oppgaveDto)
                 )
             )
         }
@@ -46,6 +49,27 @@ class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository) :
             return "Send oppgave-endringer til statistikk-appen."
         }
     }
+}
+
+fun OppgaveTilStatistikkDto.Companion.fraOppgaveDto(oppgaveDto: OppgaveDto): OppgaveTilStatistikkDto {
+    return OppgaveTilStatistikkDto(
+        id = oppgaveDto.id,
+        personIdent = oppgaveDto.personIdent,
+        saksnummer = oppgaveDto.saksnummer,
+        behandlingRef = oppgaveDto.behandlingRef,
+        journalpostId = oppgaveDto.journalpostId,
+        enhet = oppgaveDto.enhetForKø(),
+        avklaringsbehovKode = oppgaveDto.avklaringsbehovKode,
+        status = oppgaveDto.status,
+        behandlingstype = oppgaveDto.behandlingstype,
+        reservertAv = oppgaveDto.reservertAv,
+        reservertTidspunkt = oppgaveDto.reservertTidspunkt,
+        opprettetAv = oppgaveDto.opprettetAv,
+        opprettetTidspunkt = oppgaveDto.opprettetTidspunkt,
+        endretAv = oppgaveDto.endretAv,
+        endretTidspunkt = oppgaveDto.endretTidspunkt,
+        versjon = oppgaveDto.versjon
+    )
 }
 
 /**

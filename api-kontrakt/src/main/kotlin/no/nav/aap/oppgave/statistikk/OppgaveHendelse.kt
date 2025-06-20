@@ -1,10 +1,18 @@
 package no.nav.aap.oppgave.statistikk
 
 import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.Status
+import java.time.LocalDateTime
+import java.util.*
 
 enum class HendelseType {
     OPPRETTET,
-    @Deprecated(message = "GJENÅPNET skal ikke brukes lengre. OPPDATERT brukes nå for alle oppdatering av oppgave.", replaceWith = ReplaceWith("OPPDATERT"))
+
+    @Deprecated(
+        message = "GJENÅPNET skal ikke brukes lengre. OPPDATERT brukes nå for alle oppdatering av oppgave.",
+        replaceWith = ReplaceWith("OPPDATERT")
+    )
     GJENÅPNET,
     OPPDATERT,
     RESERVERT,
@@ -14,5 +22,34 @@ enum class HendelseType {
 
 data class OppgaveHendelse(
     val hendelse: HendelseType,
-    val oppgaveDto: OppgaveDto
+    @Deprecated("Bruk oppgaveTilStatistikkDto i stedet")
+    val oppgaveDto: OppgaveDto,
+    val oppgaveTilStatistikkDto: OppgaveTilStatistikkDto? = null
 )
+
+/**
+ * Denne DTO-en brukes for å sende oppgavehendelser i statistikk.
+ * Den inneholder kun de feltene som statistikk-appen trenger.
+ *
+ * @param enhet Den faktiske enheten som skal utføre oppgaven.
+ */
+data class OppgaveTilStatistikkDto(
+    val id: Long? = null,
+    val personIdent: String? = null,
+    val saksnummer: String? = null,
+    val behandlingRef: UUID? = null,
+    val journalpostId: Long? = null,
+    val enhet: String,
+    val avklaringsbehovKode: String,
+    val status: Status = Status.OPPRETTET,
+    val behandlingstype: Behandlingstype,
+    val reservertAv: String? = null,
+    val reservertTidspunkt: LocalDateTime? = null,
+    val opprettetAv: String,
+    val opprettetTidspunkt: LocalDateTime,
+    val endretAv: String? = null,
+    val endretTidspunkt: LocalDateTime? = null,
+    val versjon: Long = 0
+) {
+    companion object {}
+}
