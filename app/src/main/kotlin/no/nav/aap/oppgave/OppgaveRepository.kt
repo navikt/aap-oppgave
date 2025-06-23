@@ -406,7 +406,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
         val kunLedigeQuery =
-            if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL" else "" // TODO: på sikt kan også oppgaver på vent fjernes fra ledige oppgaver
+            if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
 
         val hentNesteOppgaveQuery = """
@@ -670,8 +670,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append("(VEILEDER_ARBEID = '$veileder' OR ")
             sb.append("VEILEDER_SYKDOM = '$veileder') AND ")
         }
-        // Vis/skjul oppgaver som er på vent fra oppgaveliste
-        // sb.append("PAA_VENT_TIL IS NULL AND ")
+
         return sb.toString()
     }
 

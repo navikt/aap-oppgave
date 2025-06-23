@@ -260,22 +260,33 @@ class OppgaveRepositoryTest {
     }
 
     @Test
-    fun `Kan vise både ledige og alle oppgaver`() {
+    fun `Skal kunne vise ledige oppgaver eller alle oppgaver`() {
         val reservertOppgaveId = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         reserverOppgave(reservertOppgaveId, "saksbehandler")
+
         val ledigOppgaveId = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
 
+        val oppgavePåVentId = opprettOppgave(enhet = ENHET_NAV_ENEBAKK,
+            påVentTil = LocalDate.now().plusDays(3),
+            påVentÅrsak = "årsak",
+            venteBegrunnelse = "grunn"
+        )
+
+        // skal kun inneholde ledig oppgave
         val ledigeOppgaver = finnLedigeOppgaver(
             filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
         )
         assertThat(ledigeOppgaver.oppgaver.first().id == ledigOppgaveId.id)
+        assertThat(ledigeOppgaver.oppgaver.map { it.id }.contains(oppgavePåVentId.id)).isFalse()
         assertThat(ledigeOppgaver.oppgaver).hasSize(1)
 
+        // skal inneholde ledig, reservert og på vent
         val alleOppgaver = finnAlleOppgaver(
             filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
         )
-        assertThat(alleOppgaver.oppgaver).hasSize(2)
+        assertThat(alleOppgaver.oppgaver).hasSize(3)
         assertThat(reservertOppgaveId.id in alleOppgaver.oppgaver.map { it.id })
+        assertThat(oppgavePåVentId.id in alleOppgaver.oppgaver.map { it.id })
         assertThat(ledigOppgaveId.id in alleOppgaver.oppgaver.map { it.id })
     }
 
@@ -351,7 +362,7 @@ class OppgaveRepositoryTest {
 
     private fun finnLedigeOppgaver(filter: Filter, paging: Paging? = null): OppgaveRepository.FinnOppgaverDto {
         return dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).finnOppgaver(filter, paging = paging)
+            OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = true)
         }
     }
 
@@ -387,6 +398,9 @@ class OppgaveRepositoryTest {
         oppfølgingsenhet: String? = null,
         veilederArbeid: String? = null,
         veilederSykdom: String? = null,
+        påVentTil: LocalDate? = null,
+        påVentÅrsak: String? = null,
+        venteBegrunnelse: String? = null,
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -398,6 +412,9 @@ class OppgaveRepositoryTest {
             status = status,
             behandlingstype = behandlingstype,
             opprettetAv = "bruker1",
+            påVentTil = påVentTil,
+            påVentÅrsak = påVentÅrsak,
+            venteBegrunnelse = venteBegrunnelse,
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
             opprettetTidspunkt = LocalDateTime.now()
