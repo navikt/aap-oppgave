@@ -80,6 +80,7 @@ class PlukkOppgaveService(
             sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
             return oppgave
         } else {
+            log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
             avreserverHvisTilgangAvslått(oppgaveId = oppgaveId, ident = ident, oppgaveRepo = oppgaveRepository)
             sjekkFortroligAdresse(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepository)
             oppdaterUtdatertEnhet(oppgaveId = oppgaveId, oppgaveRepo = oppgaveRepository)

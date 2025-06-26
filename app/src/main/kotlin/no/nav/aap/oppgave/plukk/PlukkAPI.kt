@@ -23,7 +23,11 @@ import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.authorizedPost
+import org.slf4j.LoggerFactory
 import javax.sql.DataSource
+import kotlin.jvm.javaClass
+
+private val log = LoggerFactory.getLogger("plukkApi")
 
 fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
     // Trenger ikke ytterligere tilgangskontroll da tilgang kalles for å finne plukkbar oppgave
@@ -69,6 +73,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: Prome
         if (oppgave != null) {
             respond(oppgave)
         } else {
+            log.info("Bruker kunne ikke plukke oppgave")
             respondWithStatus(HttpStatusCode.Unauthorized)
         }
     }
