@@ -22,7 +22,6 @@ class MsGraphClient(
     prometheus: PrometheusMeterRegistry
 ) : IMsGraphClient {
     private val baseUrl = URI.create(requiredConfigForKey("ms.graph.base.url"))
-
     private val clientConfig = ClientConfig(
         scope = requiredConfigForKey("ms.graph.scope")
     )
