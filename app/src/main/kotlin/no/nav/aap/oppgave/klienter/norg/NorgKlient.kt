@@ -30,7 +30,7 @@ enum class Diskresjonskode { SPFO, SPSF, ANY }
 interface INorgKlient {
     fun finnEnhet(geografiskTilknyttning: String?, erNavansatt: Boolean, diskresjonskode: Diskresjonskode): String
     fun hentEnheter(): Map<String, String>
-    fun hentOverordnetFylkesenhet(enhetsnummer: String): String
+    fun hentOverordnetFylkesenheter(enhetsnummer: String): List<String>
 }
 
 class NorgKlient: INorgKlient {
@@ -75,15 +75,20 @@ class NorgKlient: INorgKlient {
         return enheter.associate { it.enhetNr to it.navn }
     }
 
-    override fun hentOverordnetFylkesenhet(enhetsnummer: String): String {
+    override fun hentOverordnetFylkesenheter(enhetsnummer: String): List<String> {
         log.info("Henter overordnet fylkesenhet for $enhetsnummer")
-        val hentOverordnetFylkesenhetUrl = url.resolve("norg2/api/v1/enhet/$enhetsnummer/overordnet?organiseringsType=FYLKE")
-        val enheter = checkNotNull(client.get<List<EnhetMedNavn>>(hentOverordnetFylkesenhetUrl, GetRequest(
-            additionalHeaders = listOf(
-                Header("Content-Type", "application/json")
+        val hentOverordnetFylkesenhetUrl =
+            url.resolve("norg2/api/v1/enhet/$enhetsnummer/overordnet?organiseringsType=FYLKE")
+        val enheter = checkNotNull(
+            client.get<List<EnhetMedNavn>>(
+                hentOverordnetFylkesenhetUrl, GetRequest(
+                    additionalHeaders = listOf(
+                        Header("Content-Type", "application/json")
+                    )
+                )
             )
-        )))
-        return enheter.single().enhetNr
-    }
+        )
 
+        return enheter.map { it.enhetNr }
+    }
 }

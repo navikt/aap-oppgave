@@ -41,7 +41,7 @@ class EnhetServiceTest {
     @Test
     fun `Skal utlede riktig enhet basert på avklaringsbehovkode`() {
         val nomKlient = NomKlientMock.medRespons(erEgenansatt = false)
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnhet = "0400")
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
         val utledetEnhetFylke = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
@@ -60,7 +60,7 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal kunne hente fylkeskontor for enhet`() {
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnhet = "0400")
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
         val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
@@ -93,8 +93,8 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons(
             responsEnhet = enhet,
             enhetTilOverordnetEnhetMap = mapOf(
-                enhet to overordnetEnhet,
-                oppfolgingsenhet to overordnetOppfolgingsenhet
+                enhet to listOf(overordnetEnhet),
+                oppfolgingsenhet to listOf(overordnetOppfolgingsenhet)
             )
         )
 
@@ -103,6 +103,28 @@ class EnhetServiceTest {
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(overordnetEnhet)
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(overordnetOppfolgingsenhet)
+    }
+
+    @Test
+    fun `Skal bruke fylkesenhet med like 2 første siffer om NORG2 returnerer mer enn 1 overordnet fylkesenhet`() {
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0300", "0400"))
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
+
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
+        assertThat(utledetEnhet).isNotNull()
+        assertThat(utledetEnhet.enhet).isEqualTo("0400")
+        assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
+    }
+
+    @Test
+    fun `Skal bruke den første fylkesenheten om NORG2 returnerer mer enn 1 overordnet fylkesenhet ingen starter med samme siffer`() {
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0200", "0500"))
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
+
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
+        assertThat(utledetEnhet).isNotNull()
+        assertThat(utledetEnhet.enhet).isEqualTo("0200")
+        assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
     }
 
     @Test
@@ -321,17 +343,17 @@ class EnhetServiceTest {
         class NorgKlientMock(
             val responsEnhet: String? = null,
             val enhetsNavnRespons: Map<String, String>? = null,
-            val overordnetFylkesEnhet: String? = null,
-            val enhetTilOverordnetEnhetMap: Map<String, String>? = null,
+            val overordnetFylkesEnheter: List<String>? = null,
+            val enhetTilOverordnetEnhetMap: Map<String, List<String>>? = null,
         ) : INorgKlient {
             companion object {
                 fun medRespons(
                     responsEnhet: String? = null,
                     enhetsNavnRespons: Map<String, String>? = null,
-                    overordnetFylkesEnhet: String? = null,
-                    enhetTilOverordnetEnhetMap: Map<String, String>? = null
+                    overordnetFylkesEnheter: List<String>? = null,
+                    enhetTilOverordnetEnhetMap: Map<String, List<String>>? = null
                 ): NorgKlientMock {
-                    return NorgKlientMock(responsEnhet, enhetsNavnRespons, overordnetFylkesEnhet, enhetTilOverordnetEnhetMap)
+                    return NorgKlientMock(responsEnhet, enhetsNavnRespons, overordnetFylkesEnheter, enhetTilOverordnetEnhetMap)
                 }
             }
 
@@ -347,9 +369,9 @@ class EnhetServiceTest {
                 return enhetsNavnRespons ?: TODO("Not yet implemented")
             }
 
-            override fun hentOverordnetFylkesenhet(enhetsnummer: String): String {
+            override fun hentOverordnetFylkesenheter(enhetsnummer: String): List<String> {
                 return enhetTilOverordnetEnhetMap?.get(enhetsnummer)
-                    ?: overordnetFylkesEnhet
+                    ?: overordnetFylkesEnheter
                     ?: TODO("Not yet implemented")
             }
         }

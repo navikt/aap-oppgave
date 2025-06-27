@@ -85,14 +85,24 @@ class EnhetService(
         if (enhet.enhet == Enhet.NAV_UTLAND.kode) {
             return EnhetForOppgave(
                 enhet = Enhet.NAV_UTLAND.kode,
-                oppfølgingsenhet = enhet.oppfølgingsenhet?.let { norgKlient.hentOverordnetFylkesenhet(it) }
+                oppfølgingsenhet = enhet.oppfølgingsenhet?.let { getOverordnetEnhet(it) }
             )
         }
 
         return EnhetForOppgave(
-            enhet = norgKlient.hentOverordnetFylkesenhet(enhet.enhet),
-            oppfølgingsenhet = enhet.oppfølgingsenhet?.let { norgKlient.hentOverordnetFylkesenhet(it) }
+            enhet = getOverordnetEnhet(enhet.enhet),
+            oppfølgingsenhet = enhet.oppfølgingsenhet?.let { getOverordnetEnhet(it) }
         )
+    }
+
+    private fun getOverordnetEnhet(enhetsnummer: String): String {
+        val enheter = norgKlient.hentOverordnetFylkesenheter(enhetsnummer)
+        val enheterMedSammeFørste2Siffer = enheter.filter { it.substring(0, 2) == enhetsnummer.substring(0, 2) }
+
+        if (enheterMedSammeFørste2Siffer.isNotEmpty()) {
+            return enheterMedSammeFørste2Siffer.first()
+        }
+        return enheter.first()
     }
 
     private fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave {
