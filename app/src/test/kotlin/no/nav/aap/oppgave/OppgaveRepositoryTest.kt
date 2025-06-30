@@ -411,7 +411,7 @@ class OppgaveRepositoryTest {
         påVentTil: LocalDate? = null,
         påVentÅrsak: String? = null,
         venteBegrunnelse: String? = null,
-        harUkvittertLegeerklæring: Boolean? = null
+        harUkvittertLegeerklæring: Boolean = false
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
