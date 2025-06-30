@@ -4,8 +4,12 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.mottattdokument.MottattDokument
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentType
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -45,7 +49,8 @@ data class OppgaveOppdatering(
     val opprettetTidspunkt: LocalDateTime,
     val avklaringsbehov: List<AvklaringsbehovHendelse>,
     val venteInformasjon: VenteInformasjon? = null,
-    val årsakerTilBehandling: List<String>
+    val årsakerTilBehandling: List<String>,
+    val mottattDokumenter: List<MottattDokument>
 )
 
 data class AvklaringsbehovHendelse(
@@ -104,8 +109,22 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
                     begrunnelse = siste.begrunnelse.nullIfBlank()
                 )
             }
-        } else null
+        } else null,
+        mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse)
     )
+}
+
+private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): List<MottattDokument> {
+    return this.map {
+        MottattDokument(
+            type = when (it.type) {
+                InnsendingType.LEGEERKLÆRING -> MottattDokumentType.LEGEERKLÆRING
+                else -> throw Exception("InnsendingType ${it.type} er ikke støttet")
+            },
+            behandlingRef = behandlingRef,
+            referanse = it.referanse.verdi,
+        )
+    }
 }
 
 private fun TypeBehandling.tilBehandlingstype() =
@@ -181,7 +200,8 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForPostmottak(),
-        årsakerTilBehandling = emptyList()
+        årsakerTilBehandling = emptyList(),
+        mottattDokumenter = emptyList()
     )
 }
 

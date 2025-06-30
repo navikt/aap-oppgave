@@ -1,0 +1,2 @@
+ALTER TABLE oppgave ADD COLUMN ukvittert_legeerklaering BOOLEAN NOT NULL DEFAULT FALSE;
+

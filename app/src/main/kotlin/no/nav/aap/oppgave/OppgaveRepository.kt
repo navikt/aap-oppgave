@@ -39,12 +39,13 @@ class OppgaveRepository(private val connection: DBConnection) {
                 AARSAKER_TIL_BEHANDLING,
                 VENTE_BEGRUNNELSE,
                 FORTROLIG_ADRESSE,
+                UKVITTERT_LEGEERKLAERING,
                 RETUR_AARSAK,
                 retur_begrunnelse,
                 retur_aarsaker,
                 retur_returnert_av
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -69,10 +70,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setArray(17, oppgaveDto.årsakerTilBehandling)
                 setString(18, oppgaveDto.venteBegrunnelse)
                 setBoolean(19, oppgaveDto.harFortroligAdresse)
-                setEnumName(20, oppgaveDto.returInformasjon?.status)
-                setString(21, oppgaveDto.returInformasjon?.begrunnelse)
-                setArray(22, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(23, oppgaveDto.returInformasjon?.endretAv)
+                setBoolean(20, oppgaveDto.harUkvittertLegeerklæring)
+                setEnumName(21, oppgaveDto.returInformasjon?.status)
+                setString(22, oppgaveDto.returInformasjon?.begrunnelse)
+                setArray(23, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(24, oppgaveDto.returInformasjon?.endretAv)
             }
         }
         return OppgaveId(id, 0L)
@@ -208,6 +210,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         veilederSykdom: String?,
         årsakerTilBehandling: List<String>,
         harFortroligAdresse: Boolean? = false,
+        harUkvittertLegeerklæring: Boolean? = false,
         returInformasjon: ReturInformasjon?
     ) {
         val query = """
@@ -227,6 +230,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VEILEDER_SYKDOM = ?,
                 AARSAKER_TIL_BEHANDLING = ?,
                 FORTROLIG_ADRESSE = ?,
+                UKVITTERT_LEGEERKLAERING = ?,
                 RETUR_AARSAK = ?,
                 retur_returnert_av = ?,
                 retur_aarsaker = ?,
@@ -250,12 +254,13 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(9, veilederSykdom)
                 setArray(10, årsakerTilBehandling)
                 setBoolean(11, harFortroligAdresse)
-                setEnumName(12, returInformasjon?.status)
-                setString(13, returInformasjon?.endretAv)
-                setArray(14, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(15, returInformasjon?.begrunnelse)
-                setLong(16, oppgaveId.id)
-                setLong(17, oppgaveId.versjon)
+                setBoolean(12, harUkvittertLegeerklæring)
+                setEnumName(13, returInformasjon?.status)
+                setString(14, returInformasjon?.endretAv)
+                setArray(15, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(16, returInformasjon?.begrunnelse)
+                setLong(17, oppgaveId.id)
+                setLong(18, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
         }
@@ -701,6 +706,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
             versjon = row.getLong("VERSJON"),
             harFortroligAdresse = row.getBoolean("FORTROLIG_ADRESSE"),
+            harUkvittertLegeerklæring = row.getBoolean("UKVITTERT_LEGEERKLAERING"),
             returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK"),
             returInformasjon = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")?.let {
                 ReturInformasjon(
@@ -741,6 +747,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             VERSJON,
             AARSAKER_TIL_BEHANDLING,
             FORTROLIG_ADRESSE,
+            UKVITTERT_LEGEERKLAERING,
             RETUR_AARSAK,
             RETUR_BEGRUNNELSE,
             retur_aarsaker,

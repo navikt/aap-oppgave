@@ -58,7 +58,8 @@ data class OppgaveDto(
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
     val versjon: Long = 0,
-    val harFortroligAdresse: Boolean? = false
+    val harFortroligAdresse: Boolean? = false,
+    val harUkvittertLegeerklæring: Boolean? = false
 ) {
     init {
         if (journalpostId == null) {
