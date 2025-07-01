@@ -369,6 +369,28 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    fun fjernUkvittertLegeerklæring(oppgaveId: OppgaveId) {
+        val query = """
+            UPDATE 
+                OPPGAVE 
+            SET 
+                UKVITTERT_LEGEERKLAERING = false,
+                VERSJON = VERSJON + 1
+            WHERE 
+                ID = ? AND
+                STATUS != 'AVSLUTTET' AND
+                VERSJON = ?
+        """.trimIndent()
+
+        connection.execute(query) {
+            setParams {
+                setLong(1, oppgaveId.id)
+                setLong(2, oppgaveId.versjon)
+            }
+            setResultValidator { require(it == 1) }
+        }
+    }
+
     enum class Rekkefølge { asc, desc }
 
     private fun utvidetFilterQuery(utvidetFilter: UtvidetOppgavelisteFilter): String {
