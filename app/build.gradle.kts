@@ -1,9 +1,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.2.0"
-val komponenterVersjon = "1.0.271"
+val komponenterVersjon = "1.0.277"
 val tilgangVersjon = "1.0.87"
-val behandlingsflytVersjon = "0.0.358"
+val behandlingsflytVersjon = "0.0.363"
 val postmottakVersjon = "0.0.96"
 
 plugins {
@@ -71,7 +71,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.13.2")
     testImplementation("org.assertj:assertj-core:3.27.3")
-    testImplementation("org.testcontainers:postgresql:1.21.2")
+    testImplementation("org.testcontainers:postgresql:1.21.3")
     constraints {
         implementation("org.apache.commons:commons-compress:1.27.1") {
             because("https://github.com/advisories/GHSA-4g9r-vxhx-9pgx")
