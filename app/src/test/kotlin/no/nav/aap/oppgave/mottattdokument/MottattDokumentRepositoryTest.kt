@@ -27,7 +27,7 @@ class MottattDokumentRepositoryTest {
 
     @Test
     fun `skal lagre og hente ut to uleste dokumenter`() {
-        return dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val repository = MottattDokumentRepository(connection)
 
             repository.lagreDokumenter(listOf(dok1, dok2))
@@ -41,7 +41,7 @@ class MottattDokumentRepositoryTest {
 
     @Test
     fun `skal kun hente uleste dokumenter`() {
-        return dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val repository = MottattDokumentRepository(connection)
 
             repository.lagreDokumenter(listOf(dok1, dok2))
@@ -56,7 +56,7 @@ class MottattDokumentRepositoryTest {
 
     @Test
     fun `skal ikke lagre eksisterende dokumenter på nytt`() {
-        return dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val repository = MottattDokumentRepository(connection)
 
             repository.lagreDokumenter(listOf(dok1, dok2))
@@ -74,7 +74,7 @@ class MottattDokumentRepositoryTest {
 
     @Test
     fun `skal lagre nytt dokument som ulest men ikke eksisterende leste dokumenter`() {
-        return dataSource.transaction { connection ->
+        dataSource.transaction { connection ->
             val repository = MottattDokumentRepository(connection)
 
             repository.lagreDokumenter(listOf(dok1, dok2))
