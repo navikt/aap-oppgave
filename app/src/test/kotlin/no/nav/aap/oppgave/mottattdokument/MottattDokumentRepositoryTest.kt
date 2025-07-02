@@ -1,10 +1,11 @@
 package no.nav.aap.oppgave.mottattdokument
 
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import java.util.*
 import kotlin.test.AfterTest
 
 class MottattDokumentRepositoryTest {
@@ -25,31 +26,31 @@ class MottattDokumentRepositoryTest {
     }
 
     @Test
-    fun `skal lagre og hente ut to ukvitterte dokumenter`() {
+    fun `skal lagre og hente ut to uleste dokumenter`() {
         return dataSource.transaction { connection ->
             val repository = MottattDokumentRepository(connection)
 
             repository.lagreDokumenter(listOf(dok1, dok2))
 
-            val ukvitterteDokumenter =
-                repository.hentUkvitterteDokumenter(behandlingRef, MottattDokumentType.LEGEERKLÆRING)
+            val ulesteDokumenter =
+                repository.hentUlesteDokumenter(behandlingRef)
 
-            Assertions.assertThat(ukvitterteDokumenter.size).isEqualTo(2)
+            assertThat(ulesteDokumenter.size).isEqualTo(2)
         }
     }
 
     @Test
-    fun `skal kun hente ukvitterte dokumenter`() {
+    fun `skal kun hente uleste dokumenter`() {
         return dataSource.transaction { connection ->
             val repository = MottattDokumentRepository(connection)
 
             repository.lagreDokumenter(listOf(dok1, dok2))
-            repository.kvitterDokumenter(behandlingRef, MottattDokumentType.LEGEERKLÆRING, "saksbehandler")
+            repository.registrerDokumenterSomLest(behandlingRef, "saksbehandler")
 
-            val ukvitterteDokumenter =
-                repository.hentUkvitterteDokumenter(behandlingRef, MottattDokumentType.LEGEERKLÆRING)
+            val ulesteDokumenter =
+                repository.hentUlesteDokumenter(behandlingRef)
 
-            Assertions.assertThat(ukvitterteDokumenter.size).isEqualTo(0)
+            assertThat(ulesteDokumenter.size).isEqualTo(0)
         }
     }
 
@@ -60,38 +61,38 @@ class MottattDokumentRepositoryTest {
 
             repository.lagreDokumenter(listOf(dok1, dok2))
 
-            val ukvitterteDokumenter =
-                repository.hentUkvitterteDokumenter(behandlingRef, MottattDokumentType.LEGEERKLÆRING)
+            val ulesteDokumenter =
+                repository.hentUlesteDokumenter(behandlingRef)
 
-            Assertions.assertThat(ukvitterteDokumenter.size).isEqualTo(2)
+            assertThat(ulesteDokumenter.size).isEqualTo(2)
 
             repository.lagreDokumenter(listOf(dok1, dok2))
 
-            Assertions.assertThat(ukvitterteDokumenter.size).isEqualTo(2)
+            assertThat(ulesteDokumenter.size).isEqualTo(2)
         }
     }
 
     @Test
-    fun `skal lagre nytt dokument men ikke eksisterende kvitterte dokumenter`() {
+    fun `skal lagre nytt dokument som ulest men ikke eksisterende leste dokumenter`() {
         return dataSource.transaction { connection ->
             val repository = MottattDokumentRepository(connection)
 
             repository.lagreDokumenter(listOf(dok1, dok2))
-            repository.kvitterDokumenter(behandlingRef, MottattDokumentType.LEGEERKLÆRING, "saksbehandler")
-            val ukvitterteDokumenter = repository.hentUkvitterteDokumenter(behandlingRef, MottattDokumentType.LEGEERKLÆRING)
+            repository.registrerDokumenterSomLest(behandlingRef, "saksbehandler")
+            val ulesteDokumenter = repository.hentUlesteDokumenter(behandlingRef)
 
-            Assertions.assertThat(ukvitterteDokumenter.size).isEqualTo(0)
+            assertThat(ulesteDokumenter.size).isEqualTo(0)
 
             repository.lagreDokumenter(listOf(dok1, dok2, dok3))
-            val ukvitterteDokumenterMedNyttDokument = repository.hentUkvitterteDokumenter(behandlingRef, MottattDokumentType.LEGEERKLÆRING)
+            val ulesteDokumenterMedNyttDokument = repository.hentUlesteDokumenter(behandlingRef)
 
-            Assertions.assertThat(ukvitterteDokumenterMedNyttDokument.size).isEqualTo(1)
+            assertThat(ulesteDokumenterMedNyttDokument.size).isEqualTo(1)
         }
     }
 
     private fun dokument(behandlingRef: UUID) =
         MottattDokument(
-            type = MottattDokumentType.LEGEERKLÆRING,
+            type = InnsendingType.LEGEERKLÆRING.name,
             behandlingRef = behandlingRef,
             referanse = UUID.randomUUID().toString(),
         )

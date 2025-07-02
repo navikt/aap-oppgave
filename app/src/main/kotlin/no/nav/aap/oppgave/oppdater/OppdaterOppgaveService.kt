@@ -21,7 +21,6 @@ import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
-import no.nav.aap.oppgave.mottattdokument.MottattDokumentType
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -168,7 +167,7 @@ class OppdaterOppgaveService(
                     påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                     årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
                     harFortroligAdresse = harFortroligAdresse,
-                    harUkvittertLegeerklæring = harUkvittertLegeerklæring(oppgaveOppdatering),
+                    harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
                     // Setter til null for å fjerne evt tidligere status
                     returInformasjon = null,
                 )
@@ -250,7 +249,7 @@ class OppdaterOppgaveService(
                 venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                 årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
                 harFortroligAdresse = harFortroligAdresse,
-                harUkvittertLegeerklæring = harUkvittertLegeerklæring(oppgaveOppdatering),
+                harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
                 returInformasjon = tilReturInformasjon(avklaringsbehovHendelse),
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
@@ -293,13 +292,11 @@ class OppdaterOppgaveService(
     private fun hentVeilederArbeidsoppfølging(personIdent: String): String? =
         veilarbarboppfolgingKlient.hentVeileder(personIdent)
 
-    private fun harUkvittertLegeerklæring(oppgaveOppdatering: OppgaveOppdatering): Boolean {
+    private fun harUlesteDokumenter(oppgaveOppdatering: OppgaveOppdatering): Boolean {
         if (oppgaveOppdatering.mottattDokumenter.isNotEmpty()) {
             mottattDokumentRepository.lagreDokumenter(oppgaveOppdatering.mottattDokumenter)
-            val ukvitterteLegeerklæringer = mottattDokumentRepository.hentUkvitterteDokumenter(
-                behandlingRef = oppgaveOppdatering.referanse, type = MottattDokumentType.LEGEERKLÆRING
-            )
-            return ukvitterteLegeerklæringer.isNotEmpty()
+            val ulesteDokumenter = mottattDokumentRepository.hentUlesteDokumenter(oppgaveOppdatering.referanse)
+            return ulesteDokumenter.isNotEmpty()
         } else return false
     }
 
@@ -378,7 +375,7 @@ class OppdaterOppgaveService(
         venteBegrunnelse: String?,
         årsakerTilBehandling: List<String>,
         harFortroligAdresse: Boolean,
-        harUkvittertLegeerklæring: Boolean,
+        harUlesteDokumenter: Boolean,
         returInformasjon: ReturInformasjon?,
     ): OppgaveDto {
         return OppgaveDto(
@@ -409,7 +406,7 @@ class OppdaterOppgaveService(
                     endretAv = it.endretAv
                 )
             },
-            harUkvittertLegeerklæring = harUkvittertLegeerklæring
+            harUlesteDokumenter = harUlesteDokumenter
         )
     }
 

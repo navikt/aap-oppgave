@@ -4,11 +4,7 @@ import java.util.*
 
 
 data class MottattDokument(
-    val type: MottattDokumentType,
+    val type: String,
     val behandlingRef: UUID,
     val referanse: String,
 )
-
-enum class MottattDokumentType {
-    LEGEERKLÆRING;
-}

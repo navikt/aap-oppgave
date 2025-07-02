@@ -331,13 +331,13 @@ class OppgaveRepositoryTest {
     }
 
     @Test
-    fun `skal markere oppgave med ukvittert legeerklæring`() {
-        val oppgaveId = opprettOppgave(harUkvittertLegeerklæring = true)
+    fun `skal markere oppgave med uleste dokumenter`() {
+        val oppgaveId = opprettOppgave(harUlesteDokumenter = true)
         val oppgave = dataSource.transaction { connection ->
             OppgaveRepository(connection).hentOppgave(oppgaveId)
         }
 
-        assertThat(oppgave.harUkvittertLegeerklæring).isTrue
+        assertThat(oppgave.harUlesteDokumenter).isTrue
     }
 
     private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =
@@ -411,7 +411,7 @@ class OppgaveRepositoryTest {
         påVentTil: LocalDate? = null,
         påVentÅrsak: String? = null,
         venteBegrunnelse: String? = null,
-        harUkvittertLegeerklæring: Boolean = false
+        harUlesteDokumenter: Boolean = false
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -429,7 +429,7 @@ class OppgaveRepositoryTest {
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
             opprettetTidspunkt = LocalDateTime.now(),
-            harUkvittertLegeerklæring = harUkvittertLegeerklæring
+            harUlesteDokumenter = harUlesteDokumenter
         )
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).opprettOppgave(oppgaveDto)

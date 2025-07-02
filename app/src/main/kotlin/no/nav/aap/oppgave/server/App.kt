@@ -32,9 +32,9 @@ import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.hentOppgaveApi
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
-import no.nav.aap.oppgave.kvitterLegeerklæring
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.mineOppgaverApi
+import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
 import no.nav.aap.oppgave.oppgavelisteApi
@@ -102,7 +102,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 plukkOppgaveApi(dataSource, prometheus)
                 avreserverOppgave(dataSource, prometheus)
                 flyttOppgave(dataSource, prometheus)
-                kvitterLegeerklæring(dataSource, prometheus)
+                mottattDokumentApi(dataSource, prometheus)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
                 oppgavelisteApi(dataSource, prometheus)

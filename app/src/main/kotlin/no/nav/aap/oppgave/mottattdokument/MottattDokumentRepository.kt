@@ -19,25 +19,23 @@ class MottattDokumentRepository(private val connection: DBConnection) {
 
         connection.executeBatch(sql, dokumenter) {
             setParams {
-                setEnumName(1, it.type)
+                setString(1, it.type)
                 setUUID(2, it.behandlingRef)
                 setString(3, it.referanse)
             }
         }
     }
 
-    fun hentUkvitterteDokumenter(behandlingRef: UUID, type: MottattDokumentType): List<MottattDokument> {
+    fun hentUlesteDokumenter(behandlingRef: UUID): List<MottattDokument> {
         val sql = """
                 SELECT * FROM mottatt_dokument 
                 WHERE behandling_ref = ? 
-                AND type = ?
-                AND kvittert_av IS NULL
+                AND registrert_lest_av IS NULL
             """.trimIndent()
 
         val dokumenter = connection.queryList(sql) {
             setParams {
                 setUUID(1, behandlingRef)
-                setEnumName(2, type)
             }
             setRowMapper {
                 mottattDokumentMapper(it)
@@ -46,25 +44,23 @@ class MottattDokumentRepository(private val connection: DBConnection) {
         return dokumenter
     }
 
-    fun kvitterDokumenter(behandlingRef: UUID, type: MottattDokumentType, kvittertAv: String) {
+    fun registrerDokumenterSomLest(behandlingRef: UUID, lestAv: String) {
         val sql = """
-            UPDATE mottatt_dokument SET kvittert_av = ?, kvittert_tidspunkt = current_timestamp 
+            UPDATE mottatt_dokument SET registrert_lest_av = ?, registrert_lest_tidspunkt = current_timestamp 
             WHERE behandling_ref = ? 
-            AND type = ?
         """.trimIndent()
 
         connection.execute(sql) {
             setParams {
-                setString(1, kvittertAv)
+                setString(1, lestAv)
                 setUUID(2, behandlingRef)
-                setEnumName(3, type)
             }
         }
     }
 
     private fun mottattDokumentMapper(row: Row): MottattDokument {
         return MottattDokument(
-            type = row.getEnum("type"),
+            type = row.getString("type"),
             behandlingRef = row.getUUID("behandling_ref"),
             referanse = row.getString("referanse"),
         )

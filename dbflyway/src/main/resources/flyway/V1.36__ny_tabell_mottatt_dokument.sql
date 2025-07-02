@@ -1,4 +1,4 @@
--- Tabell for å holde oversikt over dokumenter (I første omgang legeerklæringer) som saksbehandler kvitter ut at de har sett
+-- Tabell for å holde oversikt over dokumenter
 CREATE TABLE MOTTATT_DOKUMENT
 (
     ID                          BIGSERIAL                       NOT NULL PRIMARY KEY,
@@ -7,6 +7,8 @@ CREATE TABLE MOTTATT_DOKUMENT
     REFERANSE                   TEXT                            NOT NULL UNIQUE,
     OPPRETTET_AV                VARCHAR(20)                     NOT NULL,
     OPPRETTET_TIDSPUNKT         TIMESTAMP(3)                    NOT NULL,
-    KVITTERT_AV                 VARCHAR(20),
-    KVITTERT_TIDSPUNKT          TIMESTAMP(3)
+    REGISTRERT_LEST_AV          VARCHAR(20),
+    REGISTRERT_LEST_TIDSPUNKT   TIMESTAMP(3)
 );
+
+ALTER TABLE oppgave ADD COLUMN uleste_dokumenter BOOLEAN NOT NULL DEFAULT FALSE;

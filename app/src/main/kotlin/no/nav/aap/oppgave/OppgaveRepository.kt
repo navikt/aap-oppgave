@@ -39,7 +39,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 AARSAKER_TIL_BEHANDLING,
                 VENTE_BEGRUNNELSE,
                 FORTROLIG_ADRESSE,
-                UKVITTERT_LEGEERKLAERING,
+                ULESTE_DOKUMENTER,
                 RETUR_AARSAK,
                 retur_begrunnelse,
                 retur_aarsaker,
@@ -70,7 +70,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setArray(17, oppgaveDto.årsakerTilBehandling)
                 setString(18, oppgaveDto.venteBegrunnelse)
                 setBoolean(19, oppgaveDto.harFortroligAdresse)
-                setBoolean(20, oppgaveDto.harUkvittertLegeerklæring)
+                setBoolean(20, oppgaveDto.harUlesteDokumenter)
                 setEnumName(21, oppgaveDto.returInformasjon?.status)
                 setString(22, oppgaveDto.returInformasjon?.begrunnelse)
                 setArray(23, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
@@ -210,7 +210,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         veilederSykdom: String?,
         årsakerTilBehandling: List<String>,
         harFortroligAdresse: Boolean? = false,
-        harUkvittertLegeerklæring: Boolean? = false,
+        harUlesteDokumenter: Boolean? = false,
         returInformasjon: ReturInformasjon?
     ) {
         val query = """
@@ -230,7 +230,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VEILEDER_SYKDOM = ?,
                 AARSAKER_TIL_BEHANDLING = ?,
                 FORTROLIG_ADRESSE = ?,
-                UKVITTERT_LEGEERKLAERING = ?,
+                ULESTE_DOKUMENTER = ?,
                 RETUR_AARSAK = ?,
                 retur_returnert_av = ?,
                 retur_aarsaker = ?,
@@ -254,7 +254,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(9, veilederSykdom)
                 setArray(10, årsakerTilBehandling)
                 setBoolean(11, harFortroligAdresse)
-                setBoolean(12, harUkvittertLegeerklæring)
+                setBoolean(12, harUlesteDokumenter)
                 setEnumName(13, returInformasjon?.status)
                 setString(14, returInformasjon?.endretAv)
                 setArray(15, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
@@ -369,12 +369,12 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun fjernUkvittertLegeerklæring(oppgaveId: OppgaveId) {
+    fun settUlesteDokumenter(oppgaveId: OppgaveId, harUlesteDokumenter: Boolean) {
         val query = """
             UPDATE 
                 OPPGAVE 
             SET 
-                UKVITTERT_LEGEERKLAERING = false,
+                ULESTE_DOKUMENTER = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -384,8 +384,9 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         connection.execute(query) {
             setParams {
-                setLong(1, oppgaveId.id)
-                setLong(2, oppgaveId.versjon)
+                setBoolean(1, harUlesteDokumenter)
+                setLong(2, oppgaveId.id)
+                setLong(3, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) }
         }
@@ -728,7 +729,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
             versjon = row.getLong("VERSJON"),
             harFortroligAdresse = row.getBoolean("FORTROLIG_ADRESSE"),
-            harUkvittertLegeerklæring = row.getBoolean("UKVITTERT_LEGEERKLAERING"),
+            harUlesteDokumenter = row.getBoolean("ULESTE_DOKUMENTER"),
             returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK"),
             returInformasjon = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")?.let {
                 ReturInformasjon(
@@ -769,7 +770,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             VERSJON,
             AARSAKER_TIL_BEHANDLING,
             FORTROLIG_ADRESSE,
-            UKVITTERT_LEGEERKLAERING,
+            ULESTE_DOKUMENTER,
             RETUR_AARSAK,
             RETUR_BEGRUNNELSE,
             retur_aarsaker,

@@ -3,19 +3,14 @@ package no.nav.aap.oppgave
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
-import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
-import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
-import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
-import no.nav.aap.oppgave.mottattdokument.MottattDokumentService
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
-import java.util.*
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
@@ -55,27 +50,3 @@ fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: Promethe
         respond(oppgaver)
 
     }
-
-fun NormalOpenAPIRoute.kvitterLegeerklæring(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
-    route("/kvitter-legeerklaring").post<Unit, Unit, KvitterLegeerklæringDto> { _, dto ->
-        prometheus.httpCallCounter("kvitter-legeerklaring").increment()
-
-        dataSource.transaction { connection ->
-            val mottattDokumentService = MottattDokumentService(
-                MottattDokumentRepository(connection),
-                OppgaveRepository(connection),
-            )
-
-            mottattDokumentService.kvitterLegeerklæring(
-                behandlingRef = dto.behandlingRef,
-                ident = ident()
-            )
-        }
-
-        respondWithStatus(HttpStatusCode.OK)
-    }
-
-data class KvitterLegeerklæringDto(
-    val behandlingRef: UUID
-)
