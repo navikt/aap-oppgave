@@ -293,7 +293,8 @@ class OppdaterOppgaveService(
         veilarbarboppfolgingKlient.hentVeileder(personIdent)
 
     private fun harUlesteDokumenter(oppgaveOppdatering: OppgaveOppdatering): Boolean {
-        if (oppgaveOppdatering.mottattDokumenter.isNotEmpty()) {
+        // TODO legger bak feature-toggle inntil vi har avklar hva vi gjør med eksisterende prod-saker
+        if (unleashService.isEnabled(FeatureToggles.LagreMottattDokumenter) && oppgaveOppdatering.mottattDokumenter.isNotEmpty()) {
             mottattDokumentRepository.lagreDokumenter(oppgaveOppdatering.mottattDokumenter)
             val ulesteDokumenter = mottattDokumentRepository.hentUlesteDokumenter(oppgaveOppdatering.referanse)
             return ulesteDokumenter.isNotEmpty()
