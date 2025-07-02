@@ -15,6 +15,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
@@ -415,7 +416,8 @@ class OppdaterOppgaveServiceTest {
                 sykefravarsoppfolgingKlient,
                 enhetService,
                 OppgaveRepository(connection),
-                FlytJobbRepository(connection)
+                FlytJobbRepository(connection),
+                MottattDokumentRepository(connection),
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }
@@ -431,7 +433,8 @@ class OppdaterOppgaveServiceTest {
                 sykefravarsoppfolgingKlient,
                 enhetService,
                 OppgaveRepository(connection),
-                FlytJobbRepository(connection)
+                FlytJobbRepository(connection),
+                MottattDokumentRepository(connection),
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }

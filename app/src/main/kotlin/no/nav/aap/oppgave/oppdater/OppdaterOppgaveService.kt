@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingKlient
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -55,7 +56,8 @@ class OppdaterOppgaveService(
     private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient = SykefravarsoppfolgingKlient(),
     private val enhetService: IEnhetService = EnhetService(msGraphClient),
     private val oppgaveRepository: OppgaveRepository,
-    private val flytJobbRepository: FlytJobbRepository
+    private val flytJobbRepository: FlytJobbRepository,
+    private val mottattDokumentRepository: MottattDokumentRepository
 ) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
@@ -151,6 +153,7 @@ class OppdaterOppgaveService(
             } else {
                 val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
                 val harFortroligAdresse = enhetService.harFortroligAdresse(oppgaveOppdatering.personIdent)
+
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
                     ident = KELVIN,
@@ -164,8 +167,9 @@ class OppdaterOppgaveService(
                     påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                     årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
                     harFortroligAdresse = harFortroligAdresse,
+                    harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
                     // Setter til null for å fjerne evt tidligere status
-                    returInformasjon = null
+                    returInformasjon = null,
                 )
                 log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}. Venteårsak: $årsakTilSattPåVent")
                 sendOppgaveStatusOppdatering(
@@ -245,7 +249,8 @@ class OppdaterOppgaveService(
                 venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
                 årsakerTilBehandling = oppgaveOppdatering.årsakerTilBehandling,
                 harFortroligAdresse = harFortroligAdresse,
-                returInformasjon = tilReturInformasjon(avklaringsbehovHendelse)
+                harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
+                returInformasjon = tilReturInformasjon(avklaringsbehovHendelse),
             )
             val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
             log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
@@ -284,7 +289,17 @@ class OppdaterOppgaveService(
             null
         }
 
-    private fun hentVeilederArbeidsoppfølging(personIdent: String): String? = veilarbarboppfolgingKlient.hentVeileder(personIdent)
+    private fun hentVeilederArbeidsoppfølging(personIdent: String): String? =
+        veilarbarboppfolgingKlient.hentVeileder(personIdent)
+
+    private fun harUlesteDokumenter(oppgaveOppdatering: OppgaveOppdatering): Boolean {
+        // TODO legger bak feature-toggle inntil vi har avklar hva vi gjør med eksisterende prod-saker
+        if (unleashService.isEnabled(FeatureToggles.LagreMottattDokumenter) && oppgaveOppdatering.mottattDokumenter.isNotEmpty()) {
+            mottattDokumentRepository.lagreDokumenter(oppgaveOppdatering.mottattDokumenter)
+            val ulesteDokumenter = mottattDokumentRepository.hentUlesteDokumenter(oppgaveOppdatering.referanse)
+            return ulesteDokumenter.isNotEmpty()
+        } else return false
+    }
 
     private fun sammeSaksbehandlerType(
         avklaringsbehovKode1: AvklaringsbehovKode,
@@ -361,7 +376,8 @@ class OppdaterOppgaveService(
         venteBegrunnelse: String?,
         årsakerTilBehandling: List<String>,
         harFortroligAdresse: Boolean,
-        returInformasjon: ReturInformasjon?
+        harUlesteDokumenter: Boolean,
+        returInformasjon: ReturInformasjon?,
     ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
@@ -390,7 +406,8 @@ class OppdaterOppgaveService(
                     begrunnelse = it.begrunnelse,
                     endretAv = it.endretAv
                 )
-            }
+            },
+            harUlesteDokumenter = harUlesteDokumenter
         )
     }
 

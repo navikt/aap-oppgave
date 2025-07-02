@@ -330,6 +330,16 @@ class OppgaveRepositoryTest {
         assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
     }
 
+    @Test
+    fun `skal markere oppgave med uleste dokumenter`() {
+        val oppgaveId = opprettOppgave(harUlesteDokumenter = true)
+        val oppgave = dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentOppgave(oppgaveId)
+        }
+
+        assertThat(oppgave.harUlesteDokumenter).isTrue
+    }
+
     private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =
         FilterDto(1, "Filter for test", "Filter for test", avklaringsbehovKoder = avklaringsbehovKoder.toSet(), opprettetAv = "test", opprettetTidspunkt = LocalDateTime.now())
 
@@ -401,6 +411,7 @@ class OppgaveRepositoryTest {
         påVentTil: LocalDate? = null,
         påVentÅrsak: String? = null,
         venteBegrunnelse: String? = null,
+        harUlesteDokumenter: Boolean = false
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -417,7 +428,8 @@ class OppgaveRepositoryTest {
             venteBegrunnelse = venteBegrunnelse,
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
-            opprettetTidspunkt = LocalDateTime.now()
+            opprettetTidspunkt = LocalDateTime.now(),
+            harUlesteDokumenter = harUlesteDokumenter
         )
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).opprettOppgave(oppgaveDto)
