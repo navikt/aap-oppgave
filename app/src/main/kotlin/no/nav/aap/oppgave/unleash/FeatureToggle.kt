@@ -6,7 +6,6 @@ interface FeatureToggle {
 
 enum class FeatureToggles(private val toggleKey: String) : FeatureToggle {
     DummyFeature("DummyFeature"),
-    HentVeilederSykefraværsoppfølging("HentVeilederSykefravarsoppfolging"),
     OpprettBrevOppgaver("OpprettBrevOppgaver"),
     UtvidetOppgaveFilter("UtvidetOppgaveFilter"),
     LagreMottattDokumenter("LagreMottattDokumenter");

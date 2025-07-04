@@ -283,11 +283,7 @@ class OppdaterOppgaveService(
     }
 
     private fun hentVeilederSykefraværoppfølging(personIdent: String): String? =
-        if (unleashService.isEnabled(FeatureToggles.HentVeilederSykefraværsoppfølging)) {
-            sykefravarsoppfolgingKlient.hentVeileder(personIdent)
-        } else {
-            null
-        }
+        sykefravarsoppfolgingKlient.hentVeileder(personIdent)
 
     private fun hentVeilederArbeidsoppfølging(personIdent: String): String? =
         veilarbarboppfolgingKlient.hentVeileder(personIdent)
