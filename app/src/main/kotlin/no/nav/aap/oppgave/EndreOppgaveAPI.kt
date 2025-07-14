@@ -36,7 +36,8 @@ fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: Pro
         prometheus.httpCallCounter("avreserver-oppgaver").increment()
         val oppgaver = dataSource.transaction { connection ->
             val oppgaverSomSkalAvreserveres = dto.oppgaver.map { oppgaveId -> OppgaveRepository(connection)
-                    .hentOppgave(oppgaveId) }.filter { it.status != Status.AVSLUTTET }
+                    .hentOppgave(oppgaveId) }
+                    .filter { it.status != Status.AVSLUTTET }
                     .map { OppgaveId(requireNotNull(it.id), it.versjon) }
             val reserverOppgaveService = ReserverOppgaveService(
                 OppgaveRepository(connection),
