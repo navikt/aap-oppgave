@@ -67,7 +67,7 @@ class PlukkOppgaveService(
         ident: String,
         token: OidcToken
     ): OppgaveDto? {
-        val oppgave = oppgaveRepository.hentOppgave(oppgaveId)
+        val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
 
         val harTilgang = TilgangGateway.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
         if (harTilgang) {
@@ -93,7 +93,7 @@ class PlukkOppgaveService(
         ident: String,
         oppgaveRepo: OppgaveRepository
     ) {
-        val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        val oppgave = oppgaveRepo.hentOppgave(oppgaveId.id)
         if (oppgave.reservertAv == ident) {
             log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
             oppgaveRepo.avreserverOppgave(oppgaveId, ident)
@@ -105,7 +105,7 @@ class PlukkOppgaveService(
         oppgaveId: OppgaveId,
         oppgaveRepo: OppgaveRepository
     ) {
-        val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        val oppgave = oppgaveRepo.hentOppgave(oppgaveId.id)
         val harFortroligAdresse = enhetService.harFortroligAdresse(oppgave.personIdent)
         if (harFortroligAdresse != (oppgave.harFortroligAdresse == true)) {
             oppgaveRepo.settFortroligAdresse(OppgaveId(oppgave.id!!, oppgave.versjon), harFortroligAdresse)
@@ -116,7 +116,7 @@ class PlukkOppgaveService(
         oppgaveId: OppgaveId,
         oppgaveRepo: OppgaveRepository
     ) {
-        val oppgave = oppgaveRepo.hentOppgave(oppgaveId)
+        val oppgave = oppgaveRepo.hentOppgave(oppgaveId.id)
         val oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon)
 
         val nyEnhet =

@@ -1285,7 +1285,7 @@ class OppgaveApiTest {
 
         private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
             return initDatasource(dbConfig, prometheus).transaction { connection ->
-                OppgaveRepository(connection).hentOppgave(oppgaveId)
+                OppgaveRepository(connection).hentOppgave(oppgaveId.id)
             }
         }
 

@@ -21,7 +21,7 @@ class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository) :
         val hendelsesType = HendelseType.valueOf(input.parameter("hendelsesType"))
         val oppgaveId = DefaultJsonMapper.fromJson<OppgaveId>(input.payload())
 
-        oppgaveRepository.hentOppgave(oppgaveId).let { oppgaveDto ->
+        oppgaveRepository.hentOppgave(oppgaveId.id).let { oppgaveDto ->
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,

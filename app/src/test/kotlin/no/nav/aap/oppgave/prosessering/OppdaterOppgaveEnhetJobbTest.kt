@@ -134,7 +134,7 @@ class OppdaterOppgaveEnhetJobbTest {
 
     private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).hentOppgave(oppgaveId)
+            OppgaveRepository(connection).hentOppgave(oppgaveId.id)
         }
     }
 }
