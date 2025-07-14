@@ -309,10 +309,7 @@ class OppgaveApiTest {
             .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name, "Bedre ting å gjøre")
 
         val uthentetPåVent = hentOppgave(
-            OppgaveId(
-                påVentOppgaver.id!!,
-                påVentOppgaver.versjon
-            )
+            påVentOppgaver.tilOppgaveId()
         )
         assertThat(uthentetPåVent)
             .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
@@ -432,20 +429,69 @@ class OppgaveApiTest {
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         assertThatThrownBy {
             plukkOppgave(
-                OppgaveId(
-                    reservertOppgaveMedTilgang?.id!!,
-                    reservertOppgaveMedTilgang.versjon
-                )
+                reservertOppgaveMedTilgang!!.tilOppgaveId()
             )
         }
             .isInstanceOf(ManglerTilgangException::class.java)
 
         // sjekk at reservasjon er fjernet
         val oppgaveUtenReservasjon =
-            hentOppgave(OppgaveId(reservertOppgaveMedTilgang?.id!!, reservertOppgaveMedTilgang.versjon))
+            hentOppgave(reservertOppgaveMedTilgang!!.tilOppgaveId())
         assertThat(oppgaveUtenReservasjon).isNotNull()
         assertThat(oppgaveUtenReservasjon.reservertAv == null)
         assertThat(oppgaveUtenReservasjon.reservertTidspunkt == null)
+    }
+
+    @Test
+    fun `Avreserver liste med oppgaver`() {
+        leggInnFilterForTest()
+        val saksnummer1 = "4567"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val saksnummer2 = "1234"
+        val referanse2 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        // reserverer begge oppgaver
+        val oppgave1 = hentOppgave(saksnummer1, referanse1, Definisjon.AVKLAR_SYKDOM)
+        val oppgave2 = hentOppgave(saksnummer2, referanse2, Definisjon.AVKLAR_SYKDOM)
+        reserverOppgave(oppgave1!!.tilOppgaveId(), "saksbehandler1", "saksbehandler1")
+        reserverOppgave(oppgave2!!.tilOppgaveId(), "saksbehandler2", "saksbehandler2")
+
+        // kall endepunkt for avreservering
+        val avreserverteOppgaveIds = avreserverOppgaver(listOf(oppgave1.id!!, oppgave2.id!!))
+        val avreserverteOppgaver = avreserverteOppgaveIds?.map { hentOppgave(it)}
+
+        assertThat(avreserverteOppgaver).hasSize(2)
+        assertThat(avreserverteOppgaver?.all { it.reservertAv == null && it.reservertTidspunkt == null })
+
     }
 
     @Test
@@ -494,12 +540,12 @@ class OppgaveApiTest {
 
         // plukk uten tilgang
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
-        assertThatThrownBy { plukkOppgave(OppgaveId(oppgaveMedNyEnhet.id!!, oppgaveMedNyEnhet.versjon)) }.isInstanceOf(
+        assertThatThrownBy { plukkOppgave(oppgaveMedNyEnhet.tilOppgaveId()) }.isInstanceOf(
             ManglerTilgangException::class.java
         )
 
         // enhet skal ha blitt oppdatert etter mislykket plukk
-        val oppgaveEtterOppdatering = hentOppgave(OppgaveId(oppgaveMedNyEnhet.id!!, oppgaveMedNyEnhet.versjon))
+        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedNyEnhet.tilOppgaveId())
         assertThat(oppgaveEtterOppdatering).isNotNull()
         assertThat(oppgaveEtterOppdatering.enhet).isEqualTo("superNav!")
         assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
@@ -663,16 +709,12 @@ class OppgaveApiTest {
 
         // sett fortrolig adresse
         settFortroligAdresseForOppgave(
-            oppgaveId = OppgaveId(
-                oppgaveUtenFortroligAdresse?.id!!, oppgaveUtenFortroligAdresse.versjon
-            ), skalHaFortroligAdresse = true
+            oppgaveId = oppgaveUtenFortroligAdresse!!.tilOppgaveId(), skalHaFortroligAdresse = true
         )
 
         // hent på nytt
         val oppgaveMedFortroligAdresse = hentOppgave(
-            OppgaveId(
-                oppgaveUtenFortroligAdresse.id!!, oppgaveUtenFortroligAdresse.versjon
-            )
+            oppgaveUtenFortroligAdresse.tilOppgaveId()
         )
         assertThat(oppgaveMedFortroligAdresse.harFortroligAdresse).isTrue()
     }
@@ -1007,6 +1049,8 @@ class OppgaveApiTest {
         assertEquals(oppgave2Før, oppgave2Etter)
     }
 
+    private fun OppgaveDto.tilOppgaveId() = OppgaveId(requireNotNull(this.id), this.versjon)
+
     private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
         return client.post(
             URI.create("http://localhost:8080/produksjonsstyring/antall-oppgaver"),
@@ -1131,6 +1175,18 @@ class OppgaveApiTest {
             URI.create("http://localhost:8080/plukk-oppgave"),
             PostRequest(
                 body = PlukkOppgaveDto(oppgaveId.id, oppgaveId.versjon),
+                additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
+                )
+            )
+        )
+    }
+
+    private fun avreserverOppgaver(oppgaver: List<Long>): List<OppgaveId>? {
+        return client.post(
+            URI.create("http://localhost:8080/avreserver-oppgaver"),
+            PostRequest(
+                body = AvreserverOppgaveDto(oppgaver),
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
                 )
@@ -1286,6 +1342,12 @@ class OppgaveApiTest {
         private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
             return initDatasource(dbConfig, prometheus).transaction { connection ->
                 OppgaveRepository(connection).hentOppgave(oppgaveId.id)
+            }
+        }
+
+        private fun reserverOppgave(oppgaveId: OppgaveId, ident: String, resevertAvIdent: String) {
+            return initDatasource(dbConfig, prometheus).transaction { connection ->
+                OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, resevertAvIdent)
             }
         }
 
