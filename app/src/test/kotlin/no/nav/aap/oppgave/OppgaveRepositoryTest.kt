@@ -334,7 +334,7 @@ class OppgaveRepositoryTest {
     fun `skal markere oppgave med uleste dokumenter`() {
         val oppgaveId = opprettOppgave(harUlesteDokumenter = true)
         val oppgave = dataSource.transaction { connection ->
-            OppgaveRepository(connection).hentOppgave(oppgaveId)
+            OppgaveRepository(connection).hentOppgave(oppgaveId.id)
         }
 
         assertThat(oppgave.harUlesteDokumenter).isTrue

@@ -120,7 +120,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         return oppgaver.firstOrNull()
     }
 
-    fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
+    fun hentOppgave(oppgaveId: Long): OppgaveDto {
         val oppgaverForIdQuery = """
             SELECT 
                 $alleOppgaveFelt
@@ -132,7 +132,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         return connection.queryFirst(oppgaverForIdQuery) {
             setParams {
-                setLong(1, oppgaveId.id)
+                setLong(1, oppgaveId)
             }
             setRowMapper { row ->
                 oppgaveMapper(row)
@@ -626,7 +626,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             setRowMapper { row -> oppgaveMapper(row) }
         }
     }
-
 
     /**
      * Hent oppgaver som ikke er avsluttet.
