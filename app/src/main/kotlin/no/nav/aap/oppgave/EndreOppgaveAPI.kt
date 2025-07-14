@@ -33,7 +33,7 @@ fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: Pro
     }
 
     route("/avreserver-oppgaver").post<Unit, List<OppgaveId>, AvreserverOppgaveDto> { _, dto ->
-        prometheus.httpCallCounter("avreserver-oppgave").increment()
+        prometheus.httpCallCounter("avreserver-oppgaver").increment()
         val oppgaver = dataSource.transaction { connection ->
             val oppgaverSomSkalAvreserveres = dto.oppgaver.map { oppgaveId -> OppgaveRepository(connection)
                     .hentOppgave(oppgaveId) }.filter { it.status != Status.AVSLUTTET }
