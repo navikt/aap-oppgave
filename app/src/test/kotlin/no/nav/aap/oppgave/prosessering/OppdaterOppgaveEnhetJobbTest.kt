@@ -17,15 +17,17 @@ import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.fakes.pdlRequestCounter
+import no.nav.aap.oppgave.fakes.pdlBatchSizes
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.postgreSQLContainer
 import no.nav.aap.oppgave.server.server
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
+import org.assertj.core.api.Assertions.assertThat
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 import java.time.Duration
@@ -69,6 +71,33 @@ class OppdaterOppgaveEnhetJobbTest {
         assertEquals(oppgave1.endretAv, "Kelvin")
         val oppgave2Etter = hentOppgave(oppgaveId2)
         assertEquals(oppgave2Før, oppgave2Etter)
+    }
+
+    @Test
+    fun `Skal gjøre 2 kall til PDL når det er mellom 1000 og 2000 identer med maks 1000 i hvert kall`() {
+        (1..1500).map { i ->
+            val ident = "$i".padStart(11, '0') // Genererer bare ugyldig men unik ident med 11 tegn
+            opprettOppgave(personIdent = ident)
+        }
+
+        pdlRequestCounter = 0
+        pdlBatchSizes.clear()
+
+        dataSource.transaction {
+            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it)).utfør(
+                JobbInput(
+                    OppdaterOppgaveEnhetJobb
+                )
+            )
+        }
+
+        assertThat(pdlRequestCounter).withFailMessage("Forventet nøyaktig 2 kall til PDL").isEqualTo(2)
+
+        pdlBatchSizes.forEach { batchSize ->
+            assertThat(batchSize).withFailMessage("Batchstørrelsen skal være maksimalt 1000, men var $batchSize").isLessThanOrEqualTo(1000)
+        }
+
+        assertThat(pdlBatchSizes.sum()).withFailMessage("Totalt antall behandlede identifikatorer skal være 1500").isEqualTo(1500)
     }
 
     companion object {
