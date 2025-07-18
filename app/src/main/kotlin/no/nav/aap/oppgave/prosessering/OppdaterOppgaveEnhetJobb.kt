@@ -28,8 +28,13 @@ class OppdaterOppgaveEnhetJobb(
             return
         }
 
-        val identerMedStrengtFortroligAdresse = PdlGraphqlKlient.withClientCredentialsRestClient()
-            .hentAdressebeskyttelseForIdenter(oppgaverForIdent.keys.toList())
+        log.info("Sjekker addressebeskyttelse for ${oppgaverForIdent.keys.size} identer, dette blir ${Math.ceilDiv(oppgaverForIdent.keys.size, 1000)} kall mot PDL.")
+        val identerMedStrengtFortroligAdresse = oppgaverForIdent.keys.toList()
+            .chunked(1000)
+            .flatMap { identBatch ->
+                PdlGraphqlKlient.withClientCredentialsRestClient()
+                    .hentAdressebeskyttelseForIdenter(identBatch)
+            }
             .filter {
                 it.person!!.adressebeskyttelse!!
                     .any { adressebeskyttelse ->

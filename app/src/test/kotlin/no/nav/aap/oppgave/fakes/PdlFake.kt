@@ -11,6 +11,9 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 
+var pdlRequestCounter = 0
+var pdlBatchSizes = mutableListOf<Int>()
+
 fun Application.pdlFake() {
     install(ContentNegotiation) {
         jackson {
@@ -25,6 +28,12 @@ fun Application.pdlFake() {
             if (body.contains("hentGeografiskTilknytning")) {
                 call.respondText(genererHentAdressebeskytelseOgGeotilknytning())
             } else if (body.contains("hentPersonBolk")) {
+                pdlRequestCounter += 1
+                val identer = finnIdenterIBody(body)
+                synchronized(pdlBatchSizes) {
+                    pdlBatchSizes.add(identer.size)
+                }
+
                 call.respondText(genererHentPersonBolkRespons(body))
             } else {
                 call.respondText(genererHentPersonRespons())
@@ -84,15 +93,17 @@ private fun genererHentPersonRespons(): String {
 }
 
 private fun finnIdenterIBody(body: String): List<String> {
-    return body.substringAfter("\"identer\" :")
-        .substringBefore("}")
-        .substringBefore(",")
-        .replace("[", "")
-        .replace("]", "")
-        .replace("\"", "")
-        .split(",")
-        .map { it.replace("\n", "").trim() }
+    // Regexen under matcher teksten mot teksten identer etterfult av whitespace og et kolon
+    // Den har en en matchgroup som matcher som inneholder hele "arrayet".
+    val identerPattern = "\"identer\"\\s*:\\s*(\\[[^]]*])".toRegex()
+    val identerMatch = identerPattern.find(body) ?: return emptyList()
+    val identerArray = identerMatch.groupValues[1]
+
+    val identPattern = "\"([^\"]+)\"".toRegex()
+    return identPattern.findAll(identerArray)
+        .map { it.groupValues[1] }
         .filter { it != "null" }
+        .toList()
 }
 
 private fun finnGradering(ident: String): String {
