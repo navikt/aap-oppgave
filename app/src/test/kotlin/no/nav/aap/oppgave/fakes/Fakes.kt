@@ -3,7 +3,6 @@ package no.nav.aap.oppgave.fakes
 import io.getunleash.FakeUnleash
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
-import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.ParameterContext
@@ -17,7 +16,7 @@ data class FakesConfig(
 )
 
 class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, ParameterResolver,
-    AfterAllCallback, BeforeAllCallback {
+    BeforeAllCallback {
 
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val azure = FakeServer(module = { azureFake() })
@@ -65,10 +64,6 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         extensionContext: ExtensionContext?
     ): Any? {
         return fakesConfig
-    }
-
-    override fun afterAll(context: ExtensionContext?) {
-        close()
     }
 
     override fun beforeAll(context: ExtensionContext?) {
