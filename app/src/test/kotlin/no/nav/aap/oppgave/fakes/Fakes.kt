@@ -3,6 +3,10 @@ package no.nav.aap.oppgave.fakes
 import io.getunleash.FakeUnleash
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
+import org.junit.jupiter.api.extension.BeforeAllCallback
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.ParameterContext
+import org.junit.jupiter.api.extension.ParameterResolver
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -11,7 +15,7 @@ data class FakesConfig(
     var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf()
 )
 
-class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
+class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, BeforeAllCallback, ParameterResolver {
 
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val azure = FakeServer(module = { azureFake() })
@@ -24,9 +28,32 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
     private val sykefravavaroppfolging = FakeServer(module = { sykefravaroppfolgingFake() })
     private val msGraph = FakeServer(module = { msGraphFake() })
     private val statistikkFake = FakeServer(module = { statistikkFake() })
+    private val fakeServere = listOf(
+        azure,
+        tilgang,
+        pdl,
+        norg,
+        nom,
+        veilarbarena,
+        veilarboppfolging,
+        sykefravavaroppfolging,
+        msGraph,
+        statistikkFake
+    )
 
     init {
-        Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
+//        Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
+
+
+    }
+
+    override fun close() {
+        fakeServere.forEach {
+            it.stop()
+        }
+    }
+
+    override fun beforeAll(context: ExtensionContext?) {
 
         // Unleash
         UnleashServiceProvider.setUnleashService(
@@ -65,7 +92,7 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         // Sykefraværoppfølging
         System.setProperty("integrasjon.syfo.url", "http://localhost:${sykefravavaroppfolging.port()}")
         System.setProperty("integrasjon.syfo.scope", "scope")
-        
+
         System.setProperty("AAP_SAKSBEHANDLER_NASJONAL", "saksbehandler-rolle")
         System.setProperty("AAP_SAKSBEHANDLER_OPPFOLGING", "veileder-rolle")
         System.setProperty("AAP_KVALITETSSIKRER", "kvalitetssikrer-rolle")
@@ -75,14 +102,22 @@ class Fakes(fakesConfig: FakesConfig = FakesConfig()): AutoCloseable {
         System.setProperty("integrasjon.statistikk.scope", "scope")
     }
 
-    override fun close() {
-        azure.stop()
-        tilgang.stop()
-        pdl.stop()
-        norg.stop()
-        nom.stop()
-        veilarbarena.stop()
-        veilarboppfolging.stop()
+    override fun supportsParameter(
+        parameterContext: ParameterContext?,
+        extensionContext: ExtensionContext?
+    ): Boolean {
+        // FakesConfig
+        if (parameterContext?.parameter?.type == FakesConfig::class.java) {
+            return true
+        }
+        return false
+    }
+
+    override fun resolveParameter(
+        parameterContext: ParameterContext?,
+        extensionContext: ExtensionContext?
+    ): Any? {
+        return fakesConfig
     }
 
 }

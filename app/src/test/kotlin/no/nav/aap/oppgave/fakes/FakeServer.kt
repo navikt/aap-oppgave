@@ -7,6 +7,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import kotlinx.coroutines.runBlocking
+import no.nav.aap.oppgave.port
 
 class FakeServer(port: Int = 0, private val module: Application.() -> Unit) {
     private var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration> =
@@ -29,10 +30,4 @@ class FakeServer(port: Int = 0, private val module: Application.() -> Unit) {
     }
 
     fun port(): Int = server.port()
-
-    private fun EmbeddedServer<*, *>.port(): Int {
-        return runBlocking {
-            this@port.engine.resolvedConnectors()
-        }.first { it.type == ConnectorType.HTTP }.port
-    }
 }
