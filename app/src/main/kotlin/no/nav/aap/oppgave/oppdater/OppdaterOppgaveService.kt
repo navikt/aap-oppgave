@@ -120,11 +120,7 @@ class OppdaterOppgaveService(
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
             val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
 
-            if (avklaringsbehov.status in setOf(
-                    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-                    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
-                )
-            ) {
+            if (harBlittSendtTilbakeFraKvalitetssikrer(avklaringsbehov)) {
                 gjenÅpneOppgaveEtterReturFraKvalitetssikrer(eksisterendeOppgave, avklaringsbehov)
             } else {
                 val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
@@ -160,6 +156,12 @@ class OppdaterOppgaveService(
             }
         }
     }
+
+    private fun harBlittSendtTilbakeFraKvalitetssikrer(avklaringsbehov: AvklaringsbehovHendelse): Boolean =
+        avklaringsbehov.status in setOf(
+            AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+            AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
+        )
 
     private fun gjenÅpneOppgaveEtterReturFraKvalitetssikrer(
         eksisterendeOppgave: OppgaveDto,
@@ -284,6 +286,20 @@ class OppdaterOppgaveService(
                         log.info("Ny oppgave(id=${oppgaveId.id}) ble automatisk tilordnet: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}")
                     }
                 }
+            }
+
+            if (oppgaveOppdatering.reserverTil != null) {
+                val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
+                    saksnummer = oppgaveOppdatering.saksnummer,
+                    referanse = oppgaveOppdatering.referanse,
+                    null,
+                    avklaringsbehovHendelse.avklaringsbehovKode.kode
+                )
+                reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
+                    avklaringsbehovReferanse,
+                    oppgaveOppdatering.reserverTil
+                )
+                log.info("Oppgave ${oppgaveId.id} automatisk reservert ${oppgaveOppdatering.reserverTil}.")
             }
         }
     }

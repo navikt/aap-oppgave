@@ -14,7 +14,7 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
 
-data class MineOppgaverRequest(@QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false)
+data class MineOppgaverRequest(@param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false)
 
 /**
  * Hent oppgaver reserver at innlogget bruker.

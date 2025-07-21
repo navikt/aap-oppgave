@@ -28,11 +28,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.assertj.core.api.Assertions.assertThat
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
-import java.time.Duration
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 import java.util.*
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -42,6 +38,7 @@ import kotlin.test.Test
 class OppdaterOppgaveEnhetJobbTest {
     private val dataSource = InitTestDatabase.freshDatabase()
 
+    @Suppress("SqlWithoutWhere")
     @AfterTest
     fun tearDown() {
         dataSource.transaction {
@@ -115,7 +112,7 @@ class OppdaterOppgaveEnhetJobbTest {
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 
         // Starter server
-        private val server = embeddedServer(Netty, port = 8080) {
+        private val server = embeddedServer(Netty, port = 0) {
             server(dbConfig = dbConfig, prometheus = prometheus)
             module(fakes)
         }.start()
@@ -166,13 +163,6 @@ class OppdaterOppgaveEnhetJobbTest {
             OppgaveRepository(connection).hentOppgave(oppgaveId.id)
         }
     }
-}
-
-private fun postgreSQLContainer(): PostgreSQLContainer<Nothing> {
-    val postgres = PostgreSQLContainer<Nothing>("postgres:16")
-    postgres.waitingFor(HostPortWaitStrategy().withStartupTimeout(Duration.of(60L, ChronoUnit.SECONDS)))
-    postgres.start()
-    return postgres
 }
 
 

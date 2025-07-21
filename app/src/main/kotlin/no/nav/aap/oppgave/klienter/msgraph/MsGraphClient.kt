@@ -68,14 +68,14 @@ class MsGraphClient(
 }
 
 data class MemberOf(
-    @JsonProperty("value")
+    @param:JsonProperty("value")
     val groups: List<Group> = emptyList()
 )
 
 data class Group(
-    @JsonProperty("id")
+    @param:JsonProperty("id")
     val id: UUID,
-    @JsonProperty("mailNickname")
+    @param:JsonProperty("mailNickname")
     val name: String
 )
 
