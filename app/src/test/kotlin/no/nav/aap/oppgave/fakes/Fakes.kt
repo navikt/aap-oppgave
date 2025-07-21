@@ -4,6 +4,7 @@ import io.getunleash.FakeUnleash
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import org.junit.jupiter.api.extension.AfterAllCallback
+import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.ParameterContext
 import org.junit.jupiter.api.extension.ParameterResolver
@@ -16,7 +17,7 @@ data class FakesConfig(
 )
 
 class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, ParameterResolver,
-    AfterAllCallback {
+    AfterAllCallback, BeforeAllCallback {
 
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val azure = FakeServer(module = { azureFake() })
@@ -42,7 +43,35 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         statistikkFake
     )
 
-    init {
+    override fun close() {
+        fakeServere.forEach {
+            it.stop()
+        }
+    }
+
+    override fun supportsParameter(
+        parameterContext: ParameterContext?,
+        extensionContext: ExtensionContext?
+    ): Boolean {
+        // FakesConfig
+        if (parameterContext?.parameter?.type == FakesConfig::class.java) {
+            return true
+        }
+        return false
+    }
+
+    override fun resolveParameter(
+        parameterContext: ParameterContext?,
+        extensionContext: ExtensionContext?
+    ): Any? {
+        return fakesConfig
+    }
+
+    override fun afterAll(context: ExtensionContext?) {
+        close()
+    }
+
+    override fun beforeAll(context: ExtensionContext?) {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
         // Unleash
         UnleashServiceProvider.setUnleashService(
@@ -89,34 +118,6 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
 
         System.setProperty("integrasjon.statistikk.url", "http://localhost:${statistikkFake.port()}")
         System.setProperty("integrasjon.statistikk.scope", "scope")
-    }
-
-    override fun close() {
-        fakeServere.forEach {
-            it.stop()
-        }
-    }
-
-    override fun supportsParameter(
-        parameterContext: ParameterContext?,
-        extensionContext: ExtensionContext?
-    ): Boolean {
-        // FakesConfig
-        if (parameterContext?.parameter?.type == FakesConfig::class.java) {
-            return true
-        }
-        return false
-    }
-
-    override fun resolveParameter(
-        parameterContext: ParameterContext?,
-        extensionContext: ExtensionContext?
-    ): Any? {
-        return fakesConfig
-    }
-
-    override fun afterAll(context: ExtensionContext?) {
-        close()
     }
 
 }

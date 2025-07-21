@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets
 fun main() {
     val postgres = postgreSQLContainer()
     val fakes = Fakes()
+    fakes.beforeAll(null)
     val server = embeddedServer(Netty, port = 0) {
         val dbConfig = DbConfig(
             username = postgres.username,
