@@ -3,7 +3,7 @@ package no.nav.aap.oppgave.fakes
 import io.getunleash.FakeUnleash
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
-import org.junit.jupiter.api.extension.BeforeAllCallback
+import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.ParameterContext
 import org.junit.jupiter.api.extension.ParameterResolver
@@ -15,7 +15,8 @@ data class FakesConfig(
     var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf()
 )
 
-class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, BeforeAllCallback, ParameterResolver {
+class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, ParameterResolver,
+    AfterAllCallback {
 
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val azure = FakeServer(module = { azureFake() })
@@ -42,19 +43,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Befor
     )
 
     init {
-//        Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
-
-
-    }
-
-    override fun close() {
-        fakeServere.forEach {
-            it.stop()
-        }
-    }
-
-    override fun beforeAll(context: ExtensionContext?) {
-
+        Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
         // Unleash
         UnleashServiceProvider.setUnleashService(
             UnleashService(FakeUnleash().apply {
@@ -102,6 +91,12 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Befor
         System.setProperty("integrasjon.statistikk.scope", "scope")
     }
 
+    override fun close() {
+        fakeServere.forEach {
+            it.stop()
+        }
+    }
+
     override fun supportsParameter(
         parameterContext: ParameterContext?,
         extensionContext: ExtensionContext?
@@ -118,6 +113,10 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Befor
         extensionContext: ExtensionContext?
     ): Any? {
         return fakesConfig
+    }
+
+    override fun afterAll(context: ExtensionContext?) {
+        close()
     }
 
 }
