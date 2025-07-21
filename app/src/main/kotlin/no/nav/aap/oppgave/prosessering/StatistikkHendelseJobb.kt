@@ -25,7 +25,6 @@ class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository) :
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,
-                    oppgaveDto = oppgaveDto,
                     oppgaveTilStatistikkDto = OppgaveTilStatistikkDto.fraOppgaveDto(oppgaveDto)
                 )
             )

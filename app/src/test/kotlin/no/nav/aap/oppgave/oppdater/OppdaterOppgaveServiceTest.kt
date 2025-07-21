@@ -93,6 +93,9 @@ class OppdaterOppgaveServiceTest {
             versjon = "Kelvin 1.0",
             hendelsesTidspunkt = nå,
             erPåVent = false,
+            mottattDokumenter = listOf(),
+            reserverTil = null,
+            årsakerTilBehandling = listOf(),
             avklaringsbehov = listOf(
                 AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
@@ -266,6 +269,8 @@ class OppdaterOppgaveServiceTest {
             versjon = "Kelvin 1.0",
             hendelsesTidspunkt = nå,
             erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
             avklaringsbehov = listOf(
                 AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
@@ -367,6 +372,8 @@ class OppdaterOppgaveServiceTest {
             versjon = "Kelvin 1.0",
             hendelsesTidspunkt = nå,
             erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
             avklaringsbehov = listOf(
                 AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,

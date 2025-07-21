@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.statistikk
 
-import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDateTime
@@ -8,12 +7,6 @@ import java.util.*
 
 enum class HendelseType {
     OPPRETTET,
-
-    @Deprecated(
-        message = "GJENÅPNET skal ikke brukes lengre. OPPDATERT brukes nå for alle oppdatering av oppgave.",
-        replaceWith = ReplaceWith("OPPDATERT")
-    )
-    GJENÅPNET,
     OPPDATERT,
     RESERVERT,
     AVRESERVERT,
@@ -22,8 +15,6 @@ enum class HendelseType {
 
 data class OppgaveHendelse(
     val hendelse: HendelseType,
-    @Deprecated("Bruk oppgaveTilStatistikkDto i stedet")
-    val oppgaveDto: OppgaveDto? = null,
     val oppgaveTilStatistikkDto: OppgaveTilStatistikkDto
 )
 

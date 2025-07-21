@@ -62,6 +62,11 @@ class OppdaterOppgaveService(
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
+    private val reserverOppgaveService = ReserverOppgaveService(
+        oppgaveRepository,
+        flytJobbRepository
+    )
+
     fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {
         val eksisterendeOppgaver = oppgaveRepository.hentOppgaver(referanse = oppgaveOppdatering.referanse)
 
@@ -120,36 +125,7 @@ class OppdaterOppgaveService(
                     AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
                 )
             ) {
-                if (eksisterendeOppgave.status == Status.AVSLUTTET) {
-                    log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-                    oppgaveRepository.gjenåpneOppgave(
-                        eksisterendeOppgave.oppgaveId(), KELVIN, tilReturInformasjon(avklaringsbehov)
-                    )
-                } else {
-                    log.warn("Kan ikke gjenåpne oppgave som er allerede er åpen (id=${eksisterendeOppgave.oppgaveId()}, avklaringsbehov=${avklaringsbehov.avklaringsbehovKode})")
-                    return
-                }
-                sendOppgaveStatusOppdatering(
-                    eksisterendeOppgave.oppgaveId(),
-                    HendelseType.OPPDATERT,
-                    flytJobbRepository
-                )
-                val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
-                if (sistEndretAv != KELVIN) {
-                    val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
-                    val oppdatertOppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanse)
-                    if (oppdatertOppgave != null) {
-                        oppgaveRepository.reserverOppgave(oppdatertOppgave.oppgaveId(), KELVIN, sistEndretAv)
-                        log.info("Reserverer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-                        sendOppgaveStatusOppdatering(
-                            oppdatertOppgave.oppgaveId(),
-                            HendelseType.RESERVERT,
-                            flytJobbRepository
-                        )
-                    } else {
-                        log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
-                    }
-                }
+                gjenÅpneOppgaveEtterReturFraKvalitetssikrer(eksisterendeOppgave, avklaringsbehov)
             } else {
                 val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
                 val harFortroligAdresse = enhetService.harFortroligAdresse(oppgaveOppdatering.personIdent)
@@ -185,6 +161,42 @@ class OppdaterOppgaveService(
         }
     }
 
+    private fun gjenÅpneOppgaveEtterReturFraKvalitetssikrer(
+        eksisterendeOppgave: OppgaveDto,
+        avklaringsbehov: AvklaringsbehovHendelse
+    ) {
+        if (eksisterendeOppgave.status == Status.AVSLUTTET) {
+            log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
+            oppgaveRepository.gjenåpneOppgave(
+                eksisterendeOppgave.oppgaveId(), KELVIN, tilReturInformasjon(avklaringsbehov)
+            )
+        } else {
+            log.warn("Kan ikke gjenåpne oppgave som er allerede er åpen (id=${eksisterendeOppgave.oppgaveId()}, avklaringsbehov=${avklaringsbehov.avklaringsbehovKode})")
+            return
+        }
+        sendOppgaveStatusOppdatering(
+            eksisterendeOppgave.oppgaveId(),
+            HendelseType.OPPDATERT,
+            flytJobbRepository
+        )
+        val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
+        if (sistEndretAv != KELVIN) {
+            val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
+            val oppdatertOppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanse)
+            if (oppdatertOppgave != null) {
+                log.info("Reserverer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
+                reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse, sistEndretAv)
+                sendOppgaveStatusOppdatering(
+                    oppdatertOppgave.oppgaveId(),
+                    HendelseType.RESERVERT,
+                    flytJobbRepository
+                )
+            } else {
+                log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
+            }
+        }
+    }
+
     private fun tilReturInformasjon(avklaringsbehov: AvklaringsbehovHendelse): ReturInformasjon? {
         val status = when (avklaringsbehov.status) {
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER -> ReturStatus.RETUR_FRA_BESLUTTER
@@ -210,10 +222,7 @@ class OppdaterOppgaveService(
         val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
         val endretAv = venteInformasjon.sattPåVentAv
         val reserverteOppgaver =
-            ReserverOppgaveService(
-                oppgaveRepository,
-                flytJobbRepository
-            ).reserverOppgaveUtenTilgangskontroll(
+            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                 avklaringsbehovReferanse,
                 endretAv
             )
@@ -267,10 +276,7 @@ class OppdaterOppgaveService(
                         null,
                         nyttAvklaringsbehov.avklaringsbehovKode.kode
                     )
-                    val reserverteOppgaver = ReserverOppgaveService(
-                        oppgaveRepository,
-                        flytJobbRepository
-                    ).reserverOppgaveUtenTilgangskontroll(
+                    val reserverteOppgaver = reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                         avklaringsbehovReferanse,
                         hvemLøsteForrigeIdent
                     )
@@ -301,12 +307,12 @@ class OppdaterOppgaveService(
         avklaringsbehovKode1: AvklaringsbehovKode,
         avklaringsbehovKode2: AvklaringsbehovKode
     ): Boolean {
-        return when {
-            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER -> true
-            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_VEILEDER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER -> true
-            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_BESLUTTER && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_BESLUTTER -> true
-            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK -> true
-            avklaringsbehovKode1 in AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK && avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK -> true
+        return when (avklaringsbehovKode1) {
+            in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER if avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER -> true
+            in AVKLARINGSBEHOV_FOR_VEILEDER if avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER -> true
+            in AVKLARINGSBEHOV_FOR_BESLUTTER if avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_BESLUTTER -> true
+            in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK if avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK -> true
+            in AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK if avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK -> true
             else -> false
         }
     }

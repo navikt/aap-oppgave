@@ -36,6 +36,9 @@ enum class AvklaringsbehovStatus {
     AVBRUTT
 }
 
+/**
+ * @param reserverTil Hvis ikke-null, reserver til denne personen.
+ */
 data class OppgaveOppdatering(
     val personIdent: String? = null,
     val saksnummer: String? = null,
@@ -48,7 +51,8 @@ data class OppgaveOppdatering(
     val avklaringsbehov: List<AvklaringsbehovHendelse>,
     val venteInformasjon: VenteInformasjon? = null,
     val årsakerTilBehandling: List<String>,
-    val mottattDokumenter: List<MottattDokument>
+    val mottattDokumenter: List<MottattDokument>,
+    val reserverTil: String? = null,
 )
 
 data class AvklaringsbehovHendelse(
@@ -129,6 +133,7 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.Tilbakekreving -> Behandlingstype.TILBAKEKREVING
         TypeBehandling.Klage -> Behandlingstype.KLAGE
         TypeBehandling.SvarFraAndreinstans -> Behandlingstype.SVAR_FRA_ANDREINSTANS
+        TypeBehandling.OppfølgingsBehandling -> Behandlingstype.OPPFØLGINGSBEHANDLING
     }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
