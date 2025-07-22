@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave
+package no.nav.aap.oppgave.oppgaveliste
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
@@ -10,12 +10,18 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
+import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.SøkDto
+import no.nav.aap.oppgave.SøkResponse
+import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.plukk.TilgangGateway
 import javax.sql.DataSource
 
 /**
- * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en joournalpost i postmottk.
+ * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en journalpost i postmottk.
  */
 fun NormalOpenAPIRoute.hentOppgaveApi(
     dataSource: DataSource,
@@ -46,12 +52,10 @@ fun NormalOpenAPIRoute.søkApi(
         val oppgaver =
             dataSource.transaction(readOnly = true) { connection ->
                 val søketekst = søk.søketekst.trim()
-                val oppgaveRepo = OppgaveRepository(connection)
-                if (søketekst.length >= 11) {
-                    oppgaveRepo.finnOppgaverGittPersonident(søketekst)
-                } else {
-                    oppgaveRepo.finnOppgaverGittSaksnummer(søketekst)
-                }
+                OppgavelisteService(
+                    OppgaveRepository(connection),
+                    MarkeringRepository(connection),
+                ).søkEtterOppgaver(søketekst)
             }
         val harAdressebeskyttelse = oppgaver.all { harAdressebeskyttelse(it) }
         val harTilgang = oppgaver.all { TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token()) }

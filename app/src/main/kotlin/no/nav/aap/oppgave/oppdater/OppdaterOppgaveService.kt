@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingKlient
+import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
@@ -57,7 +58,8 @@ class OppdaterOppgaveService(
     private val enhetService: IEnhetService = EnhetService(msGraphClient),
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
-    private val mottattDokumentRepository: MottattDokumentRepository
+    private val mottattDokumentRepository: MottattDokumentRepository,
+    private val markeringRepository: MarkeringRepository
 ) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
@@ -90,6 +92,14 @@ class OppdaterOppgaveService(
             oppgaveOppdatering.avklaringsbehov.filter { it.status in ÅPNE_STATUSER }.eldsteAvklaringsbehov()
         val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter { it.status in AVSLUTTEDE_STATUSER }
 
+        // Oppdater markeringer på behandling hvis noen endringer
+        if (markeringRepository.hentMarkeringerForBehandling(oppgaveOppdatering.referanse) != oppgaveOppdatering.markeringer) {
+            log.info("Oppdaterer markeringer for behandling med referanse ${oppgaveOppdatering.referanse}")
+            markeringRepository.oppdaterMarkeringerForBehandling(
+                oppgaveOppdatering.referanse,
+                oppgaveOppdatering.markeringer
+            )
+        }
         // Opprette eller gjenåpne oppgave
         if (åpentAvklaringsbehov != null) {
             if (oppgaveMap[åpentAvklaringsbehov.avklaringsbehovKode] == null) {

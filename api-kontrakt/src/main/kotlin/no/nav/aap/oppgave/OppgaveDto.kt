@@ -18,6 +18,17 @@ data class ReturInformasjon(
     val endretAv: String,
 )
 
+data class BehandlingMarkering(
+    val markeringType: MarkeringForBehandling,
+    val begrunnelse: String,
+    val opprettetAv: String? = null,
+)
+
+enum class MarkeringForBehandling {
+    HASTER,
+    KREVER_SPESIALKOMPETANSE
+}
+
 enum class ÅrsakTilReturKode {
     MANGELFULL_BEGRUNNELSE,
     MANGLENDE_UTREDNING,
@@ -59,7 +70,8 @@ data class OppgaveDto(
     val endretTidspunkt: LocalDateTime? = null,
     val versjon: Long = 0,
     val harFortroligAdresse: Boolean? = false,
-    val harUlesteDokumenter: Boolean? = false
+    val harUlesteDokumenter: Boolean? = false,
+    val markeringer: List<BehandlingMarkering> = emptyList(),
 ) {
     init {
         if (journalpostId == null) {

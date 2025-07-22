@@ -1,6 +1,7 @@
-package no.nav.aap.oppgave
+package no.nav.aap.oppgave.oppgaveliste
 
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import no.nav.aap.oppgave.plukk.TilgangGateway

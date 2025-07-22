@@ -1,5 +1,7 @@
 package no.nav.aap.oppgave.oppdater
 
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.MarkeringDto
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.MarkeringType
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
@@ -7,6 +9,8 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.MarkeringForBehandling
+import no.nav.aap.oppgave.BehandlingMarkering
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
@@ -53,6 +57,7 @@ data class OppgaveOppdatering(
     val årsakerTilBehandling: List<String>,
     val mottattDokumenter: List<MottattDokument>,
     val reserverTil: String? = null,
+    val markeringer: List<BehandlingMarkering> = emptyList()
 )
 
 data class AvklaringsbehovHendelse(
@@ -113,7 +118,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
                 )
             }
         } else null,
-        mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse)
+        mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
+        markeringer = this.markeringer.tilOppgaveMarkering()
     )
 }
 
@@ -125,6 +131,23 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
                 referanse = it.referanse.verdi,
             )
         }
+}
+
+private fun List<MarkeringDto>.tilOppgaveMarkering(): List<BehandlingMarkering> {
+    return map {
+        BehandlingMarkering(
+            markeringType = it.markeringType.tilMarkeringForOppgave(),
+            begrunnelse = it.begrunnelse,
+            opprettetAv = it.opprettetAv,
+        )
+    }
+}
+
+private fun MarkeringType.tilMarkeringForOppgave(): MarkeringForBehandling {
+    return when (this) {
+        MarkeringType.HASTER -> MarkeringForBehandling.HASTER
+        MarkeringType.KREVER_SPESIALKOMPETANSE -> MarkeringForBehandling.KREVER_SPESIALKOMPETANSE
+    }
 }
 
 private fun TypeBehandling.tilBehandlingstype() =
