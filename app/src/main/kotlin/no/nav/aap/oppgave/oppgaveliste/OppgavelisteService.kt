@@ -17,19 +17,28 @@ import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 
 private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
-val maksOppgaver = 25
+const val maksOppgaver = 25
 
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository
 ) {
-    fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> =
+    fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         // TODO: legg på markeringer i søket
-        if (søketekst.length >= 11) {
+        val oppgaver = if (søketekst.length >= 11) {
             oppgaveRepository.finnOppgaverGittPersonident(søketekst)
         } else {
             oppgaveRepository.finnOppgaverGittSaksnummer(søketekst)
         }
+
+        return oppgaver.map { oppgave ->
+            val behandlingRef = requireNotNull(oppgave.behandlingRef) {
+                "Fant ikke behandlingsreferanse for oppgave med id ${oppgave.id}"
+            }
+            val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingRef)
+            oppgave.leggPåMarkeringer(markeringer)
+        }
+    }
 
     fun hentOppgaverMedTilgang(
         enhetService: EnhetService,
@@ -71,7 +80,10 @@ class OppgavelisteService(
             }
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
-                val markeringer = markeringRepository.hentMarkeringerForBehandling(oppgave.behandlingRef)
+                val behandlingRef = requireNotNull(oppgave.behandlingRef) {
+                    "Fant ikke behandlingsreferanse for oppgave med id ${oppgave.id}"
+                }
+                val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingRef)
                 oppgave.leggPåMarkeringer(markeringer)
             }
 
@@ -88,7 +100,9 @@ class OppgavelisteService(
     ): List<OppgaveDto> =
         oppgaveRepository.hentMineOppgaver(ident = ident, kunPåVent = kunPaaVent == true).map {
             it.leggPåMarkeringer(
-                markeringRepository.hentMarkeringerForBehandling(it.behandlingRef)
+                markeringRepository.hentMarkeringerForBehandling(requireNotNull(it.behandlingRef) {
+                    "Fant ikke behandlingsreferanse for oppgave med id ${it.id}"
+                })
             )
         }.medPersonNavn(fjernSensitivInformasjonNårTilgangMangler = false, token = token)
 

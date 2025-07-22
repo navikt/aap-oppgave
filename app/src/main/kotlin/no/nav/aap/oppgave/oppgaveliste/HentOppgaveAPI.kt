@@ -21,7 +21,7 @@ import no.nav.aap.oppgave.plukk.TilgangGateway
 import javax.sql.DataSource
 
 /**
- * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en journalpost i postmottk.
+ * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en journalpost i postmottak.
  */
 fun NormalOpenAPIRoute.hentOppgaveApi(
     dataSource: DataSource,

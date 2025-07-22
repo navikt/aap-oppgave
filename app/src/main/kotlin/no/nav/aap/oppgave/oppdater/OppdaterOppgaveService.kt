@@ -93,12 +93,13 @@ class OppdaterOppgaveService(
         val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter { it.status in AVSLUTTEDE_STATUSER }
 
         // Oppdater markeringer på behandling hvis noen endringer
-        if (markeringRepository.hentMarkeringerForBehandling(oppgaveOppdatering.referanse) != oppgaveOppdatering.markeringer) {
-            log.info("Oppdaterer markeringer for behandling med referanse ${oppgaveOppdatering.referanse}")
+        val nåværendeMarkeringer = markeringRepository.hentMarkeringerForBehandling(oppgaveOppdatering.referanse)
+        if (nåværendeMarkeringer != oppgaveOppdatering.markeringer) {
             markeringRepository.oppdaterMarkeringerForBehandling(
                 oppgaveOppdatering.referanse,
                 oppgaveOppdatering.markeringer
             )
+            log.info("Setter ${oppgaveOppdatering.markeringer.size} markeringer på behandling med referanse ${oppgaveOppdatering.referanse}")
         }
         // Opprette eller gjenåpne oppgave
         if (åpentAvklaringsbehov != null) {

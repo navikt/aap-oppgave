@@ -31,9 +31,7 @@ class MarkeringRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentMarkeringerForBehandling(referanse: UUID?): List<BehandlingMarkering> {
-        if (referanse == null) return emptyList()
-
+    fun hentMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
         val query = """
             SELECT * FROM MARKERING WHERE behandling_ref = ?
         """.trimIndent()
