@@ -48,6 +48,7 @@ import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import org.assertj.core.api.Assertions.assertThat

@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave
 
+import no.nav.aap.oppgave.markering.MarkeringResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDate
@@ -18,16 +19,6 @@ data class ReturInformasjon(
     val endretAv: String,
 )
 
-data class BehandlingMarkering(
-    val markeringType: MarkeringForBehandling,
-    val begrunnelse: String,
-    val opprettetAv: String,
-)
-
-enum class MarkeringForBehandling {
-    HASTER,
-    KREVER_SPESIALKOMPETANSE
-}
 
 enum class ÅrsakTilReturKode {
     MANGELFULL_BEGRUNNELSE,
@@ -71,7 +62,7 @@ data class OppgaveDto(
     val versjon: Long = 0,
     val harFortroligAdresse: Boolean? = false,
     val harUlesteDokumenter: Boolean? = false,
-    val markeringer: List<BehandlingMarkering> = emptyList(),
+    val markeringer: List<MarkeringResponse> = emptyList(),
 ) {
     init {
         if (journalpostId == null) {

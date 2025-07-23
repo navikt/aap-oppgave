@@ -2,8 +2,7 @@ package no.nav.aap.oppgave.markering
 
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
-import no.nav.aap.oppgave.BehandlingMarkering
-import no.nav.aap.oppgave.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.UUID

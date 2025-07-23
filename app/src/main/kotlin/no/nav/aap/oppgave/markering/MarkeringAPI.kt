@@ -11,7 +11,6 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.auth.bruker
-import no.nav.aap.oppgave.BehandlingMarkering
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import javax.sql.DataSource
 
