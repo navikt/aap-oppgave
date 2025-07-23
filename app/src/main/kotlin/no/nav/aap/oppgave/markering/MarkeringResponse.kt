@@ -1,0 +1,9 @@
+package no.nav.aap.oppgave.markering
+
+import no.nav.aap.oppgave.MarkeringForBehandling
+
+data class MarkeringResponse(
+    val markeringType: MarkeringForBehandling,
+    val begrunnelse: String,
+    val opprettetAv: String
+)

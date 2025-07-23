@@ -37,6 +37,8 @@ import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
+import no.nav.aap.oppgave.markering.MarkeringDto
+import no.nav.aap.oppgave.markering.MarkeringResponse
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
@@ -1016,6 +1018,81 @@ class OppgaveApiTest {
         assertThat(hentAntallOppgaver().keys).hasSize(0)
     }
 
+    @Test
+    fun `markeringer skal sendes med i oppgavelistene`() {
+        val behandlingref = UUID.randomUUID()
+        val saksnummer = "1023005"
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = behandlingref, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                        )
+                    )
+                )
+            )
+        )
+
+        // legg på markering på behandling
+        val markering = MarkeringDto(
+            type = MarkeringForBehandling.HASTER,
+            begrunnelse = "Haster"
+        )
+        settNyMarkeringPåBehandling(behandlingref, markering)
+
+        // reserver og hent mine oppgaver
+        hentNesteOppgave()
+        val mineOppgaver = hentMineOppgaver()
+        assertThat(mineOppgaver.oppgaver).hasSize(1)
+        assertThat(mineOppgaver.oppgaver.first().markeringer).hasSize(1)
+        assertThat(mineOppgaver.oppgaver.first().markeringer.first().markeringType).isEqualTo(MarkeringForBehandling.HASTER)
+        assertThat(mineOppgaver.oppgaver.first().markeringer.first().begrunnelse).isEqualTo(markering.begrunnelse)
+
+        // hent markering fra endepunkt
+        val markeringer = hentMarkeringerPåBehandling(behandlingref)
+        assertThat(markeringer).hasSize(1)
+        assertThat(markeringer?.first()?.markeringType).isEqualTo(MarkeringForBehandling.HASTER)
+        assertThat(markeringer?.first()?.begrunnelse).isEqualTo(markering.begrunnelse)
+    }
+
+    @Test
+    fun `markeringer sendes ikke med i oppgavelistene etter at de er fjernet`() {
+        val behandlingref = UUID.randomUUID()
+        val saksnummer = "1023005"
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = behandlingref, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                        )
+                    )
+                )
+            )
+        )
+
+        // legg på markering på behandling
+        val markering = MarkeringDto(
+            type = MarkeringForBehandling.HASTER,
+            begrunnelse = "Haster"
+        )
+        settNyMarkeringPåBehandling(behandlingref, markering)
+
+        // reserver
+        hentNesteOppgave()
+
+        // fjern markering
+        fjernMarkeringPåBehandling(behandlingref, markering)
+        val mineOppgaver = hentMineOppgaver()
+        assertThat(mineOppgaver.oppgaver).hasSize(1)
+        assertThat(mineOppgaver.oppgaver.first().markeringer).isEmpty()
+    }
+
     private data class Behandlingsbehov(
         val definisjon: Definisjon,
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1105,6 +1182,37 @@ class OppgaveApiTest {
             URI.create("http://localhost:$port/avreserver-oppgaver"),
             PostRequest(
                 body = AvreserverOppgaveDto(oppgaver),
+                additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
+                )
+            )
+        )
+    }
+
+    private fun hentMarkeringerPåBehandling(behandlingRef: UUID): List<MarkeringResponse>? {
+        return client.get(
+            URI.create("http://localhost:$port/$behandlingRef/hent-markeringer"),
+            GetRequest()
+        )
+    }
+
+    private fun settNyMarkeringPåBehandling(behandlingRef: UUID, markering: MarkeringDto): Unit? {
+        return client.post(
+            URI.create("http://localhost:$port/$behandlingRef/ny-markering"),
+            PostRequest(
+                body = markering,
+                additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
+                )
+            )
+        )
+    }
+
+    private fun fjernMarkeringPåBehandling(behandlingRef: UUID, markering: MarkeringDto): Unit? {
+        return client.post(
+            URI.create("http://localhost:$port/$behandlingRef/fjern-markering"),
+            PostRequest(
+                body = markering,
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
                 )

@@ -37,11 +37,13 @@ class MarkeringRepositoryTest {
 
         dataSource.transaction { connection ->
             val markeringRepository = MarkeringRepository(connection)
-            markeringRepository.lagreMarkeringerForBehandling(behandlingId, listOf(spesialkompetanseMarkering))
+            // lagre spesialkompetansemarkering
+            markeringRepository.oppdaterMarkering(behandlingId, spesialkompetanseMarkering)
             val hentetMarkering = markeringRepository.hentMarkeringerForBehandling(behandlingId)
             assertThat(hentetMarkering).hasSize(1).first().isEqualTo(spesialkompetanseMarkering)
 
-            markeringRepository.lagreMarkeringerForBehandling(behandlingId, listOf(hasterMarkering))
+            // lagre hastemarkering
+            markeringRepository.oppdaterMarkering(behandlingId, hasterMarkering)
             val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingId)
             assertThat(markeringer).hasSize(2).containsExactlyInAnyOrder(hasterMarkering, spesialkompetanseMarkering)
 
@@ -50,8 +52,9 @@ class MarkeringRepositoryTest {
                 begrunnelse = "ny haste-markering",
                 opprettetAv = "saksbehandler2"
             )
-            markeringRepository.oppdaterMarkeringerForBehandling(behandlingId, listOf(nyMarkering))
-            assertThat(markeringRepository.hentMarkeringerForBehandling(behandlingId)).hasSize(1).first().isEqualTo(nyMarkering)
+            // ny hastemarkering, den gamle skal skrives over
+            markeringRepository.oppdaterMarkering(behandlingId, nyMarkering)
+            assertThat(markeringRepository.hentMarkeringerForBehandling(behandlingId)).hasSize(2).containsExactlyInAnyOrder(nyMarkering, spesialkompetanseMarkering)
         }
     }
 }
