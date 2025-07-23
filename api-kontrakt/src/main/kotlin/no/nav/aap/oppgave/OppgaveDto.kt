@@ -21,7 +21,7 @@ data class ReturInformasjon(
 data class BehandlingMarkering(
     val markeringType: MarkeringForBehandling,
     val begrunnelse: String,
-    val opprettetAv: String? = null,
+    val opprettetAv: String,
 )
 
 enum class MarkeringForBehandling {

@@ -30,7 +30,10 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
     prometheus.httpCallCounter("/hent-oppgave").increment()
     val oppgave =
         dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).hentOppgave(request)
+            OppgavelisteService(
+                OppgaveRepository(connection),
+                MarkeringRepository(connection),
+            ).hentOppgave(request)
         }
     if (oppgave != null) {
         respond(oppgave.medPersonNavn(token()))

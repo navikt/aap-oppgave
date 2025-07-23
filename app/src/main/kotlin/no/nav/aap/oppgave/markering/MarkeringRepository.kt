@@ -5,63 +5,82 @@ import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.BehandlingMarkering
 import java.util.UUID
 
-class MarkeringRepository(private val connection: DBConnection) {
+class MarkeringRepository(
+    private val connection: DBConnection
+) {
 
-    fun oppdaterMarkeringerForBehandling(referanse: UUID, markeringer: List<BehandlingMarkering>) {
-        // fjern gamle og opprett nye markeringer
-        slettMarkeringerForBehandling(referanse)
-        if (markeringer.isNotEmpty()) {
-            lagreMarkeringerForBehandling(referanse, markeringer)
+    fun oppdaterMarkering(referanse: UUID, markering: BehandlingMarkering) {
+        // Kan bare ha én markering av gitt type på en behandling
+        val markeringSkalOverskrives =
+            hentMarkeringerForBehandling(referanse).any { it.markeringType == markering.markeringType }
+
+        if (markeringSkalOverskrives) {
+            slettMarkering(referanse, markering)
         }
+        lagreMarkering(referanse, markering)
     }
 
-    fun lagreMarkeringerForBehandling(referanse: UUID, markeringer: List<BehandlingMarkering>) {
-        val query = """
+    private fun lagreMarkering(
+        referanse: UUID,
+        markering: BehandlingMarkering
+    ) {
+
+
+        val query =
+            """
             INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av)
             VALUES (?, ?, ?, ?)
-        """.trimIndent()
+            """.trimIndent()
 
-        connection.executeBatch(query, markeringer) {
+        connection.execute(query) {
             setParams {
                 setUUID(1, referanse)
-                setEnumName(2, it.markeringType)
-                setString(3, it.begrunnelse)
-                setString(4, it.opprettetAv)
+                setEnumName(2, markering.markeringType)
+                setString(3, markering.begrunnelse)
+                setString(4, markering.opprettetAv)
             }
         }
     }
 
     fun hentMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
-        val query = """
+        val query =
+            """
             SELECT * FROM MARKERING WHERE behandling_ref = ?
-        """.trimIndent()
+            """.trimIndent()
 
-        val markeringer = connection.queryList(query) {
-            setParams {
-                setUUID(1, referanse)
+        val markeringer =
+            connection.queryList(query) {
+                setParams {
+                    setUUID(1, referanse)
+                }
+                setRowMapper {
+                    markeringMapper(it)
+                }
             }
-            setRowMapper {
-                markeringMapper(it)
-            }
-        }
         return markeringer
     }
 
-    private fun slettMarkeringerForBehandling(referanse: UUID) {
-        val query = """
-            DELETE FROM MARKERING WHERE behandling_ref = ?
-        """.trimIndent()
+    fun slettMarkering(
+        referanse: UUID,
+        markering: BehandlingMarkering
+    ) {
+        val query =
+            """
+            DELETE FROM MARKERING WHERE behandling_ref = ? AND markering_type = ?
+            """.trimIndent()
 
         connection.execute(query) {
-            setParams { setUUID(1, referanse) }
+            setParams {
+                setUUID(1, referanse)
+                setEnumName(2, markering.markeringType)
+            }
         }
     }
 
-    private fun markeringMapper(row: Row): BehandlingMarkering {
-        return BehandlingMarkering(
+    private fun markeringMapper(row: Row): BehandlingMarkering =
+        BehandlingMarkering(
             markeringType = row.getEnum("markering_type"),
             begrunnelse = row.getString("begrunnelse"),
-            opprettetAv = row.getString("opprettet_av"),
+            opprettetAv = row.getString("opprettet_av")
         )
-    }
 }

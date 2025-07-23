@@ -3,6 +3,7 @@ package no.nav.aap.oppgave.oppgaveliste
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.miljo.MiljøKode
+import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.BehandlingMarkering
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
@@ -38,6 +39,15 @@ class OppgavelisteService(
             val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingRef)
             oppgave.leggPåMarkeringer(markeringer)
         }
+    }
+
+    fun hentOppgave(avklaringsbehovReferanseDto: AvklaringsbehovReferanseDto): OppgaveDto? {
+        val oppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanseDto)
+        if (avklaringsbehovReferanseDto.referanse != null) {
+            val markeringer = markeringRepository.hentMarkeringerForBehandling(avklaringsbehovReferanseDto.referanse!!)
+            return oppgave?.leggPåMarkeringer(markeringer)
+        }
+        return oppgave
     }
 
     fun hentOppgaverMedTilgang(
