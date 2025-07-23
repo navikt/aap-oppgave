@@ -46,7 +46,7 @@ fun NormalOpenAPIRoute.markeringApi(
     }
 
     route("/{referanse}/fjern-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
-        prometheus.httpCallCounter("/hent-markeringer").increment()
+        prometheus.httpCallCounter("/fjern-markering").increment()
         dataSource.transaction { connection ->
             MarkeringRepository(connection).slettMarkering(
                 request.referanse,

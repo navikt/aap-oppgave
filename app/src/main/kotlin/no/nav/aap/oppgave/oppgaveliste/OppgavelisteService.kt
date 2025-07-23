@@ -25,7 +25,6 @@ class OppgavelisteService(
     private val markeringRepository: MarkeringRepository
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
-        // TODO: legg på markeringer i søket
         val oppgaver = if (søketekst.length >= 11) {
             oppgaveRepository.finnOppgaverGittPersonident(søketekst)
         } else {
