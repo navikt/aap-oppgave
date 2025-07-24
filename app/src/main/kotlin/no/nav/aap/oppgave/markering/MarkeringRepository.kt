@@ -2,7 +2,6 @@ package no.nav.aap.oppgave.markering
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
-import no.nav.aap.oppgave.BehandlingMarkering
 import java.util.UUID
 
 class MarkeringRepository(

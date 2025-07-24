@@ -7,7 +7,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.BehandlingMarkering
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
@@ -54,7 +53,6 @@ data class OppgaveOppdatering(
     val årsakerTilBehandling: List<String>,
     val mottattDokumenter: List<MottattDokument>,
     val reserverTil: String? = null,
-    val markeringer: List<BehandlingMarkering> = emptyList()
 )
 
 data class AvklaringsbehovHendelse(
