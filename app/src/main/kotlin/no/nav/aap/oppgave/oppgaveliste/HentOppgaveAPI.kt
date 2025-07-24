@@ -60,7 +60,7 @@ fun NormalOpenAPIRoute.søkApi(
                     MarkeringRepository(connection),
                 ).søkEtterOppgaver(søketekst)
             }
-        val harAdressebeskyttelse = oppgaver.all { harAdressebeskyttelse(it) }
+        val harAdressebeskyttelse = oppgaver.any { harAdressebeskyttelse(it) }
         val harTilgang = oppgaver.all { TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token()) }
         respond(SøkResponse(oppgaver.medPersonNavn(true, token()), harTilgang, harAdressebeskyttelse))
     }
