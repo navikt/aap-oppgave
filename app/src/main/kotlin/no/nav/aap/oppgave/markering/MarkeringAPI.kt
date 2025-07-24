@@ -25,7 +25,7 @@ fun NormalOpenAPIRoute.markeringApi(
             MarkeringRepository(connection).oppdaterMarkering(
                 referanse = request.referanse,
                 BehandlingMarkering(
-                    dto.type,
+                    dto.markeringType,
                     dto.begrunnelse,
                     bruker().ident
                 )
@@ -34,14 +34,14 @@ fun NormalOpenAPIRoute.markeringApi(
         respondWithStatus(HttpStatusCode.OK)
     }
 
-    route("/{referanse}/hent-markeringer").get<BehandlingReferanse, List<MarkeringResponse>> { request ->
+    route("/{referanse}/hent-markeringer").get<BehandlingReferanse, List<MarkeringDto>> { request ->
         prometheus.httpCallCounter("/hent-markeringer").increment()
 
         val markeringer =
             dataSource.transaction { connection ->
                 MarkeringRepository(connection).hentMarkeringerForBehandling(request.referanse)
             }
-        respond(markeringer.map { it.tilMarkeringResponse() })
+        respond(markeringer.tilDto())
     }
 
     route("/{referanse}/fjern-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
@@ -50,7 +50,7 @@ fun NormalOpenAPIRoute.markeringApi(
             MarkeringRepository(connection).slettMarkering(
                 request.referanse,
                 BehandlingMarkering(
-                    dto.type,
+                    dto.markeringType,
                     dto.begrunnelse,
                     bruker().ident
                 )
@@ -60,9 +60,12 @@ fun NormalOpenAPIRoute.markeringApi(
     }
 }
 
-private fun BehandlingMarkering.tilMarkeringResponse(): MarkeringResponse =
-    MarkeringResponse(
-        markeringType = this.markeringType,
-        begrunnelse = this.begrunnelse,
-        opprettetAv = this.opprettetAv
-    )
+fun List<BehandlingMarkering>.tilDto(): List<MarkeringDto> {
+    return map {
+        MarkeringDto(
+            markeringType = it.markeringType,
+            begrunnelse = it.begrunnelse,
+            opprettetAv = it.opprettetAv
+        )
+    }
+}

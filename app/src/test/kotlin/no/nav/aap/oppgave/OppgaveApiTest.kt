@@ -38,7 +38,6 @@ import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
-import no.nav.aap.oppgave.markering.MarkeringResponse
 import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
@@ -1039,7 +1038,7 @@ class OppgaveApiTest {
 
         // legg på markering på behandling
         val markering = MarkeringDto(
-            type = MarkeringForBehandling.HASTER,
+            markeringType = MarkeringForBehandling.HASTER,
             begrunnelse = "Haster"
         )
         settNyMarkeringPåBehandling(behandlingref, markering)
@@ -1079,7 +1078,7 @@ class OppgaveApiTest {
 
         // legg på markering på behandling
         val markering = MarkeringDto(
-            type = MarkeringForBehandling.HASTER,
+            markeringType = MarkeringForBehandling.HASTER,
             begrunnelse = "Haster"
         )
         settNyMarkeringPåBehandling(behandlingref, markering)
@@ -1190,7 +1189,7 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentMarkeringerPåBehandling(behandlingRef: UUID): List<MarkeringResponse>? {
+    private fun hentMarkeringerPåBehandling(behandlingRef: UUID): List<MarkeringDto>? {
         return client.get(
             URI.create("http://localhost:$port/$behandlingRef/hent-markeringer"),
             GetRequest()

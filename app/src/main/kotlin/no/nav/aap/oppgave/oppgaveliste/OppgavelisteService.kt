@@ -11,9 +11,9 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.markering.BehandlingMarkering
+import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
-import no.nav.aap.oppgave.markering.MarkeringResponse
+import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -37,7 +37,7 @@ class OppgavelisteService(
                 "Fant ikke behandlingsreferanse for oppgave med id ${oppgave.id}"
             }
             val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingRef)
-            oppgave.leggPåMarkeringer(markeringer.map { it.tilMarkeringResponse() })
+            oppgave.leggPåMarkeringer(markeringer.tilDto())
         }
     }
 
@@ -45,7 +45,7 @@ class OppgavelisteService(
         val oppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanseDto)
         if (avklaringsbehovReferanseDto.referanse != null) {
             val markeringer = markeringRepository.hentMarkeringerForBehandling(avklaringsbehovReferanseDto.referanse!!)
-            return oppgave?.leggPåMarkeringer(markeringer.map { it.tilMarkeringResponse() })
+            return oppgave?.leggPåMarkeringer(markeringer.tilDto())
         }
         return oppgave
     }
@@ -94,7 +94,7 @@ class OppgavelisteService(
                     "Fant ikke behandlingsreferanse for oppgave med id ${oppgave.id}"
                 }
                 val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingRef)
-                oppgave.leggPåMarkeringer(markeringer.map { it.tilMarkeringResponse() })
+                oppgave.leggPåMarkeringer(markeringer.tilDto())
             }
 
         return FinnOppgaverDto(
@@ -112,7 +112,7 @@ class OppgavelisteService(
             it.leggPåMarkeringer(
                 markeringRepository.hentMarkeringerForBehandling(requireNotNull(it.behandlingRef) {
                     "Fant ikke behandlingsreferanse for oppgave med id ${it.id}"
-                }).map { it.tilMarkeringResponse() }
+                }).tilDto()
             )
         }.medPersonNavn(fjernSensitivInformasjonNårTilgangMangler = false, token = token)
 
@@ -127,7 +127,7 @@ class OppgavelisteService(
         )
     }
 
-    private fun OppgaveDto.leggPåMarkeringer(markeringer: List<MarkeringResponse>): OppgaveDto =
+    private fun OppgaveDto.leggPåMarkeringer(markeringer: List<MarkeringDto>): OppgaveDto =
         this.copy(markeringer = markeringer)
 
     private fun List<OppgaveDto>.filtrerPåTilgang(
@@ -154,12 +154,4 @@ class OppgavelisteService(
         } else {
             oppgaver
         }
-}
-
-fun BehandlingMarkering.tilMarkeringResponse(): MarkeringResponse {
-    return MarkeringResponse(
-        this.markeringType,
-        this.begrunnelse,
-        this.opprettetAv
-    )
 }

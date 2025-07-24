@@ -1,6 +1,6 @@
 package no.nav.aap.oppgave
 
-import no.nav.aap.oppgave.markering.MarkeringResponse
+import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDate
@@ -62,7 +62,7 @@ data class OppgaveDto(
     val versjon: Long = 0,
     val harFortroligAdresse: Boolean? = false,
     val harUlesteDokumenter: Boolean? = false,
-    val markeringer: List<MarkeringResponse> = emptyList(),
+    val markeringer: List<MarkeringDto> = emptyList(),
 ) {
     init {
         if (journalpostId == null) {
