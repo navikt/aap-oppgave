@@ -25,13 +25,13 @@ object TilgangGateway {
         prometheus = prometheus
     )
 
-    fun sjekkTilgang(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, token: OidcToken): Boolean {
+    fun sjekkTilgang(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, token: OidcToken, operasjon: Operasjon = Operasjon.SAKSBEHANDLE): Boolean {
         return if (avklaringsbehovReferanse.journalpostId != null) {
             harTilgangTilJournalpost(
                 JournalpostTilgangRequest(
                     journalpostId = avklaringsbehovReferanse.journalpostId!!,
                     avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
-                    operasjon = Operasjon.SAKSBEHANDLE
+                    operasjon = operasjon
                 ), token
             )
         } else {
@@ -39,7 +39,7 @@ object TilgangGateway {
                 BehandlingTilgangRequest(
                     behandlingsreferanse = avklaringsbehovReferanse.referanse!!,
                     avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
-                    operasjon = Operasjon.SAKSBEHANDLE
+                    operasjon = operasjon
                 ), token
             )
         }

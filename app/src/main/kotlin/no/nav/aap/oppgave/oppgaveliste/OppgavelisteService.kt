@@ -105,7 +105,6 @@ class OppgavelisteService(
 
     fun hentMineOppgaver(
         ident: String,
-        token: OidcToken,
         kunPaaVent: Boolean?
     ): List<OppgaveDto> =
         oppgaveRepository.hentMineOppgaver(ident = ident, kunPåVent = kunPaaVent == true).map {
@@ -114,7 +113,7 @@ class OppgavelisteService(
                     "Fant ikke behandlingsreferanse for oppgave med id ${it.id}"
                 }).tilDto()
             )
-        }.medPersonNavn(fjernSensitivInformasjonNårTilgangMangler = false, token = token)
+        }.hentPersonNavn()
 
     private fun settFilter(
         filter: FilterDto,

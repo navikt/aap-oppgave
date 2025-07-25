@@ -7,7 +7,6 @@ import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringRepository
@@ -18,7 +17,7 @@ import javax.sql.DataSource
 data class MineOppgaverRequest(@param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false)
 
 /**
- * Hent oppgaver reserver at innlogget bruker.
+ * Hent oppgaver reservert til innlogget bruker.
  */
 fun NormalOpenAPIRoute.mineOppgaverApi(
     dataSource: DataSource,
@@ -30,7 +29,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
             OppgavelisteService(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection)
-            ).hentMineOppgaver(ident(), token(), req.kunPaaVent)
+            ).hentMineOppgaver(ident(), req.kunPaaVent)
         }
     respond(
         OppgavelisteRespons(

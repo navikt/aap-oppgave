@@ -63,14 +63,12 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
         respond(
             OppgavelisteRespons(
                 antallTotalt = data.oppgaver.size,
-                oppgaver = data.oppgaver.medPersonNavn(false, token()),
+                oppgaver = data.oppgaver.hentPersonNavn(),
                 antallGjenstaaende = data.antallGjenstaaende
             )
         )
     }
 }
-
-
 
 /**
  * Søker etter oppgaver med et fritt definert filter som ikke trenger være lagret i database.
@@ -86,9 +84,6 @@ fun NormalOpenAPIRoute.oppgavesøkApi(
                 OppgaveRepository(connection).finnOppgaver(filter)
             }.oppgaver
     respond(
-        oppgaver.medPersonNavn(
-            true,
-            token()
-        )
-    ) // TODO: vurder om vi må ha true her, eller om vi må gjøre om dette.
+        oppgaver.hentPersonNavnMedTilgangssjekk(token())
+    ) // TODO: trengs sensurering av info når tilgang mangler her?
 }
