@@ -17,7 +17,7 @@ import javax.sql.DataSource
 data class MineOppgaverRequest(@param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false)
 
 /**
- * Hent oppgaver reserver at innlogget bruker.
+ * Hent oppgaver reservert til innlogget bruker.
  */
 fun NormalOpenAPIRoute.mineOppgaverApi(
     dataSource: DataSource,
