@@ -9,7 +9,6 @@ import no.nav.aap.tilgang.Operasjon
 import kotlin.collections.map
 import kotlin.collections.mapNotNull
 
-// Sensurer bort sensitiv informasjon for oppgavene saksbehandler mangler tilgang til
 fun List<OppgaveDto>.hentPersonNavnMedTilgangssjekk(
     token: OidcToken,
     operasjon: Operasjon = Operasjon.SAKSBEHANDLE
@@ -17,6 +16,7 @@ fun List<OppgaveDto>.hentPersonNavnMedTilgangssjekk(
     val oppgaverMedNavn = this.hentPersonNavn()
     return oppgaverMedNavn.map {
         if (skalFjerneSensitivInformasjon(it, token, operasjon)) {
+            // fjern sensitive felter
             it.copy(personNavn = null, personIdent = null, enhet = "", oppfølgingsenhet = null)
         } else {
             it
@@ -24,7 +24,6 @@ fun List<OppgaveDto>.hentPersonNavnMedTilgangssjekk(
     }
 }
 
-// Legg på personnavn på oppgavene
 fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> {
     val identer = mapNotNull { it.personIdent }
     if (identer.isEmpty()) {
@@ -60,7 +59,6 @@ private fun skalFjerneSensitivInformasjon(
 fun harAdressebeskyttelse(oppgave: OppgaveDto): Boolean =
     (
         oppgave.enhet == Enhet.NAV_VIKAFOSSEN.kode ||
-            oppgave.enhet.endsWith("83") ||
-            // alle kontorer for egen ansatt slutter på 83
+            oppgave.enhet.endsWith("83") || // alle kontorer for egen ansatt slutter på 83
             oppgave.harFortroligAdresse == true
     )
