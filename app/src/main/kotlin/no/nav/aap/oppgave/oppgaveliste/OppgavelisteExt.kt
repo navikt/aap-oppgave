@@ -5,45 +5,62 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 import no.nav.aap.oppgave.plukk.TilgangGateway
+import no.nav.aap.tilgang.Operasjon
+import kotlin.collections.map
+import kotlin.collections.mapNotNull
 
-fun List<OppgaveDto>.medPersonNavn(fjernSensitivInformasjonNårTilgangMangler: Boolean, token: OidcToken): List<OppgaveDto> {
+// Sensurer bort sensitiv informasjon for oppgavene saksbehandler mangler tilgang til
+fun List<OppgaveDto>.hentPersonNavnMedTilgangssjekk(
+    token: OidcToken,
+    operasjon: Operasjon = Operasjon.SAKSBEHANDLE
+): List<OppgaveDto> {
+    val oppgaverMedNavn = this.hentPersonNavn()
+    return oppgaverMedNavn.map {
+        if (skalFjerneSensitivInformasjon(it, token, operasjon)) {
+            it.copy(personNavn = null, personIdent = null, enhet = "", oppfølgingsenhet = null)
+        } else {
+            it
+        }
+    }
+}
+
+// Legg på personnavn på oppgavene
+fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> {
     val identer = mapNotNull { it.personIdent }
     if (identer.isEmpty()) {
         return this
     }
-    val navnMap = PdlGraphqlKlient.withClientCredentialsRestClient()
-        .hentPersoninfoForIdenter(identer)?.hentPersonBolk?.associate {
-            it.ident to it.person?.navn?.firstOrNull()
-        } ?: emptyMap()
+    val navnMap =
+        PdlGraphqlKlient
+            .withClientCredentialsRestClient()
+            .hentPersoninfoForIdenter(identer)
+            ?.hentPersonBolk
+            ?.associate {
+                it.ident to it.person?.navn?.firstOrNull()
+            } ?: emptyMap()
 
-    val oppgaverMedNavn =  map {
+    return map {
         val personIdent = it.personIdent
-        val personNavn = if (personIdent != null) {
-            navnMap[personIdent]?.fulltNavn() ?: ""
-        } else {
-            ""
-        }
-        it.copy(personNavn = personNavn)
-    }
-    return if (fjernSensitivInformasjonNårTilgangMangler) {
-        oppgaverMedNavn.map {
-            if (skalFjerneSensitivInformasjon(it, token)) {
-                it.copy(personNavn = null, personIdent = null, enhet = "", oppfølgingsenhet = null)
+        val personNavn =
+            if (personIdent != null) {
+                navnMap[personIdent]?.fulltNavn() ?: ""
             } else {
-                it
+                ""
             }
-        }
-    } else {
-        oppgaverMedNavn
+        it.copy(personNavn = personNavn)
     }
 }
 
-private fun skalFjerneSensitivInformasjon(oppgaveDto: OppgaveDto, token: OidcToken) =
-    TilgangGateway.sjekkTilgang(oppgaveDto.tilAvklaringsbehovReferanseDto(), token) == false
+private fun skalFjerneSensitivInformasjon(
+    oppgaveDto: OppgaveDto,
+    token: OidcToken,
+    operasjon: Operasjon
+) = TilgangGateway.sjekkTilgang(oppgaveDto.tilAvklaringsbehovReferanseDto(), token, operasjon) == false
 
 fun harAdressebeskyttelse(oppgave: OppgaveDto): Boolean =
     (
         oppgave.enhet == Enhet.NAV_VIKAFOSSEN.kode ||
-            oppgave.enhet.endsWith("83") || // alle kontorer for egen ansatt slutter på 83
+            oppgave.enhet.endsWith("83") ||
+            // alle kontorer for egen ansatt slutter på 83
             oppgave.harFortroligAdresse == true
     )

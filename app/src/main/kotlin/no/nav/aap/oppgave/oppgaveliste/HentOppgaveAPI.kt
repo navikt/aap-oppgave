@@ -18,6 +18,7 @@ import no.nav.aap.oppgave.SøkResponse
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.plukk.TilgangGateway
+import no.nav.aap.tilgang.Operasjon
 import javax.sql.DataSource
 
 /**
@@ -32,11 +33,11 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
         dataSource.transaction(readOnly = true) { connection ->
             OppgavelisteService(
                 OppgaveRepository(connection),
-                MarkeringRepository(connection),
+                MarkeringRepository(connection)
             ).hentOppgave(request)
         }
     if (oppgave != null) {
-        respond(oppgave.medPersonNavn(token()))
+        respond(oppgave.hentPersonNavnMedTilgangssjekk(token()))
     } else {
         respondWithStatus(HttpStatusCode.NoContent)
     }
@@ -57,13 +58,30 @@ fun NormalOpenAPIRoute.søkApi(
                 val søketekst = søk.søketekst.trim()
                 OppgavelisteService(
                     OppgaveRepository(connection),
-                    MarkeringRepository(connection),
+                    MarkeringRepository(connection)
                 ).søkEtterOppgaver(søketekst)
             }
         val harAdressebeskyttelse = oppgaver.any { harAdressebeskyttelse(it) }
-        val harTilgang = oppgaver.all { TilgangGateway.sjekkTilgang(it.tilAvklaringsbehovReferanseDto(), token()) }
-        respond(SøkResponse(oppgaver.medPersonNavn(true, token()), harTilgang, harAdressebeskyttelse))
+        val harTilgang =
+            oppgaver.all {
+                TilgangGateway.sjekkTilgang(
+                    it.tilAvklaringsbehovReferanseDto(),
+                    token(),
+                    Operasjon.SE
+                )
+            }
+        respond(
+            SøkResponse(
+                oppgaver.hentPersonNavnMedTilgangssjekk(
+                    token = token(),
+                    operasjon = Operasjon.SE
+                ),
+                harTilgang,
+                harAdressebeskyttelse
+            )
+        )
     }
 }
 
-private fun OppgaveDto.medPersonNavn(token: OidcToken): OppgaveDto = listOf(this).medPersonNavn(true, token).first()
+private fun OppgaveDto.hentPersonNavnMedTilgangssjekk(token: OidcToken): OppgaveDto =
+    listOf(this).hentPersonNavnMedTilgangssjekk(token).first()
