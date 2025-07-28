@@ -63,7 +63,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
 
     implementation("com.zaxxer:HikariCP:6.3.0")
-    implementation("org.flywaydb:flyway-database-postgresql:11.10.3")
+    implementation("org.flywaydb:flyway-database-postgresql:11.10.4")
     implementation("io.getunleash:unleash-client-java:11.0.2")
     runtimeOnly("org.postgresql:postgresql:42.7.7")
 
