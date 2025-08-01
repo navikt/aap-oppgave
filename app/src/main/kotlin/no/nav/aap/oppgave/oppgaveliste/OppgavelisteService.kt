@@ -78,7 +78,8 @@ class OppgavelisteService(
                         ),
                     rekkefølge = rekkefølge,
                     paging = paging,
-                    kunLedigeOppgaver = kunLedigeOppgaver
+                    kunLedigeOppgaver = kunLedigeOppgaver,
+                    utvidetFilter = utvidetFilter
                 )
             } else {
                 oppgaveRepository.finnOppgaver(
