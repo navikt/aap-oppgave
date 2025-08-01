@@ -403,6 +403,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND AARSAKER_TIL_BEHANDLING && $stringListeÅrsaker")
         }
 
+        // TODO Denne må vi fikse slik at den håndterer "På vent", "Retur fra kvalitetssikrer" og "Retur fra beslutter"
         if (utvidetFilter.statuser.isNotEmpty()) {
             val stringListeStatuser =
                 utvidetFilter.statuser.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
@@ -436,7 +437,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val kunLedigeQuery =
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
-
+        log.info("UtvidetFilterQuery er:  $utvidetFilterQuery. Og vi har sendt inn $utvidetFilter.")
         val hentNesteOppgaveQuery = """
             SELECT 
                    $alleOppgaveFelt
