@@ -403,11 +403,14 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND AARSAKER_TIL_BEHANDLING && $stringListeÅrsaker")
         }
 
-        // TODO Denne må vi fikse slik at den håndterer "På vent", "Retur fra kvalitetssikrer" og "Retur fra beslutter"
-        if (utvidetFilter.statuser.isNotEmpty()) {
-            val stringListeStatuser =
-                utvidetFilter.statuser.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
-            sb.append(" AND PAA_VENT_AARSAK IN $stringListeStatuser")
+        if (utvidetFilter.returStatuser.isNotEmpty()) {
+            val stringListeReturStatuser =
+                utvidetFilter.returStatuser.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
+            sb.append(" AND RETUR_AARSAK IN $stringListeReturStatuser")
+        }
+
+        if (utvidetFilter.påVent == true) {
+            sb.append(" AND PAA_VENT_AARSAK IS NOT NULL")
         }
 
         if (utvidetFilter.fom != null) {

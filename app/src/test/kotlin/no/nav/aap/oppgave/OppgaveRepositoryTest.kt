@@ -77,9 +77,11 @@ class OppgaveRepositoryTest {
     @Test
     fun `Finn neste oppgave finner en oppgave fordi en av oppgavene matcher filter`() {
         opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name))
-        val oppgaveIdForAvklarStudent = opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_STUDENT.kode.name))
+        val oppgaveIdForAvklarStudent =
+            opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_STUDENT.kode.name))
         dataSource.transaction { connection ->
-            val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter(Definisjon.AVKLAR_STUDENT.kode.name))
+            val plukketOppgaver =
+                OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter(Definisjon.AVKLAR_STUDENT.kode.name))
             assertThat(plukketOppgaver).hasSize(1)
             assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForAvklarStudent.id)
         }
@@ -88,10 +90,12 @@ class OppgaveRepositoryTest {
     @Test
     fun `Finn neste oppgave som bare matcher på behandlingstype dokumenthåndtering`() {
         opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING)
-        val oppgaveIdForDokumentshåndteringsoppgave = opprettOppgave(behandlingstype = Behandlingstype.DOKUMENT_HÅNDTERING)
+        val oppgaveIdForDokumentshåndteringsoppgave =
+            opprettOppgave(behandlingstype = Behandlingstype.DOKUMENT_HÅNDTERING)
 
         dataSource.transaction { connection ->
-            val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.DOKUMENT_HÅNDTERING))
+            val plukketOppgaver =
+                OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.DOKUMENT_HÅNDTERING))
             assertThat(plukketOppgaver).hasSize(1)
             assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
         }
@@ -103,19 +107,19 @@ class OppgaveRepositoryTest {
         val oppgaveIdForDokumentshåndteringsoppgave = opprettOppgave(behandlingstype = Behandlingstype.JOURNALFØRING)
 
         dataSource.transaction { connection ->
-            val plukketOppgaver = OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.JOURNALFØRING))
+            val plukketOppgaver =
+                OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.JOURNALFØRING))
             assertThat(plukketOppgaver).hasSize(1)
             assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
         }
     }
 
 
-
     @Test
     fun `Finn neste oppgave finner ikke en oppgave fordi den er avsluttet`() {
         opprettOppgave(status = Status.AVSLUTTET)
         dataSource.transaction { connection ->
-            val oppgaver= OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter())
+            val oppgaver = OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter())
             assertThat(oppgaver).hasSize(0)
         }
     }
@@ -149,11 +153,11 @@ class OppgaveRepositoryTest {
         val oppgaveId = opprettOppgave()
 
         reserverOppgave(oppgaveId, "saksbehandler1")
-        var mineOppgaver  = mineOppgaver("saksbehandler1")
+        var mineOppgaver = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(1)
 
         avreserverOppgave(OppgaveId(mineOppgaver.first().id!!, mineOppgaver.first().versjon), "saksbehandler1")
-        mineOppgaver  = mineOppgaver("saksbehandler1")
+        mineOppgaver = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(0)
     }
 
@@ -165,7 +169,7 @@ class OppgaveRepositoryTest {
         val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
 
         assertThat(oppgaver).hasSize(1)
-        assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
+        assertThat(oppgaver.map { it.id }).contains(oppgaveId2.id)
     }
 
     @Test
@@ -176,7 +180,7 @@ class OppgaveRepositoryTest {
         val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
 
         assertThat(oppgaver).hasSize(1)
-        assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
+        assertThat(oppgaver.map { it.id }).contains(oppgaveId2.id)
     }
 
     @Test
@@ -188,7 +192,7 @@ class OppgaveRepositoryTest {
         val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
 
         assertThat(oppgaver).hasSize(2)
-        assertThat(oppgaver.map {it.id}).containsAll(setOf(oppgaveId2.id, oppgaveId3.id))
+        assertThat(oppgaver.map { it.id }).containsAll(setOf(oppgaveId2.id, oppgaveId3.id))
     }
 
     @Test
@@ -215,8 +219,8 @@ class OppgaveRepositoryTest {
         val oppgaver = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
 
         assertThat(oppgaver).hasSize(2)
-        assertThat(oppgaver.map {it.id}[0]).isEqualTo(oppgaveId2.id)
-        assertThat(oppgaver.map {it.id}[1]).isEqualTo(oppgaveId3.id)
+        assertThat(oppgaver.map { it.id }[0]).isEqualTo(oppgaveId2.id)
+        assertThat(oppgaver.map { it.id }[1]).isEqualTo(oppgaveId3.id)
     }
 
     @Test
@@ -235,15 +239,18 @@ class OppgaveRepositoryTest {
         assertThat(søkUtenPaging.oppgaver).hasSize(4)
         assertThat(søkUtenPaging.antallGjenstaaende).isEqualTo(0)
 
-        val søkMedPaging = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 1))
+        val søkMedPaging =
+            finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 1))
         assertThat(søkMedPaging.oppgaver).hasSize(1)
         assertThat(søkMedPaging.antallGjenstaaende).isEqualTo(3)
 
-        val søkMedPagingPå10 = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 10))
+        val søkMedPagingPå10 =
+            finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(1, 10))
         assertThat(søkMedPagingPå10.oppgaver).hasSize(4)
         assertThat(søkMedPagingPå10.antallGjenstaaende).isEqualTo(0)
 
-        val søkMedPagingSomIkkeFinnes = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(2, 25))
+        val søkMedPagingSomIkkeFinnes =
+            finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(2, 25))
         assertThat(søkMedPagingSomIkkeFinnes.oppgaver).hasSize(0)
         assertThat(søkMedPagingSomIkkeFinnes.antallGjenstaaende).isEqualTo(0)
 
@@ -266,7 +273,8 @@ class OppgaveRepositoryTest {
 
         val ledigOppgaveId = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
 
-        val oppgavePåVentId = opprettOppgave(enhet = ENHET_NAV_ENEBAKK,
+        val oppgavePåVentId = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
             påVentTil = LocalDate.now().plusDays(3),
             påVentÅrsak = "årsak",
             venteBegrunnelse = "grunn"
@@ -294,6 +302,17 @@ class OppgaveRepositoryTest {
     fun `Kan bruke utvidet filter`() {
         val oppgave1 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgave2 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, avklaringsbehovKode = AvklaringsbehovKode("5003"))
+        val oppgave3 = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            avklaringsbehovKode = AvklaringsbehovKode("5003"),
+            påVentÅrsak = "VENTER_PÅ_SVAR_FRA_BRUKER"
+        )
+        val oppgave4 = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            avklaringsbehovKode = AvklaringsbehovKode("5003"),
+            påVentÅrsak = "VENTER_PÅ_SVAR_FRA_BRUKER",
+            returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", "")
+        )
 
         val utvidetFilter = UtvidetOppgavelisteFilter(
             årsaker = setOf(),
@@ -303,19 +322,53 @@ class OppgaveRepositoryTest {
             avklaringsbehovKoder = setOf("5003", "12341234")
         )
 
+        val utvidetFilterMedStatusPåVent = UtvidetOppgavelisteFilter(
+            årsaker = setOf(),
+            behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+            fom = LocalDate.of(2020, 1, 1),
+            tom = LocalDate.now().plusDays(1),
+            avklaringsbehovKoder = setOf("5003", "12341234"),
+            påVent = true
+        )
+
+        val utvidetFilterMedStatusPåVentOgReturStatus = UtvidetOppgavelisteFilter(
+            årsaker = setOf(),
+            behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+            fom = LocalDate.of(2020, 1, 1),
+            tom = LocalDate.now().plusDays(1),
+            avklaringsbehovKoder = setOf("5003", "12341234"),
+            påVent = true,
+            returStatuser = setOf(ReturStatus.RETUR_FRA_BESLUTTER)
+        )
+
         val søkMedUtvidetFilter = finnAlleOppgaverMedUtvidetFilter(
             filter = TransientFilterDto(),
             paging = null,
             utvidetOppgavelisteFilter = utvidetFilter,
         )
 
+        val søkMedUtvidetFilterPåVent = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(),
+            paging = null,
+            utvidetOppgavelisteFilter = utvidetFilterMedStatusPåVent,
+        )
+
+        val søkMedutvidetFilterMedStatusPåVentOgReturStatus = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(),
+            paging = null,
+            utvidetOppgavelisteFilter = utvidetFilterMedStatusPåVentOgReturStatus,
+        )
+
         val alleOppgaver = finnAlleOppgaver(
-            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)
+            filter = TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK)
             )
         )
 
-        assertThat(alleOppgaver.oppgaver).hasSize(2)
-        assertThat(søkMedUtvidetFilter.oppgaver).hasSize(1)
+        assertThat(alleOppgaver.oppgaver).hasSize(4)
+        assertThat(søkMedUtvidetFilter.oppgaver).hasSize(3)
+        assertThat(søkMedUtvidetFilterPåVent.oppgaver).hasSize(2)
+        assertThat(søkMedutvidetFilterMedStatusPåVentOgReturStatus.oppgaver).hasSize(1)
     }
 
     @Test
@@ -327,7 +380,7 @@ class OppgaveRepositoryTest {
         val oppgaver = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_LILLESTRØM))).oppgaver
 
         assertThat(oppgaver).hasSize(1)
-        assertThat(oppgaver.map {it.id}).contains(oppgaveId2.id)
+        assertThat(oppgaver.map { it.id }).contains(oppgaveId2.id)
     }
 
     @Test
@@ -341,10 +394,24 @@ class OppgaveRepositoryTest {
     }
 
     private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =
-        FilterDto(1, "Filter for test", "Filter for test", avklaringsbehovKoder = avklaringsbehovKoder.toSet(), opprettetAv = "test", opprettetTidspunkt = LocalDateTime.now())
+        FilterDto(
+            1,
+            "Filter for test",
+            "Filter for test",
+            avklaringsbehovKoder = avklaringsbehovKoder.toSet(),
+            opprettetAv = "test",
+            opprettetTidspunkt = LocalDateTime.now()
+        )
 
     private fun behandlingstypeFilter(vararg behandlingstyper: Behandlingstype) =
-        FilterDto(1, "Filter for test", "Filter for test", behandlingstyper = behandlingstyper.toSet(), opprettetAv = "test", opprettetTidspunkt = LocalDateTime.now())
+        FilterDto(
+            1,
+            "Filter for test",
+            "Filter for test",
+            behandlingstyper = behandlingstyper.toSet(),
+            opprettetAv = "test",
+            opprettetTidspunkt = LocalDateTime.now()
+        )
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
         dataSource.transaction { connection ->
@@ -382,13 +449,22 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun finnAlleOppgaverMedUtvidetFilter(filter: Filter, paging: Paging? = null, utvidetOppgavelisteFilter: UtvidetOppgavelisteFilter): OppgaveRepository.FinnOppgaverDto {
+    private fun finnAlleOppgaverMedUtvidetFilter(
+        filter: Filter,
+        paging: Paging? = null,
+        utvidetOppgavelisteFilter: UtvidetOppgavelisteFilter
+    ): OppgaveRepository.FinnOppgaverDto {
         val kombinertFilter = (filter as TransientFilterDto).copy(
             behandlingstyper = utvidetOppgavelisteFilter.behandlingstyper,
             avklaringsbehovKoder = utvidetOppgavelisteFilter.avklaringsbehovKoder,
         )
         return dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).finnOppgaver(filter = kombinertFilter, paging = paging, kunLedigeOppgaver = false, utvidetFilter = utvidetOppgavelisteFilter)
+            OppgaveRepository(connection).finnOppgaver(
+                filter = kombinertFilter,
+                paging = paging,
+                kunLedigeOppgaver = false,
+                utvidetFilter = utvidetOppgavelisteFilter
+            )
         }
     }
 
@@ -411,7 +487,8 @@ class OppgaveRepositoryTest {
         påVentTil: LocalDate? = null,
         påVentÅrsak: String? = null,
         venteBegrunnelse: String? = null,
-        harUlesteDokumenter: Boolean = false
+        harUlesteDokumenter: Boolean = false,
+        returInformasjon: ReturInformasjon? = null,
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -429,7 +506,8 @@ class OppgaveRepositoryTest {
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
             opprettetTidspunkt = LocalDateTime.now(),
-            harUlesteDokumenter = harUlesteDokumenter
+            harUlesteDokumenter = harUlesteDokumenter,
+            returInformasjon = returInformasjon
         )
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).opprettOppgave(oppgaveDto)

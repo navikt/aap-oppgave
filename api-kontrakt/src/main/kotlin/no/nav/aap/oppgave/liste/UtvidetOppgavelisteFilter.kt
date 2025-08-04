@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.liste
 
+import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import java.time.LocalDate
 
@@ -9,5 +10,6 @@ data class UtvidetOppgavelisteFilter (
     val fom: LocalDate? = null,
     val tom: LocalDate? = null,
     val avklaringsbehovKoder: Set<String> = emptySet(), // Oppgavetype
-    val statuser: Set<String> = emptySet()
+    val påVent: Boolean? = null,
+    val returStatuser: Set<ReturStatus> = emptySet()
 )
