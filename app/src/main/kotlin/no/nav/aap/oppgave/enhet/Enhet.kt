@@ -6,4 +6,5 @@ enum class Enhet(val kode: String) {
     NAY_EGNE_ANSATTE("4483"),
     NAV_UTLAND("0393"),
     NAY_UTLAND("4402"),
+    NASJONAL_OPPFØLGINGSENHET("4154")
 }

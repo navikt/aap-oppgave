@@ -69,6 +69,20 @@ class EnhetServiceTest {
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
 
     }
+    
+    @Test
+    fun `Oppfølgingsenhet skal ikke overstyre hvis nasjonal oppfølgingsenhet`() {
+        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"))
+        
+        val veilarbarenaClient = VeilarbarenaKlientMock.medRespons("4154")
+        
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient,veilarbarenaClient)
+
+        val utledetEnhet = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910")
+        assertThat(utledetEnhet).isNotNull()
+        assertThat(utledetEnhet.enhet).isEqualTo("0403")
+        assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
+    }
 
     @Test
     fun `Skal ikke prøve å omgjøre til fylkesenhet for vikafossen`() {

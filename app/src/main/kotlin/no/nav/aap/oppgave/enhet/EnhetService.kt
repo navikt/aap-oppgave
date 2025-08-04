@@ -110,20 +110,22 @@ class EnhetService(
 
         // Hvis personen er utenlandsk, så vil NORG returnere feil kontor (Den returnerer NAY-kontoret).
         // Vi må derfor hardkode inn dette som et unntak.
-        val enhetFraNorg = if (tilknytningOgSkjerming.geografiskTilknytning?.gtType == GeografiskTilknytningType.UTLAND) {
-            Enhet.NAV_UTLAND.kode
-        } else {
-            norgKlient.finnEnhet(
-                tilknytningOgSkjerming.geografiskTilknytning?.let { mapGeografiskTilknytningTilKode(it) },
-                tilknytningOgSkjerming.erNavAnsatt,
-                tilknytningOgSkjerming.diskresjonskode
-            )
-        }
-        val enhetFraArena = if (tilknytningOgSkjerming.diskresjonskode != Diskresjonskode.SPSF && !tilknytningOgSkjerming.erNavAnsatt) {
-            finnOppfølgingsenhet(fnr)
-        } else {
-            null
-        }
+        val enhetFraNorg =
+            if (tilknytningOgSkjerming.geografiskTilknytning?.gtType == GeografiskTilknytningType.UTLAND) {
+                Enhet.NAV_UTLAND.kode
+            } else {
+                norgKlient.finnEnhet(
+                    tilknytningOgSkjerming.geografiskTilknytning?.let { mapGeografiskTilknytningTilKode(it) },
+                    tilknytningOgSkjerming.erNavAnsatt,
+                    tilknytningOgSkjerming.diskresjonskode
+                )
+            }
+        val enhetFraArena =
+            if (tilknytningOgSkjerming.diskresjonskode != Diskresjonskode.SPSF && !tilknytningOgSkjerming.erNavAnsatt) {
+                finnOppfølgingsenhet(fnr).takeIf { it != Enhet.NASJONAL_OPPFØLGINGSENHET.kode }
+            } else {
+                null
+            }
         return EnhetForOppgave(enhetFraNorg, enhetFraArena)
     }
 
@@ -184,7 +186,7 @@ class EnhetService(
         val erStrengtFortrolig = harStrengtFortroligAdresse(pdlData)
         val geografiskTilknytning = pdlData.hentGeografiskTilknytning
         val erEgenAnsatt = nomKlient.erEgenansatt(fnr)
-        
+
         val enhet = if (erStrengtFortrolig) {
             Enhet.NAV_VIKAFOSSEN.kode
         } else if (erEgenAnsatt) {
@@ -194,7 +196,7 @@ class EnhetService(
         } else {
             Enhet.NAY.kode
         }
-        
+
         return EnhetForOppgave(
             enhet,
             oppfølgingsenhet = null
