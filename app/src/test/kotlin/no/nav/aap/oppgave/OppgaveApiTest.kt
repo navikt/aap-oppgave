@@ -587,7 +587,7 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun `Søkeresultat skal sensureres når saksbehandler mangler tilgang`(fakesConfig: FakesConfig) {
+    fun `Søkeresultat skal sensureres når saksbehandler mangler tilgang pga adressebeskyttelse`(fakesConfig: FakesConfig) {
         val saksnummer1 = "100002"
         val referanse1 = UUID.randomUUID()
 
@@ -605,14 +605,46 @@ class OppgaveApiTest {
             )
         )
 
-        // søk med tilgang
-        val søkResponseTilgang = søkEtterOppgaver(SøkDto(saksnummer1))
-        assertThat(søkResponseTilgang?.harTilgang).isTrue()
-        assertThat(søkResponseTilgang?.oppgaver).hasSize(1)
-        assertThat(søkResponseTilgang?.oppgaver?.first()?.saksnummer).isEqualTo(saksnummer1)
+        val søkMedTilgang = søkEtterOppgaver(SøkDto(saksnummer1))
+        assertThat(søkMedTilgang?.harTilgang).isTrue()
+        assertThat(søkMedTilgang?.oppgaver).hasSize(1)
+        assertThat(søkMedTilgang?.oppgaver?.first()?.saksnummer).isEqualTo(saksnummer1)
 
 
-        // søk uten tilgang
+        // søk uten tilgang, men uten adressebeskyttelse
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse1)
+        val manglerTilgang = søkEtterOppgaver(SøkDto(saksnummer1))
+        assertThat(manglerTilgang?.harTilgang).isEqualTo(false)
+
+        // skal ikke sensureres
+        assertThat(manglerTilgang?.oppgaver?.all { it.enhet !== "" }).isTrue()
+        assertThat(manglerTilgang?.oppgaver?.all { it.personIdent !== null }).isTrue()
+        assertThat(manglerTilgang?.oppgaver?.all { it.personNavn !== null }).isTrue()
+
+
+        val oppgaveMedGammelEnhet = hentOppgave(saksnummer1, referanse1, definisjon = Definisjon.AVKLAR_SYKDOM)
+        assertThat(oppgaveMedGammelEnhet).isNotNull()
+
+        // sett kode 6
+        oppdaterOgHentOppgave(
+            OppgaveDto(
+                id = oppgaveMedGammelEnhet!!.id,
+                saksnummer = oppgaveMedGammelEnhet.saksnummer,
+                behandlingRef = oppgaveMedGammelEnhet.behandlingRef,
+                enhet = Enhet.NAV_VIKAFOSSEN.kode,
+                oppfølgingsenhet = null,
+                veilederArbeid = oppgaveMedGammelEnhet.veilederArbeid,
+                behandlingOpprettet = oppgaveMedGammelEnhet.behandlingOpprettet,
+                avklaringsbehovKode = oppgaveMedGammelEnhet.avklaringsbehovKode,
+                status = oppgaveMedGammelEnhet.status,
+                behandlingstype = oppgaveMedGammelEnhet.behandlingstype,
+                opprettetAv = oppgaveMedGammelEnhet.opprettetAv,
+                opprettetTidspunkt = oppgaveMedGammelEnhet.opprettetTidspunkt,
+                versjon = oppgaveMedGammelEnhet.versjon,
+            )
+        )
+
+        // søk uten tilgang OG kode 6
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse1)
         val søkResponseUtenTilgang = søkEtterOppgaver(SøkDto(saksnummer1))
         assertThat(søkResponseUtenTilgang?.harTilgang).isEqualTo(false)
