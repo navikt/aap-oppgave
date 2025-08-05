@@ -172,7 +172,7 @@ class OppdaterOppgaveServiceTest {
                         )
                     )
                 )
-            )
+            ), vurderingsbehov = listOf()
         )
         sendBehandlingFlytStoppetHendelse(hendelse)
 
@@ -283,7 +283,8 @@ class OppdaterOppgaveServiceTest {
                         ),
                     )
                 ),
-            )
+            ),
+            vurderingsbehov = listOf()
         )
 
         sendBehandlingFlytStoppetHendelse(hendelse)
@@ -402,7 +403,8 @@ class OppdaterOppgaveServiceTest {
                         )
                     )
                 ),
-            )
+            ),
+            vurderingsbehov = listOf()
         )
 
         //Utfør
