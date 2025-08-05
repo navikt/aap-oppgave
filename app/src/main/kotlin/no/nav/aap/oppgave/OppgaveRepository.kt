@@ -440,7 +440,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val kunLedigeQuery =
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
-        log.info("UtvidetFilterQuery er:  $utvidetFilterQuery. Og vi har sendt inn $utvidetFilter.")
+
         val hentNesteOppgaveQuery = """
             SELECT 
                    $alleOppgaveFelt
@@ -458,7 +458,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val countQuery = """
             SELECT COUNT(*) count FROM OPPGAVE
-            WHERE ${filter.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET'
+            WHERE ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
         """.trimIndent()
 
         val alleOppgaverCount = connection.queryFirstOrNull(countQuery) {
