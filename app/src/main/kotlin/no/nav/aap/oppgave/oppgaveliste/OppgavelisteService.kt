@@ -135,9 +135,9 @@ class OppgavelisteService(
         token: OidcToken,
         ident: String
     ): List<OppgaveDto> {
-        val oppgaverFiltrertForKode6 = sjekkTilgangTilFortroligAdresse(enhetService, token.token(), this)
+        val oppgaverFiltrertForKode7 = sjekkTilgangTilFortroligAdresse(enhetService, token.token(), this)
         val enhetsGrupper = enhetService.hentEnheter(token.token(), ident)
-        return oppgaverFiltrertForKode6
+        return oppgaverFiltrertForKode7
             .asSequence()
             .filter { enhetsGrupper.contains(it.enhetForKø()) }
             .take(maksOppgaver)
