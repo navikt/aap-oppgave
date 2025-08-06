@@ -304,13 +304,17 @@ class OppgaveRepositoryTest {
         val oppgave2 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, avklaringsbehovKode = AvklaringsbehovKode("5003"))
         val oppgave3 = opprettOppgave(
             enhet = ENHET_NAV_ENEBAKK,
-            avklaringsbehovKode = AvklaringsbehovKode("5003"),
             påVentÅrsak = "VENTER_PÅ_SVAR_FRA_BRUKER"
         )
         val oppgave4 = opprettOppgave(
             enhet = ENHET_NAV_ENEBAKK,
             avklaringsbehovKode = AvklaringsbehovKode("5003"),
             påVentÅrsak = "VENTER_PÅ_SVAR_FRA_BRUKER",
+            returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", "")
+        )
+        val oppgave5 = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            avklaringsbehovKode = AvklaringsbehovKode("5003"),
             returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", "")
         )
 
@@ -324,10 +328,6 @@ class OppgaveRepositoryTest {
 
         val utvidetFilterMedStatusPåVent = UtvidetOppgavelisteFilter(
             årsaker = setOf(),
-            behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
-            fom = LocalDate.of(2020, 1, 1),
-            tom = LocalDate.now().plusDays(1),
-            avklaringsbehovKoder = setOf("5003", "12341234"),
             påVent = true
         )
 
@@ -365,10 +365,10 @@ class OppgaveRepositoryTest {
             )
         )
 
-        assertThat(alleOppgaver.oppgaver).hasSize(4)
+        assertThat(alleOppgaver.oppgaver).hasSize(5)
         assertThat(søkMedUtvidetFilter.oppgaver).hasSize(3)
+        assertThat(søkMedutvidetFilterMedStatusPåVentOgReturStatus.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterPåVent.oppgaver).hasSize(2)
-        assertThat(søkMedutvidetFilterMedStatusPåVentOgReturStatus.oppgaver).hasSize(1)
     }
 
     @Test

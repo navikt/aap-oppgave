@@ -403,14 +403,21 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND AARSAKER_TIL_BEHANDLING && $stringListeÅrsaker")
         }
 
-        if (utvidetFilter.returStatuser.isNotEmpty()) {
+        val returStatuserNotEmpty = utvidetFilter.returStatuser.isNotEmpty()
+        val påVent = utvidetFilter.påVent == true
+
+        if (påVent) {
+            if (returStatuserNotEmpty) {
+                val stringListeReturStatuser = utvidetFilter.returStatuser
+                    .joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
+                sb.append(" AND (RETUR_AARSAK IN $stringListeReturStatuser OR PAA_VENT_AARSAK IS NOT NULL)")
+            } else {
+                sb.append(" AND PAA_VENT_AARSAK IS NOT NULL")
+            }
+        } else if (returStatuserNotEmpty) {
             val stringListeReturStatuser =
                 utvidetFilter.returStatuser.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
             sb.append(" AND RETUR_AARSAK IN $stringListeReturStatuser")
-        }
-
-        if (utvidetFilter.påVent == true) {
-            sb.append(" AND PAA_VENT_AARSAK IS NOT NULL")
         }
 
         if (utvidetFilter.fom != null) {
