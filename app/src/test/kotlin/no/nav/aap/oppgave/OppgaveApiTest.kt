@@ -1155,7 +1155,8 @@ class OppgaveApiTest {
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
             mottattDokumenter = listOf(),
             reserverTil = reserverTil,
-            vurderingsbehov = emptyList()
+            vurderingsbehov = emptyList(),
+            årsakTilOpprettelse = "SØKNAD",
         )
     }
 
