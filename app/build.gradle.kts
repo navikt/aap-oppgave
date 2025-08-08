@@ -1,9 +1,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.2.3"
-val komponenterVersjon = "1.0.297"
-val tilgangVersjon = "1.0.99"
-val behandlingsflytVersjon = "0.0.400"
+val komponenterVersjon = "1.0.308"
+val tilgangVersjon = "1.0.104"
+val behandlingsflytVersjon = "0.0.403"
 val postmottakVersjon = "0.0.111"
 
 plugins {
@@ -34,7 +34,7 @@ dependencies {
     implementation("no.nav.aap.kelvin:server:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor-api:$komponenterVersjon")
-    implementation("no.nav:ktor-openapi-generator:1.0.119")
+    implementation("no.nav:ktor-openapi-generator:1.0.120")
     implementation("no.nav.aap.tilgang:api-kontrakt:$tilgangVersjon")
     implementation("no.nav.aap.tilgang:plugin:$tilgangVersjon")
     implementation("no.nav.aap.behandlingsflyt:kontrakt:$behandlingsflytVersjon")
@@ -63,15 +63,15 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
 
     implementation("com.zaxxer:HikariCP:7.0.0")
-    implementation("org.flywaydb:flyway-database-postgresql:11.10.3")
+    implementation("org.flywaydb:flyway-database-postgresql:11.10.5")
     implementation("io.getunleash:unleash-client-java:11.0.2")
     runtimeOnly("org.postgresql:postgresql:42.7.7")
 
-    testImplementation("com.nimbusds:nimbus-jose-jwt:10.4")
+    testImplementation("com.nimbusds:nimbus-jose-jwt:10.4.1")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.4")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.13.4")
     testImplementation("org.testcontainers:junit-jupiter:1.21.3")
-    testImplementation("org.assertj:assertj-core:3.27.3")
+    testImplementation("org.assertj:assertj-core:3.27.4")
     testImplementation("org.testcontainers:postgresql:1.21.3")
     constraints {
         implementation("org.apache.commons:commons-compress:1.27.1") {
