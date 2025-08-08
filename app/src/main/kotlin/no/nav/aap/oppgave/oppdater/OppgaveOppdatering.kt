@@ -47,7 +47,8 @@ data class OppgaveOppdatering(
     val opprettetTidspunkt: LocalDateTime,
     val avklaringsbehov: List<AvklaringsbehovHendelse>,
     val venteInformasjon: VenteInformasjon? = null,
-    val årsakerTilBehandling: List<String>,
+    val vurderingsbehov: List<String>,
+    val årsakTilOpprettelse: String?,
     val mottattDokumenter: List<MottattDokument>,
     val reserverTil: String? = null,
 )
@@ -81,8 +82,9 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         personIdent = this.personIdent,
         saksnummer = this.saksnummer.toString(),
         referanse = this.referanse.referanse,
-        årsakerTilBehandling = this.årsakerTilBehandling,
+        vurderingsbehov = this.vurderingsbehov,
         behandlingStatus = this.status.tilBehandlingsstatus(),
+        årsakTilOpprettelse = this.årsakTilOpprettelse,
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflyt(),
@@ -194,8 +196,9 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForPostmottak(),
-        årsakerTilBehandling = emptyList(),
-        mottattDokumenter = emptyList()
+        vurderingsbehov = emptyList(),
+        mottattDokumenter = emptyList(),
+        årsakTilOpprettelse = null
     )
 }
 

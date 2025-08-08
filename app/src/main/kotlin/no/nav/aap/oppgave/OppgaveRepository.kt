@@ -43,9 +43,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 RETUR_AARSAK,
                 retur_begrunnelse,
                 retur_aarsaker,
-                retur_returnert_av
+                retur_returnert_av,
+                aarsak_til_opprettelse
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -67,7 +68,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(14, oppgaveDto.personIdent)
                 setString(15, oppgaveDto.veilederArbeid)
                 setString(16, oppgaveDto.veilederSykdom)
-                setArray(17, oppgaveDto.årsakerTilBehandling)
+                setArray(17, oppgaveDto.vurderingsbehov)
                 setString(18, oppgaveDto.venteBegrunnelse)
                 setBoolean(19, oppgaveDto.harFortroligAdresse)
                 setBoolean(20, oppgaveDto.harUlesteDokumenter)
@@ -75,6 +76,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(22, oppgaveDto.returInformasjon?.begrunnelse)
                 setArray(23, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
                 setString(24, oppgaveDto.returInformasjon?.endretAv)
+                setString(25, oppgaveDto.årsakTilOpprettelse)
             }
         }
         return OppgaveId(id, 0L)
@@ -208,7 +210,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         oppfølgingsenhet: String?,
         veilederArbeid: String?,
         veilederSykdom: String?,
-        årsakerTilBehandling: List<String>,
+        vurderingsbehov: List<String>,
         harFortroligAdresse: Boolean? = false,
         harUlesteDokumenter: Boolean? = false,
         returInformasjon: ReturInformasjon?
@@ -252,7 +254,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(7, personIdent)
                 setString(8, veilederArbeid)
                 setString(9, veilederSykdom)
-                setArray(10, årsakerTilBehandling)
+                setArray(10, vurderingsbehov)
                 setBoolean(11, harFortroligAdresse)
                 setBoolean(12, harUlesteDokumenter)
                 setEnumName(13, returInformasjon?.status)
@@ -731,6 +733,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             påVentÅrsak = row.getStringOrNull("PAA_VENT_AARSAK"),
             venteBegrunnelse = row.getStringOrNull("VENTE_BEGRUNNELSE"),
             årsakerTilBehandling = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
+            vurderingsbehov = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
             reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
             opprettetAv = row.getString("OPPRETTET_AV"),
@@ -740,6 +743,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             versjon = row.getLong("VERSJON"),
             harFortroligAdresse = row.getBoolean("FORTROLIG_ADRESSE"),
             harUlesteDokumenter = row.getBoolean("ULESTE_DOKUMENTER"),
+            årsakTilOpprettelse = row.getStringOrNull("AARSAK_TIL_OPPRETTELSE"),
             returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK"),
             returInformasjon = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")?.let {
                 ReturInformasjon(
@@ -784,7 +788,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             RETUR_AARSAK,
             RETUR_BEGRUNNELSE,
             retur_aarsaker,
-            retur_returnert_av
+            retur_returnert_av,
+            AARSAK_TIL_OPPRETTELSE
         """.trimIndent()
     }
 

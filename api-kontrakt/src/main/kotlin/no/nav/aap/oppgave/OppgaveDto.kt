@@ -52,7 +52,10 @@ data class OppgaveDto(
     @Deprecated("Bruk returInformasjon")
     val returStatus: ReturStatus? = null,
     val returInformasjon: ReturInformasjon? = null,
+    @Deprecated("Bytt til vurderingsbehov når frontend er oppdatert")
     val årsakerTilBehandling: List<String> = emptyList(),
+    val vurderingsbehov: List<String> = emptyList(),
+    val årsakTilOpprettelse: String? = null,
     val reservertAv: String? = null,
     val reservertTidspunkt: LocalDateTime? = null,
     val opprettetAv: String,

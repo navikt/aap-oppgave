@@ -138,7 +138,7 @@ class PlukkOppgaveService(
                 oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
                 veilederArbeid = oppgave.veilederArbeid,
                 veilederSykdom = oppgave.veilederSykdom,
-                årsakerTilBehandling = oppgave.årsakerTilBehandling,
+                vurderingsbehov = oppgave.vurderingsbehov,
                 harFortroligAdresse = oppgave.harFortroligAdresse,
                 returInformasjon = oppgave.returInformasjon
             )
