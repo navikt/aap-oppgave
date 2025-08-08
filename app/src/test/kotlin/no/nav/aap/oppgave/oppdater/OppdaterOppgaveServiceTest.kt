@@ -172,7 +172,9 @@ class OppdaterOppgaveServiceTest {
                         )
                     )
                 )
-            ), vurderingsbehov = listOf()
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD"
         )
         sendBehandlingFlytStoppetHendelse(hendelse)
 
@@ -284,7 +286,8 @@ class OppdaterOppgaveServiceTest {
                     )
                 ),
             ),
-            vurderingsbehov = listOf()
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD"
         )
 
         sendBehandlingFlytStoppetHendelse(hendelse)
@@ -404,7 +407,8 @@ class OppdaterOppgaveServiceTest {
                     )
                 ),
             ),
-            vurderingsbehov = listOf()
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD"
         )
 
         //Utfør

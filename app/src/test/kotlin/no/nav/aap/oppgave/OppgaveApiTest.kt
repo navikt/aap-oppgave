@@ -118,6 +118,7 @@ class OppgaveApiTest {
         // Hent hele oppgaven
         val oppgaven = hentOppgave(OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon))
         assertThat(oppgaven.årsakerTilBehandling).containsExactly("SØKNAD")
+        assertThat(oppgaven.vurderingsbehov).containsExactly("SØKNAD")
 
         // Sjekk at oppgave kommer i mine oppgaver listen
         assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave.id)
@@ -1155,7 +1156,8 @@ class OppgaveApiTest {
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
             mottattDokumenter = listOf(),
             reserverTil = reserverTil,
-            vurderingsbehov = emptyList()
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD"
         )
     }
 
@@ -1380,7 +1382,7 @@ class OppgaveApiTest {
                     oppfølgingsenhet = oppgave.oppfølgingsenhet,
                     veilederArbeid = oppgave.veilederArbeid,
                     veilederSykdom = oppgave.veilederSykdom,
-                    årsakerTilBehandling = oppgave.årsakerTilBehandling,
+                    vurderingsbehov = oppgave.årsakerTilBehandling,
                     returInformasjon = oppgave.returInformasjon,
                 )
             }
