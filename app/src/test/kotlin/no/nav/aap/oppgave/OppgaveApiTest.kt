@@ -168,6 +168,9 @@ class OppgaveApiTest {
         val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SAMORDNING_GRADERING)
         assertThat(oppgave).isNotNull
         assertThat(oppgave!!.enhet).isEqualTo("4491")
+        assertThat(oppgave.vurderingsbehov).contains("SØKNAD")
+        assertThat(oppgave.årsakerTilBehandling).isEqualTo(oppgave.vurderingsbehov)
+        assertThat(oppgave.årsakTilOpprettelse).isEqualTo("SØKNAD")
 
         // Plukk neste oppgave
         var nesteOppgave = hentNesteOppgaveNAY()
