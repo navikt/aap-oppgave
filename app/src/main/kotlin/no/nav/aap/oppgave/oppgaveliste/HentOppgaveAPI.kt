@@ -70,14 +70,18 @@ fun NormalOpenAPIRoute.søkApi(
                     Operasjon.SE
                 )
             }
+
+        val oppgaverMedTilgangSjekk = if (harAdressebeskyttelse) {
+            // Sensurerer felter om saksbehandler ikke har tilgang
+            oppgaver.hentPersonNavnMedTilgangssjekk(token(), operasjon = Operasjon.SE)
+        } else {
+            oppgaver.hentPersonNavn()
+        }
         respond(
             SøkResponse(
-                oppgaver.hentPersonNavnMedTilgangssjekk(
-                    token = token(),
-                    operasjon = Operasjon.SE
-                ),
-                harTilgang,
-                harAdressebeskyttelse
+                oppgaver = oppgaverMedTilgangSjekk,
+                harTilgang = harTilgang,
+                harAdressebeskyttelse = harAdressebeskyttelse,
             )
         )
     }
