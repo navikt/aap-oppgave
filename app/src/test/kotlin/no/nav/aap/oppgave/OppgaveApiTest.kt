@@ -617,9 +617,9 @@ class OppgaveApiTest {
         assertThat(manglerTilgang?.harTilgang).isEqualTo(false)
 
         // skal ikke sensureres
-        assertThat(manglerTilgang?.oppgaver?.all { it.enhet !== "" }).isTrue()
-        assertThat(manglerTilgang?.oppgaver?.all { it.personIdent !== null }).isTrue()
-        assertThat(manglerTilgang?.oppgaver?.all { it.personNavn !== null }).isTrue()
+        assertThat(manglerTilgang?.oppgaver).allMatch { it.enhet.isNotEmpty() }
+        assertThat(manglerTilgang?.oppgaver).allMatch { it.personIdent !== null }
+        assertThat(manglerTilgang?.oppgaver).allMatch { it.personNavn !== null }
 
 
         val oppgaveMedGammelEnhet = hentOppgave(saksnummer1, referanse1, definisjon = Definisjon.AVKLAR_SYKDOM)
@@ -650,9 +650,9 @@ class OppgaveApiTest {
         assertThat(søkResponseUtenTilgang?.harTilgang).isEqualTo(false)
 
         // all info sensureres bort
-        assertThat(søkResponseUtenTilgang?.oppgaver?.all { it.enhet === "" }).isTrue()
-        assertThat(søkResponseUtenTilgang?.oppgaver?.all { it.personIdent === null }).isTrue()
-        assertThat(søkResponseUtenTilgang?.oppgaver?.all { it.personNavn === null }).isTrue()
+        assertThat(søkResponseUtenTilgang?.oppgaver).allMatch { it.enhet.isEmpty() }
+        assertThat(søkResponseUtenTilgang?.oppgaver).allMatch { it.personIdent === null }
+        assertThat(søkResponseUtenTilgang?.oppgaver).allMatch { it.personNavn === null }
 
     }
 
