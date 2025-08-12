@@ -9,6 +9,8 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
 
+private const val KELVIN = "Kelvin"
+
 class ReserverOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository
@@ -57,9 +59,11 @@ class ReserverOppgaveService(
         val oppgaverSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
         var c = 0
         oppgaverSomSkalReserveres.forEach {
-            oppgaveRepository.reserverOppgave(it, ident, ident)
-            sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
-            c++
+            if (ident != KELVIN) {
+                oppgaveRepository.reserverOppgave(it, ident, ident)
+                sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
+                c++
+            }
         }
         log.info("Reserverte $c oppgaver uten tilgangskontroll for $ident.")
         return oppgaverSomSkalReserveres
