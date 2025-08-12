@@ -118,6 +118,7 @@ class OppgaveApiTest {
         // Hent hele oppgaven
         val oppgaven = hentOppgave(OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon))
         assertThat(oppgaven.årsakerTilBehandling).containsExactly("SØKNAD")
+        assertThat(oppgaven.vurderingsbehov).containsExactly("SØKNAD")
 
         // Sjekk at oppgave kommer i mine oppgaver listen
         assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave.id)
@@ -167,6 +168,9 @@ class OppgaveApiTest {
         val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SAMORDNING_GRADERING)
         assertThat(oppgave).isNotNull
         assertThat(oppgave!!.enhet).isEqualTo("4491")
+        assertThat(oppgave.vurderingsbehov).contains("SØKNAD")
+        assertThat(oppgave.årsakerTilBehandling).isEqualTo(oppgave.vurderingsbehov)
+        assertThat(oppgave.årsakTilOpprettelse).isEqualTo("SØKNAD")
 
         // Plukk neste oppgave
         var nesteOppgave = hentNesteOppgaveNAY()
@@ -1187,8 +1191,8 @@ class OppgaveApiTest {
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
             mottattDokumenter = listOf(),
             reserverTil = reserverTil,
-            vurderingsbehov = emptyList(),
-            årsakTilOpprettelse = "SØKNAD",
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD"
         )
     }
 
@@ -1413,7 +1417,7 @@ class OppgaveApiTest {
                     oppfølgingsenhet = oppgave.oppfølgingsenhet,
                     veilederArbeid = oppgave.veilederArbeid,
                     veilederSykdom = oppgave.veilederSykdom,
-                    årsakerTilBehandling = oppgave.årsakerTilBehandling,
+                    vurderingsbehov = oppgave.årsakerTilBehandling,
                     returInformasjon = oppgave.returInformasjon,
                 )
             }

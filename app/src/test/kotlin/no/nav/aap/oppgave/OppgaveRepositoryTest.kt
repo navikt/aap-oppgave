@@ -391,6 +391,7 @@ class OppgaveRepositoryTest {
         }
 
         assertThat(oppgave.harUlesteDokumenter).isTrue
+        assertThat(oppgave.årsakTilOpprettelse).isEqualTo("SØKNAD")
     }
 
     private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =
@@ -489,6 +490,7 @@ class OppgaveRepositoryTest {
         venteBegrunnelse: String? = null,
         harUlesteDokumenter: Boolean = false,
         returInformasjon: ReturInformasjon? = null,
+        årsakTilOpprettelse: String? = "SØKNAD"
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -507,7 +509,8 @@ class OppgaveRepositoryTest {
             veilederSykdom = veilederSykdom,
             opprettetTidspunkt = LocalDateTime.now(),
             harUlesteDokumenter = harUlesteDokumenter,
-            returInformasjon = returInformasjon
+            returInformasjon = returInformasjon,
+            årsakTilOpprettelse = årsakTilOpprettelse
         )
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).opprettOppgave(oppgaveDto)
