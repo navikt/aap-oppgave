@@ -151,6 +151,7 @@ class OppdaterOppgaveService(
                 )
 
                 if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.reservertAv == null) {
+                    log.info("Forsøker å reservere oppgave ${eksisterendeOppgave.oppgaveId()} til saksbehandler som satte den på vent")
                     reserverOppgave(eksisterendeOppgave, oppgaveOppdatering.venteInformasjon)
                 }
             }
@@ -223,12 +224,10 @@ class OppdaterOppgaveService(
     ) {
         val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
         val endretAv = venteInformasjon.sattPåVentAv
-        val reserverteOppgaver =
-            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
-                avklaringsbehovReferanse,
-                endretAv
-            )
-        log.info("Oppgave ${reserverteOppgaver.joinToString(", ")} reservert $endretAv")
+        reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
+            avklaringsbehovReferanse,
+            endretAv
+        )
     }
 
     private fun opprettOppgaver(
