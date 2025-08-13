@@ -33,7 +33,7 @@ class OppdaterOppgaveEnhetJobb(
             .chunked(1000)
             .flatMap { identBatch ->
                 PdlGraphqlKlient.withClientCredentialsRestClient()
-                    .hentAdressebeskyttelseForIdenter(identBatch)
+                    .hentAdressebeskyttelseForIdenter(identBatch).hentPersonBolk ?: emptyList()
             }
             .filter {
                 it.person!!.adressebeskyttelse!!

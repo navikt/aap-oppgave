@@ -116,7 +116,7 @@ class OppdaterOppgaveService(
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
             val enhetForOppgave =
-                enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, personIdent)
+                enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, personIdent, oppgaveOppdatering.relevanteIdenter)
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
             val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
 
@@ -124,7 +124,7 @@ class OppdaterOppgaveService(
                 gjenÅpneOppgaveEtterReturFraKvalitetssikrer(eksisterendeOppgave, avklaringsbehov)
             } else {
                 val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
-                val harFortroligAdresse = enhetService.harFortroligAdresse(oppgaveOppdatering.personIdent)
+                val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgaveOppdatering.personIdent, oppgaveOppdatering.relevanteIdenter)
 
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
@@ -238,12 +238,13 @@ class OppdaterOppgaveService(
             val personIdent = oppgaveOppdatering.personIdent
             val enhetForOppgave = enhetService.utledEnhetForOppgave(
                 avklaringsbehovHendelse.avklaringsbehovKode,
-                personIdent
+                personIdent,
+                oppgaveOppdatering.relevanteIdenter
             )
 
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
             val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
-            val harFortroligAdresse = enhetService.harFortroligAdresse(personIdent)
+            val harFortroligAdresse = enhetService.skalHaFortroligAdresse(personIdent, oppgaveOppdatering.relevanteIdenter)
 
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
                 personIdent = personIdent,

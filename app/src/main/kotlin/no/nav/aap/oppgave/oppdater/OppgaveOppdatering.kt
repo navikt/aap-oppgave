@@ -35,6 +35,7 @@ enum class AvklaringsbehovStatus {
 
 /**
  * @param reserverTil Hvis ikke-null, reserver til denne personen.
+ * @param relevanteIdenter Identer på barn lagret på behandlingen, som påvirker enhetsutledning
  */
 data class OppgaveOppdatering(
     val personIdent: String? = null,
@@ -51,6 +52,7 @@ data class OppgaveOppdatering(
     val årsakTilOpprettelse: String?,
     val mottattDokumenter: List<MottattDokument>,
     val reserverTil: String? = null,
+    val relevanteIdenter: List<String> = emptyList(),
 )
 
 data class AvklaringsbehovHendelse(
@@ -89,6 +91,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflyt(),
         reserverTil = this.reserverTil,
+        relevanteIdenter = this.relevanteIdenterPåBehandling ?: emptyList(),
         venteInformasjon = if (this.erPåVent) {
             val ventebehov =
                 this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() && it.status.erÅpent() }
