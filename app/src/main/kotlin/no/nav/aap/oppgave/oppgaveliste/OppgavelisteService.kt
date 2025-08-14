@@ -19,7 +19,7 @@ import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 
 private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
-const val maksOppgaver = 25
+const val maksOppgaver = 50
 
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
