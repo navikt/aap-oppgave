@@ -25,7 +25,7 @@ data class FinnNavenhetRequest(
     val behandlingstema: String = "ab0014"
 )
 
-enum class Diskresjonskode { SPFO, SPSF, ANY }
+enum class Diskresjonskode(val prioritet: Int) { ANY(0), SPFO(1), SPSF(2) }
 
 interface INorgKlient {
     fun finnEnhet(geografiskTilknyttning: String?, erNavansatt: Boolean, diskresjonskode: Diskresjonskode): String

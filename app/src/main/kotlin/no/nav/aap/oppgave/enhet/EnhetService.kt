@@ -223,11 +223,7 @@ class EnhetService(
     private fun finnStrengesteGradering(søkersGradering: Diskresjonskode, relevanteIdenter: List<String> = emptyList()): Diskresjonskode {
         val graderingerForRelevanteIdenter = pdlGraphqlKlient.hentAdressebeskyttelseForIdenter(relevanteIdenter).hentPersonBolk?.flatMap { it.person?.adressebeskyttelse ?: emptyList() }?.map { it.gradering.tilDiskresjonskode() }
         val alleGraderinger = graderingerForRelevanteIdenter?.plus(søkersGradering) ?: listOf(søkersGradering)
-        return when {
-            Diskresjonskode.SPSF in alleGraderinger -> Diskresjonskode.SPSF
-            Diskresjonskode.SPFO in alleGraderinger -> Diskresjonskode.SPFO
-            else -> Diskresjonskode.ANY
-        }
+        return alleGraderinger.max()
     }
 
     private fun erEgneAnsatteKontor(enhet: String): Boolean {
