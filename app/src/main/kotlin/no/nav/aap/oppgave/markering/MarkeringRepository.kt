@@ -79,7 +79,7 @@ class MarkeringRepository(
     private fun markeringMapper(row: Row): BehandlingMarkering =
         BehandlingMarkering(
             markeringType = row.getEnum("markering_type"),
-            begrunnelse = row.getString("begrunnelse"),
+            begrunnelse = row.getStringOrNull("begrunnelse"),
             opprettetAv = row.getString("opprettet_av")
         )
 }
