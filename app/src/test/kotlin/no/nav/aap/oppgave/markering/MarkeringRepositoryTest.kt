@@ -48,8 +48,7 @@ class MarkeringRepositoryTest {
 
             val nyMarkering = BehandlingMarkering(
                 markeringType = MarkeringForBehandling.HASTER,
-                begrunnelse = "ny haste-markering",
-                opprettetAv = "saksbehandler2"
+                opprettetAv = "saksbehandler2",
             )
             // ny hastemarkering, den gamle skal skrives over
             markeringRepository.oppdaterMarkering(behandlingId, nyMarkering)
