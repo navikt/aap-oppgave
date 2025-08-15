@@ -591,6 +591,45 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `Oppdaterer enhet til vikafossen om relatert ident har fått strengt fortrolig adresse`(fakesConfig: FakesConfig) {
+        val saksnummer = "8910"
+        val referanse = UUID.randomUUID()
+
+        // BehandlingsflytStoppetHendelse uten relaterte identer
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+
+        val oppgaveMedGammelEnhet = hentOppgave(saksnummer, referanse, definisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING)
+        assertThat(oppgaveMedGammelEnhet).isNotNull()
+
+        // plukk uten tilgang - det har kommet ny relatert ident på sak fra behandlingsflyt-pip
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
+        fakesConfig.relaterteIdenterPåBehandling = listOf(STRENGT_FORTROLIG_IDENT)
+        assertThatThrownBy { plukkOppgave(oppgaveMedGammelEnhet!!.tilOppgaveId()) }.isInstanceOf(
+            ManglerTilgangException::class.java
+        )
+
+        // enhet skal ha blitt oppdatert med hensyn til relatert ident etter mislykket plukk
+        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedGammelEnhet!!.tilOppgaveId())
+        assertThat(oppgaveEtterOppdatering).isNotNull()
+        assertThat(oppgaveEtterOppdatering.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
+        assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
+    }
+
+
+    @Test
     fun `Søkeresultat skal sensureres når saksbehandler mangler tilgang pga adressebeskyttelse`(fakesConfig: FakesConfig) {
         val saksnummer1 = "100002"
         val referanse1 = UUID.randomUUID()
@@ -1151,6 +1190,7 @@ class OppgaveApiTest {
         behandlingsbehov: List<Behandlingsbehov>,
         typeBehandling: TypeBehandling = TypeBehandling.Førstegangsbehandling,
         reserverTil: String? = null,
+        relaterteIdenter: List<String>? = emptyList()
     ): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
         val avklaringsbehovHendelseDtoListe = behandlingsbehov.map { avklaringsbehovHendelse ->
@@ -1188,7 +1228,7 @@ class OppgaveApiTest {
             versjon = "1",
             avklaringsbehov = avklaringsbehovHendelseDtoListe,
             årsakerTilBehandling = listOf("SØKNAD"),
-            relevanteIdenterPåBehandling = emptyList(),
+            relevanteIdenterPåBehandling = relaterteIdenter,
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
             mottattDokumenter = listOf(),
             reserverTil = reserverTil,
