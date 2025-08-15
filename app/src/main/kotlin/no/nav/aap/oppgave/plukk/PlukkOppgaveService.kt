@@ -129,7 +129,7 @@ class PlukkOppgaveService(
             )
 
         if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
-            log.info("Oppdaterer enhet for oppgave $oppgaveId etter at tilgang ble avslått på plukk.")
+            log.info("Oppdaterer enhet for oppgave $oppgaveId fra ${oppgave.oppfølgingsenhet ?: oppgave.enhet} til ${nyEnhet.oppfølgingsenhet ?: nyEnhet.enhet} etter at tilgang ble avslått på plukk.")
             oppgaveRepo.oppdatereOppgave(
                 oppgaveId = oppgaveId,
                 ident = "Kelvin",
