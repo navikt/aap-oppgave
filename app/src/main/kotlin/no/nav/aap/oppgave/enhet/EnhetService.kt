@@ -17,7 +17,6 @@ import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
-import no.nav.aap.oppgave.klienter.pdl.PdlData
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
 
 data class EnhetForOppgave(
@@ -25,10 +24,16 @@ data class EnhetForOppgave(
     val oppfølgingsenhet: String?,
 )
 
+data class TilknytningOgSkjerming(
+    val geografiskTilknytning: GeografiskTilknytning?,
+    val diskresjonskode: Diskresjonskode,
+    val erNavAnsatt: Boolean
+)
+
 interface IEnhetService {
     fun hentEnheter(currentToken: String, ident: String): List<String>
-    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, fnr: String?): EnhetForOppgave
-    fun harFortroligAdresse(personIdent: String?): Boolean
+    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>): EnhetForOppgave
+    fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean
 }
 
 class EnhetService(
@@ -45,25 +50,26 @@ class EnhetService(
 
     }
 
-    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, fnr: String?): EnhetForOppgave {
+    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>): EnhetForOppgave {
         return if (avklaringsbehovKode in
             AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
             + AVKLARINGSBEHOV_FOR_BESLUTTER
             + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
         ) {
-            requireNotNull(fnr) { "fødselsnummer trenges for utlede enhet for ikke-kvalitetssikringsoppgaver" }
-            finnNayEnhet(fnr)
+            requireNotNull(ident) { "fødselsnummer trenges for utlede enhet for ikke-kvalitetssikringsoppgaver" }
+            finnNayEnhet(ident, relevanteIdenter)
         } else {
             if (avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) {
-                finnFylkesEnhet(fnr)
+                finnFylkesEnhet(ident, relevanteIdenter)
             } else {
-                finnEnhetstilknytningForPerson(fnr)
+                finnEnhetstilknytningForPerson(ident, relevanteIdenter)
             }
         }
     }
 
-    override fun harFortroligAdresse(personIdent: String?): Boolean {
-        return finnTilknytningOgSkjerming(personIdent).diskresjonskode == Diskresjonskode.SPFO
+    override fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean {
+        val søkersGradering = finnTilknytningOgSkjerming(ident).diskresjonskode
+        return finnStrengesteGradering(søkersGradering, relevanteIdenter) == Diskresjonskode.SPFO
     }
 
     fun kanSaksbehandleFortroligAdresse(
@@ -73,8 +79,8 @@ class EnhetService(
             .map { it.name }.contains(FORTROLIG_ADRESSE_GROUP)
     }
 
-    private fun finnFylkesEnhet(fnr: String?): EnhetForOppgave {
-        val enhet = finnEnhetstilknytningForPerson(fnr)
+    private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>): EnhetForOppgave {
+        val enhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter)
         if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
             return enhet
         }
@@ -105,8 +111,33 @@ class EnhetService(
         return enheter.first()
     }
 
-    private fun finnEnhetstilknytningForPerson(fnr: String?): EnhetForOppgave {
-        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(fnr)
+    private fun finnNayEnhet(ident: String, relevanteIdenter: List<String>): EnhetForOppgave {
+        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident)
+        val strengesteGradering = finnStrengesteGradering(tilknytningOgSkjerming.diskresjonskode, relevanteIdenter)
+
+        val erStrengtFortrolig = strengesteGradering == Diskresjonskode.SPSF
+        val geografiskTilknytning = tilknytningOgSkjerming.geografiskTilknytning
+        val erEgenAnsatt = tilknytningOgSkjerming.erNavAnsatt
+
+        val enhet = if (erStrengtFortrolig) {
+            Enhet.NAV_VIKAFOSSEN.kode
+        } else if (erEgenAnsatt) {
+            Enhet.NAY_EGNE_ANSATTE.kode
+        } else if (geografiskTilknytning?.gtType == GeografiskTilknytningType.UTLAND) {
+            Enhet.NAY_UTLAND.kode
+        } else {
+            Enhet.NAY.kode
+        }
+
+        return EnhetForOppgave(
+            enhet,
+            oppfølgingsenhet = null
+        )
+    }
+
+    private fun finnEnhetstilknytningForPerson(ident: String?, relevanteIdenter: List<String>): EnhetForOppgave {
+        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident)
+        val strengesteGradering = finnStrengesteGradering(tilknytningOgSkjerming.diskresjonskode, relevanteIdenter)
 
         // Hvis personen er utenlandsk, så vil NORG returnere feil kontor (Den returnerer NAY-kontoret).
         // Vi må derfor hardkode inn dette som et unntak.
@@ -117,21 +148,21 @@ class EnhetService(
                 norgKlient.finnEnhet(
                     tilknytningOgSkjerming.geografiskTilknytning?.let { mapGeografiskTilknytningTilKode(it) },
                     tilknytningOgSkjerming.erNavAnsatt,
-                    tilknytningOgSkjerming.diskresjonskode
+                    strengesteGradering,
                 )
             }
         val enhetFraArena =
-            if (tilknytningOgSkjerming.diskresjonskode != Diskresjonskode.SPSF && !tilknytningOgSkjerming.erNavAnsatt) {
-                finnOppfølgingsenhet(fnr).takeIf { it != Enhet.NASJONAL_OPPFØLGINGSENHET.kode }
+            if (strengesteGradering != Diskresjonskode.SPSF && !tilknytningOgSkjerming.erNavAnsatt) {
+                finnOppfølgingsenhet(ident).takeIf { it != Enhet.NASJONAL_OPPFØLGINGSENHET.kode }
             } else {
                 null
             }
         return EnhetForOppgave(enhetFraNorg, enhetFraArena)
     }
 
-    private fun finnOppfølgingsenhet(fnr: String?): String? {
-        val enhetFraArena = if (fnr != null) {
-            veilarbarenaKlient.hentOppfølgingsenhet(fnr)
+    private fun finnOppfølgingsenhet(ident: String?): String? {
+        val enhetFraArena = if (ident != null) {
+            veilarbarenaKlient.hentOppfølgingsenhet(ident)
         } else {
             null
         }
@@ -153,19 +184,13 @@ class EnhetService(
                 geoTilknytning.gtType.name
         }
 
-    data class TilknytningOgSkjerming(
-        val geografiskTilknytning: GeografiskTilknytning?,
-        val diskresjonskode: Diskresjonskode,
-        val erNavAnsatt: Boolean
-    )
-
-    private fun finnTilknytningOgSkjerming(fnr: String?): TilknytningOgSkjerming {
-        if (fnr != null) {
-            val pdlData = pdlGraphqlKlient.hentAdressebeskyttelseOgGeolokasjon(fnr)
+    private fun finnTilknytningOgSkjerming(ident: String?): TilknytningOgSkjerming {
+        if (ident != null) {
+            val pdlData = pdlGraphqlKlient.hentAdressebeskyttelseOgGeolokasjon(ident)
             val geografiskTilknytning = pdlData.hentGeografiskTilknytning
 
             val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
-            val egenAnsatt = nomKlient.erEgenansatt(fnr)
+            val egenAnsatt = nomKlient.erEgenansatt(ident)
             return TilknytningOgSkjerming(
                 geografiskTilknytning,
                 diskresjonskode,
@@ -180,33 +205,7 @@ class EnhetService(
         }
     }
 
-    private fun finnNayEnhet(fnr: String): EnhetForOppgave {
-        val pdlData = pdlGraphqlKlient.hentAdressebeskyttelseOgGeolokasjon(fnr)
 
-        val erStrengtFortrolig = harStrengtFortroligAdresse(pdlData)
-        val geografiskTilknytning = pdlData.hentGeografiskTilknytning
-        val erEgenAnsatt = nomKlient.erEgenansatt(fnr)
-
-        val enhet = if (erStrengtFortrolig) {
-            Enhet.NAV_VIKAFOSSEN.kode
-        } else if (erEgenAnsatt) {
-            Enhet.NAY_EGNE_ANSATTE.kode
-        } else if (geografiskTilknytning?.gtType == GeografiskTilknytningType.UTLAND) {
-            Enhet.NAY_UTLAND.kode
-        } else {
-            Enhet.NAY.kode
-        }
-
-        return EnhetForOppgave(
-            enhet,
-            oppfølgingsenhet = null
-        )
-    }
-
-    private fun harStrengtFortroligAdresse(pdlData: PdlData): Boolean {
-        val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
-        return diskresjonskode == Diskresjonskode.SPSF
-    }
 
     private fun mapDiskresjonskode(adressebeskyttelsekoder: List<Adressebeskyttelseskode>?) =
         adressebeskyttelsekoder?.firstOrNull().let {
@@ -220,6 +219,12 @@ class EnhetService(
                 else -> Diskresjonskode.ANY
             }
         }
+
+    private fun finnStrengesteGradering(søkersGradering: Diskresjonskode, relevanteIdenter: List<String> = emptyList()): Diskresjonskode {
+        val graderingerForRelevanteIdenter = pdlGraphqlKlient.hentAdressebeskyttelseForIdenter(relevanteIdenter).hentPersonBolk?.flatMap { it.person?.adressebeskyttelse ?: emptyList() }?.map { it.gradering.tilDiskresjonskode() }
+        val alleGraderinger = graderingerForRelevanteIdenter?.plus(søkersGradering) ?: listOf(søkersGradering)
+        return alleGraderinger.max()
+    }
 
     private fun erEgneAnsatteKontor(enhet: String): Boolean {
         return enhet.endsWith("83")

@@ -16,7 +16,7 @@ import java.net.URI
 interface IPdlKlient {
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
     fun hentPersoninfoForIdenter(identer: List<String>): PdlData?
-    fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult>
+    fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData
 }
 
 class PdlGraphqlKlient(
@@ -56,10 +56,10 @@ class PdlGraphqlKlient(
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
     
-    override fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult> {
+    override fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData {
         val request = PdlRequest.hentAdressebeskyttelseForIdenter(identer)
         val response = runBlocking { graphqlQuery(request) }
-        return response.data?.hentPersonBolk ?: error("Unexpected response from PDL: ${response.errors}")
+        return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
 
     private fun graphqlQuery(query: PdlRequest, currentToken: OidcToken? = null): PdlResponse {

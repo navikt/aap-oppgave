@@ -106,7 +106,8 @@ class PlukkOppgaveService(
         oppgaveRepo: OppgaveRepository
     ) {
         val oppgave = oppgaveRepo.hentOppgave(oppgaveId.id)
-        val harFortroligAdresse = enhetService.harFortroligAdresse(oppgave.personIdent)
+        // TODO: må spørre til behandlingsflyt for å finne ut om tilgang avslås pga. barn som har fått kode 7
+        val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, emptyList())
         if (harFortroligAdresse != (oppgave.harFortroligAdresse == true)) {
             oppgaveRepo.settFortroligAdresse(OppgaveId(oppgave.id!!, oppgave.versjon), harFortroligAdresse)
         }
@@ -122,7 +123,9 @@ class PlukkOppgaveService(
         val nyEnhet =
             enhetService.utledEnhetForOppgave(
                 AvklaringsbehovKode(oppgave.avklaringsbehovKode),
-                oppgave.personIdent
+                oppgave.personIdent,
+                // TODO: må ta hensyn til alle relevante identer på behandling - spør til pip i behandlingsflyt
+                emptyList()
             )
 
         if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {

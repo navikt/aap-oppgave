@@ -10,6 +10,7 @@ import no.nav.aap.oppgave.klienter.nom.INomKlient
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgKlient
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
+import no.nav.aap.oppgave.klienter.pdl.Code
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.Gradering
@@ -17,6 +18,7 @@ import no.nav.aap.oppgave.klienter.pdl.HentPersonBolkResult
 import no.nav.aap.oppgave.klienter.pdl.HentPersonResult
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlData
+import no.nav.aap.oppgave.klienter.pdl.PdlPerson
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -44,15 +46,15 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
-        val utledetEnhetFylke = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
+        val utledetEnhetFylke = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
         assertThat(utledetEnhetFylke).isNotNull()
         assertThat(utledetEnhetFylke.enhet).isEqualTo("0400")
 
-        val utledetEnhetLokal = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910")
+        val utledetEnhetLokal = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
         assertThat(utledetEnhetLokal).isNotNull()
         assertThat(utledetEnhetLokal.enhet).isEqualTo("0403")
 
-        val utledetEnhetNay = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "12345678910")
+        val utledetEnhetNay = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
         assertThat(utledetEnhetNay).isNotNull()
         assertThat(utledetEnhetNay.enhet).isEqualTo(Enhet.NAY.kode)
 
@@ -63,7 +65,7 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo("0400")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
@@ -78,7 +80,7 @@ class EnhetServiceTest {
         
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient,veilarbarenaClient)
 
-        val utledetEnhet = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910")
+        val utledetEnhet = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo("0403")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
@@ -88,7 +90,7 @@ class EnhetServiceTest {
     fun `Skal ikke prøve å omgjøre til fylkesenhet for vikafossen`() {
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = (Enhet.NAV_VIKAFOSSEN.kode))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911")
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList())
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(
             Enhet.NAV_VIKAFOSSEN.kode
@@ -113,7 +115,7 @@ class EnhetServiceTest {
         )
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient)
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911")
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList())
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(overordnetEnhet)
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(overordnetOppfolgingsenhet)
@@ -124,7 +126,7 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0300", "0400"))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo("0400")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
@@ -135,7 +137,7 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0200", "0500"))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910")
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo("0200")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
@@ -147,7 +149,7 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911")
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList())
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(
             egneAnsatteOslo
@@ -165,7 +167,7 @@ class EnhetServiceTest {
         val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), VeilarbarenaKlientMock())
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any")
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
         assertThat(res.enhet).isEqualTo(Enhet.NAY_EGNE_ANSATTE.kode)
     }
 
@@ -182,7 +184,7 @@ class EnhetServiceTest {
 
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
-        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any")
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
         assertThat(res.enhet).isEqualTo(egneAnsatteOslo)
     }
 
@@ -199,11 +201,11 @@ class EnhetServiceTest {
         val veilarbarenaClient = VeilarbarenaKlientMock(oppfølgingsenhet = "1111")
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient)
-        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any")
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
         assertThat(res.enhet).isEqualTo(egneAnsatteOslo)
         assertThat(res.oppfølgingsenhet).isNull()
 
-        val res2 = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any")
+        val res2 = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
         assertThat(res2.enhet).isEqualTo(egneAnsatteOslo)
         assertThat(res2.oppfølgingsenhet).isNull()
     }
@@ -218,7 +220,7 @@ class EnhetServiceTest {
         val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), VeilarbarenaKlientMock())
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any")
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
         assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
     }
 
@@ -237,7 +239,7 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons()
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
-        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any")
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
 
         assertThat(res.enhet).isEqualTo(Enhet.NAV_UTLAND.kode)
     }
@@ -257,7 +259,7 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons()
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
-        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any")
+        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
 
         assertThat(res.enhet).isEqualTo(Enhet.NAV_UTLAND.kode)
     }
@@ -277,9 +279,46 @@ class EnhetServiceTest {
         val norgKlient = NorgKlientMock.medRespons()
 
         val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any")
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
 
         assertThat(res.enhet).isEqualTo(Enhet.NAY_UTLAND.kode)
+    }
+
+
+    @Test
+    fun `Skal sette adressebeskyttelse når relaterte identer har adressebeskyttelse`() {
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
+                // relatert ident har strengt fortrolig adresse i PDL
+                hentPersonBolk = listOf(
+                    HentPersonBolkResult(
+                    ident = "barn",
+                    person = PdlPerson(
+                        adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.STRENGT_FORTROLIG)),
+                        code = Code.ok,
+                        navn = emptyList(),
+                    ),
+                    code = Code.ok.name
+                ),
+                    HentPersonBolkResult(
+                        ident = "barn2",
+                        person = PdlPerson(
+                            adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.FORTROLIG)),
+                            code = Code.ok,
+                            navn = emptyList(),
+                        ),
+                        code = Code.ok.name
+                    )    )
+            )
+        )
+
+        val norgKlient = NorgKlientMock.medRespons()
+
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock())
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
+
+        assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
     }
 
     companion object {
@@ -317,8 +356,10 @@ class EnhetServiceTest {
                 TODO("Not yet implemented")
             }
 
-            override fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult> {
-                TODO("Not yet implemented")
+            override fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData {
+                return PdlData(
+                    hentPersonBolk = emptyList(),
+                )
             }
         }
 
@@ -349,8 +390,8 @@ class EnhetServiceTest {
                 return pdlDataRespons ?: TODO("Not yet implemented")
             }
 
-            override fun hentAdressebeskyttelseForIdenter(identer: List<String>): List<HentPersonBolkResult> {
-                TODO("Not yet implemented")
+            override fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData {
+                return pdlDataRespons ?: TODO("Not yet implemented")
             }
         }
 

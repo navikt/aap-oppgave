@@ -19,8 +19,10 @@ import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
+import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
@@ -251,7 +253,110 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgaverPåBehandling2).hasSize(1)
         assertThat(oppgaverPåBehandling2.first().status).isEqualTo(Status.AVSLUTTET)
         assertThat(oppgaverPåBehandling2.first().avklaringsbehovKode).isEqualTo("1340")
+    }
 
+    @Test
+    fun `Adressebeskyttelse utledes riktig fra relevante identer på en oppgaveoppdatering`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+        )
+        val nå = LocalDateTime.now()
+
+        val hendelseMedKode6RelatertIdent = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            erPåVent = true,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå,
+                            årsakTilSattPåVent = ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.VENT_PÅ_OPPFØLGING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå,
+                            årsakTilSattPåVent = ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER,
+                            frist = nå.plusDays(2).toLocalDate(),
+
+                            ),
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = listOf(STRENGT_FORTROLIG_IDENT),
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelseMedKode6RelatertIdent)
+
+        // Oppgaven skal få oppdatert enhet pga. ny relevant ident med kode 6
+        val oppgave = hentOppgave(oppgaveId)
+        assertThat(oppgave.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
+
+        val (oppgaveId2, saksnummer2, behandlingsref2) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SAMORDNING_GRADERING.kode.name),
+        )
+
+        val hendelseMedKode7RelatertIdent = BehandlingFlytStoppetHendelse(
+            personIdent = "1112345678",
+            saksnummer = saksnummer2,
+            referanse = behandlingsref2,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå,
+                        ),
+                    )
+                )
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = listOf(FORTROLIG_ADRESSE_IDENT),
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelseMedKode7RelatertIdent)
+
+        // Oppgaven skal ha fortrolig adresse pga. ny relevant ident med kode 7
+        val fortroligAdresseOppgave = hentOppgave(oppgaveId2)
+        assertThat(fortroligAdresseOppgave.enhet).isEqualTo(ENHET_NAV_LØRENSKOG)
+        assertThat(fortroligAdresseOppgave.harFortroligAdresse).isTrue()
 
     }
 
@@ -616,20 +721,26 @@ class OppdaterOppgaveServiceTest {
         override fun hentVeileder(personIdent: String) = null
     }
 
+    private val FORTROLIG_ADRESSE_IDENT = "11111000000"
     val enhetService = object : IEnhetService {
+
         override fun hentEnheter(currentToken: String, ident: String): List<String> {
             TODO("Not yet implemented")
         }
 
         override fun utledEnhetForOppgave(
             avklaringsbehovKode: AvklaringsbehovKode,
-            fnr: String?
+            ident: String?,
+            relevanteIdenter: List<String>,
         ): EnhetForOppgave {
+            if ((relevanteIdenter + ident).contains(STRENGT_FORTROLIG_IDENT)) {
+                return EnhetForOppgave(Enhet.NAV_VIKAFOSSEN.kode, null)
+            }
             return EnhetForOppgave(ENHET_NAV_LØRENSKOG, null)
         }
 
-        override fun harFortroligAdresse(personIdent: String?): Boolean {
-            return false
+        override fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean {
+            return ident === FORTROLIG_ADRESSE_IDENT || relevanteIdenter.any { it === FORTROLIG_ADRESSE_IDENT } == true
         }
     }
 }
