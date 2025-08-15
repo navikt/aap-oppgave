@@ -12,7 +12,8 @@ import org.slf4j.LoggerFactory
 import java.util.*
 
 data class FakesConfig(
-    var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf()
+    var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf(),
+    var relaterteIdenterPåBehandling: List<String> = emptyList(),
 )
 
 class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, ParameterResolver,
@@ -21,6 +22,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val azure = FakeServer(module = { azureFake() })
     private val tilgang = FakeServer(module = { tilgangFake(fakesConfig) })
+    private val behandlingsflyt = FakeServer(module = { behandlingsflytFake(fakesConfig) })
     private val pdl = FakeServer(module = { pdlFake() })
     private val norg = FakeServer(module = { norgFake() })
     private val nom = FakeServer(module = { nomFake() })
@@ -32,6 +34,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
     private val fakeServere = listOf(
         azure,
         tilgang,
+        behandlingsflyt,
         pdl,
         norg,
         nom,
@@ -105,14 +108,19 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         // Sykefraværoppfølging
         System.setProperty("integrasjon.syfo.url", "http://localhost:${sykefravavaroppfolging.port()}")
         System.setProperty("integrasjon.syfo.scope", "scope")
-
+        // Behandlingsflyt
+        System.setProperty("integrasjon.behandlingsflyt.url", "http://localhost:${behandlingsflyt.port()}")
+        System.setProperty("integrasjon.behandlingsflyt.scope", "scope")
+        // Statistikk
+        System.setProperty("integrasjon.statistikk.url", "http://localhost:${statistikkFake.port()}")
+        System.setProperty("integrasjon.statistikk.scope", "scope")
+        // Roller
         System.setProperty("AAP_SAKSBEHANDLER_NASJONAL", "saksbehandler-rolle")
         System.setProperty("AAP_SAKSBEHANDLER_OPPFOLGING", "veileder-rolle")
         System.setProperty("AAP_KVALITETSSIKRER", "kvalitetssikrer-rolle")
         System.setProperty("AAP_BESLUTTER", "beslutter-rolle")
 
-        System.setProperty("integrasjon.statistikk.url", "http://localhost:${statistikkFake.port()}")
-        System.setProperty("integrasjon.statistikk.scope", "scope")
+
     }
 
 }
