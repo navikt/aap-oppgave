@@ -4,7 +4,7 @@ val ktorVersion = "3.2.3"
 val komponenterVersjon = "1.0.325"
 val tilgangVersjon = "1.0.108"
 val behandlingsflytVersjon = "0.0.407"
-val postmottakVersjon = "0.0.111"
+val postmottakVersjon = "0.0.116"
 
 plugins {
     id("oppgave.conventions")
