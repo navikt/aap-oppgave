@@ -6,7 +6,6 @@ interface FeatureToggle {
 
 enum class FeatureToggles(private val toggleKey: String) : FeatureToggle {
     DummyFeature("DummyFeature"),
-    UtvidetOppgaveFilter("UtvidetOppgaveFilter"),
     LagreMottattDokumenter("LagreMottattDokumenter");
 
     override fun key(): String = toggleKey

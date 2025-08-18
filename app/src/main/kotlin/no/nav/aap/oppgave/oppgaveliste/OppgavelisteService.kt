@@ -14,11 +14,7 @@ import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
-import no.nav.aap.oppgave.unleash.FeatureToggles
-import no.nav.aap.oppgave.unleash.IUnleashService
-import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 
-private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 const val maksOppgaver = 50
 
 class OppgavelisteService(
@@ -67,28 +63,20 @@ class OppgavelisteService(
                 else -> OppgaveRepository.Rekkefølge.asc
             }
 
+        val kombinertFilter = settFilter(filter, utvidetFilter)
         val finnOppgaverDto =
-            if (unleashService.isEnabled(FeatureToggles.UtvidetOppgaveFilter)) {
-                val kombinertFilter = settFilter(filter, utvidetFilter)
-                oppgaveRepository.finnOppgaver(
-                    filter =
-                        kombinertFilter.copy(
-                            enheter = enheter,
-                            veileder = veilederIdent
-                        ),
-                    rekkefølge = rekkefølge,
-                    paging = paging,
-                    kunLedigeOppgaver = kunLedigeOppgaver,
-                    utvidetFilter = utvidetFilter
-                )
-            } else {
-                oppgaveRepository.finnOppgaver(
-                    filter = filter.copy(enheter = enheter, veileder = veilederIdent),
-                    rekkefølge = rekkefølge,
-                    paging = paging,
-                    kunLedigeOppgaver = kunLedigeOppgaver
-                )
-            }
+            oppgaveRepository.finnOppgaver(
+                filter =
+                    kombinertFilter.copy(
+                        enheter = enheter,
+                        veileder = veilederIdent
+                    ),
+                rekkefølge = rekkefølge,
+                paging = paging,
+                kunLedigeOppgaver = kunLedigeOppgaver,
+                utvidetFilter = utvidetFilter
+            )
+
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
                 val behandlingRef = requireNotNull(oppgave.behandlingRef) {
