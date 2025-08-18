@@ -25,7 +25,6 @@ import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
-import kotlin.jvm.javaClass
 
 private val log = LoggerFactory.getLogger("plukkApi")
 

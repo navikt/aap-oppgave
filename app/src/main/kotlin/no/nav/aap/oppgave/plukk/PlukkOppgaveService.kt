@@ -9,16 +9,22 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
+import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytKlient
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 
 class PlukkOppgaveService(
     val enhetService: IEnhetService,
     val oppgaveRepository: OppgaveRepository,
     val flytJobbRepository: FlytJobbRepository,
-    val filterRepository: FilterRepository
+    val filterRepository: FilterRepository,
 ) {
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
@@ -106,8 +112,17 @@ class PlukkOppgaveService(
         oppgaveRepo: OppgaveRepository
     ) {
         val oppgave = oppgaveRepo.hentOppgave(oppgaveId.id)
-        // TODO: må spørre til behandlingsflyt for å finne ut om tilgang avslås pga. barn som har fått kode 7
-        val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, emptyList())
+
+        val harFortroligAdresse = if (unleashService.isEnabled(FeatureToggles.HentIdenterFraBehandlingsflyt)) {
+            val behandlingRef = requireNotNull(oppgave.behandlingRef) {
+                "Oppgave $oppgaveId mangler behandlingsreferanse"
+            }
+            val relaterteIdenter = BehandlingsflytKlient.hentRelevanteIdenterPåBehandling(behandlingRef)
+            enhetService.skalHaFortroligAdresse(oppgave.personIdent, relaterteIdenter)
+        } else {
+            enhetService.skalHaFortroligAdresse(oppgave.personIdent, emptyList())
+        }
+
         if (harFortroligAdresse != (oppgave.harFortroligAdresse == true)) {
             oppgaveRepo.settFortroligAdresse(OppgaveId(oppgave.id!!, oppgave.versjon), harFortroligAdresse)
         }
@@ -120,13 +135,24 @@ class PlukkOppgaveService(
         val oppgave = oppgaveRepo.hentOppgave(oppgaveId.id)
         val oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon)
 
-        val nyEnhet =
+        val nyEnhet = if (unleashService.isEnabled(FeatureToggles.HentIdenterFraBehandlingsflyt)) {
+            val behandlingRef = requireNotNull(oppgave.behandlingRef) {
+                "Oppgave $oppgaveId mangler behandlingsreferanse"
+            }
+            val relaterteIdenter = BehandlingsflytKlient.hentRelevanteIdenterPåBehandling(behandlingRef)
             enhetService.utledEnhetForOppgave(
                 AvklaringsbehovKode(oppgave.avklaringsbehovKode),
                 oppgave.personIdent,
-                // TODO: må ta hensyn til alle relevante identer på behandling - spør til pip i behandlingsflyt
+                relaterteIdenter,
+            )
+        }
+        else {
+            enhetService.utledEnhetForOppgave(
+                AvklaringsbehovKode(oppgave.avklaringsbehovKode),
+                oppgave.personIdent,
                 emptyList()
             )
+        }
 
         if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
             log.info("Oppdaterer enhet for oppgave $oppgaveId fra ${oppgave.oppfølgingsenhet ?: oppgave.enhet} til ${nyEnhet.oppfølgingsenhet ?: nyEnhet.enhet} etter at tilgang ble avslått på plukk.")

@@ -48,3 +48,7 @@ env:
     value: http://syfooversiktsrv.teamsykefravr
   - name: INTEGRASJON_SYFO_SCOPE
     value: api://prod-gcp.teamsykefravr.syfooversiktsrv/.default
+  - name: INTEGRASJON_BEHANDLINGSFLYT_URL
+    value: http://behandlingsflyt
+  - name: INTEGRASJON_BEHANDLINGSFLYT_SCOPE
+    value: api://prod-gcp.aap.behandlingsflyt/.default
