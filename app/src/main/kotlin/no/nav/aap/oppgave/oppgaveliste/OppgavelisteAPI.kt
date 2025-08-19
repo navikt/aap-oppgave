@@ -37,6 +37,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val data =
             dataSource.transaction(readOnly = true) { connection ->
+                log.info("Henter filter med filterId ${request.filterId}")
                 val filter = requireNotNull(FilterRepository(connection).hent(request.filterId))
                 val veilederIdent =
                     if (request.veileder) {
