@@ -265,6 +265,20 @@ class EnhetServiceTest {
     }
 
     @Test
+    fun `Riktig prioritering av graderinger`() {
+        // Strengt fortrolig > Fortrolig > Any
+        val strengtFortrolig = listOf(Diskresjonskode.SPSF, Diskresjonskode.SPFO, Diskresjonskode.ANY)
+        assertThat(strengtFortrolig.max()).isEqualTo(Diskresjonskode.SPSF)
+
+        // Fortrolig > Any
+        val fortrolig = listOf(Diskresjonskode.SPFO, Diskresjonskode.ANY)
+        assertThat(fortrolig.max()).isEqualTo(Diskresjonskode.SPFO)
+
+        val ingenGradering = listOf(Diskresjonskode.ANY)
+        assertThat(ingenGradering.max()).isEqualTo(Diskresjonskode.ANY)
+    }
+
+    @Test
     fun `Skal sette NAYs enhet til NAY_UTLAND for saker knyttet til brukere fra Danmark`() {
         val pdlKlient = PdlKlientMock.medRespons(
             PdlData(
