@@ -8,8 +8,8 @@ import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.httpklient.auth.token
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
@@ -19,7 +19,10 @@ import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.plukk.TilgangGateway
 import no.nav.aap.tilgang.Operasjon
+import org.slf4j.LoggerFactory
 import javax.sql.DataSource
+
+private val log = LoggerFactory.getLogger("hentOppgaveApi")
 
 /**
  * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en journalpost i postmottak.
@@ -61,6 +64,15 @@ fun NormalOpenAPIRoute.søkApi(
                     MarkeringRepository(connection)
                 ).søkEtterOppgaver(søketekst)
             }
+
+        if (oppgaver.isEmpty()) {
+            log.info("Fant ingen oppgaver basert på søketeksten")
+            respond(SøkResponse(
+                oppgaver = emptyList(),
+                harTilgang = false,
+                harAdressebeskyttelse = false,
+            ))
+        }
         val harAdressebeskyttelse = oppgaver.any { harAdressebeskyttelse(it) }
         val harTilgang =
             oppgaver.all {
