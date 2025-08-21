@@ -131,8 +131,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE 
             WHERE 
                 BEHANDLING_REF = ?
-            AND
-                STATUS = 'OPPRETTET'
             ORDER BY OPPRETTET_TIDSPUNKT DESC
             LIMIT 1
         """.trimIndent()
