@@ -1,12 +1,14 @@
 package no.nav.aap.oppgave.oppgaveliste
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
+import com.papsign.ktor.openapigen.route.path.normal.get
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.server.auth.token
@@ -27,6 +29,7 @@ private val log = LoggerFactory.getLogger("hentOppgaveApi")
 /**
  * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en journalpost i postmottak.
  */
+@Deprecated("Finner ingen bruk av denne siste 30 dager fra loggene og heller ikke i koden. Vurder å fjerne den.")
 fun NormalOpenAPIRoute.hentOppgaveApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry
@@ -38,6 +41,27 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection)
             ).hentOppgave(request)
+        }
+    if (oppgave != null) {
+        respond(oppgave.hentPersonNavnMedTilgangssjekk(token()))
+    } else {
+        respondWithStatus(HttpStatusCode.NoContent)
+    }
+}
+
+/**
+ * Henter nyeste oppgave med status "OPPRETTET" gitt en behandlingsreferanse.
+ */
+fun NormalOpenAPIRoute.hentOppgaveApiV2(
+    dataSource: DataSource,
+    prometheus: PrometheusMeterRegistry
+) = route("/{referanse}/hent-oppgave").get<BehandlingReferanse, OppgaveDto> { request ->
+    prometheus.httpCallCounter("/hent-oppgave").increment()
+        val oppgave = dataSource.transaction(readOnly = true) { connection ->
+            OppgavelisteService(
+                OppgaveRepository(connection),
+                MarkeringRepository(connection)
+            ).hentNyesteOppgave(request)
         }
     if (oppgave != null) {
         respond(oppgave.hentPersonNavnMedTilgangssjekk(token()))
@@ -89,6 +113,7 @@ fun NormalOpenAPIRoute.søkApi(
         } else {
             oppgaver.hentPersonNavn()
         }
+
         respond(
             SøkResponse(
                 oppgaver = oppgaverMedTilgangSjekk,

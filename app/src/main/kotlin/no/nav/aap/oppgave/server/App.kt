@@ -38,6 +38,7 @@ import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
+import no.nav.aap.oppgave.oppgaveliste.hentOppgaveApiV2
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavesøkApi
 import no.nav.aap.oppgave.plukk.plukkNesteApi
@@ -106,6 +107,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 mottattDokumentApi(dataSource, prometheus)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
+                hentOppgaveApiV2(dataSource, prometheus)
                 oppgavelisteApi(dataSource, prometheus)
                 oppgavesøkApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)

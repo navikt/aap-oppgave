@@ -25,7 +25,7 @@ fun List<OppgaveDto>.hentPersonNavnMedTilgangssjekk(
 }
 
 fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> {
-    val identer = mapNotNull { it.personIdent }
+    val identer = mapNotNull { it.personIdent }.distinct()
     if (identer.isEmpty()) {
         return this
     }
