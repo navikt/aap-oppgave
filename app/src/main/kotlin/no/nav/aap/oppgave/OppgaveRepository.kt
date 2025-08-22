@@ -479,8 +479,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
 
         val hentNesteOppgaveQuery = """
-            SELECT 
-                   $alleOppgaveFelt, m.markering_type,
+            SELECT o.*, m.markering_type
             FROM 
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
