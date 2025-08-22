@@ -10,7 +10,6 @@ import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
@@ -43,7 +42,7 @@ fun NormalOpenAPIRoute.hentOppgaveApiDeprecated(
             ).hentOppgave(request)
         }
     if (oppgave != null) {
-        respond(oppgave.hentPersonNavnMedTilgangssjekk(token()))
+        respond(oppgave.hentPersonNavn())
     } else {
         respondWithStatus(HttpStatusCode.NoContent)
     }
@@ -64,7 +63,7 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
             ).hentAktivOppgave(request)
         }
     if (oppgave != null) {
-        respond(oppgave.hentPersonNavnMedTilgangssjekk(token()))
+        respond(oppgave.hentPersonNavn())
     } else {
         respondWithStatus(HttpStatusCode.NoContent)
     }
@@ -107,16 +106,9 @@ fun NormalOpenAPIRoute.søkApi(
                 )
             }
 
-        val oppgaverMedTilgangSjekk = if (harAdressebeskyttelse) {
-            // Sensurerer felter om saksbehandler ikke har tilgang
-            oppgaver.hentPersonNavnMedTilgangssjekk(token(), operasjon = Operasjon.SE)
-        } else {
-            oppgaver.hentPersonNavn()
-        }
-
         respond(
             SøkResponse(
-                oppgaver = oppgaverMedTilgangSjekk,
+                oppgaver = oppgaver.hentPersonNavn(),
                 harTilgang = harTilgang,
                 harAdressebeskyttelse = harAdressebeskyttelse,
             )
@@ -124,5 +116,4 @@ fun NormalOpenAPIRoute.søkApi(
     }
 }
 
-private fun OppgaveDto.hentPersonNavnMedTilgangssjekk(token: OidcToken): OppgaveDto =
-    listOf(this).hentPersonNavnMedTilgangssjekk(token).first()
+private fun OppgaveDto.hentPersonNavn() = listOf(this).hentPersonNavn().first()

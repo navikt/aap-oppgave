@@ -85,6 +85,6 @@ fun NormalOpenAPIRoute.oppgavesøkApi(
                 OppgaveRepository(connection).finnOppgaver(filter)
             }.oppgaver
     respond(
-        oppgaver.hentPersonNavnMedTilgangssjekk(token())
-    ) // TODO: trengs sensurering av info når tilgang mangler her?
+        oppgaver.hentPersonNavn()
+    )
 }
