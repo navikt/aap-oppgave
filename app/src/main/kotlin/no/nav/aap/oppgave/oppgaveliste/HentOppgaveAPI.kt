@@ -30,7 +30,7 @@ private val log = LoggerFactory.getLogger("hentOppgaveApi")
  * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en journalpost i postmottak.
  */
 @Deprecated("Finner ingen bruk av denne siste 30 dager fra loggene og heller ikke i koden. Vurder å fjerne den.")
-fun NormalOpenAPIRoute.hentOppgaveApi(
+fun NormalOpenAPIRoute.hentOppgaveApiDeprecated(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry
 ) = route("/hent-oppgave").post<Unit, OppgaveDto, AvklaringsbehovReferanseDto> { _, request ->
@@ -52,7 +52,7 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
 /**
  * Henter nyeste oppgave med status "OPPRETTET" gitt en behandlingsreferanse.
  */
-fun NormalOpenAPIRoute.hentOppgaveApiV2(
+fun NormalOpenAPIRoute.hentOppgaveApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry
 ) = route("/{referanse}/hent-oppgave").get<BehandlingReferanse, OppgaveDto> { request ->
@@ -61,7 +61,7 @@ fun NormalOpenAPIRoute.hentOppgaveApiV2(
             OppgavelisteService(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection)
-            ).hentNyesteOppgave(request)
+            ).hentAktivOppgave(request)
         }
     if (oppgave != null) {
         respond(oppgave.hentPersonNavnMedTilgangssjekk(token()))

@@ -47,8 +47,8 @@ class OppgavelisteService(
         return oppgave
     }
 
-    fun hentNyesteOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
-        val oppgave = oppgaveRepository.hentNyesteOppgave(behandlingReferanse)
+    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
+        val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null) {
             val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingReferanse.referanse)
             return oppgave.leggPåMarkeringer(markeringer.tilDto())
