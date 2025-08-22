@@ -8,6 +8,7 @@ enum class Behandlingstype {
     KLAGE,
     SVAR_FRA_ANDREINSTANS,
     OPPFØLGINGSBEHANDLING,
+    AKTIVITETSPLIKT,
 
     // Fra postmottak
     DOKUMENT_HÅNDTERING,

@@ -121,12 +121,12 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
 
 private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): List<MottattDokument> {
     return map {
-            MottattDokument(
-                type = it.type.name,
-                behandlingRef = behandlingRef,
-                referanse = it.referanse.verdi,
-            )
-        }
+        MottattDokument(
+            type = it.type.name,
+            behandlingRef = behandlingRef,
+            referanse = it.referanse.verdi,
+        )
+    }
 }
 
 
@@ -138,6 +138,7 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.Klage -> Behandlingstype.KLAGE
         TypeBehandling.SvarFraAndreinstans -> Behandlingstype.SVAR_FRA_ANDREINSTANS
         TypeBehandling.OppfølgingsBehandling -> Behandlingstype.OPPFØLGINGSBEHANDLING
+        TypeBehandling.Aktivitetsplikt -> Behandlingstype.AKTIVITETSPLIKT
     }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
