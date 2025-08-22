@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
 import no.nav.aap.oppgave.filter.Filter
@@ -392,6 +393,30 @@ class OppgaveRepositoryTest {
 
         assertThat(oppgave.harUlesteDokumenter).isTrue
         assertThat(oppgave.årsakTilOpprettelse).isEqualTo("SØKNAD")
+    }
+
+    @Test
+    fun `skal hente nyeste aktive oppgave`() {
+        val behandlingRef = BehandlingReferanse(UUID.randomUUID())
+        opprettOppgave(behandlingRef = behandlingRef.referanse)
+        val oppgaveNyeste = opprettOppgave(behandlingRef = behandlingRef.referanse, avklaringsbehovKode = AvklaringsbehovKode("2000"))
+        val oppgave = dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentAktivOppgave(behandlingRef)
+        }
+
+        assertThat(oppgave?.behandlingRef).isEqualTo(behandlingRef.referanse)
+        assertThat(oppgave?.id).isEqualTo(oppgaveNyeste.id)
+    }
+
+    @Test
+    fun `skal returne null hvis ingen aktiv oppgave finnes`() {
+        val behandlingRef = BehandlingReferanse(UUID.randomUUID())
+        opprettOppgave(behandlingRef = behandlingRef.referanse, status = Status.AVSLUTTET)
+        val oppgave = dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentAktivOppgave(behandlingRef)
+        }
+
+        assertThat(oppgave).isNull()
     }
 
     private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =

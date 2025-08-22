@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave
 
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.filter.Filter
@@ -120,6 +121,28 @@ class OppgaveRepository(private val connection: DBConnection) {
             log.warn("Hent oppgaver skal ikke returnere mer en 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
         }
         return oppgaver.firstOrNull()
+    }
+
+    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
+        val oppgaverForIdQuery = """
+            SELECT 
+                $alleOppgaveFelt
+            FROM 
+                OPPGAVE 
+            WHERE 
+                BEHANDLING_REF = ?
+            AND STATUS = 'OPPRETTET'
+            ORDER BY OPPRETTET_TIDSPUNKT DESC
+        """.trimIndent()
+
+        return connection.queryFirstOrNull(oppgaverForIdQuery) {
+            setParams {
+                setUUID(1, behandlingReferanse.referanse)
+            }
+            setRowMapper { row ->
+                oppgaveMapper(row)
+            }
+        }
     }
 
     fun hentOppgave(oppgaveId: Long): OppgaveDto {
