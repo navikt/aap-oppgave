@@ -42,7 +42,7 @@ fun NormalOpenAPIRoute.hentOppgaveApiDeprecated(
             ).hentOppgave(request)
         }
     if (oppgave != null) {
-        respond(listOf(oppgave).hentPersonNavn().first())
+        respond(oppgave.hentPersonNavn())
     } else {
         respondWithStatus(HttpStatusCode.NoContent)
     }
@@ -63,7 +63,7 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
             ).hentAktivOppgave(request)
         }
     if (oppgave != null) {
-        respond(oppgave.hentPersonNavnMedTilgangssjekk(token()))
+        respond(oppgave.hentPersonNavn())
     } else {
         respondWithStatus(HttpStatusCode.NoContent)
     }
@@ -115,3 +115,5 @@ fun NormalOpenAPIRoute.søkApi(
         )
     }
 }
+
+private fun OppgaveDto.hentPersonNavn() = listOf(this).hentPersonNavn().first()
