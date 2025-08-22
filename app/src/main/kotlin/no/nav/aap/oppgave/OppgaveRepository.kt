@@ -455,7 +455,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         if (utvidetFilter.markertHaster == true) {
-            sb.append(" AND MARKERING_TYPE = ${MarkeringForBehandling.HASTER.name}")
+            sb.append(" AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}'")
         }
 
         return sb.toString()
@@ -494,7 +494,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         val countQuery = """
-            SELECT COUNT(*) count FROM OPPGAVE
+            SELECT COUNT(*) count FROM OPPGAVE o
+            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             WHERE ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
         """.trimIndent()
 
