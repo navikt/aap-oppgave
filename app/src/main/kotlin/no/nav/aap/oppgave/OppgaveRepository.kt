@@ -9,6 +9,7 @@ import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
@@ -453,6 +454,10 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND OPPRETTET_TIDSPUNKT <= '${utvidetFilter.tom}'")
         }
 
+        if (utvidetFilter.markertHaster == true) {
+            sb.append(" AND MARKERING_TYPE = ${MarkeringForBehandling.HASTER.name}")
+        }
+
         return sb.toString()
     }
 
@@ -475,11 +480,12 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val hentNesteOppgaveQuery = """
             SELECT 
-                   $alleOppgaveFelt
+                   $alleOppgaveFelt, m.markering_type,
             FROM 
-                OPPGAVE 
+                OPPGAVE o
+            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             WHERE 
-                ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
+                ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
             ORDER BY BEHANDLING_OPPRETTET ${rekkefølge.name}
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
