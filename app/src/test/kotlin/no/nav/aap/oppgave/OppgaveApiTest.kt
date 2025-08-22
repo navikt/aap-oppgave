@@ -106,7 +106,7 @@ class OppgaveApiTest {
         )
 
         // Hent oppgaven som ble opprettet
-        val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SYKDOM)
+        val oppgave = hentOppgave(referanse)
         assertThat(oppgave).isNotNull
         assertThat(oppgave!!.enhet).isEqualTo("superNav!")
 
@@ -165,7 +165,7 @@ class OppgaveApiTest {
         )
 
         // Hent oppgaven som ble opprettet
-        val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_SAMORDNING_GRADERING)
+        val oppgave = hentOppgave(referanse)
         assertThat(oppgave).isNotNull
         assertThat(oppgave!!.enhet).isEqualTo("4491")
         assertThat(oppgave.vurderingsbehov).contains("SØKNAD")
@@ -233,7 +233,7 @@ class OppgaveApiTest {
         )
 
         // Hent oppgaven som ble opprettet
-        val oppgave = hentOppgave(saksnummer, referanse, Definisjon.AVKLAR_BISTANDSBEHOV)
+        val oppgave = hentOppgave(referanse)
         assertThat(oppgave).isNotNull
 
         // Sjekk at oppgave kommer i mine oppgaver listen
@@ -311,9 +311,7 @@ class OppgaveApiTest {
         assertThat(nesteOppgave).isNull()
 
         val påVentOppgaver = hentOppgave(
-            saksnummer = saksnummer,
-            referanse = referanse,
-            definisjon = Definisjon.AVKLAR_SYKDOM
+            referanse = referanse
         )!!
         assertThat(påVentOppgaver)
             .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::venteBegrunnelse)
@@ -398,9 +396,7 @@ class OppgaveApiTest {
         )
 
         val oppgaveDto = hentOppgave(
-            saksnummer = saksnummer,
-            referanse = referanse,
-            definisjon = Definisjon.AVKLAR_SYKDOM
+            referanse = referanse
         )!!
 
         assertThat(oppgaveDto.reservertAv)
@@ -458,8 +454,7 @@ class OppgaveApiTest {
         // reserverer oppgave
         hentNesteOppgave()
         val reservertOppgaveMedTilgang = hentOppgave(
-            saksnummer = saksnummer, referanse = referanse,
-            definisjon = Definisjon.AVKLAR_SYKDOM,
+            referanse = referanse,
         )
         assertThat(reservertOppgaveMedTilgang).isNotNull()
         assertThat(reservertOppgaveMedTilgang?.reservertAv).isNotNull()
@@ -519,8 +514,8 @@ class OppgaveApiTest {
         )
 
         // reserverer begge oppgaver
-        val oppgave1 = hentOppgave(saksnummer1, referanse1, Definisjon.AVKLAR_SYKDOM)
-        val oppgave2 = hentOppgave(saksnummer2, referanse2, Definisjon.AVKLAR_SYKDOM)
+        val oppgave1 = hentOppgave(referanse1)
+        val oppgave2 = hentOppgave(referanse2)
         reserverOppgave(oppgave1!!.tilOppgaveId(), "saksbehandler1", "saksbehandler1")
         reserverOppgave(oppgave2!!.tilOppgaveId(), "saksbehandler2", "saksbehandler2")
 
@@ -553,7 +548,7 @@ class OppgaveApiTest {
         )
 
 
-        val oppgaveMedGammelEnhet = hentOppgave(saksnummer, referanse, definisjon = Definisjon.AVKLAR_SYKDOM)
+        val oppgaveMedGammelEnhet = hentOppgave(referanse)
         assertThat(oppgaveMedGammelEnhet).isNotNull()
 
         // oppdater enhet på oppgave
@@ -611,7 +606,7 @@ class OppgaveApiTest {
         )
 
 
-        val oppgaveMedGammelEnhet = hentOppgave(saksnummer, referanse, definisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING)
+        val oppgaveMedGammelEnhet = hentOppgave(referanse)
         assertThat(oppgaveMedGammelEnhet).isNotNull()
 
         // plukk uten tilgang - det har kommet ny relatert ident på sak fra behandlingsflyt-pip
@@ -649,8 +644,6 @@ class OppgaveApiTest {
 
         val opprettetOppgave = hentOppgave(
             referanse = referanse1,
-            saksnummer = saksnummer1,
-            definisjon = Definisjon.AVKLAR_SYKDOM,
         )
 
         // sett strengt fortrolig adresse
@@ -740,7 +733,7 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgaveUtenFortroligAdresse = hentOppgave(saksnummer1, referanse1, definisjon = Definisjon.AVKLAR_SYKDOM)
+        val oppgaveUtenFortroligAdresse = hentOppgave(referanse1)
         assertThat(oppgaveUtenFortroligAdresse).isNotNull()
 
         // sett fortrolig adresse
@@ -935,7 +928,7 @@ class OppgaveApiTest {
         // Oppgaven er gjenopprettet
         assertThat(hentAntallOppgaver().keys).hasSize(1)
 
-        val oppgaven = hentOppgave(saksnummer1, referanse1, Definisjon.AVKLAR_SYKDOM)!!
+        val oppgaven = hentOppgave(referanse1)!!
 
         assertThat(oppgaven).extracting(OppgaveDto::returInformasjon)
             .isNotNull
@@ -1257,16 +1250,10 @@ class OppgaveApiTest {
         return nesteOppgave
     }
 
-    private fun hentOppgave(saksnummer: String, referanse: UUID, definisjon: Definisjon): OppgaveDto? {
-        return oboClient.post(
-            URI.create("http://localhost:$port/hent-oppgave"),
-            PostRequest(
-                body = AvklaringsbehovReferanseDto(
-                    saksnummer = saksnummer,
-                    referanse = referanse,
-                    journalpostId = null,
-                    avklaringsbehovKode = definisjon.kode.name
-                ),
+    private fun hentOppgave(referanse: UUID): OppgaveDto? {
+        return oboClient.get(
+            URI.create("http://localhost:$port/${referanse}/hent-oppgave"),
+            GetRequest(
                 currentToken = getOboToken()
             )
         )

@@ -30,23 +30,22 @@ import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.flyttOppgave
-import no.nav.aap.oppgave.oppgaveliste.hentOppgaveApiDeprecated
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
 import no.nav.aap.oppgave.markering.markeringApi
 import no.nav.aap.oppgave.metrikker.prometheus
-import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.hentOppgaveApi
+import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavesøkApi
+import no.nav.aap.oppgave.oppgaveliste.søkApi
 import no.nav.aap.oppgave.plukk.plukkNesteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
-import no.nav.aap.oppgave.oppgaveliste.søkApi
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -106,7 +105,6 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 flyttOppgave(dataSource, prometheus)
                 mottattDokumentApi(dataSource, prometheus)
                 // Hent oppgave(r)
-                hentOppgaveApiDeprecated(dataSource, prometheus)
                 hentOppgaveApi(dataSource, prometheus)
                 oppgavelisteApi(dataSource, prometheus)
                 oppgavesøkApi(dataSource, prometheus)

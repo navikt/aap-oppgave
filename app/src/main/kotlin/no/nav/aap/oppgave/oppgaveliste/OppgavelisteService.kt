@@ -4,7 +4,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.miljo.MiljøKode
-import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
@@ -36,15 +35,6 @@ class OppgavelisteService(
             val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingRef)
             oppgave.leggPåMarkeringer(markeringer.tilDto())
         }
-    }
-
-    fun hentOppgave(avklaringsbehovReferanseDto: AvklaringsbehovReferanseDto): OppgaveDto? {
-        val oppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanseDto)
-        if (avklaringsbehovReferanseDto.referanse != null) {
-            val markeringer = markeringRepository.hentMarkeringerForBehandling(avklaringsbehovReferanseDto.referanse!!)
-            return oppgave?.leggPåMarkeringer(markeringer.tilDto())
-        }
-        return oppgave
     }
 
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
