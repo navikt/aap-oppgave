@@ -24,7 +24,6 @@ import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
-import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -312,12 +311,9 @@ class OppdaterOppgaveService(
         veilarbarboppfolgingKlient.hentVeileder(personIdent)
 
     private fun harUlesteDokumenter(oppgaveOppdatering: OppgaveOppdatering): Boolean {
-        // TODO legger bak feature-toggle inntil vi har avklar hva vi gjør med eksisterende prod-saker
-        if (unleashService.isEnabled(FeatureToggles.LagreMottattDokumenter) && oppgaveOppdatering.mottattDokumenter.isNotEmpty()) {
-            mottattDokumentRepository.lagreDokumenter(oppgaveOppdatering.mottattDokumenter)
-            val ulesteDokumenter = mottattDokumentRepository.hentUlesteDokumenter(oppgaveOppdatering.referanse)
-            return ulesteDokumenter.isNotEmpty()
-        } else return false
+        mottattDokumentRepository.lagreDokumenter(oppgaveOppdatering.mottattDokumenter)
+        val ulesteDokumenter = mottattDokumentRepository.hentUlesteDokumenter(oppgaveOppdatering.referanse)
+        return ulesteDokumenter.isNotEmpty()
     }
 
     private fun sammeSaksbehandlerType(
