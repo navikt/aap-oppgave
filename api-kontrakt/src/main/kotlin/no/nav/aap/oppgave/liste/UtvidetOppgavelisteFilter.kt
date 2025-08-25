@@ -11,5 +11,6 @@ data class UtvidetOppgavelisteFilter (
     val tom: LocalDate? = null,
     val avklaringsbehovKoder: Set<String> = emptySet(), // Oppgavetype
     val påVent: Boolean? = null,
-    val returStatuser: Set<ReturStatus> = emptySet()
+    val returStatuser: Set<ReturStatus> = emptySet(),
+    val markertHaster: Boolean? = null,
 )

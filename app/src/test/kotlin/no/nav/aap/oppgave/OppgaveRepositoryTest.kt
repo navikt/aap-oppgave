@@ -9,7 +9,11 @@ import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
+import no.nav.aap.oppgave.markering.BehandlingMarkering
+import no.nav.aap.oppgave.markering.MarkeringDto
+import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -313,11 +317,14 @@ class OppgaveRepositoryTest {
             påVentÅrsak = "VENTER_PÅ_SVAR_FRA_BRUKER",
             returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", "")
         )
+        val hasterBehandlingsref = UUID.randomUUID()
         val oppgave5 = opprettOppgave(
             enhet = ENHET_NAV_ENEBAKK,
             avklaringsbehovKode = AvklaringsbehovKode("5003"),
-            returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", "")
+            returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", ""),
+            behandlingRef = hasterBehandlingsref
         )
+        markerHasteOppgave(hasterBehandlingsref)
 
         val utvidetFilter = UtvidetOppgavelisteFilter(
             årsaker = setOf(),
@@ -342,6 +349,11 @@ class OppgaveRepositoryTest {
             returStatuser = setOf(ReturStatus.RETUR_FRA_BESLUTTER)
         )
 
+        val utvidetFilterMedHastesøk = UtvidetOppgavelisteFilter(
+            årsaker = setOf(),
+            markertHaster = true
+        )
+
         val søkMedUtvidetFilter = finnAlleOppgaverMedUtvidetFilter(
             filter = TransientFilterDto(),
             paging = null,
@@ -360,6 +372,12 @@ class OppgaveRepositoryTest {
             utvidetOppgavelisteFilter = utvidetFilterMedStatusPåVentOgReturStatus,
         )
 
+        val søkMedUtvidetFilterHastesøk = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(),
+            paging = null,
+            utvidetOppgavelisteFilter = utvidetFilterMedHastesøk,
+        )
+
         val alleOppgaver = finnAlleOppgaver(
             filter = TransientFilterDto(
                 enheter = setOf(ENHET_NAV_ENEBAKK)
@@ -370,6 +388,7 @@ class OppgaveRepositoryTest {
         assertThat(søkMedUtvidetFilter.oppgaver).hasSize(3)
         assertThat(søkMedutvidetFilterMedStatusPåVentOgReturStatus.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterPåVent.oppgaver).hasSize(2)
+        assertThat(søkMedUtvidetFilterHastesøk.oppgaver).hasSize(1)
     }
 
     @Test
@@ -399,7 +418,8 @@ class OppgaveRepositoryTest {
     fun `skal hente nyeste aktive oppgave`() {
         val behandlingRef = BehandlingReferanse(UUID.randomUUID())
         opprettOppgave(behandlingRef = behandlingRef.referanse)
-        val oppgaveNyeste = opprettOppgave(behandlingRef = behandlingRef.referanse, avklaringsbehovKode = AvklaringsbehovKode("2000"))
+        val oppgaveNyeste =
+            opprettOppgave(behandlingRef = behandlingRef.referanse, avklaringsbehovKode = AvklaringsbehovKode("2000"))
         val oppgave = dataSource.transaction { connection ->
             OppgaveRepository(connection).hentAktivOppgave(behandlingRef)
         }
@@ -497,6 +517,16 @@ class OppgaveRepositoryTest {
     private fun finnOppgaverForSak(saksnummer: String): List<OppgaveDto> {
         return dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaverGittSaksnummer(saksnummer)
+        }
+    }
+
+    private fun markerHasteOppgave(hasterBehandlingsref: UUID) {
+        dataSource.transaction { connection ->
+            val markeringRepository = MarkeringRepository(connection)
+            markeringRepository.oppdaterMarkering(
+                hasterBehandlingsref,
+                BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", "me")
+            )
         }
     }
 

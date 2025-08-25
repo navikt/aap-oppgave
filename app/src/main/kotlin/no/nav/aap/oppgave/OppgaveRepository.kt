@@ -9,6 +9,7 @@ import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
@@ -453,6 +454,10 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND OPPRETTET_TIDSPUNKT <= '${utvidetFilter.tom}'")
         }
 
+        if (utvidetFilter.markertHaster == true) {
+            sb.append(" AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}'")
+        }
+
         return sb.toString()
     }
 
@@ -474,12 +479,12 @@ class OppgaveRepository(private val connection: DBConnection) {
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
 
         val hentNesteOppgaveQuery = """
-            SELECT 
-                   $alleOppgaveFelt
+            SELECT o.*, m.markering_type
             FROM 
-                OPPGAVE 
+                OPPGAVE o
+            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             WHERE 
-                ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
+                ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
             ORDER BY BEHANDLING_OPPRETTET ${rekkefølge.name}
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
@@ -489,7 +494,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         val countQuery = """
-            SELECT COUNT(*) count FROM OPPGAVE
+            SELECT COUNT(*) count FROM OPPGAVE o
+            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             WHERE ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
         """.trimIndent()
 
