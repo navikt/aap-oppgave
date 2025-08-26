@@ -92,7 +92,7 @@ fun NormalOpenAPIRoute.søkApi(
             log.info("Fant ingen oppgaver basert på søketeksten")
             respond(SøkResponse(
                 oppgaver = emptyList(),
-                harTilgang = false,
+                harTilgang = true,
                 harAdressebeskyttelse = false,
             ))
         }
