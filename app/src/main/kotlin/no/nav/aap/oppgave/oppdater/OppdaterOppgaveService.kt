@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoKlient
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingKlient
@@ -57,13 +58,15 @@ class OppdaterOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
+    private val ansattInfoKlient: AnsattInfoKlient,
 ) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
     private val reserverOppgaveService = ReserverOppgaveService(
         oppgaveRepository,
-        flytJobbRepository
+        flytJobbRepository,
+        ansattInfoKlient,
     )
 
     fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {

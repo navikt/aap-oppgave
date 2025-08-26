@@ -15,7 +15,7 @@ val erIkkeEgenansatt: suspend RoutingContext.() -> Unit = {
     call.respond(false)
 }
 
-fun Application.nomFake(
+fun Application.nomSkjermingFake(
     egenansatt: suspend RoutingContext.() -> Unit = erIkkeEgenansatt,
 ) {
 

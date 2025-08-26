@@ -57,6 +57,7 @@ data class OppgaveDto(
     val vurderingsbehov: List<String> = emptyList(),
     val årsakTilOpprettelse: String? = null,
     val reservertAv: String? = null,
+    val reservertAvNavn: String? = null,
     val reservertTidspunkt: LocalDateTime? = null,
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,

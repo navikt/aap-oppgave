@@ -25,7 +25,8 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
     private val behandlingsflyt = FakeServer(module = { behandlingsflytFake(fakesConfig) })
     private val pdl = FakeServer(module = { pdlFake() })
     private val norg = FakeServer(module = { norgFake() })
-    private val nom = FakeServer(module = { nomFake() })
+    private val nomSkjerming = FakeServer(module = { nomSkjermingFake() })
+    private val nomAnsattInfo = FakeServer(module = { nomAnsattInfoFake() })
     private val veilarbarena = FakeServer(module = { veilarbarenaFake() })
     private val veilarboppfolging = FakeServer(module = { veilarboppfolgingFake() })
     private val sykefravavaroppfolging = FakeServer(module = { sykefravaroppfolgingFake() })
@@ -37,7 +38,8 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         behandlingsflyt,
         pdl,
         norg,
-        nom,
+        nomSkjerming,
+        nomAnsattInfo,
         veilarbarena,
         veilarboppfolging,
         sykefravavaroppfolging,
@@ -65,7 +67,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
     override fun resolveParameter(
         parameterContext: ParameterContext?,
         extensionContext: ExtensionContext?
-    ): Any? {
+    ): Any {
         return fakesConfig
     }
 
@@ -93,9 +95,12 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         System.setProperty("integrasjon.pdl.scope", "scope")
         // NORG
         System.setProperty("integrasjon.norg.url", "http://localhost:${norg.port()}")
-        // NOM
-        System.setProperty("integrasjon.nom.url", "http://localhost:${nom.port()}")
+        // NOM (skjerming)
+        System.setProperty("integrasjon.nom.url", "http://localhost:${nomSkjerming.port()}")
         System.setProperty("integrasjon.nom.scope", "scope")
+        // NOM (api)
+        System.setProperty("integrasjon.nom.api.url", "http://localhost:${nomAnsattInfo.port()}")
+        System.setProperty("integrasjon.nom.api.scope", "scope")
         // MS GRAPH
         System.setProperty("MS_GRAPH_BASE_URL", "http://localhost:${msGraph.port()}")
         System.setProperty("MS_GRAPH_SCOPE", "scope")
@@ -119,8 +124,6 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         System.setProperty("AAP_SAKSBEHANDLER_OPPFOLGING", "veileder-rolle")
         System.setProperty("AAP_KVALITETSSIKRER", "kvalitetssikrer-rolle")
         System.setProperty("AAP_BESLUTTER", "beslutter-rolle")
-
-
     }
 
 }

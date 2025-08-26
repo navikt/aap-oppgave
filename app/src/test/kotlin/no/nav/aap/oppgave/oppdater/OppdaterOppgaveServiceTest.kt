@@ -26,6 +26,7 @@ import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoKlient
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
 import no.nav.aap.oppgave.unleash.UnleashService
@@ -639,6 +640,7 @@ class OppdaterOppgaveServiceTest {
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
                 MottattDokumentRepository(connection),
+                ansattInfoKlient
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }
@@ -656,6 +658,8 @@ class OppdaterOppgaveServiceTest {
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
                 MottattDokumentRepository(connection),
+                ansattInfoKlient
+
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }
@@ -715,6 +719,12 @@ class OppdaterOppgaveServiceTest {
 
     val veilarbarboppfolgingKlient = object : IVeilarbarboppfolgingKlient {
         override fun hentVeileder(personIdent: String) = null
+    }
+
+    val ansattInfoKlient = object : AnsattInfoKlient {
+        override fun hentAnsattNavnHvisFinnes(navIdent: String): String {
+            return "Test Testesen"
+        }
     }
 
     val sykefravarsoppfolgingKlient = object : ISykefravarsoppfolgingKlient {
