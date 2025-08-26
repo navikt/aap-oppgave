@@ -7,7 +7,7 @@ import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
-import no.nav.aap.oppgave.klienter.nom.INomKlient
+import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingKlient
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgKlient
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
@@ -387,7 +387,7 @@ class EnhetServiceTest {
             }
         }
 
-        val nomKlient = object : INomKlient {
+        val nomKlient = object : SkjermingKlient {
             override fun erEgenansatt(personident: String): Boolean {
                 return false
             }
@@ -403,7 +403,7 @@ class EnhetServiceTest {
                 )
             }
 
-            override fun hentPersoninfoForIdenter(identer: List<String>): PdlData? {
+            override fun hentPersoninfoForIdenter(identer: List<String>): PdlData {
                 TODO("Not yet implemented")
             }
 
@@ -414,7 +414,7 @@ class EnhetServiceTest {
             }
         }
 
-        class NomKlientMock(val erEgenansatt: Boolean?) : INomKlient {
+        class NomKlientMock(val erEgenansatt: Boolean?) : SkjermingKlient {
             companion object {
                 fun medRespons(erEgenansatt: Boolean): NomKlientMock {
                     return NomKlientMock(erEgenansatt)
@@ -437,7 +437,7 @@ class EnhetServiceTest {
                 return pdlDataRespons ?: TODO("Not yet implemented")
             }
 
-            override fun hentPersoninfoForIdenter(identer: List<String>): PdlData? {
+            override fun hentPersoninfoForIdenter(identer: List<String>): PdlData {
                 return pdlDataRespons ?: TODO("Not yet implemented")
             }
 

@@ -10,6 +10,7 @@ import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytKlient
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoKlient
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.Logger
@@ -20,6 +21,7 @@ class PlukkOppgaveService(
     val oppgaveRepository: OppgaveRepository,
     val flytJobbRepository: FlytJobbRepository,
     val filterRepository: FilterRepository,
+    val ansattInfoKlient: AnsattInfoKlient,
 ) {
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
@@ -47,7 +49,7 @@ class PlukkOppgaveService(
             val oppgaveId = OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon)
             val harTilgang = TilgangGateway.sjekkTilgang(nesteOppgave.avklaringsbehovReferanse, token)
             if (harTilgang) {
-                oppgaveRepo.reserverOppgave(oppgaveId, ident, ident)
+                oppgaveRepo.reserverOppgave(oppgaveId, ident, ident, ansattInfoKlient.hentAnsattNavnHvisFinnes(ident))
                 sendOppgaveStatusOppdatering(oppgaveId, HendelseType.RESERVERT, flytJobbRepository)
                 log.info(
                     "Fant neste oppgave med id ${nesteOppgave.oppgaveId} etter ${i + 1} forsøk for filterId $filterId"
@@ -77,7 +79,7 @@ class PlukkOppgaveService(
                 return oppgave
             }
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
-            oppgaveRepository.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
+            oppgaveRepository.reserverOppgave(oppgaveIdMedVersjon, ident, ident, ansattInfoKlient.hentAnsattNavnHvisFinnes(ident))
             sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
             return oppgave
         } else {

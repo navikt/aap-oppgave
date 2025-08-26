@@ -10,7 +10,6 @@ import no.nav.aap.oppgave.filter.TransientFilterDto
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.BehandlingMarkering
-import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -467,7 +466,7 @@ class OppgaveRepositoryTest {
 
     private fun reserverOppgave(oppgaveId: OppgaveId, ident: String) {
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, ident)
+            OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, ident, null)
         }
     }
 

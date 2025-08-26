@@ -8,8 +8,8 @@ import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaClient
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
-import no.nav.aap.oppgave.klienter.nom.INomKlient
-import no.nav.aap.oppgave.klienter.nom.NomKlient
+import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingKlient
+import no.nav.aap.oppgave.klienter.nom.skjerming.NomSkjermingKlient
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgKlient
 import no.nav.aap.oppgave.klienter.norg.NorgKlient
@@ -44,7 +44,7 @@ interface IEnhetService {
 class EnhetService(
     private val msGraphClient: IMsGraphClient,
     private val pdlGraphqlKlient: IPdlKlient = PdlGraphqlKlient.withClientCredentialsRestClient(),
-    private val nomKlient: INomKlient = NomKlient(),
+    private val nomSkjermingKlient: SkjermingKlient = NomSkjermingKlient(),
     private val norgKlient: INorgKlient = NorgKlient(),
     private val veilarbarenaKlient: IVeilarbarenaClient = VeilarbarenaClient(),
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
@@ -204,7 +204,7 @@ class EnhetService(
             val geografiskTilknytning = pdlData.hentGeografiskTilknytning
 
             val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
-            val egenAnsatt = nomKlient.erEgenansatt(ident)
+            val egenAnsatt = nomSkjermingKlient.erEgenansatt(ident)
             return TilknytningOgSkjerming(
                 geografiskTilknytning,
                 diskresjonskode,
