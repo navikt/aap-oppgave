@@ -86,6 +86,8 @@ spec:
         - application: behandlingsflyt
         - application: skjermede-personer-pip
           namespace: nom
+        - application: nom-api
+          namespace: nom
         - application: veilarboppfolging
           namespace: poao
         - application: syfooversiktsrv
