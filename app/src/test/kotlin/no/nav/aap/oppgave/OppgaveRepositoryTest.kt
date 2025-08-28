@@ -135,13 +135,16 @@ class OppgaveRepositoryTest {
         val oppgaveId3 = opprettOppgave()
         val oppgaveId4 = opprettOppgave()
 
-        reserverOppgave(oppgaveId1, "bruker1")
-        reserverOppgave(oppgaveId2, "bruker2")
-        reserverOppgave(oppgaveId3, "bruker1")
-        reserverOppgave(oppgaveId4, "bruker1")
+        val saksbehandlerNavn = "Test Testesen"
+
+        reserverOppgave(oppgaveId1, "bruker1", saksbehandlerNavn)
+        reserverOppgave(oppgaveId2, "bruker2", saksbehandlerNavn)
+        reserverOppgave(oppgaveId3, "bruker1", saksbehandlerNavn)
+        reserverOppgave(oppgaveId4, "bruker1", saksbehandlerNavn)
 
         val mineOppgaverFørAvslutt = mineOppgaver("bruker1")
         assertThat(mineOppgaverFørAvslutt).hasSize(3)
+        assertThat(mineOppgaverFørAvslutt.first().reservertAvNavn).isEqualTo(saksbehandlerNavn)
 
         val oppgaveSomSkalAvsluttes = mineOppgaverFørAvslutt.first { it.id == oppgaveId4.id }
         avsluttOppgave(OppgaveId(oppgaveSomSkalAvsluttes.id!!, oppgaveSomSkalAvsluttes.versjon))
@@ -163,6 +166,13 @@ class OppgaveRepositoryTest {
         avreserverOppgave(OppgaveId(mineOppgaver.first().id!!, mineOppgaver.first().versjon), "saksbehandler1")
         mineOppgaver = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(0)
+
+        dataSource.transaction { connection ->
+            val oppgave = OppgaveRepository(connection).hentOppgave(oppgaveId.id)
+            assertThat(oppgave.reservertAv).isNull()
+            assertThat(oppgave.reservertAv).isNull()
+            assertThat(oppgave.reservertTidspunkt).isNull()
+        }
     }
 
     @Test
@@ -464,9 +474,9 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun reserverOppgave(oppgaveId: OppgaveId, ident: String) {
+    private fun reserverOppgave(oppgaveId: OppgaveId, ident: String, navn: String? = null) {
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, ident, null)
+            OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, ident, navn)
         }
     }
 
