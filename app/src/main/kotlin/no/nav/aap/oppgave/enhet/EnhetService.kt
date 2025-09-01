@@ -18,6 +18,11 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
+import no.nav.aap.postmottak.kontrakt.enhet.GodkjentEnhet
+import org.slf4j.LoggerFactory
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -42,7 +47,10 @@ class EnhetService(
     private val nomKlient: INomKlient = NomKlient(),
     private val norgKlient: INorgKlient = NorgKlient(),
     private val veilarbarenaKlient: IVeilarbarenaClient = VeilarbarenaClient(),
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
+
 ) : IEnhetService {
+    private val log = LoggerFactory.getLogger(EnhetService::class.java)
 
     override fun hentEnheter(currentToken: String, ident: String): List<String> {
         return msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
@@ -157,6 +165,12 @@ class EnhetService(
             } else {
                 null
             }
+
+        val enhetForKø = enhetFraArena ?: enhetFraNorg
+        if (!GodkjentEnhet.entries.map { it.enhetNr }.contains(enhetForKø) && unleashService.isEnabled(FeatureToggles.VarsleHvisEnhetIkkeGodkjent)) {
+            log.error("Oppgave har lagt seg på køen til enhet $enhetForKø, som ikke har tatt Kelvin i bruk enda.")
+        }
+
         return EnhetForOppgave(enhetFraNorg, enhetFraArena)
     }
 
