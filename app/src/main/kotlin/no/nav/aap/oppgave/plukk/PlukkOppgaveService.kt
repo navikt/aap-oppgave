@@ -144,13 +144,15 @@ class PlukkOppgaveService(
                 AvklaringsbehovKode(oppgave.avklaringsbehovKode),
                 oppgave.personIdent,
                 relaterteIdenter,
+                oppgave.saksnummer
             )
         }
         else {
             enhetService.utledEnhetForOppgave(
                 AvklaringsbehovKode(oppgave.avklaringsbehovKode),
                 oppgave.personIdent,
-                emptyList()
+                emptyList(),
+                oppgave.saksnummer
             )
         }
 

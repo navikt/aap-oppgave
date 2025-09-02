@@ -115,7 +115,7 @@ class OppdaterOppgaveService(
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
             val enhetForOppgave =
-                enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, personIdent, oppgaveOppdatering.relevanteIdenter)
+                enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, personIdent, oppgaveOppdatering.relevanteIdenter, oppgaveOppdatering.saksnummer)
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
             val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
 
@@ -238,7 +238,8 @@ class OppdaterOppgaveService(
             val enhetForOppgave = enhetService.utledEnhetForOppgave(
                 avklaringsbehovHendelse.avklaringsbehovKode,
                 personIdent,
-                oppgaveOppdatering.relevanteIdenter
+                oppgaveOppdatering.relevanteIdenter,
+                oppgaveOppdatering.saksnummer
             )
 
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null

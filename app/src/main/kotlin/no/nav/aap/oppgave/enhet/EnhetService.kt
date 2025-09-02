@@ -18,6 +18,11 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
+import no.nav.aap.postmottak.kontrakt.enhet.GodkjentEnhet
+import org.slf4j.LoggerFactory
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -32,7 +37,7 @@ data class TilknytningOgSkjerming(
 
 interface IEnhetService {
     fun hentEnheter(currentToken: String, ident: String): List<String>
-    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>): EnhetForOppgave
+    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null): EnhetForOppgave
     fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean
 }
 
@@ -42,7 +47,10 @@ class EnhetService(
     private val nomKlient: INomKlient = NomKlient(),
     private val norgKlient: INorgKlient = NorgKlient(),
     private val veilarbarenaKlient: IVeilarbarenaClient = VeilarbarenaClient(),
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
+
 ) : IEnhetService {
+    private val log = LoggerFactory.getLogger(EnhetService::class.java)
 
     override fun hentEnheter(currentToken: String, ident: String): List<String> {
         return msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
@@ -50,7 +58,7 @@ class EnhetService(
 
     }
 
-    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>): EnhetForOppgave {
+    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
         return if (avklaringsbehovKode in
             AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
             + AVKLARINGSBEHOV_FOR_BESLUTTER
@@ -60,9 +68,9 @@ class EnhetService(
             finnNayEnhet(ident, relevanteIdenter)
         } else {
             if (avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) {
-                finnFylkesEnhet(ident, relevanteIdenter)
+                finnFylkesEnhet(ident, relevanteIdenter, saksnummer)
             } else {
-                finnEnhetstilknytningForPerson(ident, relevanteIdenter)
+                finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
             }
         }
     }
@@ -79,8 +87,8 @@ class EnhetService(
             .map { it.name }.contains(FORTROLIG_ADRESSE_GROUP)
     }
 
-    private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>): EnhetForOppgave {
-        val enhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter)
+    private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
+        val enhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
         if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
             return enhet
         }
@@ -135,7 +143,7 @@ class EnhetService(
         )
     }
 
-    private fun finnEnhetstilknytningForPerson(ident: String?, relevanteIdenter: List<String>): EnhetForOppgave {
+    private fun finnEnhetstilknytningForPerson(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident)
         val strengesteGradering = finnStrengesteGradering(tilknytningOgSkjerming.diskresjonskode, relevanteIdenter)
 
@@ -157,6 +165,12 @@ class EnhetService(
             } else {
                 null
             }
+
+        val enhetForKø = enhetFraArena ?: enhetFraNorg
+        if (!GodkjentEnhet.entries.map { it.enhetNr }.contains(enhetForKø) && unleashService.isEnabled(FeatureToggles.VarsleHvisEnhetIkkeGodkjent)) {
+            log.error("Oppgave har lagt seg på køen til enhet $enhetForKø, som ikke har tatt Kelvin i bruk enda. Saksnummer: $saksnummer")
+        }
+
         return EnhetForOppgave(enhetFraNorg, enhetFraArena)
     }
 
