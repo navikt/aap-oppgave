@@ -732,6 +732,7 @@ class OppdaterOppgaveServiceTest {
             avklaringsbehovKode: AvklaringsbehovKode,
             ident: String?,
             relevanteIdenter: List<String>,
+            saksnummer: String?
         ): EnhetForOppgave {
             if ((relevanteIdenter + ident).contains(STRENGT_FORTROLIG_IDENT)) {
                 return EnhetForOppgave(Enhet.NAV_VIKAFOSSEN.kode, null)
