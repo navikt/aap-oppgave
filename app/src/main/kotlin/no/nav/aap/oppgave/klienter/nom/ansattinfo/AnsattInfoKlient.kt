@@ -7,7 +7,6 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.klienter.graphql.GraphQLResponseHandler
-import no.nav.aap.oppgave.klienter.nom.skjerming.NomSkjermingKlient
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
@@ -24,7 +23,7 @@ class NomApiKlient(
     private val restClient: RestClient<InputStream>,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ): AnsattInfoKlient {
-    private val log = LoggerFactory.getLogger(NomSkjermingKlient::class.java)
+    private val log = LoggerFactory.getLogger(NomApiKlient::class.java)
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.nom.api.url"))
 
     companion object {
@@ -51,7 +50,7 @@ class NomApiKlient(
             try {
                 hentAnsattNavn(navIdent)
             } catch (e: Exception) {
-                log.warn("Feil ved henting av navn for ansatt $navIdent. Fortsetter uten", e)
+                log.warn("Feil ved henting av navn for ansatt $navIdent. Fortsetter uten.", e)
                 null
             }
         } else {
@@ -61,11 +60,10 @@ class NomApiKlient(
 
     private fun hentAnsattNavn(navIdent: String): String {
         val request = AnsattInfoRequest(navnQuery, AnsattInfoVariables(navIdent))
-        val response = checkNotNull(query(request).data) {
+        val response = checkNotNull(query(request).data?.ressurs) {
             "Fant ikke ansatt i NOM"
         }
-
-        return checkNotNull(response.ressurs?.visningsnavn) {}
+        return response.visningsnavn
     }
 
 

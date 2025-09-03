@@ -5,7 +5,7 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoKlient
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiKlient
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
@@ -15,9 +15,8 @@ private const val KELVIN = "Kelvin"
 class ReserverOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
-    private val ansattInfoKlient: AnsattInfoKlient
 ) {
-
+    private val ansattInfoKlient = NomApiKlient.withClientCredentialsRestClient()
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun reserverOppgave(

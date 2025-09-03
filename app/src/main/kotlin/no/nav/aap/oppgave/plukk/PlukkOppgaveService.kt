@@ -10,7 +10,7 @@ import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytKlient
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoKlient
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiKlient
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.Logger
@@ -21,8 +21,8 @@ class PlukkOppgaveService(
     val oppgaveRepository: OppgaveRepository,
     val flytJobbRepository: FlytJobbRepository,
     val filterRepository: FilterRepository,
-    val ansattInfoKlient: AnsattInfoKlient,
 ) {
+    private val ansattInfoKlient = NomApiKlient.withClientCredentialsRestClient()
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
     fun plukkNesteOppgave(

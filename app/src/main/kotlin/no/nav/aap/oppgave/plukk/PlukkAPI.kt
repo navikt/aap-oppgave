@@ -15,7 +15,6 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiKlient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.tilgang.Beslutter
@@ -42,7 +41,6 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
                 FilterRepository(connection),
-                NomApiKlient.withClientCredentialsRestClient()
             ).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
         }
         if (nesteOppgave != null) {
@@ -65,7 +63,6 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: Prome
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
                 FilterRepository(connection),
-                NomApiKlient.withClientCredentialsRestClient()
             ).plukkOppgave(
                 OppgaveId(request.oppgaveId, request.versjon),
                 ident(),

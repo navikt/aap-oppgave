@@ -11,7 +11,6 @@ import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiKlient
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
@@ -37,7 +36,6 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
-            ansattInfoKlient = NomApiKlient.withClientCredentialsRestClient(),
         ).oppdaterOppgaver(
             request.tilOppgaveOppdatering()
         )
@@ -63,7 +61,6 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
-            ansattInfoKlient = NomApiKlient.withClientCredentialsRestClient()
         ).oppdaterOppgaver(request.tilOppgaveOppdatering())
     }
     respondWithStatus(HttpStatusCode.OK)
