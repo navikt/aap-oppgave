@@ -170,7 +170,7 @@ class OppgaveRepositoryTest {
         dataSource.transaction { connection ->
             val oppgave = OppgaveRepository(connection).hentOppgave(oppgaveId.id)
             assertThat(oppgave.reservertAv).isNull()
-            assertThat(oppgave.reservertAv).isNull()
+            assertThat(oppgave.reservertAvNavn).isNull()
             assertThat(oppgave.reservertTidspunkt).isNull()
         }
     }
