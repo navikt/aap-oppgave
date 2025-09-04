@@ -9,7 +9,6 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.oppgave.klienter.graphql.GraphQLResponseHandler
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.io.InputStream
 import java.net.URI
@@ -37,7 +36,7 @@ class PdlGraphqlKlient(
                 RestClient(
                     config = getClientConfig(),
                     tokenProvider = ClientCredentialsTokenProvider,
-                    responseHandler = GraphQLResponseHandler(),
+                    responseHandler = PdlResponseHandler(),
                     prometheus = prometheus
                 )
             )

@@ -1,15 +1,15 @@
-package no.nav.aap.oppgave.klienter.graphql
+package no.nav.aap.oppgave.klienter.pdl
 
 import no.nav.aap.komponenter.httpklient.httpclient.error.DefaultResponseHandler
 import no.nav.aap.komponenter.httpklient.httpclient.error.RestResponseHandler
-import no.nav.aap.oppgave.klienter.pdl.PdlResponse
+import no.nav.aap.oppgave.klienter.graphql.GraphQLError
 import java.io.InputStream
 import java.net.http.HttpHeaders
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import kotlin.collections.isNotEmpty
 
-class GraphQLResponseHandler : RestResponseHandler<InputStream> {
+class PdlResponseHandler : RestResponseHandler<InputStream> {
 
     private val defaultResponseHandler = DefaultResponseHandler()
 
