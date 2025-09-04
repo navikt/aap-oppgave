@@ -21,7 +21,7 @@ fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: Pro
             val oppgaverSomSkalAvreserveres = OppgaveRepository(connection).hentÅpneOppgaver(dto)
             val reserverOppgaveService = ReserverOppgaveService(
                 OppgaveRepository(connection),
-                FlytJobbRepository(connection)
+                FlytJobbRepository(connection),
             )
             val ident = ident()
             oppgaverSomSkalAvreserveres.forEach {
@@ -41,7 +41,7 @@ fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: Pro
                     .map { OppgaveId(requireNotNull(it.id), it.versjon) }
             val reserverOppgaveService = ReserverOppgaveService(
                 OppgaveRepository(connection),
-                FlytJobbRepository(connection)
+                FlytJobbRepository(connection),
             )
             val ident = ident()
             oppgaverSomSkalAvreserveres.forEach {
@@ -66,7 +66,7 @@ fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: Promethe
             val token = token()
             val reserverOppgaveService = ReserverOppgaveService(
                 OppgaveRepository(connection),
-                FlytJobbRepository(connection)
+                FlytJobbRepository(connection),
             )
             reserverOppgaveService.reserverOppgave(dto.avklaringsbehovReferanse, innloggetBrukerIdent, token)
         }

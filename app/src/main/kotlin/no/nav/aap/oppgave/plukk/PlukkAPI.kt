@@ -40,7 +40,7 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
-                FilterRepository(connection)
+                FilterRepository(connection),
             ).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
         }
         if (nesteOppgave != null) {
@@ -62,7 +62,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: Prome
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
-                FilterRepository(connection)
+                FilterRepository(connection),
             ).plukkOppgave(
                 OppgaveId(request.oppgaveId, request.versjon),
                 ident(),

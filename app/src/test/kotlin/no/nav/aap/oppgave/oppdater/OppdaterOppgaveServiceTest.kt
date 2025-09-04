@@ -22,6 +22,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
+import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
@@ -37,6 +38,7 @@ import no.nav.aap.postmottak.kontrakt.journalpost.JournalpostId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -44,6 +46,8 @@ import kotlin.test.AfterTest
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 
+
+@ExtendWith(Fakes::class)
 class OppdaterOppgaveServiceTest {
 
     private val dataSource = InitTestDatabase.freshDatabase()
@@ -656,6 +660,7 @@ class OppdaterOppgaveServiceTest {
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
                 MottattDokumentRepository(connection),
+
             ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }

@@ -63,7 +63,7 @@ class OppdaterOppgaveService(
 
     private val reserverOppgaveService = ReserverOppgaveService(
         oppgaveRepository,
-        flytJobbRepository
+        flytJobbRepository,
     )
 
     fun oppdaterOppgaver(oppgaveOppdatering: OppgaveOppdatering) {

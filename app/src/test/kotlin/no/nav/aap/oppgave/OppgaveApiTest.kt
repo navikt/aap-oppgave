@@ -1361,7 +1361,7 @@ class OppgaveApiTest {
 
         private fun reserverOppgave(oppgaveId: OppgaveId, ident: String, resevertAvIdent: String) {
             return initDatasource(dbConfig(), prometheus).transaction { connection ->
-                OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, resevertAvIdent)
+                OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, resevertAvIdent, null)
             }
         }
 

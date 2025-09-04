@@ -324,6 +324,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             SET 
                 RESERVERT_AV = NULL, 
                 RESERVERT_TIDSPUNKT = NULL,
+                RESERVERT_AV_NAVN = NULL,
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 VERSJON = VERSJON + 1
@@ -598,12 +599,13 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun reserverOppgave(oppgaveId: OppgaveId, ident: String, reservertAvIdent: String) {
+    fun reserverOppgave(oppgaveId: OppgaveId, ident: String, reservertAvIdent: String, reservertAvNavn: String?) {
         val updaterOppgaveReservasjonQuery = """
             UPDATE 
                 OPPGAVE 
             SET 
                 RESERVERT_AV = ?,
+                RESERVERT_AV_NAVN = ?,
                 RESERVERT_TIDSPUNKT = CURRENT_TIMESTAMP,
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
@@ -616,9 +618,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         connection.execute(updaterOppgaveReservasjonQuery) {
             setParams {
                 setString(1, reservertAvIdent)
-                setString(2, ident)
-                setLong(3, oppgaveId.id)
-                setLong(4, oppgaveId.versjon)
+                setString(2, reservertAvNavn)
+                setString(3, ident)
+                setLong(4, oppgaveId.id)
+                setLong(5, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) }
         }
@@ -764,6 +767,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             årsakerTilBehandling = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             vurderingsbehov = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
+            reservertAvNavn = row.getStringOrNull("RESERVERT_AV_NAVN"),
             reservertTidspunkt = row.getLocalDateTimeOrNull("RESERVERT_TIDSPUNKT"),
             opprettetAv = row.getString("OPPRETTET_AV"),
             opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
@@ -805,6 +809,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             PAA_VENT_AARSAK,
             VENTE_BEGRUNNELSE,
             RESERVERT_AV,
+            RESERVERT_AV_NAVN,
             RESERVERT_TIDSPUNKT,
             OPPRETTET_AV,
             OPPRETTET_TIDSPUNKT,

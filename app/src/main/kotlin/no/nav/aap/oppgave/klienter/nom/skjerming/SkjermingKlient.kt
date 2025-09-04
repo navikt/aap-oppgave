@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.klienter.nom
+package no.nav.aap.oppgave.klienter.nom.skjerming
 
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
@@ -12,12 +12,12 @@ import java.net.URI
 
 private data class EgenansattRequest(val personident: String)
 
-interface INomKlient {
+interface SkjermingKlient {
     fun erEgenansatt(personident: String): Boolean
 }
-class NomKlient: INomKlient {
+class NomSkjermingKlient: SkjermingKlient {
 
-    private val log = LoggerFactory.getLogger(NomKlient::class.java)
+    private val log = LoggerFactory.getLogger(NomSkjermingKlient::class.java)
 
     private val url = URI.create(requiredConfigForKey("integrasjon.nom.url"))
 
