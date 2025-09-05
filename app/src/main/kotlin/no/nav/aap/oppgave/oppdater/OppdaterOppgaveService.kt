@@ -250,7 +250,7 @@ class OppdaterOppgaveService(
                 personIdent = personIdent,
                 avklaringsbehovKode = avklaringsbehovHendelse.avklaringsbehovKode,
                 behandlingstype = oppgaveOppdatering.behandlingstype,
-                ident = "Kelvin",
+                ident = KELVIN,
                 enhet = enhetForOppgave.enhet,
                 oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
                 veilederArbeid = veilederArbeid,
@@ -335,7 +335,7 @@ class OppdaterOppgaveService(
         oppgaver
             .filter { it.status != Status.AVSLUTTET }
             .forEach {
-                oppgaveRepository.avsluttOppgave(it.oppgaveId(), "Kelvin")
+                oppgaveRepository.avsluttOppgave(it.oppgaveId(), KELVIN)
                 log.info("AVsluttet oppgave med ID ${it.oppgaveId()}.")
                 sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, flytJobbRepository)
             }
