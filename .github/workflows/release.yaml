@@ -90,6 +90,7 @@ jobs:
             id-token: write
         needs: gradle
         uses: navikt/aap-workflows/.github/workflows/deploy.yml@main
+        concurrency: deploy-dev-gcp
         secrets: inherit
         with:
             cluster: dev-gcp
@@ -103,6 +104,7 @@ jobs:
         contents: read
         id-token: write
       needs: dev
+      concurrency: deploy-prod-gcp
       uses: navikt/aap-workflows/.github/workflows/deploy.yml@main
       secrets: inherit
       with:
