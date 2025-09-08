@@ -149,7 +149,8 @@ class OppdaterOppgaveService(
                     flytJobbRepository
                 )
 
-                if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.reservertAv == null) {
+                // Hvis oppgaven ble satt på vent, reserver til saksbehandler som satte på vent
+                if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.påVentTil == null && eksisterendeOppgave.reservertAv == null) {
                     log.info("Forsøker å reservere oppgave ${eksisterendeOppgave.oppgaveId()} til saksbehandler som satte den på vent")
                     reserverOppgave(eksisterendeOppgave, oppgaveOppdatering.venteInformasjon)
                 }
