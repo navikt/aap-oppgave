@@ -7,18 +7,13 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
-import org.slf4j.LoggerFactory
 import java.net.URI
 
-private data class EgenansattRequest(val personident: String)
-
 interface SkjermingKlient {
-    fun erEgenansatt(personident: String): Boolean
+    fun erEgenansattBulk(personidenter: List<String>): Boolean
 }
+
 class NomSkjermingKlient: SkjermingKlient {
-
-    private val log = LoggerFactory.getLogger(NomSkjermingKlient::class.java)
-
     private val url = URI.create(requiredConfigForKey("integrasjon.nom.url"))
 
     private val config = ClientConfig(
@@ -31,14 +26,18 @@ class NomSkjermingKlient: SkjermingKlient {
         prometheus = prometheus
     )
 
-    override fun erEgenansatt(personident: String): Boolean {
-        log.info("Sjekker om $personident er egenansatt")
-        val egenansattUrl = url.resolve("skjermet")
+    override fun erEgenansattBulk(personidenter: List<String>): Boolean {
+        val egenansattUrl = url.resolve("/skjermetBulk")
         val request = PostRequest(
-            body = EgenansattRequest(personident)
+            body = SkjermetDataBulkRequestDTO(personidenter)
         )
 
-        return client.post(egenansattUrl, request) ?: error("Uventet respons fra NOM")
+        val response: Map<String, Boolean>  = client.post(egenansattUrl, request) ?: throw SkjermingException("Feil ved henting av skjerming")
+        val eksistererSkjermet = response.values.any { identIsSkjermet -> identIsSkjermet }
+
+        return eksistererSkjermet
     }
 
 }
+
+internal data class SkjermetDataBulkRequestDTO(val personidenter: List<String>)
