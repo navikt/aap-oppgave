@@ -11,7 +11,6 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
-import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SøkDto
@@ -24,29 +23,6 @@ import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("hentOppgaveApi")
-
-/**
- * Henter en oppgave gitt en behandling knyttet til en sak i behandlingsflyt eller en journalpost i postmottak.
- */
-@Deprecated("Finner ingen bruk av denne siste 30 dager fra loggene og heller ikke i koden. Vurder å fjerne den.")
-fun NormalOpenAPIRoute.hentOppgaveApiDeprecated(
-    dataSource: DataSource,
-    prometheus: PrometheusMeterRegistry
-) = route("/hent-oppgave").post<Unit, OppgaveDto, AvklaringsbehovReferanseDto> { _, request ->
-    prometheus.httpCallCounter("/hent-oppgave").increment()
-    val oppgave =
-        dataSource.transaction(readOnly = true) { connection ->
-            OppgavelisteService(
-                OppgaveRepository(connection),
-                MarkeringRepository(connection)
-            ).hentOppgave(request)
-        }
-    if (oppgave != null) {
-        respond(oppgave.hentPersonNavn())
-    } else {
-        respondWithStatus(HttpStatusCode.NoContent)
-    }
-}
 
 /**
  * Henter nyeste oppgave med status "OPPRETTET" gitt en behandlingsreferanse.
