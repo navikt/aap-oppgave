@@ -7,6 +7,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.tokenx.OnBehalfOfTokenProvider as TexasOnBehalfOfTokenProvider
+import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.tilgang.BehandlingTilgangRequest
@@ -21,7 +23,7 @@ object TilgangGateway {
 
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
-        tokenProvider = OnBehalfOfTokenProvider,
+        tokenProvider = if (Miljø.erProd()) OnBehalfOfTokenProvider else TexasOnBehalfOfTokenProvider(identityProvider = "azuread"),
         prometheus = prometheus
     )
 
