@@ -10,8 +10,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
+import no.nav.aap.komponenter.miljo.Miljø
 import java.net.URI
 import java.util.*
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.tokenx.OnBehalfOfTokenProvider as TexasOnBehalfOfTokenProvider
 
 interface IMsGraphClient {
     fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf
@@ -27,7 +29,10 @@ class MsGraphClient(
     )
     private val httpClient = RestClient.withDefaultResponseHandler(
         config = clientConfig,
-        tokenProvider = OnBehalfOfTokenProvider,
+        tokenProvider = if (Miljø.erProd())
+            OnBehalfOfTokenProvider
+        else
+            TexasOnBehalfOfTokenProvider(identityProvider = "azuread"),
         prometheus = prometheus,
     )
 
