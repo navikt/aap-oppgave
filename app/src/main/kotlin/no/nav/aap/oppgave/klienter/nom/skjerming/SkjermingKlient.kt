@@ -27,9 +27,10 @@ class NomSkjermingKlient: SkjermingKlient {
     )
 
     override fun erEgenansattBulk(personidenter: List<String>): Boolean {
+        val personIdenterDistinct = personidenter.distinct()
         val egenansattUrl = url.resolve("/skjermetBulk")
         val request = PostRequest(
-            body = SkjermetDataBulkRequestDTO(personidenter)
+            body = SkjermetDataBulkRequestDTO(personIdenterDistinct)
         )
 
         val response: Map<String, Boolean>  = client.post(egenansattUrl, request) ?: throw SkjermingException("Feil ved henting av skjerming")
