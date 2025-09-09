@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.klienter.pdl
 
-import kotlinx.coroutines.runBlocking
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -15,13 +14,13 @@ import java.net.URI
 
 interface IPdlKlient {
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
-    fun hentPersoninfoForIdenter(identer: List<String>): PdlData?
+    fun hentPersoninfoForIdenter(identer: List<String>): PdlData
     fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData
 }
 
 class PdlGraphqlKlient(
     private val restClient: RestClient<InputStream>
-): IPdlKlient {
+) : IPdlKlient {
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
 
     companion object {
@@ -45,20 +44,20 @@ class PdlGraphqlKlient(
 
     override fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken?): PdlData {
         val request = PdlRequest.hentAdressebeskyttelseOgGeografiskTilknytning(personident)
-        val response = runBlocking { graphqlQuery(request, currentToken) }
+        val response = graphqlQuery(request, currentToken)
 
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
 
-    override fun hentPersoninfoForIdenter(identer: List<String>): PdlData? {
+    override fun hentPersoninfoForIdenter(identer: List<String>): PdlData {
         val request = PdlRequest.hentPersoninfoForIdenter(identer)
-        val response = runBlocking { graphqlQuery(request) }
+        val response = graphqlQuery(request)
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
-    
+
     override fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData {
         val request = PdlRequest.hentAdressebeskyttelseForIdenter(identer)
-        val response = runBlocking { graphqlQuery(request) }
+        val response =  graphqlQuery(request)
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
 

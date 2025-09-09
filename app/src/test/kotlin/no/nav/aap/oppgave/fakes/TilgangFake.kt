@@ -1,21 +1,17 @@
 package no.nav.aap.oppgave.fakes
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.serialization.jackson.jackson
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.application.log
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
-import io.ktor.server.routing.post
-import io.ktor.server.routing.routing
+import io.ktor.http.*
+import io.ktor.serialization.jackson.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 import no.nav.aap.oppgave.server.ErrorRespons
 import no.nav.aap.tilgang.BehandlingTilgangRequest
 import no.nav.aap.tilgang.TilgangResponse
-import java.util.UUID
 
 fun Application.tilgangFake(fakesConfig: FakesConfig) = runBlocking {
     install(ContentNegotiation) {
