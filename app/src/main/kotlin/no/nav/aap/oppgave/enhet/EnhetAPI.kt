@@ -72,6 +72,10 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                     oppgave.saksnummer
                 )
 
+            if (nyEnhet.enhet != oppgave.enhet) {
+                log.info("Oppdaterer enhet for oppgave ${oppgaveIdMedVersjon.id} fra ${oppgave.enhet} til ${nyEnhet.enhet}")
+            }
+
             oppgaveRepository.oppdatereOppgave(
                 oppgaveId = oppgaveIdMedVersjon,
                 ident = "Kelvin",
