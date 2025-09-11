@@ -57,9 +57,10 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
             val oppgaveRepository = OppgaveRepository(connection)
 
             val oppgave = oppgaveRepository.hentOppgave(request.oppgaveId)
-            val oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon)
+            val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
+
             val behandlingRef = requireNotNull(oppgave.behandlingRef) {
-                "Synkoniser oppgave: Oppgave $oppgaveId mangler behandlingsreferanse"
+                "Synkoniser oppgave: Oppgave ${oppgaveIdMedVersjon.id} mangler behandlingsreferanse"
             }
             val relaterteIdenter = BehandlingsflytKlient.hentRelevanteIdenterPåBehandling(behandlingRef)
 
@@ -72,7 +73,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 )
 
             oppgaveRepository.oppdatereOppgave(
-                oppgaveId = oppgaveId,
+                oppgaveId = oppgaveIdMedVersjon,
                 ident = "Kelvin",
                 personIdent = oppgave.personIdent,
                 enhet = nyEnhet.enhet,
@@ -88,7 +89,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
             )
 
             sendOppgaveStatusOppdatering(
-                oppgaveId, HendelseType.OPPDATERT,
+                oppgaveIdMedVersjon, HendelseType.OPPDATERT,
                 FlytJobbRepository(connection),
             )
         }
