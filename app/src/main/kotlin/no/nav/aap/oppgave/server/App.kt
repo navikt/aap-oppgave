@@ -26,6 +26,7 @@ import no.nav.aap.motor.api.motorApi
 import no.nav.aap.motor.retry.RetryService
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.enhet.hentEnhetApi
+import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
 import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
@@ -119,6 +120,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 hentAntallOppgaver(dataSource, prometheus)
                 // Enheter
                 hentEnhetApi(iMsGraphClient, prometheus)
+                synkroniserEnhetPåOppgaveApi(dataSource, iMsGraphClient, prometheus)
                 // Motor-API
                 motorApi(dataSource)
             }
