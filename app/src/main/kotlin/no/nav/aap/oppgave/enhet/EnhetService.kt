@@ -131,7 +131,7 @@ class EnhetService(
             Enhet.NAV_VIKAFOSSEN.kode
         } else if (erEgenAnsatt) {
             Enhet.NAY_EGNE_ANSATTE.kode
-        } else if (geografiskTilknytning?.gtType == GeografiskTilknytningType.UTLAND) {
+        } else if (skalTilNayUtland(ident, geografiskTilknytning?.gtType)) {
             Enhet.NAY_UTLAND.kode
         } else {
             Enhet.NAY.kode
@@ -248,6 +248,13 @@ class EnhetService(
         return enhet.endsWith("83")
     }
 
+    private fun skalTilNayUtland(ident: String, geografiskTilknytningType: GeografiskTilknytningType?): Boolean {
+        val utlandTilknytning = geografiskTilknytningType == GeografiskTilknytningType.UTLAND
+        // Hvis bruker har norsk adresse, men saken allikevel bør håndteres av utlands-enhetene,
+        // settes oppfølgingsenhet til NUFO. Da skal saken videre til NAY Utland
+        val utlandOppfølgingsenhet = finnOppfølgingsenhet(ident) == Enhet.NAV_UTLAND.kode
+        return utlandTilknytning || utlandOppfølgingsenhet
+    }
 
     companion object {
         const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"

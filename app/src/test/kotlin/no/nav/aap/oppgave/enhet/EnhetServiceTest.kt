@@ -335,6 +335,21 @@ class EnhetServiceTest {
         assertThat(res.enhet).isEqualTo(Enhet.NAY_UTLAND.kode)
     }
 
+    @Test
+    fun `Skal rutes til NAY Utland når oppfølgingskontor er NAV Utland`() {
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
+            )
+        )
+        val veilarbarenaClient = VeilarbarenaKlientMock(oppfølgingsenhet = Enhet.NAV_UTLAND.kode)
+        val norgKlient = NorgKlientMock.medRespons()
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient, UnleashService(FakeUnleash().apply {
+            enableAll()
+        }))
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
+        assertThat(res.enhet).isEqualTo(Enhet.NAY_UTLAND.kode)
+    }
 
     @Test
     fun `Skal sette adressebeskyttelse når relaterte identer har adressebeskyttelse`() {
