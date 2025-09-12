@@ -74,7 +74,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
 
             val nyEnhetForKø = nyEnhet.oppfølgingsenhet ?: nyEnhet.enhet
             if (nyEnhetForKø != oppgave.enhetForKø()) {
-                log.info("Oppdaterer enhet for oppgave ${oppgaveIdMedVersjon.id} fra ${nyEnhetForKø} til ${oppgave.enhetForKø()}")
+                log.info("Oppdaterer enhet for oppgave ${oppgaveIdMedVersjon.id} fra ${oppgave.enhetForKø()} til $nyEnhetForKø")
             }
 
             oppgaveRepository.oppdatereOppgave(
