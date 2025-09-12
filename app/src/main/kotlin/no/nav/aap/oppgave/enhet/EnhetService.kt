@@ -167,7 +167,8 @@ class EnhetService(
             }
 
         val enhetForKø = enhetFraArena ?: enhetFraNorg
-        if (!GodkjentEnhet.entries.map { it.enhetNr }.contains(enhetForKø) && unleashService.isEnabled(FeatureToggles.VarsleHvisEnhetIkkeGodkjent)) {
+        val skalVarsle = !GodkjentEnhet.entries.map { it.enhetNr }.contains(enhetForKø) && enhetForKø != Enhet.NAV_UTLAND.kode
+        if (skalVarsle && unleashService.isEnabled(FeatureToggles.VarsleHvisEnhetIkkeGodkjent)) {
             log.error("Oppgave har lagt seg på køen til enhet $enhetForKø, som ikke har tatt Kelvin i bruk enda. Saksnummer: $saksnummer")
         }
 
