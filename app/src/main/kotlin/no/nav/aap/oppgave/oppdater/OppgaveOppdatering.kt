@@ -139,6 +139,7 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.SvarFraAndreinstans -> Behandlingstype.SVAR_FRA_ANDREINSTANS
         TypeBehandling.OppfølgingsBehandling -> Behandlingstype.OPPFØLGINGSBEHANDLING
         TypeBehandling.Aktivitetsplikt -> Behandlingstype.AKTIVITETSPLIKT
+        TypeBehandling.Aktivitetsplikt11_9 -> Behandlingstype.AKTIVITETSPLIKT_11_9
     }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
