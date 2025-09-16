@@ -352,6 +352,22 @@ class EnhetServiceTest {
     }
 
     @Test
+    fun `Skal kvalitetssikres av NAY Utland når oppfølgingskontor er NAV Utland`() {
+        val pdlKlient = PdlKlientMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
+            )
+        )
+        val veilarbarenaClient = VeilarbarenaKlientMock(oppfølgingsenhet = Enhet.NAV_UTLAND.kode)
+        val norgKlient = NorgKlientMock.medRespons(overordnetFylkesEnheter = listOf("0600"), responsEnhet = "0621")
+        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient, UnleashService(FakeUnleash().apply {
+            enableAll()
+        }))
+        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        assertThat(res.oppfølgingsenhet).isEqualTo(Enhet.NAV_UTLAND.kode)
+    }
+
+    @Test
     fun `Skal sette adressebeskyttelse når relaterte identer har adressebeskyttelse`() {
         val pdlKlient = PdlKlientMock.medRespons(
             PdlData(
