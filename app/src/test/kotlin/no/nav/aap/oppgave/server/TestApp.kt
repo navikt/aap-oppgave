@@ -14,8 +14,8 @@ import java.time.temporal.ChronoUnit
 
 fun main() {
     val postgres = postgreSQLContainer()
-    val fakes = Fakes()
-    embeddedServer(Netty, port = 8080) {
+    val fakes = Fakes().also { it.beforeAll(null) }
+    embeddedServer(Netty, port = 8084) {
         val dbConfig = DbConfig(
             username = postgres.username,
             password = postgres.password,
@@ -30,6 +30,7 @@ internal fun postgreSQLContainer(): PostgreSQLContainer<Nothing> {
     val postgres = PostgreSQLContainer<Nothing>("postgres:16")
     postgres.waitingFor(HostPortWaitStrategy().withStartupTimeout(Duration.of(60L, ChronoUnit.SECONDS)))
     postgres.start()
+    println("\n\n${postgres.jdbcUrl}&user=test&password=test\n\n")
     return postgres
 }
 

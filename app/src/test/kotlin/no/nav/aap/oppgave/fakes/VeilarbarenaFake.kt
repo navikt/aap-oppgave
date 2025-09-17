@@ -28,7 +28,7 @@ fun Application.veilarbarenaFake() {
 private fun responsFraArena(): String {
     return """
             { 
-                "oppfolgingsenhet": "9999"
+                "oppfolgingsenhet": "superNav!"
            
             }
     """.trimIndent()
