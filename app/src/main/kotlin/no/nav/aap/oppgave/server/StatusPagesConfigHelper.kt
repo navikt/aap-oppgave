@@ -26,7 +26,11 @@ object StatusPagesConfigHelper {
                 }
 
                 else -> {
-                    logger.error("Ukjent feil ved kall til '{}'", call.request.local.uri, cause)
+                    logger.error(
+                        "Ukjent feil ved kall til '{}'. Type: ${cause.javaClass}. Message: ${cause.message}",
+                        call.request.local.uri,
+                        cause
+                    )
                     call.respondWithError(InternfeilException("En ukjent feil oppsto"))
                 }
             }
