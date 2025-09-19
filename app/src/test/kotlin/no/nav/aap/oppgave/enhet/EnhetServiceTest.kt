@@ -405,17 +405,6 @@ class EnhetServiceTest {
         assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
     }
 
-    @Test
-    fun `Skal sette skjerming når relaterte identer har skjerming`() {
-        val norgKlient = NorgKlientMock.medRespons()
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
-            enableAll()
-        }))
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", listOf("barn", IDENT_MED_SKJERMING))
-
-        assertThat(res.enhet).isEqualTo(Enhet.NAY_EGNE_ANSATTE.kode)
-    }
-
     companion object {
         val graphClient = object : IMsGraphClient {
             override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
@@ -432,8 +421,8 @@ class EnhetServiceTest {
         }
 
         val nomKlient = object : SkjermingKlient {
-            override fun erEgenansattBulk(personidenter: List<String>): Boolean {
-                return personidenter.contains(IDENT_MED_SKJERMING)
+            override fun erSkjermet(ident: String): Boolean {
+                return ident == IDENT_MED_SKJERMING
             }
         }
 
@@ -465,7 +454,7 @@ class EnhetServiceTest {
                 }
             }
 
-            override fun erEgenansattBulk(personidenter: List<String>): Boolean {
+            override fun erSkjermet(ident: String): Boolean {
                 return erEgenansatt ?: TODO("Not yet implemented")
             }
         }

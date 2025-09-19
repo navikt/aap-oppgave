@@ -12,7 +12,7 @@ val erEgenansatt: suspend RoutingContext.() -> Unit = {
 }
 
 val erIkkeEgenansatt: suspend RoutingContext.() -> Unit = {
-    call.respond(mapOf("ident" to false))
+    call.respond(false)
 }
 
 fun Application.nomSkjermingFake(
@@ -26,7 +26,7 @@ fun Application.nomSkjermingFake(
     }
 
     routing {
-        post("/skjermetBulk", egenansatt)
+        post("/skjermet", egenansatt)
     }
 
 }

@@ -9,8 +9,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.Client
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 
+private data class EgenansattRequest(val personident: String)
+
 interface SkjermingKlient {
-    fun erEgenansattBulk(personidenter: List<String>): Boolean
+    fun erSkjermet(ident: String): Boolean
 }
 
 class NomSkjermingKlient: SkjermingKlient {
@@ -26,19 +28,13 @@ class NomSkjermingKlient: SkjermingKlient {
         prometheus = prometheus
     )
 
-    override fun erEgenansattBulk(personidenter: List<String>): Boolean {
-        val personIdenterDistinct = personidenter.distinct()
-        val egenansattUrl = url.resolve("/skjermetBulk")
+    override fun erSkjermet(ident: String): Boolean {
+        val egenansattUrl = url.resolve("/skjermet")
         val request = PostRequest(
-            body = SkjermetDataBulkRequestDTO(personIdenterDistinct)
+            body = EgenansattRequest(ident),
         )
-
-        val response: Map<String, Boolean>  = client.post(egenansattUrl, request) ?: throw SkjermingException("Feil ved henting av skjerming")
-        val eksistererSkjermet = response.values.any { identIsSkjermet -> identIsSkjermet }
-
+        val eksistererSkjermet = client.post<EgenansattRequest, Boolean>(egenansattUrl, request) ?: throw SkjermingException("Kunne ikke hente skjermingstatus for ident")
         return eksistererSkjermet
     }
 
 }
-
-internal data class SkjermetDataBulkRequestDTO(val personidenter: List<String>)

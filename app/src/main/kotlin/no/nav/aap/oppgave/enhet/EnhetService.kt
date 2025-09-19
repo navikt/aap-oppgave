@@ -76,7 +76,7 @@ class EnhetService(
     }
 
     override fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean {
-        val søkersGradering = finnTilknytningOgSkjerming(ident, relevanteIdenter).diskresjonskode
+        val søkersGradering = finnTilknytningOgSkjerming(ident).diskresjonskode
         return finnStrengesteGradering(søkersGradering, relevanteIdenter) == Diskresjonskode.SPFO
     }
 
@@ -125,7 +125,7 @@ class EnhetService(
     }
 
     private fun finnNayEnhet(ident: String, relevanteIdenter: List<String>): EnhetForOppgave {
-        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident, relevanteIdenter)
+        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident)
         val strengesteGradering = finnStrengesteGradering(tilknytningOgSkjerming.diskresjonskode, relevanteIdenter)
 
         val erStrengtFortrolig = strengesteGradering == Diskresjonskode.SPSF
@@ -149,7 +149,7 @@ class EnhetService(
     }
 
     private fun finnEnhetstilknytningForPerson(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
-        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident, relevanteIdenter)
+        val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident)
         val strengesteGradering = finnStrengesteGradering(tilknytningOgSkjerming.diskresjonskode, relevanteIdenter)
 
         // Hvis personen er utenlandsk, så vil NORG returnere feil kontor (Den returnerer NAY-kontoret).
@@ -204,18 +204,17 @@ class EnhetService(
                 geoTilknytning.gtType.name
         }
 
-    private fun finnTilknytningOgSkjerming(ident: String?, relevanteIdenter: List<String>): TilknytningOgSkjerming {
+    private fun finnTilknytningOgSkjerming(ident: String?): TilknytningOgSkjerming {
         if (ident != null) {
             val pdlData = pdlGraphqlKlient.hentAdressebeskyttelseOgGeolokasjon(ident)
             val geografiskTilknytning = pdlData.hentGeografiskTilknytning
 
             val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
-            val alleIdenter = relevanteIdenter.plus(ident)
-            val egenAnsatt = nomSkjermingKlient.erEgenansattBulk(alleIdenter)
+            val erSkjermet = nomSkjermingKlient.erSkjermet(ident)
             return TilknytningOgSkjerming(
                 geografiskTilknytning,
                 diskresjonskode,
-                egenAnsatt
+                erSkjermet
             )
         } else {
             return TilknytningOgSkjerming(
