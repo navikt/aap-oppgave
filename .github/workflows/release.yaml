@@ -31,7 +31,7 @@ jobs:
             publish-typescript: true
             typescript-enums: true
             app-navn: oppgave
-            generate-openapi-command: gradle genererOpenApiJson
+            generate-openapi-command: ./gradlew genererOpenApiJson
 
     publish-kontrakt:
         needs: gradle
