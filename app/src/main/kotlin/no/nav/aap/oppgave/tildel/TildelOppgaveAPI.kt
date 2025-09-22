@@ -1,0 +1,42 @@
+package no.nav.aap.oppgave.tildel
+
+import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
+import com.papsign.ktor.openapigen.route.response.respond
+import com.papsign.ktor.openapigen.route.route
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.oppgave.OppgaveId
+import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.tilgang.Beslutter
+import no.nav.aap.tilgang.Kvalitetssikrer
+import no.nav.aap.tilgang.RollerConfig
+import no.nav.aap.tilgang.SaksbehandlerNasjonal
+import no.nav.aap.tilgang.SaksbehandlerOppfolging
+import no.nav.aap.tilgang.authorizedPost
+import javax.sql.DataSource
+
+fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
+    route("/saksbehandler-sok").authorizedPost<Unit, SaksbehandlerSøkResponse, SaksbehandlerSøkRequest>(
+        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
+    ) { _, request ->
+        prometheus.httpCallCounter("/tildel-oppgave").increment()
+
+        val saksbehandlereFraNom = dataSource.transaction { connection ->
+            TildelOppgaveService(
+                oppgaveRepository = OppgaveRepository(connection),
+            ).søkEtterSaksbehandlere(søketekst = request.søketekst, oppgaveId = OppgaveId(request.oppgaveId, request.oppgaveVersjon))
+        }
+
+        respond(
+            SaksbehandlerSøkResponse(
+                saksbehandlere = saksbehandlereFraNom.map {
+                    SaksbehandlerDto(
+                        navn = it.visningsnavn,
+                        navIdent = it.navident
+                    )
+                }
+            )
+        )
+    }
+

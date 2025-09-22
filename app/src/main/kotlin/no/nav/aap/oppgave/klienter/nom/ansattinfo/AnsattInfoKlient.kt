@@ -16,6 +16,7 @@ import java.net.URI
 
 interface AnsattInfoKlient {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
+    fun søkEtterSaksbehandler(søketekst: String): List<AnsattFraSøk>
 }
 
 class NomApiKlient(
@@ -57,16 +58,29 @@ class NomApiKlient(
         }
     }
 
+    override fun søkEtterSaksbehandler(søketekst: String): List<AnsattFraSøk> {
+        val request = SøkRequest(søkQuery, SøkVariables(søketekst))
+        val response = checkNotNull(søkQuery(request).data) {
+            "Kunne ikke søke etter ansatte i NOM"
+        }
+        return response.search
+    }
+
     private fun hentAnsattNavn(navIdent: String): String {
         val request = AnsattInfoRequest(navnQuery, AnsattInfoVariables(navIdent))
-        val response = checkNotNull(query(request).data?.ressurs) {
+        val response = checkNotNull(ansattInfoQuery(request).data?.ressurs) {
             "Fant ikke ansatt i NOM"
         }
         return response.visningsnavn
     }
 
 
-    private fun query(request: AnsattInfoRequest): AnsattInfoRespons {
+    private fun ansattInfoQuery(request: AnsattInfoRequest): AnsattInfoRespons {
+        val httpRequest = PostRequest(body = request)
+        return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
+    }
+
+    private fun søkQuery(request: SøkRequest): SøkRespons {
         val httpRequest = PostRequest(body = request)
         return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
@@ -79,4 +93,21 @@ val navnQuery = """
         visningsnavn
       }
     }
+""".trimIndent()
+
+private const val soketekst = "\$soketekst"
+val søkQuery = """
+    query($soketekst: String!) {
+  search(term: $soketekst) {
+    ... on Ressurs {
+      visningsnavn
+      navident
+      orgTilknytning {
+        orgEnhet {
+          orgEnhetsType
+        }
+      }
+    }
+  }
+}
 """.trimIndent()
