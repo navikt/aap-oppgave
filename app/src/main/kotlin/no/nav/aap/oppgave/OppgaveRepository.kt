@@ -11,6 +11,7 @@ import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
+import org.jetbrains.annotations.TestOnly
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.util.UUID
@@ -657,6 +658,7 @@ class OppgaveRepository(private val connection: DBConnection) {
      * Brukes i test.
      */
     @Suppress("unused")
+    @TestOnly
     fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
         val query = """
             SELECT 
