@@ -1,6 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-val ktorVersion = "3.2.3"
+val ktorVersion = "3.3.0"
 val komponenterVersjon = "1.0.366"
 val tilgangVersjon = "1.0.125"
 val behandlingsflytVersjon = "0.0.436"
@@ -80,6 +80,7 @@ dependencies {
 
 tasks {
     withType<ShadowJar> {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
         mergeServiceFiles()
     }
 }
