@@ -15,12 +15,12 @@ data class NomRessurs(
     val visningsnavn: String,
 )
 
-data class SøkRespons(
-    val data: SøkData?,
+data class AnsattSøkResponse(
+    val data: AnsattSøkData?,
     val errors: List<GraphQLError>?,
 )
 
-data class SøkData(
+data class AnsattSøkData(
     val search: List<AnsattFraSøk>
 )
 

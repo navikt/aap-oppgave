@@ -5,7 +5,7 @@ data class AnsattInfoRequest(val query: String, val variables: AnsattInfoVariabl
 
 data class AnsattInfoVariables(val navIdent: String)
 
-data class SøkRequest(val query: String, val variables: SøkVariables)
+data class AnsattSøkRequest(val query: String, val variables: AnsattSøkVariables)
 
-data class SøkVariables(val soketekst: String)
+data class AnsattSøkVariables(val soketekst: String)
 

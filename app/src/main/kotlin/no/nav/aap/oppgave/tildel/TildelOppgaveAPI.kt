@@ -6,7 +6,6 @@ import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepository
-import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
@@ -30,7 +29,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
                 oppgaveRepository = OppgaveRepository(connection),
             ).søkEtterSaksbehandlere(
                 søketekst = request.søketekst,
-                oppgaveId = OppgaveId(request.oppgaveId, request.oppgaveVersjon)
+                oppgaveId = request.oppgaveId,
             )
         }
 
@@ -46,10 +45,10 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
         )
     }
 
-    route("/tildel-oppgave").authorizedPost<Unit, TildelOppgaveResponse, TildelOppgaveRequest>(
+    route("/tildel-oppgaver").authorizedPost<Unit, TildelOppgaveResponse, TildelOppgaveRequest>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
-        prometheus.httpCallCounter("/tildel-oppgave").increment()
+        prometheus.httpCallCounter("/tildel-oppgaver").increment()
 
         val tildelteOppgaver = dataSource.transaction { connection ->
             ReserverOppgaveService(

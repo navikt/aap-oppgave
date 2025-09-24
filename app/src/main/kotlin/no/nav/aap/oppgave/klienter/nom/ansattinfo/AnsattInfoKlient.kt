@@ -59,8 +59,8 @@ class NomApiKlient(
     }
 
     override fun søkEtterSaksbehandler(søketekst: String): List<AnsattFraSøk> {
-        val request = SøkRequest(søkQuery, SøkVariables(søketekst))
-        val response = checkNotNull(søkQuery(request).data) {
+        val request = AnsattSøkRequest(søkQuery, AnsattSøkVariables(søketekst))
+        val response = checkNotNull(ansattSøkQuery(request).data) {
             "Kunne ikke søke etter ansatte i NOM"
         }
         return response.search
@@ -80,7 +80,7 @@ class NomApiKlient(
         return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
 
-    private fun søkQuery(request: SøkRequest): SøkRespons {
+    private fun ansattSøkQuery(request: AnsattSøkRequest): AnsattSøkResponse {
         val httpRequest = PostRequest(body = request)
         return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
