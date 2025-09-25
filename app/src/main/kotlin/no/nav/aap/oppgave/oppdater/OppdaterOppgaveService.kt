@@ -142,6 +142,21 @@ class OppdaterOppgaveService(
                     // Setter til null for å fjerne evt tidligere status
                     returInformasjon = null,
                 )
+
+                if (oppgaveOppdatering.reserverTil != null) {
+                    val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
+                        saksnummer = oppgaveOppdatering.saksnummer,
+                        referanse = oppgaveOppdatering.referanse,
+                        null,
+                        avklaringsbehov.avklaringsbehovKode.kode
+                    )
+                    reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
+                        avklaringsbehovReferanse,
+                        oppgaveOppdatering.reserverTil
+                    )
+                    log.info("Oppgave ${eksisterendeOppgave.oppgaveId()} automatisk reservert ${oppgaveOppdatering.reserverTil}.")
+                }
+
                 log.info("Oppdaterer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}. Venteårsak: $årsakTilSattPåVent")
                 sendOppgaveStatusOppdatering(
                     eksisterendeOppgave.oppgaveId(),
