@@ -46,6 +46,10 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
+import no.nav.aap.oppgave.tildel.SaksbehandlerSøkRequest
+import no.nav.aap.oppgave.tildel.SaksbehandlerSøkResponse
+import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
+import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.tilgang.SaksbehandlerNasjonal
@@ -525,6 +529,115 @@ class OppgaveApiTest {
 
         assertThat(avreserverteOppgaver).hasSize(2)
         assertThat(avreserverteOppgaver?.all { it.reservertAv == null && it.reservertTidspunkt == null })
+
+    }
+
+    @Test
+    fun `Kan søke etter saksbehandlere i NOM`() {
+        val saksnummer1 = "4567"
+        val referanse1 = UUID.randomUUID()
+
+        // ny kontor-oppgavr
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val oppgave = hentOppgave(referanse1)
+
+        // Søk på å tildele en 11-5-oppgave skal bare returnere veiledere
+        val lokalSaksbehandlere = søkEtterSaksbehandlere("any", oppgave!!)?.saksbehandlere
+        assertThat(lokalSaksbehandlere).hasSize(2)
+        assertThat(lokalSaksbehandlere?.map { it.navn }?.all { it.contains("Kontorsen") }).isTrue()
+
+        // Ny NAY-oppgave
+        val saksnummer2 = "1234"
+        val referanse2 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+
+        val oppgave2 = hentOppgave(referanse2)
+
+        // Søk på å tildele en 11-19-oppgave skal bare returnere NAY-saksbehandlere
+        val naySaksbehandlere = søkEtterSaksbehandlere("any", oppgave2!!)?.saksbehandlere
+        assertThat(naySaksbehandlere).hasSize(2)
+        assertThat(naySaksbehandlere?.map { it.navn }?.all { it.contains("Naysen") }).isTrue()
+
+    }
+
+    @Test
+    fun `Tildeler en liste med oppgaver`() {
+        val saksnummer1 = "4567"
+        val referanse1 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val saksnummer2 = "1234"
+        val referanse2 = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val oppgave1 = hentOppgave(referanse1)
+        val oppgave2 = hentOppgave(referanse2)
+
+        tildelOppgaver(listOf(oppgave1?.id!!, oppgave2?.id!!), ident = "saksbehandler")
+
+        val oppgave1EtterReservering = hentOppgave(referanse1)
+        val oppgave2EtterReservering = hentOppgave(referanse2)
+        assertThat(oppgave1EtterReservering?.reservertAv).isEqualTo("saksbehandler")
+        assertThat(oppgave2EtterReservering?.reservertAv).isEqualTo("saksbehandler")
+
+        // kan tildele oppgave på nytt, selv om den nå er reservert av noen
+        tildelOppgaver(listOf(oppgave1EtterReservering?.id!!), ident = "saksbehandler2")
+
+        val oppgave1Igjen = hentOppgave(referanse1)
+        assertThat(oppgave1Igjen?.reservertAv).isEqualTo("saksbehandler2")
 
     }
 
@@ -1163,6 +1276,32 @@ class OppgaveApiTest {
         return client.post(
             URI.create("http://localhost:$port/oppdater-oppgaver"),
             PostRequest(body = behandlingFlytStoppetHendelse)
+        )
+    }
+
+    private fun tildelOppgaver(oppgaver: List<Long>, ident: String): TildelOppgaveResponse? {
+        return client.post(
+            URI.create("http://localhost:$port/tildel-oppgaver"),
+            PostRequest(body = TildelOppgaveRequest(
+                oppgaver = oppgaver,
+                saksbehandlerIdent = ident
+            ),
+                additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
+                ))
+        )
+    }
+
+    private fun søkEtterSaksbehandlere(søketekst: String, oppgave: OppgaveDto): SaksbehandlerSøkResponse? {
+        return client.post(
+            URI.create("http://localhost:$port/saksbehandler-sok"),
+            PostRequest(body = SaksbehandlerSøkRequest(
+                søketekst = søketekst,
+                oppgaveId = oppgave.id!!,
+            ),
+                additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
+                ))
         )
     }
 

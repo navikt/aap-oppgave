@@ -600,7 +600,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun reserverOppgave(oppgaveId: OppgaveId, ident: String, reservertAvIdent: String, reservertAvNavn: String?) {
+    fun reserverOppgave(oppgaveId: OppgaveId, endretAvIdent: String, reservertAvIdent: String, reservertAvNavn: String?) {
         val updaterOppgaveReservasjonQuery = """
             UPDATE 
                 OPPGAVE 
@@ -620,7 +620,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             setParams {
                 setString(1, reservertAvIdent)
                 setString(2, reservertAvNavn)
-                setString(3, ident)
+                setString(3, endretAvIdent)
                 setLong(4, oppgaveId.id)
                 setLong(5, oppgaveId.versjon)
             }

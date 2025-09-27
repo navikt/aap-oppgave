@@ -47,6 +47,7 @@ import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
+import no.nav.aap.oppgave.tildel.tildelOppgaveApi
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -105,6 +106,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 avreserverOppgave(dataSource, prometheus)
                 flyttOppgave(dataSource, prometheus)
                 mottattDokumentApi(dataSource, prometheus)
+                tildelOppgaveApi(dataSource, prometheus)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
                 oppgavelisteApi(dataSource, prometheus)

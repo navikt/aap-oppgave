@@ -8,12 +8,18 @@ import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattFraSøk
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoData
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoRespons
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomRessurs
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.OrgEnhet
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.OrgEnhetsType
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattSøkData
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattSøkResponse
 import no.nav.aap.oppgave.server.ErrorRespons
 import kotlin.collections.emptyList
 
@@ -36,17 +42,65 @@ fun Application.nomAnsattInfoFake() {
 
     routing {
         post() {
-            val data = AnsattInfoData(
-                NomRessurs(
-                    visningsnavn = "Test Testesen"
+            val body = call.receive<String>()
+            if (body.contains("orgTilknytning")) {
+                val data = AnsattSøkData(
+                    search = listOf(
+                        AnsattFraSøk(
+                            visningsnavn = "Test Naysen",
+                            navident = "Test123",
+                            orgTilknytning = listOf(
+                                OrgEnhet(
+                                    orgEnhetsType = OrgEnhetsType.NAV_ARBEID_OG_YTELSER
+                                )
+                            )
+                        ),
+                        AnsattFraSøk(
+                            visningsnavn = "Navn Naysen",
+                            navident = "Navn123",
+                            orgTilknytning = listOf(
+                                OrgEnhet(
+                                    orgEnhetsType = OrgEnhetsType.NAV_ARBEID_OG_YTELSER
+                                )
+                            )
+                        ),
+                        AnsattFraSøk(
+                            visningsnavn = "Test Kontorsen",
+                            navident = "Tests123",
+                            orgTilknytning = listOf(
+                                OrgEnhet(
+                                    orgEnhetsType = OrgEnhetsType.NAV_KONTOR
+                                )
+                            )
+                        ),
+                        AnsattFraSøk(
+                            visningsnavn = "Navn Kontorsen",
+                            navident = "Nay123",
+                            orgTilknytning = listOf(
+                                OrgEnhet(
+                                    orgEnhetsType = OrgEnhetsType.NAV_KONTOR
+                                )
+                            )
+                        )
+                    )
                 )
-            )
-            val response = AnsattInfoRespons(
-                data,
-                emptyList()
-            )
+                call.respond(AnsattSøkResponse(
+                    data,
+                    errors = emptyList()
+                ))
+            } else {
+                val data = AnsattInfoData(
+                    NomRessurs(
+                        visningsnavn = "Test Testesen"
+                    )
+                )
+                val response = AnsattInfoRespons(
+                    data,
+                    emptyList()
+                )
 
-            call.respond(response)
+                call.respond(response)
+            }
         }
     }
 }
