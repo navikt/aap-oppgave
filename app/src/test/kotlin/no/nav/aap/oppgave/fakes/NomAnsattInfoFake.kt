@@ -88,6 +88,11 @@ fun Application.nomAnsattInfoFake() {
                                     OrgEnhet(
                                         orgEnhetsType = OrgEnhetsType.NAV_KONTOR
                                     )
+                                ),
+                                OrgEnhetInfo(
+                                    OrgEnhet(
+                                        orgEnhetsType = null
+                                    )
                                 )
                             )
                         )

@@ -35,7 +35,7 @@ data class OrgEnhetInfo (
 )
 
 data class OrgEnhet(
-    val orgEnhetsType: OrgEnhetsType,
+    val orgEnhetsType: OrgEnhetsType? = null,
 )
 
 enum class OrgEnhetsType {
