@@ -27,7 +27,11 @@ data class AnsattSøkData(
 data class AnsattFraSøk(
     val visningsnavn: String,
     val navident: String,
-    val orgTilknytning: List<OrgEnhet>
+    val orgTilknytning: List<OrgEnhetInfo>
+)
+
+data class OrgEnhetInfo (
+    val orgEnhet: OrgEnhet
 )
 
 data class OrgEnhet(
