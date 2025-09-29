@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.klienter.nom.ansattinfo.OrgEnhet
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.OrgEnhetsType
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattSøkData
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattSøkResponse
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.OrgEnhetInfo
 import no.nav.aap.oppgave.server.ErrorRespons
 import kotlin.collections.emptyList
 
@@ -50,8 +51,10 @@ fun Application.nomAnsattInfoFake() {
                             visningsnavn = "Test Naysen",
                             navident = "Test123",
                             orgTilknytning = listOf(
-                                OrgEnhet(
-                                    orgEnhetsType = OrgEnhetsType.NAV_ARBEID_OG_YTELSER
+                                OrgEnhetInfo(
+                                    OrgEnhet(
+                                        orgEnhetsType = OrgEnhetsType.NAV_ARBEID_OG_YTELSER
+                                    )
                                 )
                             )
                         ),
@@ -59,8 +62,10 @@ fun Application.nomAnsattInfoFake() {
                             visningsnavn = "Navn Naysen",
                             navident = "Navn123",
                             orgTilknytning = listOf(
-                                OrgEnhet(
-                                    orgEnhetsType = OrgEnhetsType.NAV_ARBEID_OG_YTELSER
+                                OrgEnhetInfo(
+                                    OrgEnhet(
+                                        orgEnhetsType = OrgEnhetsType.NAV_ARBEID_OG_YTELSER
+                                    )
                                 )
                             )
                         ),
@@ -68,8 +73,10 @@ fun Application.nomAnsattInfoFake() {
                             visningsnavn = "Test Kontorsen",
                             navident = "Tests123",
                             orgTilknytning = listOf(
-                                OrgEnhet(
-                                    orgEnhetsType = OrgEnhetsType.NAV_KONTOR
+                                OrgEnhetInfo(
+                                    OrgEnhet(
+                                        orgEnhetsType = OrgEnhetsType.NAV_KONTOR
+                                    )
                                 )
                             )
                         ),
@@ -77,8 +84,10 @@ fun Application.nomAnsattInfoFake() {
                             visningsnavn = "Navn Kontorsen",
                             navident = "Nay123",
                             orgTilknytning = listOf(
-                                OrgEnhet(
-                                    orgEnhetsType = OrgEnhetsType.NAV_KONTOR
+                                OrgEnhetInfo(
+                                    OrgEnhet(
+                                        orgEnhetsType = OrgEnhetsType.NAV_KONTOR
+                                    )
                                 )
                             )
                         )
