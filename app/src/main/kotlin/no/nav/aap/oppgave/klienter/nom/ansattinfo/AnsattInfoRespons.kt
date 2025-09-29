@@ -14,3 +14,27 @@ data class AnsattInfoData(
 data class NomRessurs(
     val visningsnavn: String,
 )
+
+data class AnsattSøkResponse(
+    val data: AnsattSøkData?,
+    val errors: List<GraphQLError>?,
+)
+
+data class AnsattSøkData(
+    val search: List<AnsattFraSøk>
+)
+
+data class AnsattFraSøk(
+    val visningsnavn: String,
+    val navident: String,
+    val orgTilknytning: List<OrgEnhet>
+)
+
+data class OrgEnhet(
+    val orgEnhetsType: OrgEnhetsType,
+)
+
+enum class OrgEnhetsType {
+    NAV_KONTOR,
+    NAV_ARBEID_OG_YTELSER
+}
