@@ -60,10 +60,11 @@ class NomApiKlient(
 
     override fun søkEtterSaksbehandler(søketekst: String): List<AnsattFraSøk> {
         val request = AnsattSøkRequest(søkQuery, AnsattSøkVariables(søketekst))
-        val response = checkNotNull(ansattSøkQuery(request).data) {
-            "Kunne ikke søke etter ansatte i NOM"
+        val response = ansattSøkQuery(request)
+        val responseData = checkNotNull(response.data) {
+            "Kunne ikke søke etter ansatte i NOM. Feilmelding: ${response.errors}"
         }
-        return response.search
+        return responseData.search
     }
 
     private fun hentAnsattNavn(navIdent: String): String {

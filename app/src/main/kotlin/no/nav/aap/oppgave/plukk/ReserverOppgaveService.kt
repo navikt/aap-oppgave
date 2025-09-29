@@ -72,18 +72,18 @@ class ReserverOppgaveService(
 
     fun tildelOppgaver(
         oppgaver: List<Long>,
-        ident: String,
+        tildelTilIdent: String,
         tildeltAvIdent: String,
     ): List<Long> {
         // Tildeler uten tilgangskontroll inntil videre
         val oppgaverSomSkalReserveres = oppgaver.map { oppgaveRepository.hentOppgave(it) }
         var c = 0
         oppgaverSomSkalReserveres.forEach {
-            oppgaveRepository.reserverOppgave(oppgaveId = OppgaveId(it.id!!, it.versjon), endretAvIdent = tildeltAvIdent, reservertAvIdent = ident, reservertAvNavn = ansattInfoKlient.hentAnsattNavnHvisFinnes(ident))
+            oppgaveRepository.reserverOppgave(oppgaveId = OppgaveId(it.id!!, it.versjon), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent, reservertAvNavn = ansattInfoKlient.hentAnsattNavnHvisFinnes(tildelTilIdent))
             sendOppgaveStatusOppdatering(OppgaveId(it.id!!, it.versjon), HendelseType.RESERVERT, flytJobbRepository)
             c++
         }
-        log.info("Tildelte $c oppgaver til $ident.")
+        log.info("Tildelte $c oppgaver til $tildelTilIdent.")
         return oppgaverSomSkalReserveres.mapNotNull { it.id }
     }
 
