@@ -90,7 +90,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
     val iMsGraphClient = MsGraphClient(prometheus)
 
-    val motor = motor(dataSource)
+    val motor = motor(dataSource, prometheus)
 
     routing {
         authenticate(AZURE) {
@@ -131,10 +131,11 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     }
 }
 
-fun Application.motor(dataSource: DataSource): Motor {
+fun Application.motor(dataSource: DataSource, prometheus: MeterRegistry): Motor {
     val motor = Motor(
         dataSource = dataSource,
         antallKammer = ANTALL_WORKERS,
+        prometheus = prometheus,
         jobber = listOf(
             StatistikkHendelseJobb,
             OppdaterOppgaveEnhetJobb
@@ -186,12 +187,12 @@ private fun Routing.actuator(prometheus: PrometheusMeterRegistry) {
         }
 
         get("/live") {
-            val status = HttpStatusCode.Companion.OK
+            val status = HttpStatusCode.OK
             call.respond(status, "Oppe!")
         }
 
         get("/ready") {
-            val status = HttpStatusCode.Companion.OK
+            val status = HttpStatusCode.OK
             call.respond(status, "Oppe!")
         }
     }
