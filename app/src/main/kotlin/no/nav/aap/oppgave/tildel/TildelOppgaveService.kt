@@ -20,7 +20,7 @@ class TildelOppgaveService(
         val linje = utledLinjeForOppgave(oppgaveTilTildeling)
 
         val alleSaksbehandlere = ansattInfoKlient.søkEtterSaksbehandler(søketekst).filter { it.navident != null }
-        val saksbehandlereForLinje = alleSaksbehandlere.filter { saksbehandler -> saksbehandler.orgTilknytning.map { it.orgEnhet.orgEnhetsType }.contains(linje) }
+        val saksbehandlereForLinje = alleSaksbehandlere.filter { saksbehandler -> saksbehandler.orgTilknytning?.mapNotNull { it.orgEnhet?.orgEnhetsType }?.contains(linje) == true }
 
         return saksbehandlereForLinje
     }

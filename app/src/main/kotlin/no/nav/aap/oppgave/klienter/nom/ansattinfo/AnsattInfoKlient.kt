@@ -64,7 +64,7 @@ class NomApiKlient(
         val responseData = checkNotNull(response.data) {
             "Kunne ikke søke etter ansatte i NOM. Feilmelding: ${response.errors}"
         }
-        return responseData.search
+        return requireNotNull(responseData.search) { "Søkeinfo fra NOM kan ikke være null" }
     }
 
     private fun hentAnsattNavn(navIdent: String): String {

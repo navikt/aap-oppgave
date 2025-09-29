@@ -21,17 +21,17 @@ data class AnsattSøkResponse(
 )
 
 data class AnsattSøkData(
-    val search: List<AnsattFraSøk>
+    val search: List<AnsattFraSøk>?
 )
 
 data class AnsattFraSøk(
     val visningsnavn: String? = null,
     val navident: String? = null,
-    val orgTilknytning: List<OrgEnhetInfo>
+    val orgTilknytning: List<OrgEnhetInfo>?
 )
 
 data class OrgEnhetInfo (
-    val orgEnhet: OrgEnhet
+    val orgEnhet: OrgEnhet?
 )
 
 data class OrgEnhet(
