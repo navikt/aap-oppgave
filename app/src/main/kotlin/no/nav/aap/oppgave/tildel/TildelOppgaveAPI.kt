@@ -34,9 +34,9 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource) {
                 saksbehandlere = saksbehandlereFraNom.map {
                     SaksbehandlerDto(
                         navn = it.visningsnavn,
-                        navIdent = it.navident
+                        navIdent = requireNotNull(it.navident) { "Saksbehandler fra søk mangler navIdent" },
                     )
-                }
+                },
             )
         )
     }

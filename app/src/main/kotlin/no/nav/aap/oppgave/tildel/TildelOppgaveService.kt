@@ -19,7 +19,7 @@ class TildelOppgaveService(
         val oppgaveTilTildeling = oppgaveRepository.hentOppgave(oppgaveId)
         val linje = utledLinjeForOppgave(oppgaveTilTildeling)
 
-        val alleSaksbehandlere = ansattInfoKlient.søkEtterSaksbehandler(søketekst)
+        val alleSaksbehandlere = ansattInfoKlient.søkEtterSaksbehandler(søketekst).filter { it.navident != null }
         val saksbehandlereForLinje = alleSaksbehandlere.filter { saksbehandler -> saksbehandler.orgTilknytning.map { it.orgEnhet.orgEnhetsType }.contains(linje) }
 
         return saksbehandlereForLinje
