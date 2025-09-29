@@ -5,6 +5,6 @@ data class SaksbehandlerSøkResponse(
 )
 
 data class SaksbehandlerDto(
-    val navn: String,
+    val navn: String? = null,
     val navIdent: String,
 )

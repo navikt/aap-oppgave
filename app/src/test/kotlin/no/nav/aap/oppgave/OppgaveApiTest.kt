@@ -557,7 +557,7 @@ class OppgaveApiTest {
         // Søk på å tildele en 11-5-oppgave skal bare returnere veiledere
         val lokalSaksbehandlere = søkEtterSaksbehandlere("any", oppgave!!)?.saksbehandlere
         assertThat(lokalSaksbehandlere).hasSize(2)
-        assertThat(lokalSaksbehandlere?.map { it.navn }?.all { it.contains("Kontorsen") }).isTrue()
+        assertThat(lokalSaksbehandlere?.mapNotNull { it.navn }?.all { it.contains("Kontorsen") }).isTrue()
 
         // Ny NAY-oppgave
         val saksnummer2 = "1234"
@@ -583,7 +583,7 @@ class OppgaveApiTest {
         // Søk på å tildele en 11-19-oppgave skal bare returnere NAY-saksbehandlere
         val naySaksbehandlere = søkEtterSaksbehandlere("any", oppgave2!!)?.saksbehandlere
         assertThat(naySaksbehandlere).hasSize(2)
-        assertThat(naySaksbehandlere?.map { it.navn }?.all { it.contains("Naysen") }).isTrue()
+        assertThat(naySaksbehandlere?.mapNotNull { it.navn }?.all { it.contains("Naysen") }).isTrue()
 
     }
 
