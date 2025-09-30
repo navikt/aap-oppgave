@@ -115,7 +115,12 @@ class OppdaterOppgaveService(
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
             val enhetForOppgave =
-                enhetService.utledEnhetForOppgave(avklaringsbehov.avklaringsbehovKode, personIdent, oppgaveOppdatering.relevanteIdenter, oppgaveOppdatering.saksnummer)
+                enhetService.utledEnhetForOppgave(
+                    avklaringsbehov.avklaringsbehovKode,
+                    personIdent,
+                    oppgaveOppdatering.relevanteIdenter,
+                    oppgaveOppdatering.saksnummer
+                )
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
             val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
 
@@ -123,7 +128,10 @@ class OppdaterOppgaveService(
                 gjenÅpneOppgaveEtterReturFraKvalitetssikrer(eksisterendeOppgave, avklaringsbehov)
             } else {
                 val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
-                val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgaveOppdatering.personIdent, oppgaveOppdatering.relevanteIdenter)
+                val harFortroligAdresse = enhetService.skalHaFortroligAdresse(
+                    oppgaveOppdatering.personIdent,
+                    oppgaveOppdatering.relevanteIdenter
+                )
 
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
@@ -212,6 +220,8 @@ class OppdaterOppgaveService(
             } else {
                 log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
             }
+        } else {
+            log.info("Reserverer ikke oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status} fordi $KELVIN utførte siste endring")
         }
     }
 
@@ -260,7 +270,8 @@ class OppdaterOppgaveService(
 
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
             val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
-            val harFortroligAdresse = enhetService.skalHaFortroligAdresse(personIdent, oppgaveOppdatering.relevanteIdenter)
+            val harFortroligAdresse =
+                enhetService.skalHaFortroligAdresse(personIdent, oppgaveOppdatering.relevanteIdenter)
 
             val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
                 personIdent = personIdent,
@@ -302,6 +313,8 @@ class OppdaterOppgaveService(
                     if (reserverteOppgaver.isNotEmpty()) {
                         log.info("Ny oppgave(id=${oppgaveId.id}) ble automatisk tilordnet: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}")
                     }
+                } else {
+                    log.info("Ingen automatisk tilordning: Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${nyttAvklaringsbehov.avklaringsbehovKode}")
                 }
             }
 
@@ -363,8 +376,18 @@ class OppdaterOppgaveService(
             .maxByOrNull { it.sistEndret() }
 
         if (sisteAvsluttetAvklaringsbehov == null) {
+            val beskrivelse = avklaringsbehov.joinToString { beh ->
+                val siste = beh.endringer.maxByOrNull { it.tidsstempel }
+                "${beh.avklaringsbehovKode.kode}:${beh.status} (sistEndret=${siste?.tidsstempel}, av=${siste?.endretAv})"
+            }
+            log.info("Fant ingen avsluttede avklaringsbehov. Behovene: [$beskrivelse]")
             return null
         }
+
+        if (sisteAvsluttetAvklaringsbehov.sistEndretAv() == KELVIN) {
+            log.info("Siste avsluttede avklaringsbehov ble løst av systembruker $KELVIN, oppgave vil ikke bli reservert.")
+        }
+
         return Pair(sisteAvsluttetAvklaringsbehov.avklaringsbehovKode, sisteAvsluttetAvklaringsbehov.sistEndretAv())
     }
 
