@@ -41,6 +41,11 @@ interface IEnhetService {
     fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean
 }
 
+
+/**
+ * Husk å vedlikeholde tekstlig beskrivelse i sysdoc
+ * https://aap-sysdoc.ansatt.nav.no/funksjonalitet/Oppgave/
+ */
 class EnhetService(
     private val msGraphClient: IMsGraphClient,
     private val pdlGraphqlKlient: IPdlKlient = PdlGraphqlKlient.withClientCredentialsRestClient(),
