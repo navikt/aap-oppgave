@@ -9,18 +9,21 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattFraSøk
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiKlient
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.OrgEnhetsType
+import org.slf4j.LoggerFactory
 
 class TildelOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
 ){
     private val ansattInfoKlient = NomApiKlient.withClientCredentialsRestClient()
+    private val log = LoggerFactory.getLogger(TildelOppgaveService::class.java)
 
-    fun søkEtterSaksbehandlere(søketekst: String, oppgaveId: Long): List<AnsattFraSøk> {
-        val oppgaveTilTildeling = oppgaveRepository.hentOppgave(oppgaveId)
-        val linje = utledLinjeForOppgave(oppgaveTilTildeling)
+    fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>): List<AnsattFraSøk> {
+        val oppgaverTilTildeling = oppgaver.map { oppgave -> oppgaveRepository.hentOppgave(oppgave) }
+        val linjer = oppgaverTilTildeling.map { utledLinjeForOppgave(it) }.distinct()
 
+        log.info("Søker på saksbehandlere i linje $linjer for å tildele oppgaver med id: ${oppgaver.joinToString(", ")}")
         val alleSaksbehandlere = ansattInfoKlient.søkEtterSaksbehandler(søketekst).filter { it.navident != null }
-        val saksbehandlereForLinje = alleSaksbehandlere.filter { saksbehandler -> saksbehandler.orgTilknytning?.mapNotNull { it.orgEnhet?.orgEnhetsType }?.contains(linje) == true }
+        val saksbehandlereForLinje = alleSaksbehandlere.filter { saksbehandler -> saksbehandler.orgTilknytning?.mapNotNull { it.orgEnhet?.orgEnhetsType }?.any {it in linjer} == true }
 
         return saksbehandlereForLinje
     }
