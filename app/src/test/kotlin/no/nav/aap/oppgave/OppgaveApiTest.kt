@@ -555,7 +555,7 @@ class OppgaveApiTest {
         val oppgave = hentOppgave(referanse1)
 
         // Søk på å tildele en 11-5-oppgave skal bare returnere veiledere
-        val lokalSaksbehandlere = søkEtterSaksbehandlere("any", oppgave!!)?.saksbehandlere
+        val lokalSaksbehandlere = søkEtterSaksbehandlere("any", listOf(oppgave?.id!!))?.saksbehandlere
         assertThat(lokalSaksbehandlere).hasSize(2)
         assertThat(lokalSaksbehandlere?.mapNotNull { it.navn }?.all { it.contains("Kontorsen") }).isTrue()
 
@@ -581,10 +581,13 @@ class OppgaveApiTest {
         val oppgave2 = hentOppgave(referanse2)
 
         // Søk på å tildele en 11-19-oppgave skal bare returnere NAY-saksbehandlere
-        val naySaksbehandlere = søkEtterSaksbehandlere("any", oppgave2!!)?.saksbehandlere
+        val naySaksbehandlere = søkEtterSaksbehandlere("any", listOf(oppgave2?.id!!))?.saksbehandlere
         assertThat(naySaksbehandlere).hasSize(2)
         assertThat(naySaksbehandlere?.mapNotNull { it.navn }?.all { it.contains("Naysen") }).isTrue()
 
+        // Søk på å tildele både en NAY-oppgave og en kontor-oppgave skal vise alle veiledere
+        val alleSaksbehandlere = søkEtterSaksbehandlere("tekst", listOf(oppgave.id!!, oppgave2.id!!))?.saksbehandlere
+        assertThat(alleSaksbehandlere).hasSize(4)
     }
 
     @Test
@@ -1292,12 +1295,12 @@ class OppgaveApiTest {
         )
     }
 
-    private fun søkEtterSaksbehandlere(søketekst: String, oppgave: OppgaveDto): SaksbehandlerSøkResponse? {
+    private fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>): SaksbehandlerSøkResponse? {
         return client.post(
             URI.create("http://localhost:$port/saksbehandler-sok"),
             PostRequest(body = SaksbehandlerSøkRequest(
                 søketekst = søketekst,
-                oppgaveId = oppgave.id!!,
+                oppgaver = oppgaver,
             ),
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")

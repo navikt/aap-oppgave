@@ -25,7 +25,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource) {
                 oppgaveRepository = OppgaveRepository(connection),
             ).søkEtterSaksbehandlere(
                 søketekst = request.søketekst,
-                oppgaveId = request.oppgaveId,
+                oppgaver = request.oppgaver,
             )
         }
 
