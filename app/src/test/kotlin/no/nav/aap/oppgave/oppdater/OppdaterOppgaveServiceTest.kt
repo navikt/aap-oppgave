@@ -264,6 +264,91 @@ class OppdaterOppgaveServiceTest {
     }
 
     @Test
+    fun `venteinformasjon fra postmottak-oppgave skal kunne utledes`() {
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val nå = LocalDateTime.now()
+
+        val hendelse = DokumentflytStoppetHendelse(
+            journalpostId = JournalpostId(123),
+            ident = "personIdent",
+            referanse = behandlingsref.referanse,
+            behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
+            status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            avklaringsbehov = listOf(
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.DIGITALISER_DOKUMENT,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                    )
+                )
+            ),
+            opprettetTidspunkt = nå.minusHours(2),
+            saksnummer = null,
+            hendelsesTidspunkt = nå.minusHours(2),
+        )
+
+        sendDokumentFlytStoppetHendelse(hendelse)
+
+        val åpneOppgaver = hentOppgaverForBehandling(behandlingsref)
+        assertThat(åpneOppgaver).hasSize(1)
+
+        val venteFrist = LocalDate.now().plusDays(1)
+
+        val hendelse2 = hendelse.copy(
+            avklaringsbehov = hendelse.avklaringsbehov +
+                    no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                        avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
+                        status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                                endretAv = "Saksbehandler",
+                                tidsstempel = nå.minusHours(1),
+                                frist = venteFrist,
+                                årsakTilSattPåVent = no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER
+                            )
+                        )
+                    )
+        )
+
+        sendDokumentFlytStoppetHendelse(hendelse2)
+
+        val oppgaver = hentOppgaverForBehandling(behandlingsref)
+        assertThat(oppgaver).hasSize(1).first()
+            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+            .containsExactly(no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER.toString(), venteFrist)
+
+        // Ventebehovet avsluttes
+        val hendelse3 = hendelse2.copy(
+            avklaringsbehov = hendelse2.avklaringsbehov.map {
+                if (it.avklaringsbehovDefinisjon == no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT) {
+                    it.copy(
+                        endringer = it.endringer + no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå,
+                            frist = null,
+                            årsakTilSattPåVent = null,
+                        )
+                    )
+                } else it
+            }
+        )
+
+        sendDokumentFlytStoppetHendelse(hendelse3)
+        val oppgaver2 = hentOppgaverForBehandling(behandlingsref)
+
+        assertThat(oppgaver2).hasSize(1).first()
+            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+            .containsExactly(null, null)
+    }
+
+    @Test
     fun `Adressebeskyttelse utledes riktig fra relevante identer på en oppgaveoppdatering`() {
         val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
@@ -627,7 +712,7 @@ class OppdaterOppgaveServiceTest {
                             årsakTilSattPåVent = ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER,
                             frist = nå.plusDays(2).toLocalDate(),
 
-                        ),
+                            ),
                     )
                 ),
             ),
@@ -690,7 +775,7 @@ class OppdaterOppgaveServiceTest {
                             tidsstempel = nå,
                             årsakTilSattPåVent = ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER,
                             frist = nå.plusDays(2).toLocalDate(),
-                            ),
+                        ),
                     )
                 ),
             ),
@@ -797,7 +882,7 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 MottattDokumentRepository(connection),
 
-            ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
+                ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
         }
     }
 
