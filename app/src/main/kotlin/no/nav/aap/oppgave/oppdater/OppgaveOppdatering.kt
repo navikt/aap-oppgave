@@ -30,7 +30,15 @@ enum class AvklaringsbehovStatus {
     SENDT_TILBAKE_FRA_BESLUTTER,
     KVALITETSSIKRET,
     SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-    AVBRUTT
+    AVBRUTT;
+
+    fun erÅpent(): Boolean {
+        return this in setOf(
+            OPPRETTET,
+            SENDT_TILBAKE_FRA_BESLUTTER,
+            SENDT_TILBAKE_FRA_KVALITETSSIKRER
+        )
+    }
 }
 
 /**
@@ -203,8 +211,36 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForPostmottak(),
         vurderingsbehov = emptyList(),
         mottattDokumenter = emptyList(),
-        årsakTilOpprettelse = null
+        årsakTilOpprettelse = null,
+        venteInformasjon = this.utledVenteinformasjonFraPostmottak()
     )
+}
+
+private fun DokumentflytStoppetHendelse.utledVenteinformasjonFraPostmottak(): VenteInformasjon? {
+    val åpentVentebehov = this.avklaringsbehov.filter { it ->
+        it.avklaringsbehovDefinisjon.erVentebehov() && it.status.tilAvklaringsbehovStatus().erÅpent()
+    }
+
+    if (åpentVentebehov.isEmpty()) {
+        return null
+    }
+
+    if (åpentVentebehov.size > 1) {
+        logger.warn("Mer enn ett åpent ventebehov. Referanse: ${this.referanse}. Velger første.")
+    }
+
+    val førsteVentebehov = åpentVentebehov.first()
+    val sisteEndring = førsteVentebehov.endringer.tilEndringerForPostmottak().maxByOrNull { it.tidsstempel }
+
+    if (sisteEndring?.påVentTil != null) {
+        return VenteInformasjon(
+            årsakTilSattPåVent = sisteEndring.påVentÅrsak,
+            frist = sisteEndring.påVentTil,
+            sattPåVentAv = sisteEndring.endretAv,
+            begrunnelse = sisteEndring.begrunnelse.nullIfBlank()
+        )
+    }
+    return null
 }
 
 private fun no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.tilBehandlingstype() =
@@ -250,6 +286,6 @@ private fun List<no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO>.tilEndringe
             tidsstempel = it.tidsstempel,
             endretAv = it.endretAv,
             påVentTil = it.frist,
-            påVentÅrsak = null,
+            påVentÅrsak = it.årsakTilSattPåVent?.name,
         )
     }
