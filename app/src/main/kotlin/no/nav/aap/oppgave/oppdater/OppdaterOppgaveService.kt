@@ -81,18 +81,15 @@ class OppdaterOppgaveService(
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
     ) {
-        // Om det er flere åpne avklaringsbehov (f.eks ved tilbakeføring fra beslutter), velger vi det eldste avklaringsbehovet.
-        // Dette burde svare til det første steget i flyten.
-        // På sikt bør vi kanskje se på mer robuste løsninger, f.eks at behandlingsflyt velger ut hvilken avklaringsbehov
-        // som skal løses først, i stedet for alle.
-        val åpentAvklaringsbehov =
-            oppgaveOppdatering.avklaringsbehov.filter { it.status in ÅPNE_STATUSER }.eldsteAvklaringsbehov()
+        // Om det er flere åpne avklaringsbehov (f.eks ved tilbakeføring fra beslutter, eller ved opprettelser av revurdering),
+        // velger vi det første åpne avklaringsbehovet.
+        val åpentAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.firstOrNull { it.status in ÅPNE_STATUSER }
         val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter { it.status in AVSLUTTEDE_STATUSER }
 
         // Opprette eller gjenåpne oppgave
         if (åpentAvklaringsbehov != null) {
             if (oppgaveMap[åpentAvklaringsbehov.avklaringsbehovKode] == null) {
-                opprettOppgaver(oppgaveOppdatering, listOf(åpentAvklaringsbehov))
+                opprettNyOppgaveForAvklaringsbehov(oppgaveOppdatering, oppgaveMap, åpentAvklaringsbehov)
             } else {
                 gjenåpneOppgave(oppgaveOppdatering, oppgaveMap, åpentAvklaringsbehov)
             }
@@ -179,6 +176,18 @@ class OppdaterOppgaveService(
                 }
             }
         }
+    }
+
+    private fun opprettNyOppgaveForAvklaringsbehov(
+        oppgaveOppdatering: OppgaveOppdatering,
+        oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
+        åpentAvklaringsbehov: AvklaringsbehovHendelse
+    ) {
+        if (oppgaveMap.isNotEmpty()) {
+            // Dersom det finnes åpne oppgaver fra før, skal disse avsluttes før ny oppgave opprettes.
+            avslutteOppgaver(oppgaveMap.values.toList())
+        }
+        opprettOppgaver(oppgaveOppdatering, listOf(åpentAvklaringsbehov))
     }
 
     private fun harBlittSendtTilbakeFraKvalitetssikrer(avklaringsbehov: AvklaringsbehovHendelse): Boolean =
@@ -406,10 +415,6 @@ class OppdaterOppgaveService(
 
     private fun AvklaringsbehovHendelse.opprettetTidspunkt(): LocalDateTime {
         return endringer.minByOrNull { it.tidsstempel }!!.tidsstempel
-    }
-
-    private fun List<AvklaringsbehovHendelse>.eldsteAvklaringsbehov(): AvklaringsbehovHendelse? {
-        return this.minByOrNull { it.opprettetTidspunkt() }
     }
 
     private fun AvklaringsbehovHendelse.sistEndretAv(status: AvklaringsbehovStatus = this.status) =
