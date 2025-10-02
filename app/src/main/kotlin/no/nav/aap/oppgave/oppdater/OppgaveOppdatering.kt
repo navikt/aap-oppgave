@@ -287,5 +287,6 @@ private fun List<no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO>.tilEndringe
             endretAv = it.endretAv,
             påVentTil = it.frist,
             påVentÅrsak = it.årsakTilSattPåVent?.name,
+            begrunnelse = it.begrunnelse
         )
     }
