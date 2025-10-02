@@ -1,10 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion = "3.3.0"
-val komponenterVersjon = "1.0.375"
+val komponenterVersjon = "1.0.378"
 val tilgangVersjon = "1.0.128"
 val behandlingsflytVersjon = "0.0.446"
 val postmottakVersjon = "0.0.121"
+val junitVersjon = "5.13.4"
 
 plugins {
     id("oppgave.conventions")
@@ -34,7 +35,7 @@ dependencies {
     implementation("no.nav.aap.kelvin:server:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor:$komponenterVersjon")
     implementation("no.nav.aap.kelvin:motor-api:$komponenterVersjon")
-    implementation("no.nav:ktor-openapi-generator:1.0.125")
+    implementation("no.nav:ktor-openapi-generator:1.0.128")
     implementation("no.nav.aap.tilgang:api-kontrakt:$tilgangVersjon")
     implementation("no.nav.aap.tilgang:plugin:$tilgangVersjon")
     implementation("no.nav.aap.behandlingsflyt:kontrakt:$behandlingsflytVersjon")
@@ -65,8 +66,8 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql:42.7.7")
 
     testImplementation("com.nimbusds:nimbus-jose-jwt:10.5")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.4")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.13.4")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersjon")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersjon")
     testImplementation("org.testcontainers:junit-jupiter:1.21.3")
     testImplementation("org.assertj:assertj-core:3.27.6")
     testImplementation("org.testcontainers:postgresql:1.21.3")
