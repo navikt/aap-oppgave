@@ -81,10 +81,8 @@ class OppdaterOppgaveService(
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
     ) {
-        // Om det er flere åpne avklaringsbehov (f.eks ved tilbakeføring fra beslutter, eller ved opprettelser av revurdering), velger vi det første avklaringsbehovet.
-        // Dette burde svare til det første steget i flyten.
-        // På sikt bør vi kanskje se på mer robuste løsninger, f.eks at behandlingsflyt velger ut hvilken avklaringsbehov
-        // som skal løses først, i stedet for alle.
+        // Om det er flere åpne avklaringsbehov (f.eks ved tilbakeføring fra beslutter, eller ved opprettelser av revurdering),
+        // velger vi det første åpne avklaringsbehovet.
         val åpentAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.firstOrNull { it.status in ÅPNE_STATUSER }
         val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter { it.status in AVSLUTTEDE_STATUSER }
 
