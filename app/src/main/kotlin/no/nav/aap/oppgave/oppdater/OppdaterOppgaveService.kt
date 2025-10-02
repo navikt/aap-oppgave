@@ -419,10 +419,6 @@ class OppdaterOppgaveService(
         return endringer.minByOrNull { it.tidsstempel }!!.tidsstempel
     }
 
-    private fun List<AvklaringsbehovHendelse>.eldsteAvklaringsbehov(): AvklaringsbehovHendelse? {
-        return this.minByOrNull { it.opprettetTidspunkt() }
-    }
-
     private fun AvklaringsbehovHendelse.sistEndretAv(status: AvklaringsbehovStatus = this.status) =
         sisteEndring(status).endretAv
 
