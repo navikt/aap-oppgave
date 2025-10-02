@@ -48,7 +48,7 @@ jobs:
               with:
                   java-version: 21
                   distribution: 'temurin'
-            - uses: gradle/actions/setup-gradle@v4
+            - uses: gradle/actions/setup-gradle@v5
             - uses: paulhatch/semantic-version@v5.4.0
               id: tag
               with:
