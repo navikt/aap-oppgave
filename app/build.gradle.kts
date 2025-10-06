@@ -5,7 +5,7 @@ val komponenterVersjon = "1.0.386"
 val tilgangVersjon = "1.0.131"
 val behandlingsflytVersjon = "0.0.446"
 val postmottakVersjon = "0.0.126"
-val junitVersjon = "5.13.4"
+val junitVersjon = "6.0.0"
 
 plugins {
     id("oppgave.conventions")
