@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit
 
 fun main() {
     val postgres = postgreSQLContainer()
-    val fakes = Fakes().also { it.beforeAll(null) }
+    val fakes = Fakes().also { it.setProperties() }
     embeddedServer(Netty, port = 8084) {
         val dbConfig = DbConfig(
             username = postgres.username,

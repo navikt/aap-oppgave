@@ -54,25 +54,26 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
     }
 
     override fun supportsParameter(
-        parameterContext: ParameterContext?,
-        extensionContext: ExtensionContext?
+        parameterContext: ParameterContext,
+        extensionContext: ExtensionContext
     ): Boolean {
         // FakesConfig
-        if (parameterContext?.parameter?.type == FakesConfig::class.java) {
-            return true
-        }
-        return false
+        return parameterContext.parameter.type == FakesConfig::class.java
     }
 
     override fun resolveParameter(
-        parameterContext: ParameterContext?,
-        extensionContext: ExtensionContext?
+        parameterContext: ParameterContext,
+        extensionContext: ExtensionContext
     ): Any {
         return fakesConfig
     }
 
-    override fun beforeAll(context: ExtensionContext?) {
+    override fun beforeAll(context: ExtensionContext) {
         Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
+        setProperties()
+    }
+
+    fun setProperties() {
         // Unleash
         UnleashServiceProvider.setUnleashService(
             UnleashService(FakeUnleash().apply {
