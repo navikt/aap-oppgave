@@ -19,7 +19,7 @@ class TildelOppgaveService(
 
     fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>): List<AnsattFraSøk> {
         val oppgaverTilTildeling = oppgaver.map { oppgave -> oppgaveRepository.hentOppgave(oppgave) }
-        val linjer = oppgaverTilTildeling.map { utledLinjeForOppgave(it) }.distinct()
+        val linjer = oppgaverTilTildeling.flatMap { utledLinjeForOppgave(it) }.distinct()
 
         log.info("Søker på saksbehandlere i linje $linjer for å tildele oppgaver med id: ${oppgaver.joinToString(", ")}")
         val alleSaksbehandlere = ansattInfoKlient.søkEtterSaksbehandler(søketekst).filter { it.navident != null }
@@ -30,16 +30,16 @@ class TildelOppgaveService(
 
     private fun utledLinjeForOppgave(
         oppgave: OppgaveDto
-    ): OrgEnhetsType {
+    ): List<OrgEnhetsType> {
         val avklaringsbehovKode = AvklaringsbehovKode(oppgave.avklaringsbehovKode)
         return if (avklaringsbehovKode in
             AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
             + AVKLARINGSBEHOV_FOR_BESLUTTER
             + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
         ) {
-            OrgEnhetsType.NAV_ARBEID_OG_YTELSER
+            listOf(OrgEnhetsType.NAV_ARBEID_OG_YTELSER)
         } else {
-            OrgEnhetsType.NAV_KONTOR
+            listOf(OrgEnhetsType.NAV_KONTOR, OrgEnhetsType.ARBEIDSLIVSSENTER)
         }
     }
 }
