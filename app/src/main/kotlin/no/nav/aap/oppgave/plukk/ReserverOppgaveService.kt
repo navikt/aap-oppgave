@@ -83,7 +83,7 @@ class ReserverOppgaveService(
             sendOppgaveStatusOppdatering(OppgaveId(it.id!!, it.versjon), HendelseType.RESERVERT, flytJobbRepository)
             c++
         }
-        log.info("Tildelte $c oppgaver til $tildelTilIdent.")
+        log.info("Tildelte $c oppgaver til $tildelTilIdent. Saksnumre: ${oppgaverSomSkalReserveres.joinToString(", ") { it.saksnummer.toString() }}")
         return oppgaverSomSkalReserveres.mapNotNull { it.id }
     }
 
