@@ -35,6 +35,10 @@ data class TilknytningOgSkjerming(
     val erNavAnsatt: Boolean
 )
 
+enum class FylkeskontorSomSkalBehandleKlager(val enhetsnummer: String) {
+    NAV_VEST_VIKEN("0600")
+}
+
 interface IEnhetService {
     fun hentEnheter(currentToken: String, ident: String): List<String>
     fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null): EnhetForOppgave
@@ -69,15 +73,33 @@ class EnhetService(
             + AVKLARINGSBEHOV_FOR_BESLUTTER
             + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
         ) {
-            requireNotNull(ident) { "fødselsnummer trenges for utlede enhet for ikke-kvalitetssikringsoppgaver" }
+            requireNotNull(ident) { "Kan ikke utlede oppgavens enhet uten ident. Saksnummer $saksnummer" }
             finnNayEnhet(ident, relevanteIdenter)
         } else {
-            if (avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) {
-                finnFylkesEnhet(ident, relevanteIdenter, saksnummer)
-            } else {
-                finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
+            when (avklaringsbehovKode.kode) {
+                Definisjon.KVALITETSSIKRING.kode.name -> {
+                    finnFylkesEnhet(ident, relevanteIdenter, saksnummer)
+                }
+                Definisjon.VURDER_KLAGE_KONTOR.kode.name if unleashService.isEnabled(
+                    FeatureToggles.NyRutingAvKlageoppgaver
+                ) -> {
+                    finnEnhetForKlageoppgave(ident, relevanteIdenter, saksnummer)
+                }
+                else -> {
+                    finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
+                }
             }
         }
+    }
+
+    private fun finnEnhetForKlageoppgave(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
+        // Ruter klageoppgave til fylkeskontor for de fylkene som har bedt om det
+        val fylkesenhetForOppgave = finnFylkesEnhet(ident, relevanteIdenter, saksnummer)
+        val gjeldendeFylkesenhet = fylkesenhetForOppgave.oppfølgingsenhet ?: fylkesenhetForOppgave.enhet
+        if (gjeldendeFylkesenhet in FylkeskontorSomSkalBehandleKlager.entries.map { it.enhetsnummer }) {
+            return fylkesenhetForOppgave
+        }
+        return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
     }
 
     override fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean {
