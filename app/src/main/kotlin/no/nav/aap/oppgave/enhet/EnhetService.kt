@@ -97,6 +97,7 @@ class EnhetService(
         val fylkesenhetForOppgave = finnFylkesEnhet(ident, relevanteIdenter, saksnummer)
         val gjeldendeFylkesenhet = fylkesenhetForOppgave.oppfølgingsenhet ?: fylkesenhetForOppgave.enhet
         if (gjeldendeFylkesenhet in FylkeskontorSomSkalBehandleKlager.entries.map { it.enhetsnummer }) {
+            log.info("Ruter klageoppgave til fylkesenhet. Saksnummer: $saksnummer")
             return fylkesenhetForOppgave
         }
         return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
