@@ -29,6 +29,7 @@ import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.klienter.msgraph.Group
+import no.nav.aap.oppgave.klienter.msgraph.GroupMembers
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
@@ -935,7 +936,11 @@ class OppdaterOppgaveServiceTest {
         }
 
         override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
-            TODO("Not yet implemented")
+            return MemberOf()
+        }
+
+        override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers {
+            return GroupMembers()
         }
     }
 
