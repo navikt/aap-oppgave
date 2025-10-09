@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.klienter.oppfolging
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -9,20 +10,21 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
-
-private data class PersonIdent(val value: String)
+import java.time.Duration
 
 private data class HentVeilederSykefravarsoppfolgingResponse(
-    val personident: PersonIdent,
     val tildeltVeilederident: String?,
-    val tildeltEnhet: String?,
 )
 
 interface ISykefravarsoppfolgingKlient {
     fun hentVeileder(personIdent: String): String?
 }
 
-class SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
+object SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
+    private val cache = Caffeine.newBuilder()
+        .maximumSize(1000)
+        .expireAfterWrite(Duration.ofMinutes(15))
+        .build<String, HentVeilederSykefravarsoppfolgingResponse>()
 
     private val url = URI.create(requiredConfigForKey("integrasjon.syfo.url"))
 
@@ -41,6 +43,9 @@ class SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
      * Per 28-05-25
      */
     override fun hentVeileder(personIdent: String): String? {
+        val cachetRespons = cache.getIfPresent(personIdent)
+        if (cachetRespons != null) return cachetRespons.tildeltVeilederident?.takeUnless(String::isBlank)
+
         val hentVeilederUrl = url.resolve("/api/v1/system/persontildeling/personer/single")
         val request = GetRequest(
             additionalHeaders = listOf(
@@ -50,6 +55,7 @@ class SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
         )
         val resp = client.get<HentVeilederSykefravarsoppfolgingResponse?>(hentVeilederUrl, request)
 
+        cache.put(personIdent, resp ?: HentVeilederSykefravarsoppfolgingResponse(null))
         return resp?.tildeltVeilederident
     }
 
