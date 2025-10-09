@@ -65,6 +65,7 @@ class MsGraphClient(
         val groupId = hentGruppeIdGittNavn(gruppeNavn)
 
         // TODO: paginering når det er mer enn 500 saksbehandlere på enhet
+        log.info("Henter gruppemedlemmer for gruppenavn $gruppeNavn")
         val url = baseUrl.resolve("groups/${groupId}/members?\$top=500&\$select=onPremisesSamAccountName")
         val respons = httpClientM2m.get<GroupMembers>(
             url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
