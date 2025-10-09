@@ -405,6 +405,30 @@ class EnhetServiceTest {
         assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
     }
 
+    @Test
+    fun `Behandling av klage på lokalkontor skal rutes til enten fylkeskontor eller lokalkontor`() {
+        val norgKlientVestViken = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0600"))
+
+        val serviceVestViken = EnhetService(graphClient, pdlKlient, nomKlient, norgKlientVestViken, VeilarbarenaKlientMock(), unleashService = UnleashService(FakeUnleash().apply {
+            enableAll()
+        }))
+
+        val enhetForKlageOppgave = serviceVestViken.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.VURDER_KLAGE_KONTOR.kode.name), "any", emptyList(), "1234567")
+        assertThat(enhetForKlageOppgave.enhet).isEqualTo("0600")
+
+        val enhetForVanligOppgave = serviceVestViken.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SYKDOM.kode.name), "any", emptyList(), "1234567")
+        assertThat(enhetForVanligOppgave.enhet).isEqualTo("0403")
+
+        // Når oppgaven ikke skal til fylkeskontor
+        val norgKlientInnlandet = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
+        val serviceInnlandet = EnhetService(graphClient, pdlKlient, nomKlient, norgKlientInnlandet, VeilarbarenaKlientMock(), unleashService = UnleashService(FakeUnleash().apply {
+            enableAll()
+        }))
+
+        val enhetForKlageOppgaveInnlandet = serviceInnlandet.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.VURDER_KLAGE_KONTOR.kode.name), "any", emptyList(), "1234567")
+        assertThat(enhetForKlageOppgaveInnlandet.enhet).isEqualTo("0403")
+    }
+
     companion object {
         val graphClient = object : IMsGraphClient {
             override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
