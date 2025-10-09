@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.logstashLogbackEncoder)
 
     implementation(libs.hikariCp)
+    implementation(libs.caffeine)
     implementation(libs.flywayDatabasePostgresql)
     implementation(libs.unleashClientJava)
     runtimeOnly(libs.postgresql)
