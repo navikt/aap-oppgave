@@ -9,8 +9,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.komponenter.miljo.Miljø
+import org.slf4j.LoggerFactory
 import java.net.URI
 import java.util.*
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.tokenx.OnBehalfOfTokenProvider as TexasOnBehalfOfTokenProvider
@@ -18,6 +20,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.tokenx.OnBehal
 interface IMsGraphClient {
     fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf
     fun hentFortroligAdresseGruppe(currentToken: String): MemberOf
+    fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers
 }
 
 class MsGraphClient(
@@ -36,6 +39,14 @@ class MsGraphClient(
         prometheus = prometheus,
     )
 
+    private val httpClientM2m = RestClient.withDefaultResponseHandler(
+        config = clientConfig,
+        tokenProvider = ClientCredentialsTokenProvider,
+        prometheus = prometheus,
+    )
+
+    private val log = LoggerFactory.getLogger(MsGraphClient::class.java)
+
     override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
         val url =
             baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)}")
@@ -47,6 +58,30 @@ class MsGraphClient(
             )
         ) ?: MemberOf()
         return respons
+    }
+
+    // TODO oppgave må ha tilgang til å lese GroupMembers i dev og prod
+    override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers {
+        val gruppeNavn = ENHET_GROUP_PREFIX + enhetsnummer
+        val groupId = hentGruppeIdGittNavn(gruppeNavn)
+
+        // onPremisesSamAccountName = NavIdent
+        val url = baseUrl.resolve("groups/${groupId}/members?\$select=onPremisesSamAccountName")
+        val respons = httpClientM2m.get<GroupMembers>(
+            url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
+        ) ?: GroupMembers()
+        if (respons.members.isEmpty()) {
+            log.warn("MsGraph fant ingen medlemmer i gruppe $gruppeNavn")
+        }
+        return respons
+    }
+
+    private fun hentGruppeIdGittNavn(gruppeNavn: String): UUID {
+        val url = baseUrl.resolve("groups?\$filter=${equalsFilter(displayName = gruppeNavn)}&\$select=id,displayName")
+        val respons = httpClientM2m.get<MemberOf>(
+            url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
+        )
+        return requireNotNull(respons?.groups?.first()?.id) { "Kunne ikke hente gruppe-ID fra msGraph gitt gruppenavn $gruppeNavn"}
     }
 
     override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
@@ -66,6 +101,10 @@ class MsGraphClient(
         return "startswith(displayName,\'$prefix\')"
     }
 
+    private fun equalsFilter(displayName: String): String {
+        return "displayName%20eq%20\'$displayName\'"
+    }
+
     companion object {
         const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
         const val FORTROLIG_ADRESSE_GROUP = "0000-GA-Fortrolig_Adresse"
@@ -82,5 +121,15 @@ data class Group(
     val id: UUID,
     @param:JsonProperty("mailNickname")
     val name: String
+)
+
+data class User(
+    @param:JsonProperty("onPremisesSamAccountName")
+    val navIdent: String,
+)
+
+data class GroupMembers(
+    @param:JsonProperty("value")
+    val members: List<User> = emptyList()
 )
 
