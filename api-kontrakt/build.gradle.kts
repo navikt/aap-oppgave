@@ -9,11 +9,9 @@ group = "no.nav.aap.oppgave"
 apply(plugin = "maven-publish")
 apply(plugin = "java-library")
 
-val jacksonVersion = "2.20.0"
-
 dependencies {
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
-    api("no.nav:ktor-openapi-generator:1.0.128")
+    implementation(libs.jacksonDatatypeJsr310)
+    api(libs.ktorOpenapiGenerator)
 }
 
 java {
