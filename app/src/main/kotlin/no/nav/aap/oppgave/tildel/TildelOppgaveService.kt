@@ -45,6 +45,7 @@ class TildelOppgaveService(
         val overlapp = saksbehandlere.filter { saksbehandler -> saksbehandler.navident in relevantGruppeMedlemmer.map { it.navIdent }}
 
         return overlapp.ifEmpty {
+            log.warn("Fant ingen saksbehandlere med enhetstilgang gitt søketeksten. Enhet: $enheter")
             saksbehandlere
         }
     }
