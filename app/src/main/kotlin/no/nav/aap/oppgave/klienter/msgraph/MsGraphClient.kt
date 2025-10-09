@@ -76,7 +76,7 @@ class MsGraphClient(
     }
 
     private fun hentGruppeIdGittNavn(gruppeNavn: String): UUID {
-        val url = baseUrl.resolve("groups?\$filter=${equalsFilter(displayName = gruppeNavn)}&\$select=id,displayName")
+        val url = baseUrl.resolve("groups?\$filter=${equalsFilter(displayName = gruppeNavn)}&\$select=id,mailNickname")
         val respons = httpClientM2m.get<MemberOf>(
             url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
         )
