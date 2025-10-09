@@ -60,13 +60,12 @@ class MsGraphClient(
         return respons
     }
 
-    // TODO oppgave må ha tilgang til å lese GroupMembers i dev og prod
     override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers {
         val gruppeNavn = ENHET_GROUP_PREFIX + enhetsnummer
         val groupId = hentGruppeIdGittNavn(gruppeNavn)
 
-        // onPremisesSamAccountName = NavIdent
-        val url = baseUrl.resolve("groups/${groupId}/members?\$select=onPremisesSamAccountName")
+        // TODO: paginering når det er mer enn 500 saksbehandlere på enhet
+        val url = baseUrl.resolve("groups/${groupId}/members?\$top=500&\$select=onPremisesSamAccountName")
         val respons = httpClientM2m.get<GroupMembers>(
             url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
         ) ?: GroupMembers()
