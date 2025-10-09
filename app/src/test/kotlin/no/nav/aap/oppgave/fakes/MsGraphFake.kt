@@ -21,6 +21,15 @@ fun Application.msGraphFake() {
         get("/me/memberOf") {
             call.respondText(responsFraMsGraph())
         }
+
+        get("/groups/{groupId}/members") {
+            call.respondText(responsFraMsGraphGroupMembers())
+        }
+
+        get("/groups") {
+            call.respondText(responsFraMsGraphGroupSearch())
+        }
+
     }
 
 }
@@ -37,4 +46,33 @@ private fun responsFraMsGraph(): String {
                 ]
             }
     """.trimIndent()
+}
+
+private fun responsFraMsGraphGroupMembers(): String {
+    // returnerer en veileder og en saksbehandler
+    return """
+        { 
+                "value": [
+                    {
+                        "onPremisesSamAccountName": "Test123"
+                    },
+                    {
+                        "onPremisesSamAccountName": "Tests123"
+                    }
+                ]
+            }
+    """.trimIndent()
+}
+
+private fun responsFraMsGraphGroupSearch(): String {
+    return """
+        { 
+                "value": [
+                    {
+                        "id": "00000000-0000-4000-8000-000000000001",
+                        "mailNickname": "0000-GA-ENHET_superNav!"
+                    }
+                ]
+            }
+    """
 }

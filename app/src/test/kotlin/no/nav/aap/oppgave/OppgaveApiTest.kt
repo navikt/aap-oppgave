@@ -554,10 +554,10 @@ class OppgaveApiTest {
 
         val oppgave = hentOppgave(referanse1)
 
-        // Søk på å tildele en 11-5-oppgave skal bare returnere veiledere
+        // Søk på å tildele en 11-5-oppgave skal bare returnere veiledere med tilgang til enheten
         val lokalSaksbehandlere = søkEtterSaksbehandlere("any", listOf(oppgave?.id!!))?.saksbehandlere
-        assertThat(lokalSaksbehandlere).hasSize(2)
-        assertThat(lokalSaksbehandlere?.mapNotNull { it.navn }?.all { it.contains("Kontorsen") }).isTrue()
+        assertThat(lokalSaksbehandlere).hasSize(1)
+        assertThat(lokalSaksbehandlere?.first()?.navIdent).isEqualTo("Tests123")
 
         // Ny NAY-oppgave
         val saksnummer2 = "1234"
@@ -580,14 +580,14 @@ class OppgaveApiTest {
 
         val oppgave2 = hentOppgave(referanse2)
 
-        // Søk på å tildele en 11-19-oppgave skal bare returnere NAY-saksbehandlere
+        // Søk på å tildele en 11-19-oppgave skal bare returnere den NAY-saksbehandleren med enhetstilgang
         val naySaksbehandlere = søkEtterSaksbehandlere("any", listOf(oppgave2?.id!!))?.saksbehandlere
-        assertThat(naySaksbehandlere).hasSize(2)
-        assertThat(naySaksbehandlere?.mapNotNull { it.navn }?.all { it.contains("Naysen") }).isTrue()
+        assertThat(naySaksbehandlere).hasSize(1)
+        assertThat(naySaksbehandlere?.first()?.navIdent).isEqualTo("Test123")
 
-        // Søk på å tildele både en NAY-oppgave og en kontor-oppgave skal vise alle veiledere
+        // Søk på å tildele både en NAY-oppgave og en kontor-oppgave skal returnere kun saksbehandlere som har tilgang til en av dem
         val alleSaksbehandlere = søkEtterSaksbehandlere("tekst", listOf(oppgave.id!!, oppgave2.id!!))?.saksbehandlere
-        assertThat(alleSaksbehandlere).hasSize(4)
+        assertThat(alleSaksbehandlere).hasSize(2)
     }
 
     @Test

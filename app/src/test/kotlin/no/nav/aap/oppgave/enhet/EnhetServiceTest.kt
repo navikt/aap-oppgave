@@ -5,6 +5,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
 import no.nav.aap.oppgave.klienter.msgraph.Group
+import no.nav.aap.oppgave.klienter.msgraph.GroupMembers
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingKlient
@@ -441,6 +442,10 @@ class EnhetServiceTest {
 
             override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
                 return MemberOf()
+            }
+
+            override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers {
+                return GroupMembers()
             }
         }
 
