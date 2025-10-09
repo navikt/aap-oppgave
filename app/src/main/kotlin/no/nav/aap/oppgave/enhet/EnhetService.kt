@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.enhet
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
@@ -23,6 +24,7 @@ import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.postmottak.kontrakt.enhet.GodkjentEnhet
 import org.slf4j.LoggerFactory
+import java.time.Duration
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -62,9 +64,10 @@ class EnhetService(
     private val log = LoggerFactory.getLogger(EnhetService::class.java)
 
     override fun hentEnheter(currentToken: String, ident: String): List<String> {
-        return msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
-            .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
-
+        return enheterCache.getIfPresent(ident)
+            ?: msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
+                .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
+                .also { enheterCache.put(ident, it) }
     }
 
     override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
@@ -289,8 +292,13 @@ class EnhetService(
     }
 
     companion object {
-        const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
-        const val FORTROLIG_ADRESSE_GROUP = "0000-GA-Fortrolig_Adresse"
+        private const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
+        private const val FORTROLIG_ADRESSE_GROUP = "0000-GA-Fortrolig_Adresse"
+
+        private val enheterCache = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofHours(1))
+            .maximumSize(1000)
+            .build<String, List<String>>()
     }
 
 }
