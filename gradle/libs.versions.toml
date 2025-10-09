@@ -1,0 +1,58 @@
+[versions]
+ktor = "3.3.0"
+jackson = "2.20.0"
+komponenter = "1.0.387"
+tilgang = "1.0.133"
+behandlingsflytVersjon = "0.0.459"
+postmottakVersjon = "0.0.126"
+junit = "6.0.0"
+testcontainers = "1.21.3"
+
+[libraries]
+jacksonDatabind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jacksonDatatypeJsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+ktorOpenapiGenerator = { module = "no.nav:ktor-openapi-generator", version = "1.0.128" }
+
+ktorServerAuth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktorServerAuthJwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+ktorClientCio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktorClientContentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktorServerCallLogging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktorServerCallId = { module = "io.ktor:ktor-server-call-id", version.ref = "ktor" }
+ktorServerContentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktorServerMetricsMicrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
+ktorServerNetty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktorServerCors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+ktorServerStatusPages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktorSerializationJackson = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
+
+json = { module = "no.nav.aap.kelvin:json", version.ref = "komponenter" }
+dbconnect = { module = "no.nav.aap.kelvin:dbconnect", version.ref = "komponenter" }
+dbmigrering = { module = "no.nav.aap.kelvin:dbmigrering", version.ref = "komponenter" }
+httpklient = { module = "no.nav.aap.kelvin:httpklient", version.ref = "komponenter" }
+infrastructure = { module = "no.nav.aap.kelvin:infrastructure", version.ref = "komponenter" }
+server = { module = "no.nav.aap.kelvin:server", version.ref = "komponenter" }
+motor = { module = "no.nav.aap.kelvin:motor", version.ref = "komponenter" }
+motorApi = { module = "no.nav.aap.kelvin:motor-api", version.ref = "komponenter" }
+dbtest = { module = "no.nav.aap.kelvin:dbtest", version.ref = "komponenter" }
+
+behandlingsflytKontrakt = { module = "no.nav.aap.behandlingsflyt:kontrakt", version.ref = "behandlingsflytVersjon" }
+postmottakKontrakt = { module = "no.nav.aap.postmottak:kontrakt", version.ref = "postmottakVersjon" }
+tilgangKontrakt = { module = "no.nav.aap.tilgang:api-kontrakt", version.ref = "tilgang" }
+tilgangPlugin = { module = "no.nav.aap.tilgang:plugin", version.ref = "tilgang" }
+
+commonsCompress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
+micrometerRegistryPrometheus = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.15.4" }
+logbackClassic = { module = "ch.qos.logback:logback-classic", version = "1.5.19" }
+logstashLogbackEncoder = { module = "net.logstash.logback:logstash-logback-encoder", version = "8.1" }
+hikariCp = { module = "com.zaxxer:HikariCP", version = "7.0.2" }
+flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "11.13.2" }
+unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "11.1.0" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
+nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.5" }
+
+junitJupiterApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junitJupiterEngine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+assertjCore = { module = "org.assertj:assertj-core", version = "3.27.6" }
+testcontainersJunitJupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainersPostgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
