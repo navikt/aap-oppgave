@@ -17,7 +17,7 @@ private data class HentVeilederRequest(
 )
 
 private data class HentVeilederResponse(
-    val veilederIdent: String
+    val veilederIdent: String?
 )
 
 interface IVeilarbarboppfolgingKlient {
@@ -27,7 +27,7 @@ interface IVeilarbarboppfolgingKlient {
 object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
     private val cache = Caffeine.newBuilder()
         .maximumSize(1000)
-        .expireAfterWrite(Duration.ofMinutes(15))
+        .expireAfterWrite(Duration.ofHours(4))
         .build<String, HentVeilederResponse>()
 
     private val url = URI.create(requiredConfigForKey("integrasjon.veilarboppfolging.url"))
@@ -48,7 +48,7 @@ object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
      */
     override fun hentVeileder(personIdent: String): String? {
         val cachetRespons = cache.getIfPresent(personIdent)
-        if (cachetRespons != null) return cachetRespons.veilederIdent.takeUnless(String::isBlank)
+        if (cachetRespons != null) return cachetRespons.veilederIdent
 
         val hentVeilederUrl = url.resolve("/veilarboppfolging/api/v3/hent-veileder")
         val request = PostRequest(
@@ -59,8 +59,8 @@ object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
         )
         val resp = client.post<HentVeilederRequest, HentVeilederResponse?>(hentVeilederUrl, request)
 
-        cache.put(personIdent, resp ?: HentVeilederResponse(""))
-        return resp?.veilederIdent
+        cache.put(personIdent, resp ?: HentVeilederResponse(null))
+        return resp?.veilederIdent?.takeUnless(String::isBlank)
     }
 
 }

@@ -23,7 +23,7 @@ interface ISykefravarsoppfolgingKlient {
 object SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
     private val cache = Caffeine.newBuilder()
         .maximumSize(1000)
-        .expireAfterWrite(Duration.ofMinutes(15))
+        .expireAfterWrite(Duration.ofHours(4))
         .build<String, HentVeilederSykefravarsoppfolgingResponse>()
 
     private val url = URI.create(requiredConfigForKey("integrasjon.syfo.url"))
@@ -44,7 +44,7 @@ object SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
      */
     override fun hentVeileder(personIdent: String): String? {
         val cachetRespons = cache.getIfPresent(personIdent)
-        if (cachetRespons != null) return cachetRespons.tildeltVeilederident?.takeUnless(String::isBlank)
+        if (cachetRespons != null) return cachetRespons.tildeltVeilederident
 
         val hentVeilederUrl = url.resolve("/api/v1/system/persontildeling/personer/single")
         val request = GetRequest(
@@ -56,7 +56,7 @@ object SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
         val resp = client.get<HentVeilederSykefravarsoppfolgingResponse?>(hentVeilederUrl, request)
 
         cache.put(personIdent, resp ?: HentVeilederSykefravarsoppfolgingResponse(null))
-        return resp?.tildeltVeilederident
+        return resp?.tildeltVeilederident?.takeUnless(String::isBlank)
     }
 
 }
