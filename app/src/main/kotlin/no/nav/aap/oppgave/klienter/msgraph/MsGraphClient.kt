@@ -65,12 +65,15 @@ class MsGraphClient(
         val groupId = hentGruppeIdGittNavn(gruppeNavn)
 
         // TODO: paginering når det er mer enn 500 saksbehandlere på enhet
-        val url = baseUrl.resolve("groups/${groupId}/members?\$top=500&\$select=onPremisesSamAccountName")
+        log.info("Henter gruppemedlemmer for gruppenavn $gruppeNavn")
+        val url = baseUrl.resolve("groups/${groupId}/members?\$top=500&\$select=onPremisesSamAccountName,givenName,surname")
         val respons = httpClientM2m.get<GroupMembers>(
             url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
         ) ?: GroupMembers()
         if (respons.members.isEmpty()) {
             log.warn("MsGraph fant ingen medlemmer i gruppe $gruppeNavn")
+        } else if (respons.members.size == 500) {
+            log.warn("Hentet 500 medlemmer i gruppe $gruppeNavn.")
         }
         return respons
     }
@@ -125,6 +128,10 @@ data class Group(
 data class User(
     @param:JsonProperty("onPremisesSamAccountName")
     val navIdent: String,
+    @param:JsonProperty("givenName")
+    val fornavn: String,
+    @param:JsonProperty("surname")
+    val etternavn: String,
 )
 
 data class GroupMembers(
