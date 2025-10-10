@@ -51,8 +51,8 @@ private const val KELVIN = "Kelvin"
 class OppdaterOppgaveService(
     msGraphClient: IMsGraphClient,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
-    private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingKlient = VeilarbarboppfolgingKlient(),
-    private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient = SykefravarsoppfolgingKlient(),
+    private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingKlient = VeilarbarboppfolgingKlient,
+    private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient = SykefravarsoppfolgingKlient,
     private val enhetService: IEnhetService = EnhetService(msGraphClient),
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
@@ -411,10 +411,6 @@ class OppdaterOppgaveService(
                 e
             )
         }
-    }
-
-    private fun AvklaringsbehovHendelse.opprettetTidspunkt(): LocalDateTime {
-        return endringer.minByOrNull { it.tidsstempel }!!.tidsstempel
     }
 
     private fun AvklaringsbehovHendelse.sistEndretAv(status: AvklaringsbehovStatus = this.status) =
