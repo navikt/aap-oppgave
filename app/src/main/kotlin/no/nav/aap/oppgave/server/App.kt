@@ -90,7 +90,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
     val iMsGraphClient = MsGraphClient(prometheus)
 
-    val motor = motor(dataSource, prometheus)
+    motor(dataSource, prometheus)
 
     routing {
         authenticate(AZURE) {

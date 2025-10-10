@@ -42,7 +42,7 @@ fun Application.nomAnsattInfoFake() {
     }
 
     routing {
-        post() {
+        post {
             val body = call.receive<String>()
             if (body.contains("orgTilknytning")) {
                 val data = AnsattSøkData(

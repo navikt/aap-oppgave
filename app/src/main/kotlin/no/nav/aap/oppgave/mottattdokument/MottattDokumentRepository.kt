@@ -2,11 +2,7 @@ package no.nav.aap.oppgave.mottattdokument
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
-import no.nav.aap.oppgave.OppgaveRepository
-import org.slf4j.LoggerFactory
 import java.util.*
-
-private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
 class MottattDokumentRepository(private val connection: DBConnection) {
 

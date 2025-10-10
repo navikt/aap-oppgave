@@ -1582,16 +1582,6 @@ class OppgaveApiTest {
 
 }
 
-fun Application.module(fakes: Fakes) {
-    // Setter opp virtuell sandkasse lokalt
-    monitor.subscribe(ApplicationStopped) { application ->
-        application.environment.log.info("Server har stoppet")
-        fakes.close()
-        // Release resources and unsubscribe from events
-        application.monitor.unsubscribe(ApplicationStopped) {}
-    }
-}
-
 fun getOboToken(roller: List<String> = emptyList()): OidcToken {
     return OidcToken(AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(false, roller))
 }

@@ -264,7 +264,7 @@ class FilterRepository(private val connection: DBConnection) {
                 }
             }
             setRowMapper { row ->
-                Pair<Long, String>(row.getLong("FILTER_ID"), row.getString("AVKLARINGSBEHOVTYPE"))
+                Pair(row.getLong("FILTER_ID"), row.getString("AVKLARINGSBEHOVTYPE"))
             }
         }
 

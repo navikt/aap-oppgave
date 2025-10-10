@@ -14,7 +14,7 @@ class MottattDokumentService(
     val oppgaveRepository: OppgaveRepository,
 ) {
     fun registrerDokumenterLest(behandlingRef: UUID, ident: String) {
-        log.info("Registrerer dokumenter for ${behandlingRef} som lest")
+        log.info("Registrerer dokumenter for $behandlingRef som lest")
         val ulesteDokumenter = mottattDokumentRepository.hentUlesteDokumenter(behandlingRef)
 
         if (ulesteDokumenter.isEmpty()) {

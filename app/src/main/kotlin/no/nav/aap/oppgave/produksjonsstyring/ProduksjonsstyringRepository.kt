@@ -27,7 +27,7 @@ class ProduksjonsstyringRepository(private val connection: DBConnection) {
                 AVKLARINGSBEHOV_TYPE
         """.trimIndent()
 
-        val antallList =  connection.queryList<AvklaringbehovOgAntall>(sql) {
+        val antallList =  connection.queryList(sql) {
             setParams {
                 if (behandlingstype != null) {
                     setString(1, behandlingstype.name)

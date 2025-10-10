@@ -41,6 +41,4 @@ data class OppgaveTilStatistikkDto(
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
     val versjon: Long = 0
-) {
-    companion object {}
-}
+)

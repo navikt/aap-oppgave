@@ -25,7 +25,7 @@ class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository) :
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,
-                    oppgaveTilStatistikkDto = OppgaveTilStatistikkDto.fraOppgaveDto(oppgaveDto)
+                    oppgaveTilStatistikkDto = fraOppgaveDto(oppgaveDto)
                 )
             )
         }
@@ -50,7 +50,7 @@ class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository) :
     }
 }
 
-fun OppgaveTilStatistikkDto.Companion.fraOppgaveDto(oppgaveDto: OppgaveDto): OppgaveTilStatistikkDto {
+private fun fraOppgaveDto(oppgaveDto: OppgaveDto): OppgaveTilStatistikkDto {
     return OppgaveTilStatistikkDto(
         id = oppgaveDto.id,
         personIdent = oppgaveDto.personIdent,
