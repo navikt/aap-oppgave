@@ -28,12 +28,10 @@ class TildelOppgaveService(
 
         val enheter = oppgaverTilTildeling.map { it.enhetForKø() }
 
-
         log.info("Søker på saksbehandlere i linje $linjer for å tildele oppgaver med id: ${oppgaver.joinToString(", ")}")
         val alleSaksbehandlere = ansattInfoKlient.søkEtterSaksbehandler(søketekst).filter { it.navident != null }
         val saksbehandlereFraNom = alleSaksbehandlere.filter { saksbehandler -> saksbehandler.orgTilknytning?.mapNotNull { it.orgEnhet?.orgEnhetsType }?.any {it in linjer} == true }
-        val saksbehandlereMedTilgang = hentSaksbehandlereMedEnhetstilgang(enheter).filter { it.navn?.contains(søketekst.trim(), ignoreCase = true)
-            ?: false }
+        val saksbehandlereMedTilgang = hentSaksbehandlereMedEnhetstilgang(enheter).filtrerSøkPåNavn(søketekst)
 
         return if (unleashService.isEnabled(FeatureToggles.HentSaksbehandlereForEnhet)) {
                 saksbehandlereMedTilgang
@@ -54,6 +52,14 @@ class TildelOppgaveService(
             navn = it.fornavn + " " + it.etternavn,
             navIdent = it.navIdent,
         ) }
+    }
+
+    private fun List<SaksbehandlerDto>.filtrerSøkPåNavn(søketekst: String): List<SaksbehandlerDto> {
+        return this.filter { saksbehandler ->
+            saksbehandler.navn?.split(" ")?.any {
+                it.startsWith(søketekst, ignoreCase = true)
+            } == true
+        }
     }
 
     private fun utledLinjeForOppgave(
