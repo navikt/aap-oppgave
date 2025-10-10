@@ -13,7 +13,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import no.nav.aap.oppgave.server.ErrorRespons
-import no.nav.aap.tilgang.groupsClaim
 import no.nav.aap.tilgang.rolesClaim
 
 fun Application.azureFake() {

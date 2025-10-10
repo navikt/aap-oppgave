@@ -147,7 +147,7 @@ class EnhetService(
 
     private fun getOverordnetEnhet(enhetsnummer: String): String {
         val enheter = norgKlient.hentOverordnetFylkesenheter(enhetsnummer)
-        val enheterMedSammeFørste2Siffer = enheter.filter { it.substring(0, 2) == enhetsnummer.substring(0, 2) }
+        val enheterMedSammeFørste2Siffer = enheter.filter { it.take(2) == enhetsnummer.take(2) }
 
         if (enheterMedSammeFørste2Siffer.isNotEmpty()) {
             return enheterMedSammeFørste2Siffer.first()

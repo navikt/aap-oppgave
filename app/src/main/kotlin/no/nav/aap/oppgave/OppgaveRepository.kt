@@ -697,7 +697,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 STATUS != 'AVSLUTTET'
         """.trimIndent()
 
-        val oppgaver = connection.queryList<OppgaveId>(oppgaverForReferanseQuery) {
+        val oppgaver = connection.queryList(oppgaverForReferanseQuery) {
             setParams {
                 var index = 1
                 if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)

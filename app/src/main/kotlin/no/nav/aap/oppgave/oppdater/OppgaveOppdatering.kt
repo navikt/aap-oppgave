@@ -217,7 +217,7 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
 }
 
 private fun DokumentflytStoppetHendelse.utledVenteinformasjonFraPostmottak(): VenteInformasjon? {
-    val åpentVentebehov = this.avklaringsbehov.filter { it ->
+    val åpentVentebehov = this.avklaringsbehov.filter {
         it.avklaringsbehovDefinisjon.erVentebehov() && it.status.tilAvklaringsbehovStatus().erÅpent()
     }
 
