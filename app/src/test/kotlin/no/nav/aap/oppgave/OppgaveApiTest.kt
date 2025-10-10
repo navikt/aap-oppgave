@@ -533,7 +533,7 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun `Kan søke etter saksbehandlere i NOM`() {
+    fun `Kan søke etter saksbehandlere fra MsGraph`() {
         val saksnummer1 = "4567"
         val referanse1 = UUID.randomUUID()
 
@@ -555,9 +555,9 @@ class OppgaveApiTest {
         val oppgave = hentOppgave(referanse1)
 
         // Søk på å tildele en 11-5-oppgave skal bare returnere veiledere med tilgang til enheten
-        val lokalSaksbehandlere = søkEtterSaksbehandlere("any", listOf(oppgave?.id!!))?.saksbehandlere
+        val lokalSaksbehandlere = søkEtterSaksbehandlere("Kontorsen", listOf(oppgave?.id!!))?.saksbehandlere
         assertThat(lokalSaksbehandlere).hasSize(1)
-        assertThat(lokalSaksbehandlere?.first()?.navIdent).isEqualTo("Tests123")
+        assertThat(lokalSaksbehandlere?.first()?.navIdent).isEqualTo("KontorVeileder123")
 
         // Ny NAY-oppgave
         val saksnummer2 = "1234"
@@ -581,13 +581,17 @@ class OppgaveApiTest {
         val oppgave2 = hentOppgave(referanse2)
 
         // Søk på å tildele en 11-19-oppgave skal bare returnere den NAY-saksbehandleren med enhetstilgang
-        val naySaksbehandlere = søkEtterSaksbehandlere("any", listOf(oppgave2?.id!!))?.saksbehandlere
+        val naySaksbehandlere = søkEtterSaksbehandlere("Naysen", listOf(oppgave2?.id!!))?.saksbehandlere
         assertThat(naySaksbehandlere).hasSize(1)
-        assertThat(naySaksbehandlere?.first()?.navIdent).isEqualTo("Test123")
+        assertThat(naySaksbehandlere?.first()?.navIdent).isEqualTo("NayVeileder123")
 
         // Søk på å tildele både en NAY-oppgave og en kontor-oppgave skal returnere kun saksbehandlere som har tilgang til en av dem
-        val alleSaksbehandlere = søkEtterSaksbehandlere("tekst", listOf(oppgave.id!!, oppgave2.id!!))?.saksbehandlere
+        val alleSaksbehandlere = søkEtterSaksbehandlere("Test", listOf(oppgave.id!!, oppgave2.id!!))?.saksbehandlere
         assertThat(alleSaksbehandlere).hasSize(2)
+
+        // Når ingen matcher returneres tom liste
+        val ingenSaksbehandlere = søkEtterSaksbehandlere("xxxxx", listOf(oppgave.id!!, oppgave2.id!!))?.saksbehandlere
+        assertThat(ingenSaksbehandlere).isEmpty()
     }
 
     @Test
