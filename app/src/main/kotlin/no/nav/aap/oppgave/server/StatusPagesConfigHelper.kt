@@ -8,6 +8,7 @@ import no.nav.aap.komponenter.httpklient.exception.ApiErrorCode
 import no.nav.aap.komponenter.httpklient.exception.ApiException
 import no.nav.aap.komponenter.httpklient.exception.InternfeilException
 import org.slf4j.LoggerFactory
+import java.net.http.HttpTimeoutException
 
 object StatusPagesConfigHelper {
     fun setup(): StatusPagesConfig.() -> Unit = {
@@ -15,6 +16,16 @@ object StatusPagesConfigHelper {
             val logger = LoggerFactory.getLogger(javaClass)
 
             when (cause) {
+                is HttpTimeoutException -> {
+                    logger.warn(cause.cause?.message ?: cause.message)
+                    call.respondWithError(
+                        ApiException(
+                            status = HttpStatusCode.RequestTimeout,
+                            message = "Forespørselen tok for lang tid. Prøv igjen om litt."
+                        )
+                    )
+                }
+
                 is InternfeilException -> {
                     logger.error(cause.cause?.message ?: cause.message)
                     call.respondWithError(cause)
