@@ -34,12 +34,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
 
         respond(
             SaksbehandlerSøkResponse(
-                saksbehandlere = saksbehandlereFraNom.map {
-                    SaksbehandlerDto(
-                        navn = it.visningsnavn,
-                        navIdent = requireNotNull(it.navident) { "Saksbehandler fra søk mangler navIdent" },
-                    )
-                },
+                saksbehandlere = saksbehandlereFraNom,
             )
         )
     }

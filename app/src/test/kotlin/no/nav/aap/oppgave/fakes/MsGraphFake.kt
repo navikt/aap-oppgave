@@ -54,10 +54,14 @@ private fun responsFraMsGraphGroupMembers(): String {
         { 
                 "value": [
                     {
-                        "onPremisesSamAccountName": "Test123"
+                        "onPremisesSamAccountName": "KontorVeileder123",
+                        "givenName": "Test",
+                        "surname": "Kontorsen"
                     },
                     {
-                        "onPremisesSamAccountName": "Tests123"
+                        "onPremisesSamAccountName": "NayVeileder123",
+                        "givenName": "Test",
+                        "surname": "Naysen"
                     }
                 ]
             }
