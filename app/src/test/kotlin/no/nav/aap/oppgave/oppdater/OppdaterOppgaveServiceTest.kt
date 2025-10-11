@@ -17,9 +17,9 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
@@ -34,6 +34,7 @@ import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -927,7 +928,7 @@ class OppdaterOppgaveServiceTest {
     }
 
     val graphClient = object : IMsGraphClient {
-        override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
+        override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf {
             return MemberOf(
                 groups = listOf(
                     Group(name = "0000-GA-ENHET_$ENHET_NAV_LØRENSKOG", id = UUID.randomUUID()),
@@ -935,7 +936,7 @@ class OppdaterOppgaveServiceTest {
             )
         }
 
-        override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
+        override fun hentFortroligAdresseGruppe(ident: String, currentToken: OidcToken): MemberOf {
             return MemberOf()
         }
 
@@ -955,7 +956,7 @@ class OppdaterOppgaveServiceTest {
     private val FORTROLIG_ADRESSE_IDENT = "11111000000"
     val enhetService = object : IEnhetService {
 
-        override fun hentEnheter(currentToken: String, ident: String): List<String> {
+        override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
             TODO("Not yet implemented")
         }
 

@@ -8,6 +8,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.oppgave.felles.withCache
+import no.nav.aap.oppgave.metrikker.CachedService
+import no.nav.aap.oppgave.metrikker.cacheHit
+import no.nav.aap.oppgave.metrikker.cacheMiss
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 import java.time.Duration
@@ -42,21 +46,19 @@ object SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
      * Kildekode for endepunktet: https://github.com/navikt/syfooversiktsrv/blob/master/src/main/kotlin/no/nav/syfo/personstatus/api/v2/endpoints/PersonTildelingSystemApi.kt
      * Per 28-05-25
      */
-    override fun hentVeileder(personIdent: String): String? {
-        val cachetRespons = cache.getIfPresent(personIdent)
-        if (cachetRespons != null) return cachetRespons.tildeltVeilederident
-
-        val hentVeilederUrl = url.resolve("/api/v1/system/persontildeling/personer/single")
-        val request = GetRequest(
-            additionalHeaders = listOf(
-                Header("nav-personident", personIdent),
-                Header("Nav-Consumer-Id", "aap-oppgave"),
+    override fun hentVeileder(personIdent: String): String? =
+        withCache(cache, personIdent, CachedService.SYFO_VEILEDER) {
+            val hentVeilederUrl = url.resolve("/api/v1/system/persontildeling/personer/single")
+            val request = GetRequest(
+                additionalHeaders = listOf(
+                    Header("nav-personident", personIdent),
+                    Header("Nav-Consumer-Id", "aap-oppgave"),
+                )
             )
-        )
-        val resp = client.get<HentVeilederSykefravarsoppfolgingResponse?>(hentVeilederUrl, request)
+            val resp = client.get<HentVeilederSykefravarsoppfolgingResponse?>(hentVeilederUrl, request)
 
-        cache.put(personIdent, resp ?: HentVeilederSykefravarsoppfolgingResponse(null))
-        return resp?.tildeltVeilederident?.takeUnless(String::isBlank)
-    }
-
+            resp ?: HentVeilederSykefravarsoppfolgingResponse(null)
+        }.let {
+            it.tildeltVeilederident?.takeUnless(String::isBlank)
+        }
 }

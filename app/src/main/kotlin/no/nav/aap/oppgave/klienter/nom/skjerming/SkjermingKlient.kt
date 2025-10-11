@@ -1,13 +1,17 @@
 package no.nav.aap.oppgave.klienter.nom.skjerming
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.oppgave.felles.withCache
+import no.nav.aap.oppgave.metrikker.CachedService
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
+import java.time.Duration
 
 private data class EgenansattRequest(val personident: String)
 
@@ -28,13 +32,23 @@ class NomSkjermingKlient: SkjermingKlient {
         prometheus = prometheus
     )
 
-    override fun erSkjermet(ident: String): Boolean {
-        val egenansattUrl = url.resolve("/skjermet")
-        val request = PostRequest(
-            body = EgenansattRequest(ident),
-        )
-        val eksistererSkjermet = client.post<EgenansattRequest, Boolean>(egenansattUrl, request) ?: throw SkjermingException("Kunne ikke hente skjermingstatus for ident")
-        return eksistererSkjermet
+    override fun erSkjermet(ident: String): Boolean =
+        withCache(cache, ident, CachedService.NOM_EGENANSATT) {
+            val egenansattUrl = url.resolve("/skjermet")
+            val request = PostRequest(
+                body = EgenansattRequest(ident),
+            )
+
+            client.post<EgenansattRequest, Boolean>(egenansattUrl, request)
+                ?: throw SkjermingException("Kunne ikke hente skjermingstatus for ident")
+        }
+
+    companion object {
+        private val cache = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(Duration.ofHours(4))
+            .build<String, Boolean>()
+
     }
 
 }

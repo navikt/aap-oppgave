@@ -27,7 +27,7 @@ import javax.sql.DataSource
 fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphClient, prometheus: PrometheusMeterRegistry) =
     route("/enheter").get<Unit, List<EnhetDto>> {
         prometheus.httpCallCounter("/enheter").increment()
-        val enheter = EnhetService(msGraphClient).hentEnheter(token().token(), ident())
+        val enheter = EnhetService(msGraphClient).hentEnheter(ident(), token())
         val enhetNrTilNavn = NorgKlient().hentEnheter()
         val enheterMedNavn = enheter.map { EnhetDto(it, enhetNrTilNavn[it] ?: "") }
         respond(enheterMedNavn)
