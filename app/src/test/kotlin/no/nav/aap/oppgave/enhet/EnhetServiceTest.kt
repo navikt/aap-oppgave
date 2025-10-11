@@ -3,6 +3,7 @@ package no.nav.aap.oppgave.enhet
 import io.getunleash.FakeUnleash
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.GroupMembers
@@ -41,7 +42,10 @@ class EnhetServiceTest {
                 enableAll()
             }),)
 
-        val res = service.hentEnheter("xxx", "")
+        val res = service.hentEnheter(
+            "xxx",
+            OidcToken(AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(false, emptyList()))
+        )
         assertThat(res).isNotEmpty()
         assertThat(res).hasSize(1)
         assertThat(res[0]).isEqualTo("12345")
@@ -432,7 +436,7 @@ class EnhetServiceTest {
 
     companion object {
         val graphClient = object : IMsGraphClient {
-            override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
+            override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf {
                 return MemberOf(
                     groups = listOf(
                         Group(name = "0000-GA-ENHET_12345", id = UUID.randomUUID()),
@@ -440,7 +444,7 @@ class EnhetServiceTest {
                 )
             }
 
-            override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
+            override fun hentFortroligAdresseGruppe(ident: String, currentToken: OidcToken): MemberOf {
                 return MemberOf()
             }
 
@@ -521,7 +525,12 @@ class EnhetServiceTest {
                     overordnetFylkesEnheter: List<String>? = null,
                     enhetTilOverordnetEnhetMap: Map<String, List<String>>? = null
                 ): NorgKlientMock {
-                    return NorgKlientMock(responsEnhet, enhetsNavnRespons, overordnetFylkesEnheter, enhetTilOverordnetEnhetMap)
+                    return NorgKlientMock(
+                        responsEnhet,
+                        enhetsNavnRespons,
+                        overordnetFylkesEnheter,
+                        enhetTilOverordnetEnhetMap
+                    )
                 }
             }
 
