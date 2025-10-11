@@ -54,9 +54,7 @@ class MsGraphClient(
     override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf =
         withCache(enhetsgrupperCache, ident, CachedService.MSGRAPH_ENHETSGRUPPER) {
             val url =
-                baseUrl.resolve(
-                    "users/$ident/memberOf?\$count=true&\$top=100&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)}"
-                )
+                baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)}")
             val respons = httpClient.get<MemberOf>(
                 url,
                 GetRequest(
