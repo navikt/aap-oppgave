@@ -1,7 +1,7 @@
 package no.nav.aap.oppgave.enhet
 
-import com.github.benmanes.caffeine.cache.Caffeine
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
@@ -9,8 +9,8 @@ import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaClient
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
-import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingKlient
 import no.nav.aap.oppgave.klienter.nom.skjerming.NomSkjermingKlient
+import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingKlient
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgKlient
 import no.nav.aap.oppgave.klienter.norg.NorgKlient
@@ -24,7 +24,6 @@ import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.postmottak.kontrakt.enhet.GodkjentEnhet
 import org.slf4j.LoggerFactory
-import java.time.Duration
 
 data class EnhetForOppgave(
     val enhet: String,
@@ -42,7 +41,7 @@ enum class FylkeskontorSomSkalBehandleKlager(val enhetsnummer: String) {
 }
 
 interface IEnhetService {
-    fun hentEnheter(currentToken: String, ident: String): List<String>
+    fun hentEnheter(ident: String, currentToken: OidcToken): List<String>
     fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null): EnhetForOppgave
     fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean
 }
@@ -59,15 +58,12 @@ class EnhetService(
     private val norgKlient: INorgKlient = NorgKlient(),
     private val veilarbarenaKlient: IVeilarbarenaClient = VeilarbarenaClient(),
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
-
 ) : IEnhetService {
     private val log = LoggerFactory.getLogger(EnhetService::class.java)
 
-    override fun hentEnheter(currentToken: String, ident: String): List<String> {
-        return enheterCache.getIfPresent(ident)
-            ?: msGraphClient.hentEnhetsgrupper(currentToken, ident).groups
+    override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
+        return msGraphClient.hentEnhetsgrupper(ident, currentToken).groups
                 .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
-                .also { enheterCache.put(ident, it) }
     }
 
     override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
@@ -112,9 +108,10 @@ class EnhetService(
     }
 
     fun kanSaksbehandleFortroligAdresse(
-        currentToken: String
+        ident: String,
+        currentToken: OidcToken
     ): Boolean {
-        return msGraphClient.hentFortroligAdresseGruppe(currentToken).groups
+        return msGraphClient.hentFortroligAdresseGruppe(ident, currentToken).groups
             .map { it.name }.contains(FORTROLIG_ADRESSE_GROUP)
     }
 
@@ -294,11 +291,6 @@ class EnhetService(
     companion object {
         private const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
         private const val FORTROLIG_ADRESSE_GROUP = "0000-GA-Fortrolig_Adresse"
-
-        private val enheterCache = Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ofHours(1))
-            .maximumSize(1000)
-            .build<String, List<String>>()
     }
 
 }

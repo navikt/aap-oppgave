@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.klienter.msgraph
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
@@ -12,14 +13,17 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.komponenter.miljo.Miljø
+import no.nav.aap.oppgave.felles.withCache
+import no.nav.aap.oppgave.metrikker.CachedService
 import org.slf4j.LoggerFactory
 import java.net.URI
+import java.time.Duration
 import java.util.*
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.tokenx.OnBehalfOfTokenProvider as TexasOnBehalfOfTokenProvider
 
 interface IMsGraphClient {
-    fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf
-    fun hentFortroligAdresseGruppe(currentToken: String): MemberOf
+    fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf
+    fun hentFortroligAdresseGruppe(ident: String, currentToken: OidcToken): MemberOf
     fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers
 }
 
@@ -47,36 +51,47 @@ class MsGraphClient(
 
     private val log = LoggerFactory.getLogger(MsGraphClient::class.java)
 
-    override fun hentEnhetsgrupper(currentToken: String, ident: String): MemberOf {
-        val url =
-            baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)}")
-        val respons = httpClient.get<MemberOf>(
-            url,
-            GetRequest(
-                currentToken = OidcToken(currentToken),
-                additionalHeaders = listOf(Header("ConsistencyLevel", "eventual"))
-            )
-        ) ?: MemberOf()
-        return respons
-    }
+    override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf =
+        withCache(enhetsgrupperCache, ident, CachedService.MSGRAPH_ENHETSGRUPPER) {
+            val url =
+                baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)}")
+            val respons = httpClient.get<MemberOf>(
+                url,
+                GetRequest(
+                    currentToken = currentToken,
+                    additionalHeaders = listOf(Header("ConsistencyLevel", "eventual"))
+                )
+            ) ?: MemberOf()
 
-    override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers {
-        val gruppeNavn = ENHET_GROUP_PREFIX + enhetsnummer
-        val groupId = hentGruppeIdGittNavn(gruppeNavn)
+            if (respons.groups.isEmpty()) {
+                log.warn("MsGraph fant ingen enhetsgrupper for bruker $ident")
+            }
+            respons
+        }
+
+
+    override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers =
+        withCache(medlemmerCache, enhetsnummer, CachedService.MSGRAPH_MEDLEMMER_I_GRUPPE) {
+            val gruppeNavn = ENHET_GROUP_PREFIX + enhetsnummer
+            val groupId = hentGruppeIdGittNavn(gruppeNavn)
 
         // TODO: paginering når det er mer enn 500 saksbehandlere på enhet
-        log.info("Henter gruppemedlemmer for gruppenavn $gruppeNavn")
-        val url = baseUrl.resolve("groups/${groupId}/members?\$top=500&\$select=onPremisesSamAccountName,givenName,surname")
-        val respons = httpClientM2m.get<GroupMembers>(
-            url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
-        ) ?: GroupMembers()
-        if (respons.members.isEmpty()) {
-            log.warn("MsGraph fant ingen medlemmer i gruppe $gruppeNavn")
-        } else if (respons.members.size == 500) {
-            log.warn("Hentet 500 medlemmer i gruppe $gruppeNavn.")
+            log.info("Henter gruppemedlemmer for gruppenavn $gruppeNavn")
+            val url =
+                baseUrl.resolve("groups/${groupId}/members?\$top=500&\$select=onPremisesSamAccountName,givenName,surname")
+
+            val respons = httpClientM2m.get<GroupMembers>(
+                url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
+            ) ?: GroupMembers()
+
+            if (respons.members.isEmpty()) {
+                log.warn("MsGraph fant ingen medlemmer i gruppe $gruppeNavn")
+            } else if (respons.members.size == 500) {
+                log.warn("Hentet 500 medlemmer i gruppe $gruppeNavn.")
+            }
+
+            respons
         }
-        return respons
-    }
 
     private fun hentGruppeIdGittNavn(gruppeNavn: String): UUID {
         val url = baseUrl.resolve("groups?\$filter=${equalsFilter(displayName = gruppeNavn)}&\$select=id,mailNickname")
@@ -86,18 +101,19 @@ class MsGraphClient(
         return requireNotNull(respons?.groups?.first()?.id) { "Kunne ikke hente gruppe-ID fra msGraph gitt gruppenavn $gruppeNavn"}
     }
 
-    override fun hentFortroligAdresseGruppe(currentToken: String): MemberOf {
-        val url =
-            baseUrl.resolve("me/memberOf?\$count=true&\$top=1&\$filter=${starterMedFilter(FORTROLIG_ADRESSE_GROUP)}")
-        val respons = httpClient.get<MemberOf>(
-            url,
-            GetRequest(
-                currentToken = OidcToken(currentToken),
-                additionalHeaders = listOf(Header("ConsistencyLevel", "eventual"))
-            )
-        ) ?: MemberOf()
-        return respons
-    }
+    override fun hentFortroligAdresseGruppe(ident: String, currentToken: OidcToken): MemberOf =
+        withCache(fortroligAdresseCache, ident, CachedService.MSGRAPH_FORTROLIG_ADRESSE) {
+            val url =
+                baseUrl.resolve("me/memberOf?\$count=true&\$top=1&\$filter=${starterMedFilter(FORTROLIG_ADRESSE_GROUP)}")
+
+            httpClient.get<MemberOf>(
+                url,
+                GetRequest(
+                    currentToken = currentToken,
+                    additionalHeaders = listOf(Header("ConsistencyLevel", "eventual"))
+                )
+            ) ?: MemberOf()
+        }
 
     private fun starterMedFilter(prefix: String): String {
         return "startswith(displayName,\'$prefix\')"
@@ -110,6 +126,21 @@ class MsGraphClient(
     companion object {
         const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
         const val FORTROLIG_ADRESSE_GROUP = "0000-GA-Fortrolig_Adresse"
+
+        private val enhetsgrupperCache = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(Duration.ofMinutes(30))
+            .build<String, MemberOf>()
+
+        private val medlemmerCache = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(Duration.ofMinutes(30))
+            .build<String, GroupMembers>()
+
+        private val fortroligAdresseCache = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(Duration.ofMinutes(10))
+            .build<String, MemberOf>()
     }
 }
 

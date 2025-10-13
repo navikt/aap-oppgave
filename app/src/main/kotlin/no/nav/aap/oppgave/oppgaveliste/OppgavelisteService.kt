@@ -123,8 +123,8 @@ class OppgavelisteService(
         token: OidcToken,
         ident: String
     ): List<OppgaveDto> {
-        val oppgaverFiltrertForKode7 = sjekkTilgangTilFortroligAdresse(enhetService, token.token(), this)
-        val enhetsGrupper = enhetService.hentEnheter(token.token(), ident)
+        val oppgaverFiltrertForKode7 = sjekkTilgangTilFortroligAdresse(enhetService, ident, token, this)
+        val enhetsGrupper = enhetService.hentEnheter(ident, token)
         return oppgaverFiltrertForKode7
             .asSequence()
             .filter { enhetsGrupper.contains(it.enhetForKø()) }
@@ -134,10 +134,11 @@ class OppgavelisteService(
 
     private fun sjekkTilgangTilFortroligAdresse(
         enhetService: EnhetService,
-        token: String,
+        ident: String,
+        token: OidcToken,
         oppgaver: List<OppgaveDto>
     ): List<OppgaveDto> =
-        if (!enhetService.kanSaksbehandleFortroligAdresse(token)) {
+        if (!enhetService.kanSaksbehandleFortroligAdresse(ident, token)) {
             oppgaver.filterNot { it.harFortroligAdresse == true }
         } else {
             oppgaver

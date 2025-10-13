@@ -7,6 +7,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.oppgave.felles.withCache
+import no.nav.aap.oppgave.metrikker.CachedService
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 import java.io.InputStream
@@ -27,7 +29,7 @@ class NomApiKlient(
     companion object {
         private val saksbehandlerNavnCache = Caffeine.newBuilder()
             .maximumSize(1000)
-            .expireAfterWrite(Duration.ofHours(4))
+            .expireAfterWrite(Duration.ofDays(1))
             .build<String, String>()
 
         private fun getClientConfig() = ClientConfig(
@@ -64,17 +66,14 @@ class NomApiKlient(
         return requireNotNull(responseData.search) { "Søkeinfo fra NOM kan ikke være null" }
     }
 
-    private fun hentAnsattNavn(navIdent: String): String {
-        val cachedNavn = saksbehandlerNavnCache.getIfPresent(navIdent)
-        if (cachedNavn != null) return cachedNavn
-
-        val request = AnsattInfoRequest(navnQuery, AnsattInfoVariables(navIdent))
-        val response = checkNotNull(ansattInfoQuery(request).data?.ressurs) {
-            "Fant ikke ansatt i NOM"
+    private fun hentAnsattNavn(navIdent: String): String =
+        withCache(saksbehandlerNavnCache, navIdent, CachedService.NOM_ANSATT) {
+            val request = AnsattInfoRequest(navnQuery, AnsattInfoVariables(navIdent))
+            val response = checkNotNull(ansattInfoQuery(request).data?.ressurs) {
+                "Fant ikke ansatt i NOM"
+            }
+            response.visningsnavn
         }
-        return response.visningsnavn
-            .also { saksbehandlerNavnCache.put(navIdent, it)}
-    }
 
 
     private fun ansattInfoQuery(request: AnsattInfoRequest): AnsattInfoRespons {
