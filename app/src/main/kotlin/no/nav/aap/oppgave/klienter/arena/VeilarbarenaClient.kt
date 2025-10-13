@@ -67,6 +67,7 @@ class VeilarbarenaClient : IVeilarbarenaClient {
         private val oppfølgingsenhetCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofHours(4))
+            .recordStats()
             .build<String, HentOppfølgingsenhetResponse>()
 
         fun invalidateCache(personIdent: String) = oppfølgingsenhetCache.invalidate(personIdent)

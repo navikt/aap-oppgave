@@ -33,6 +33,7 @@ class NomApiKlient(
         private val saksbehandlerNavnCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofDays(1))
+            .recordStats()
             .build<String, String>()
 
         private fun getClientConfig() = ClientConfig(

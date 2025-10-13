@@ -135,16 +135,19 @@ class MsGraphClient(
         private val enhetsgrupperCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(30))
+            .recordStats()
             .build<String, MemberOf>()
 
         private val medlemmerCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(30))
+            .recordStats()
             .build<String, GroupMembers>()
 
         private val fortroligAdresseCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(10))
+            .recordStats()
             .build<String, MemberOf>()
     }
 }

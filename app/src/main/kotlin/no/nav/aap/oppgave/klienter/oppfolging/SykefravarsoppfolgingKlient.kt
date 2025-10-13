@@ -25,6 +25,7 @@ object SykefravarsoppfolgingKlient : ISykefravarsoppfolgingKlient {
     private val syfoVeilederCache = Caffeine.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(Duration.ofHours(4))
+        .recordStats()
         .build<String, HentVeilederSykefravarsoppfolgingResponse>()
 
     private val url = URI.create(requiredConfigForKey("integrasjon.syfo.url"))

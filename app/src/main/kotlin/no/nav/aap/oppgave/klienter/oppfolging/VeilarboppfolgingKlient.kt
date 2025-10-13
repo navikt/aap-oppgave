@@ -30,6 +30,7 @@ object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
     private val veilarboppVeiledercache = Caffeine.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(Duration.ofHours(4))
+        .recordStats()
         .build<String, HentVeilederResponse>()
 
     private val url = URI.create(requiredConfigForKey("integrasjon.veilarboppfolging.url"))

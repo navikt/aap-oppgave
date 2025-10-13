@@ -50,6 +50,7 @@ class NomSkjermingKlient : SkjermingKlient {
         private val skjermingCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofHours(4))
+            .recordStats()
             .build<String, Boolean>()
 
     }
