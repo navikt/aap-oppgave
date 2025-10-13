@@ -14,6 +14,7 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.klienter.arena.VeilarbarenaClient
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytKlient
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
 import no.nav.aap.oppgave.klienter.norg.NorgKlient
@@ -62,6 +63,8 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 "Synkoniser oppgave: Oppgave ${oppgaveIdMedVersjon.id} mangler behandlingsreferanse"
             }
             val relaterteIdenter = BehandlingsflytKlient.hentRelevanteIdenterPåBehandling(behandlingRef)
+
+            relaterteIdenter.forEach { VeilarbarenaClient.invalidateCache(it) }
 
             val nyEnhet =
                 enhetService.utledEnhetForOppgave(

@@ -42,7 +42,7 @@ class VeilarbarenaClient : IVeilarbarenaClient {
     )
 
     override fun hentOppfølgingsenhet(personIdent: String): String? =
-        withCache(cache, personIdent, CachedService.VEILARBARENA_ENHET) {
+        withCache(oppfølgingsenhetCache, personIdent, CachedService.VEILARBARENA_ENHET) {
             val hentStatusUrl = url.resolve("/veilarbarena/api/v2/arena/hent-status")
             val request = PostRequest(
                 body = HentOppfølgingsenhetRequest(personIdent),
@@ -61,11 +61,12 @@ class VeilarbarenaClient : IVeilarbarenaClient {
         }.oppfolgingsenhet
 
     companion object {
-        private val cache = Caffeine.newBuilder()
+        private val oppfølgingsenhetCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofHours(4))
             .build<String, HentOppfølgingsenhetResponse>()
 
+        fun invalidateCache(personIdent: String) = oppfølgingsenhetCache.invalidate(personIdent)
     }
 
 }

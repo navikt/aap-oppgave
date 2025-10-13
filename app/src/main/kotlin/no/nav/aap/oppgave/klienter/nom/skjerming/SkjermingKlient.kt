@@ -33,7 +33,7 @@ class NomSkjermingKlient: SkjermingKlient {
     )
 
     override fun erSkjermet(ident: String): Boolean =
-        withCache(cache, ident, CachedService.NOM_EGENANSATT) {
+        withCache(skjermingCache, ident, CachedService.NOM_EGENANSATT) {
             val egenansattUrl = url.resolve("/skjermet")
             val request = PostRequest(
                 body = EgenansattRequest(ident),
@@ -44,7 +44,7 @@ class NomSkjermingKlient: SkjermingKlient {
         }
 
     companion object {
-        private val cache = Caffeine.newBuilder()
+        private val skjermingCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofHours(4))
             .build<String, Boolean>()

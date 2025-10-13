@@ -10,8 +10,6 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.felles.withCache
 import no.nav.aap.oppgave.metrikker.CachedService
-import no.nav.aap.oppgave.metrikker.cacheHit
-import no.nav.aap.oppgave.metrikker.cacheMiss
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 import java.time.Duration
@@ -25,7 +23,7 @@ interface ISykefravarsoppfolgingKlient {
 }
 
 object SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
-    private val cache = Caffeine.newBuilder()
+    private val syfoVeilederCache = Caffeine.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(Duration.ofHours(4))
         .build<String, HentVeilederSykefravarsoppfolgingResponse>()
@@ -47,7 +45,7 @@ object SykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient {
      * Per 28-05-25
      */
     override fun hentVeileder(personIdent: String): String? =
-        withCache(cache, personIdent, CachedService.SYFO_VEILEDER) {
+        withCache(syfoVeilederCache, personIdent, CachedService.SYFO_VEILEDER) {
             val hentVeilederUrl = url.resolve("/api/v1/system/persontildeling/personer/single")
             val request = GetRequest(
                 additionalHeaders = listOf(

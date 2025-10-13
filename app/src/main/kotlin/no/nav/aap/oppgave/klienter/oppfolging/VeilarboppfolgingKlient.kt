@@ -27,7 +27,7 @@ interface IVeilarbarboppfolgingKlient {
 }
 
 object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
-    private val cache = Caffeine.newBuilder()
+    private val veilarboppVeiledercache = Caffeine.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(Duration.ofHours(4))
         .build<String, HentVeilederResponse>()
@@ -49,7 +49,7 @@ object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
      * Per 28-03-25
      */
     override fun hentVeileder(personIdent: String): String? =
-        withCache(cache, personIdent, CachedService.VEILARBOPP_VEILEDER) {
+        withCache(veilarboppVeiledercache, personIdent, CachedService.VEILARBOPP_VEILEDER) {
             val hentVeilederUrl = url.resolve("/veilarboppfolging/api/v3/hent-veileder")
             val request = PostRequest(
                 body = HentVeilederRequest(personIdent),
