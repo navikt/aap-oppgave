@@ -51,9 +51,9 @@ class MsGraphClient(
     private val log = LoggerFactory.getLogger(MsGraphClient::class.java)
 
     init {
-        CaffeineCacheMetrics.monitor(prometheus, enhetsgrupperCache, "msgraph_enhetsgrupper_cache")
-        CaffeineCacheMetrics.monitor(prometheus, medlemmerCache, "msgraph_medlemmer_cache")
-        CaffeineCacheMetrics.monitor(prometheus, fortroligAdresseCache, "msgraph_fortrolig_adresse_cache")
+        CaffeineCacheMetrics.monitor(prometheus, enhetsgrupperCache, "msgraph_enhetsgrupper")
+        CaffeineCacheMetrics.monitor(prometheus, medlemmerCache, "msgraph_medlemmer")
+        CaffeineCacheMetrics.monitor(prometheus, fortroligAdresseCache, "msgraph_fortrolig_adresse")
     }
 
     override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf =

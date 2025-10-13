@@ -26,7 +26,7 @@ class NomApiKlient(
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.nom.api.url"))
 
     init {
-        CaffeineCacheMetrics.monitor(prometheus, saksbehandlerNavnCache, "nom_ansatt_cache")
+        CaffeineCacheMetrics.monitor(prometheus, saksbehandlerNavnCache, "nom_ansatt")
     }
 
     companion object {

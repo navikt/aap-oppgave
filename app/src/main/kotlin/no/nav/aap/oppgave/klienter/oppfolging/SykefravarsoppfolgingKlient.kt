@@ -41,7 +41,7 @@ object SykefravarsoppfolgingKlient : ISykefravarsoppfolgingKlient {
     )
 
     init {
-        CaffeineCacheMetrics.monitor(prometheus, syfoVeilederCache, "syfo_veileder_cache")
+        CaffeineCacheMetrics.monitor(prometheus, syfoVeilederCache, "syfo_veileder")
     }
 
     /**

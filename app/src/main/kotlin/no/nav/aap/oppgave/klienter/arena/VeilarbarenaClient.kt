@@ -41,7 +41,7 @@ class VeilarbarenaClient : IVeilarbarenaClient {
     )
 
     init {
-        CaffeineCacheMetrics.monitor(prometheus, oppfølgingsenhetCache, "veilarbarena_enhet_cache")
+        CaffeineCacheMetrics.monitor(prometheus, oppfølgingsenhetCache, "veilarbarena_enhet")
     }
 
     override fun hentOppfølgingsenhet(personIdent: String): String? =

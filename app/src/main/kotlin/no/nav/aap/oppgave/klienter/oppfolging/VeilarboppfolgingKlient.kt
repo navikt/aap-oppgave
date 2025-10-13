@@ -46,7 +46,7 @@ object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
     )
 
     init {
-        CaffeineCacheMetrics.monitor(prometheus, veilarboppVeiledercache, "veilarboppfolging_veileder_cache")
+        CaffeineCacheMetrics.monitor(prometheus, veilarboppVeiledercache, "veilarboppfolging_veileder")
     }
 
     /**

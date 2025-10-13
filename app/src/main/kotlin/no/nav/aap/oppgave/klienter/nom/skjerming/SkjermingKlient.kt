@@ -32,7 +32,7 @@ class NomSkjermingKlient : SkjermingKlient {
     )
 
     init {
-        CaffeineCacheMetrics.monitor(prometheus, skjermingCache, "nom_skjermet_cache")
+        CaffeineCacheMetrics.monitor(prometheus, skjermingCache, "nom_skjermet")
     }
 
     override fun erSkjermet(ident: String): Boolean =
