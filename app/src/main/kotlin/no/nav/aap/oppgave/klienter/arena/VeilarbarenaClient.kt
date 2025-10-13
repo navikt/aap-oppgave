@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.klienter.arena
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -9,8 +10,6 @@ import no.nav.aap.komponenter.httpklient.httpclient.error.IkkeFunnetException
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.oppgave.felles.withCache
-import no.nav.aap.oppgave.metrikker.CachedService
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 import java.time.Duration
@@ -41,8 +40,12 @@ class VeilarbarenaClient : IVeilarbarenaClient {
         prometheus = prometheus
     )
 
+    init {
+        CaffeineCacheMetrics.monitor(prometheus, oppfølgingsenhetCache, "veilarbarena_enhet_cache")
+    }
+
     override fun hentOppfølgingsenhet(personIdent: String): String? =
-        withCache(oppfølgingsenhetCache, personIdent, CachedService.VEILARBARENA_ENHET) {
+        oppfølgingsenhetCache.get(personIdent) {
             val hentStatusUrl = url.resolve("/veilarbarena/api/v2/arena/hent-status")
             val request = PostRequest(
                 body = HentOppfølgingsenhetRequest(personIdent),

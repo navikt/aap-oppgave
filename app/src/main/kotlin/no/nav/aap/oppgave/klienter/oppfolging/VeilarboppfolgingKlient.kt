@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.klienter.oppfolging
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -8,11 +9,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.oppgave.felles.withCache
-import no.nav.aap.oppgave.metrikker.CachedService
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 import java.time.Duration
+import kotlin.text.isBlank
 
 private data class HentVeilederRequest(
     val fnr: String
@@ -44,12 +44,16 @@ object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
         prometheus = prometheus
     )
 
+    init {
+        CaffeineCacheMetrics.monitor(prometheus, veilarboppVeiledercache, "veilarboppfolging_veileder_cache")
+    }
+
     /**
      * Kildekode for endepunktet: https://github.com/navikt/veilarboppfolging/blob/main/src/main/java/no/nav/veilarboppfolging/controller/v3/VeilederV3Controller.java
      * Per 28-03-25
      */
     override fun hentVeileder(personIdent: String): String? =
-        withCache(veilarboppVeiledercache, personIdent, CachedService.VEILARBOPP_VEILEDER) {
+        veilarboppVeiledercache.get(personIdent) {
             val hentVeilederUrl = url.resolve("/veilarboppfolging/api/v3/hent-veileder")
             val request = PostRequest(
                 body = HentVeilederRequest(personIdent),
