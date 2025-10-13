@@ -17,7 +17,6 @@ import java.time.Duration
 
 interface AnsattInfoKlient {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
-    fun søkEtterSaksbehandler(søketekst: String): List<AnsattFraSøk>
 }
 
 class NomApiKlient(
@@ -57,15 +56,6 @@ class NomApiKlient(
         }
     }
 
-    override fun søkEtterSaksbehandler(søketekst: String): List<AnsattFraSøk> {
-        val request = AnsattSøkRequest(søkQuery, AnsattSøkVariables(søketekst))
-        val response = ansattSøkQuery(request)
-        val responseData = checkNotNull(response.data) {
-            "Kunne ikke søke etter ansatte i NOM. Feilmelding: ${response.errors}"
-        }
-        return requireNotNull(responseData.search) { "Søkeinfo fra NOM kan ikke være null" }
-    }
-
     private fun hentAnsattNavn(navIdent: String): String =
         withCache(saksbehandlerNavnCache, navIdent, CachedService.NOM_ANSATT) {
             val request = AnsattInfoRequest(navnQuery, AnsattInfoVariables(navIdent))
@@ -80,11 +70,6 @@ class NomApiKlient(
         val httpRequest = PostRequest(body = request)
         return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
-
-    private fun ansattSøkQuery(request: AnsattSøkRequest): AnsattSøkResponse {
-        val httpRequest = PostRequest(body = request)
-        return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
-    }
 }
 
 private const val navIdent = "\$navIdent"
@@ -94,21 +79,4 @@ val navnQuery = """
         visningsnavn
       }
     }
-""".trimIndent()
-
-private const val soketekst = "\$soketekst"
-val søkQuery = """
-    query($soketekst: String!) {
-  search(term: $soketekst) {
-    ... on Ressurs {
-      visningsnavn
-      navident
-      orgTilknytning {
-        orgEnhet {
-          orgEnhetsType
-        }
-      }
-    }
-  }
-}
 """.trimIndent()
