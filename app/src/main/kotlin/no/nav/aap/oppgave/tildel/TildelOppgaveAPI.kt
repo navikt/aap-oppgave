@@ -22,7 +22,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
     route("/saksbehandler-sok").authorizedPost<Unit, SaksbehandlerSøkResponse, SaksbehandlerSøkRequest>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
-        val saksbehandlereFraNom = dataSource.transaction { connection ->
+        val saksbehandlereMedTilgang = dataSource.transaction { connection ->
             TildelOppgaveService(
                 oppgaveRepository = OppgaveRepository(connection),
                 msGraphClient = MsGraphClient(prometheus),
@@ -34,7 +34,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
 
         respond(
             SaksbehandlerSøkResponse(
-                saksbehandlere = saksbehandlereFraNom,
+                saksbehandlere = saksbehandlereMedTilgang,
             )
         )
     }

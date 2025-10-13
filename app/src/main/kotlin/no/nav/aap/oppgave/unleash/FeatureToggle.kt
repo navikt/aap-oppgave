@@ -6,8 +6,7 @@ interface FeatureToggle {
 
 enum class FeatureToggles(private val toggleKey: String) : FeatureToggle {
     VarsleHvisEnhetIkkeGodkjent("VarsleHvisEnhetIkkeGodkjent"),
-    NyRutingAvKlageoppgaver("NyRutingAvKlageoppgaver"),
-    HentSaksbehandlereForEnhet("HentSaksbehandlereForEnhet");
+    NyRutingAvKlageoppgaver("NyRutingAvKlageoppgaver");
 
     override fun key(): String = toggleKey
 }
