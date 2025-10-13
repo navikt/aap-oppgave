@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.klienter.msgraph
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
@@ -13,8 +14,6 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.komponenter.miljo.Miljø
-import no.nav.aap.oppgave.felles.withCache
-import no.nav.aap.oppgave.metrikker.CachedService
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
@@ -51,8 +50,14 @@ class MsGraphClient(
 
     private val log = LoggerFactory.getLogger(MsGraphClient::class.java)
 
+    init {
+        CaffeineCacheMetrics.monitor(prometheus, enhetsgrupperCache, "msgraph_enhetsgrupper")
+        CaffeineCacheMetrics.monitor(prometheus, medlemmerCache, "msgraph_medlemmer")
+        CaffeineCacheMetrics.monitor(prometheus, fortroligAdresseCache, "msgraph_fortrolig_adresse")
+    }
+
     override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf =
-        withCache(enhetsgrupperCache, ident, CachedService.MSGRAPH_ENHETSGRUPPER) {
+        enhetsgrupperCache.get(ident) {
             val url =
                 baseUrl.resolve("me/memberOf?\$count=true&\$top=999&\$filter=${starterMedFilter(ENHET_GROUP_PREFIX)}")
             val respons = httpClient.get<MemberOf>(
@@ -71,11 +76,11 @@ class MsGraphClient(
 
 
     override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers =
-        withCache(medlemmerCache, enhetsnummer, CachedService.MSGRAPH_MEDLEMMER_I_GRUPPE) {
+        medlemmerCache.get(enhetsnummer) {
             val gruppeNavn = ENHET_GROUP_PREFIX + enhetsnummer
             val groupId = hentGruppeIdGittNavn(gruppeNavn)
 
-        // TODO: paginering når det er mer enn 500 saksbehandlere på enhet
+            // TODO: paginering når det er mer enn 500 saksbehandlere på enhet
             log.info("Henter gruppemedlemmer for gruppenavn $gruppeNavn")
             val url =
                 baseUrl.resolve("groups/${groupId}/members?\$top=500&\$select=onPremisesSamAccountName,givenName,surname")
@@ -98,11 +103,11 @@ class MsGraphClient(
         val respons = httpClientM2m.get<MemberOf>(
             url, GetRequest(additionalHeaders = listOf(Header("ConsistencyLevel", "eventual")))
         )
-        return requireNotNull(respons?.groups?.first()?.id) { "Kunne ikke hente gruppe-ID fra msGraph gitt gruppenavn $gruppeNavn"}
+        return requireNotNull(respons?.groups?.first()?.id) { "Kunne ikke hente gruppe-ID fra msGraph gitt gruppenavn $gruppeNavn" }
     }
 
     override fun hentFortroligAdresseGruppe(ident: String, currentToken: OidcToken): MemberOf =
-        withCache(fortroligAdresseCache, ident, CachedService.MSGRAPH_FORTROLIG_ADRESSE) {
+        fortroligAdresseCache.get(ident) {
             val url =
                 baseUrl.resolve("me/memberOf?\$count=true&\$top=1&\$filter=${starterMedFilter(FORTROLIG_ADRESSE_GROUP)}")
 
@@ -130,16 +135,19 @@ class MsGraphClient(
         private val enhetsgrupperCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(30))
+            .recordStats()
             .build<String, MemberOf>()
 
         private val medlemmerCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(30))
+            .recordStats()
             .build<String, GroupMembers>()
 
         private val fortroligAdresseCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(10))
+            .recordStats()
             .build<String, MemberOf>()
     }
 }

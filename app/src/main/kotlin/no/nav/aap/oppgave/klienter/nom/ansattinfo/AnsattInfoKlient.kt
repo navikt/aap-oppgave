@@ -1,14 +1,13 @@
 package no.nav.aap.oppgave.klienter.nom.ansattinfo
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.oppgave.felles.withCache
-import no.nav.aap.oppgave.metrikker.CachedService
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 import java.io.InputStream
@@ -26,10 +25,15 @@ class NomApiKlient(
     private val log = LoggerFactory.getLogger(NomApiKlient::class.java)
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.nom.api.url"))
 
+    init {
+        CaffeineCacheMetrics.monitor(prometheus, saksbehandlerNavnCache, "nom_ansatt")
+    }
+
     companion object {
         private val saksbehandlerNavnCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofDays(1))
+            .recordStats()
             .build<String, String>()
 
         private fun getClientConfig() = ClientConfig(
@@ -67,7 +71,7 @@ class NomApiKlient(
     }
 
     private fun hentAnsattNavn(navIdent: String): String =
-        withCache(saksbehandlerNavnCache, navIdent, CachedService.NOM_ANSATT) {
+        saksbehandlerNavnCache.get(navIdent) {
             val request = AnsattInfoRequest(navnQuery, AnsattInfoVariables(navIdent))
             val response = checkNotNull(ansattInfoQuery(request).data?.ressurs) {
                 "Fant ikke ansatt i NOM"

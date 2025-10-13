@@ -1,14 +1,13 @@
 package no.nav.aap.oppgave.klienter.nom.skjerming
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.oppgave.felles.withCache
-import no.nav.aap.oppgave.metrikker.CachedService
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 import java.time.Duration
@@ -19,7 +18,7 @@ interface SkjermingKlient {
     fun erSkjermet(ident: String): Boolean
 }
 
-class NomSkjermingKlient: SkjermingKlient {
+class NomSkjermingKlient : SkjermingKlient {
     private val url = URI.create(requiredConfigForKey("integrasjon.nom.url"))
 
     private val config = ClientConfig(
@@ -32,8 +31,12 @@ class NomSkjermingKlient: SkjermingKlient {
         prometheus = prometheus
     )
 
+    init {
+        CaffeineCacheMetrics.monitor(prometheus, skjermingCache, "nom_skjermet")
+    }
+
     override fun erSkjermet(ident: String): Boolean =
-        withCache(skjermingCache, ident, CachedService.NOM_EGENANSATT) {
+        skjermingCache.get(ident) {
             val egenansattUrl = url.resolve("/skjermet")
             val request = PostRequest(
                 body = EgenansattRequest(ident),
@@ -47,6 +50,7 @@ class NomSkjermingKlient: SkjermingKlient {
         private val skjermingCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofHours(4))
+            .recordStats()
             .build<String, Boolean>()
 
     }
