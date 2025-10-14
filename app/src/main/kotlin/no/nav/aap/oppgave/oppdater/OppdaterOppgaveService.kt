@@ -132,6 +132,7 @@ class OppdaterOppgaveService(
                     oppgaveOppdatering.relevanteIdenter
                 )
 
+                log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
                 oppgaveRepository.oppdatereOppgave(
                     oppgaveId = eksisterendeOppgave.oppgaveId(),
                     ident = KELVIN,
@@ -184,7 +185,7 @@ class OppdaterOppgaveService(
         oppgaveOppdatering: OppgaveOppdatering,
     ): ReturInformasjon? {
         // Skal settes egen status når behandling sendes tilbake til totrinn
-        val returTilToTrinn = erToTrinn(avklaringsbehov)
+        val returTilToTrinn = erReturTilToTrinn(avklaringsbehov)
         return if (returTilToTrinn && unleashService.isEnabled(FeatureToggles.ToTrinnForAndreGang)) {
             log.info("Totrinnsoppgave gjenåpnet, setter retur fra veileder/saksbehandler. Saksnummer: ${oppgaveOppdatering.saksnummer}")
             val forrigeAvklaringsbehovLøstAvVeileder = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
@@ -225,11 +226,11 @@ class OppdaterOppgaveService(
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
         )
 
-    private fun erToTrinn(avklaringsbehov: AvklaringsbehovHendelse): Boolean {
-        return avklaringsbehov.avklaringsbehovKode.kode in setOf(
+    private fun erReturTilToTrinn(avklaringsbehov: AvklaringsbehovHendelse): Boolean {
+        return (avklaringsbehov.avklaringsbehovKode.kode in setOf(
             Definisjon.KVALITETSSIKRING.kode.name,
             Definisjon.FATTE_VEDTAK.kode.name,
-        )
+        ) && avklaringsbehov.endringer.map { it.status }.contains(AvklaringsbehovStatus.AVSLUTTET))
     }
 
     private fun gjenÅpneOppgaveEtterReturFraKvalitetssikrer(
