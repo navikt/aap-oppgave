@@ -17,7 +17,7 @@ enum class ReturStatus {
 data class ReturInformasjon(
     val status: ReturStatus,
     val årsaker: List<ÅrsakTilReturKode>,
-    val begrunnelse: String? = null,
+    val begrunnelse: String,
     val endretAv: String,
 )
 

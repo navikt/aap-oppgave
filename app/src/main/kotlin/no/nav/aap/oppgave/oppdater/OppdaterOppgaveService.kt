@@ -196,6 +196,11 @@ class OppdaterOppgaveService(
                 },
                 årsaker = emptyList(),
                 endretAv = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.second ?: "Ukjent",
+                begrunnelse = if (forrigeAvklaringsbehovLøstAvVeileder) {
+                    "Retur fra veileder"
+                } else {
+                    "Retur fra saksbehandler"
+                }
             )
         } else {
             null
