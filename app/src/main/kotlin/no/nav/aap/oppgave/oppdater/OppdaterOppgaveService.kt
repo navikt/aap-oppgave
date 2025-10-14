@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.oppdater
 
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
@@ -24,6 +25,7 @@ import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
+import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -144,8 +146,7 @@ class OppdaterOppgaveService(
                     vurderingsbehov = oppgaveOppdatering.vurderingsbehov,
                     harFortroligAdresse = harFortroligAdresse,
                     harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
-                    // Setter til null for å fjerne evt tidligere status
-                    returInformasjon = null,
+                    returInformasjon = utledReturTilToTrinn(avklaringsbehov, oppgaveOppdatering),
                 )
 
                 if (oppgaveOppdatering.reserverTil != null) {
@@ -178,6 +179,29 @@ class OppdaterOppgaveService(
         }
     }
 
+    private fun utledReturTilToTrinn(
+        avklaringsbehov: AvklaringsbehovHendelse,
+        oppgaveOppdatering: OppgaveOppdatering,
+    ): ReturInformasjon? {
+        // Skal settes egen status når behandling sendes tilbake til totrinn
+        val returTilToTrinn = erToTrinn(avklaringsbehov)
+        return if (returTilToTrinn && unleashService.isEnabled(FeatureToggles.ToTrinnForAndreGang)) {
+            log.info("Totrinnsoppgave gjenåpnet, setter retur fra veileder/saksbehandler. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+            val forrigeAvklaringsbehovLøstAvVeileder = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
+            ReturInformasjon(
+                status = if (forrigeAvklaringsbehovLøstAvVeileder) {
+                    ReturStatus.RETUR_FRA_VEILEDER
+                } else {
+                    ReturStatus.RETUR_FRA_SAKSBEHANDLER
+                },
+                årsaker = emptyList(),
+                endretAv = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.second ?: "Ukjent",
+            )
+        } else {
+            null
+        }
+    }
+
     private fun opprettNyOppgaveForAvklaringsbehov(
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
@@ -195,6 +219,13 @@ class OppdaterOppgaveService(
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
         )
+
+    private fun erToTrinn(avklaringsbehov: AvklaringsbehovHendelse): Boolean {
+        return avklaringsbehov.avklaringsbehovKode.kode in setOf(
+            Definisjon.KVALITETSSIKRING.kode.name,
+            Definisjon.FATTE_VEDTAK.kode.name,
+        )
+    }
 
     private fun gjenÅpneOppgaveEtterReturFraKvalitetssikrer(
         eksisterendeOppgave: OppgaveDto,

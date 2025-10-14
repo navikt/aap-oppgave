@@ -10,15 +10,16 @@ import java.util.*
 enum class ReturStatus {
     RETUR_FRA_BESLUTTER,
     RETUR_FRA_KVALITETSSIKRER,
+    RETUR_FRA_VEILEDER,
+    RETUR_FRA_SAKSBEHANDLER,
 }
 
 data class ReturInformasjon(
     val status: ReturStatus,
     val årsaker: List<ÅrsakTilReturKode>,
-    val begrunnelse: String,
+    val begrunnelse: String? = null,
     val endretAv: String,
 )
-
 
 enum class ÅrsakTilReturKode {
     MANGELFULL_BEGRUNNELSE,
