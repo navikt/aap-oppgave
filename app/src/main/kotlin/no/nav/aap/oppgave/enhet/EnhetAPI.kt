@@ -4,9 +4,7 @@ import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.get
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
-import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
-import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
@@ -38,8 +36,13 @@ fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphClient, prometheus: P
  * Synkroniserer enhet på oppgaven etter at oppfølgingsenhet er endret i Arena,
  * midlertidig løsning inntil permanenent løsning for oppfølgingskontor post Arena er på plass
  */
-data class EnhetSynkroniseringOppgave(
+data class EnhetSynkroniseringRequest(
     val oppgaveId: Long
+)
+
+data class EnhetSynkroniseringRespons(
+    val gammelEnhet: String,
+    val nyEnhet: String,
 )
 
 fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
@@ -47,12 +50,12 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
     msGraphClient: IMsGraphClient,
     prometheus: PrometheusMeterRegistry
 ) =
-    route("/synkroniser-enhet-paa-oppgave").post<Unit, Unit, EnhetSynkroniseringOppgave> { _, request ->
+    route("/synkroniser-enhet-paa-oppgave").post<Unit, EnhetSynkroniseringRespons, EnhetSynkroniseringRequest> { _, request ->
         prometheus.httpCallCounter("/synkroniser-enhet-paa-oppgave").increment()
         val log = LoggerFactory.getLogger("synkroniser-enhet-paa-oppgave")
 
         log.info("Synkoniserer oppgave for ${request.oppgaveId} ")
-        dataSource.transaction { connection ->
+        val respons = dataSource.transaction { connection ->
             val enhetService = EnhetService(msGraphClient)
             val oppgaveRepository = OppgaveRepository(connection)
 
@@ -75,7 +78,9 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 )
 
             val nyEnhetForKø = nyEnhet.oppfølgingsenhet ?: nyEnhet.enhet
-            if (nyEnhetForKø != oppgave.enhetForKø()) {
+            if (nyEnhetForKø == oppgave.enhetForKø()) {
+                log.info("Ingen endring på enhet for oppgave ${oppgaveIdMedVersjon.id}, er allerede satt til $nyEnhetForKø")
+            } else {
                 log.info("Oppdaterer enhet for oppgave ${oppgaveIdMedVersjon.id} fra ${oppgave.enhetForKø()} til $nyEnhetForKø")
             }
 
@@ -99,8 +104,11 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 oppgaveIdMedVersjon, HendelseType.OPPDATERT,
                 FlytJobbRepository(connection),
             )
+
+            EnhetSynkroniseringRespons(oppgave.enhetForKø(), nyEnhetForKø)
         }
-        respondWithStatus(HttpStatusCode.OK)
+
+        respond(respons)
     }
 
 /*
