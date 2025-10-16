@@ -8,7 +8,6 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
-import io.ktor.server.metrics.micrometer.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
@@ -54,8 +53,6 @@ import javax.sql.DataSource
 
 private val SECURE_LOGGER = LoggerFactory.getLogger("secureLog")
 private const val ANTALL_WORKERS = 5
-
-class App
 
 fun main() {
     Thread.currentThread().setUncaughtExceptionHandler { _, e ->

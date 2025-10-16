@@ -12,7 +12,7 @@ class TildelOppgaveService(
 
     fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>): List<SaksbehandlerDto> {
         val oppgaverTilTildeling = oppgaver.map { oppgave -> oppgaveRepository.hentOppgave(oppgave) }
-        val enheter = oppgaverTilTildeling.map { it.enhetForKø() }
+        val enheter = oppgaverTilTildeling.map { it.enhetForKø }.distinct()
 
         log.info("Søker på saksbehandlere i enheter $enheter for å tildele oppgaver med id: ${oppgaver.joinToString(", ")}")
         return hentSaksbehandlereMedEnhetstilgang(enheter).filtrerSøkPåNavn(søketekst)

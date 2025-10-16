@@ -72,6 +72,12 @@ data class OppgaveDto(
     val harUlesteDokumenter: Boolean? = false,
     val markeringer: List<MarkeringDto> = emptyList(),
 ) {
+    /**
+     * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.
+     * Brukes for å sikre at oppgaver havner i riktig kø i oppgavelisten.
+     **/
+    val enhetForKø: String = oppfølgingsenhet ?: enhet
+
     init {
         if (journalpostId == null) {
             if (saksnummer == null || behandlingRef == null) {
@@ -87,10 +93,6 @@ data class OppgaveDto(
             this.journalpostId,
             this.avklaringsbehovKode
         )
-    }
-
-    fun enhetForKø(): String {
-        return this.oppfølgingsenhet ?: this.enhet
     }
 
 }

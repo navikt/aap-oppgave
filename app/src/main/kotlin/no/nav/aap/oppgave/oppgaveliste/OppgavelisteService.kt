@@ -127,7 +127,7 @@ class OppgavelisteService(
         val enhetsGrupper = enhetService.hentEnheter(ident, token)
         return oppgaverFiltrertForKode7
             .asSequence()
-            .filter { enhetsGrupper.contains(it.enhetForKø()) }
+            .filter { it.enhetForKø in enhetsGrupper }
             .take(maksOppgaver)
             .toList()
     }

@@ -57,7 +57,7 @@ private fun fraOppgaveDto(oppgaveDto: OppgaveDto): OppgaveTilStatistikkDto {
         saksnummer = oppgaveDto.saksnummer,
         behandlingRef = oppgaveDto.behandlingRef,
         journalpostId = oppgaveDto.journalpostId,
-        enhet = oppgaveDto.enhetForKø(),
+        enhet = oppgaveDto.enhetForKø,
         avklaringsbehovKode = oppgaveDto.avklaringsbehovKode,
         status = oppgaveDto.status,
         behandlingstype = oppgaveDto.behandlingstype,

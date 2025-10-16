@@ -78,10 +78,10 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 )
 
             val nyEnhetForKø = nyEnhet.oppfølgingsenhet ?: nyEnhet.enhet
-            if (nyEnhetForKø == oppgave.enhetForKø()) {
+            if (nyEnhetForKø == oppgave.enhetForKø) {
                 log.info("Ingen endring på enhet for oppgave ${oppgaveIdMedVersjon.id}, er allerede satt til $nyEnhetForKø")
             } else {
-                log.info("Oppdaterer enhet for oppgave ${oppgaveIdMedVersjon.id} fra ${oppgave.enhetForKø()} til $nyEnhetForKø")
+                log.info("Oppdaterer enhet for oppgave ${oppgaveIdMedVersjon.id} fra ${oppgave.enhetForKø} til $nyEnhetForKø")
             }
 
             oppgaveRepository.oppdatereOppgave(
@@ -105,7 +105,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 FlytJobbRepository(connection),
             )
 
-            EnhetSynkroniseringRespons(oppgave.enhetForKø(), nyEnhetForKø)
+            EnhetSynkroniseringRespons(oppgave.enhetForKø, nyEnhetForKø)
         }
 
         respond(respons)
