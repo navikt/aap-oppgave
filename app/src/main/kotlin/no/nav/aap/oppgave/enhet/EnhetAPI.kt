@@ -87,7 +87,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                     oppgaveId = oppgaveIdMedVersjon,
                     ident = "Kelvin",
                     personIdent = oppgave.personIdent,
-                    enhet = nyEnhetForKø,
+                    enhet = nyEnhet.enhet,
                     påVentTil = oppgave.påVentTil,
                     påVentÅrsak = oppgave.påVentÅrsak,
                     påVentBegrunnelse = oppgave.venteBegrunnelse,
