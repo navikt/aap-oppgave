@@ -198,7 +198,7 @@ class FilterRepository(private val connection: DBConnection) {
                 behandlingstyper = alleFilterBehandlingstyper[filter.id] ?: emptySet()
             )
         }
-        return alleFilterMedFelter
+        return alleFilterMedFelter.sortedBy { it.navn }
     }
 
 
