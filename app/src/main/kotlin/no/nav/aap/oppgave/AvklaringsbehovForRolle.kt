@@ -9,7 +9,7 @@ import no.nav.aap.tilgang.Rolle
 val AVKLARINGSBEHOV_FOR_VEILEDER =
     Definisjon.entries
         .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_OPPFOLGING) }
+        .filter { Rolle.SAKSBEHANDLER_OPPFOLGING in it.løsesAv }
         .map { AvklaringsbehovKode(it.kode.name) }
         .toSet()
 
@@ -17,14 +17,14 @@ val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER =
     Definisjon.entries
         .asSequence()
         .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_NASJONAL) }
+        .filter { Rolle.SAKSBEHANDLER_NASJONAL in it.løsesAv }
         .filter { it.løsesISteg != StegType.KVALITETSSIKRING }
         .map { AvklaringsbehovKode(it.kode.name) }
         .toSet()
 
 val AVKLARINGSBEHOV_FOR_BESLUTTER = Definisjon.entries
     .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
-    .filter { it.løsesAv.contains(Rolle.BESLUTTER) }
+    .filter { Rolle.BESLUTTER in it.løsesAv }
     .map { AvklaringsbehovKode(it.kode.name) }
     .toSet()
 
@@ -36,7 +36,7 @@ val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK =
                 PostmottakDefinisjon.BehovType.MANUELT_FRIVILLIG
             )
         }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_NASJONAL) }
+        .filter { Rolle.SAKSBEHANDLER_NASJONAL in it.løsesAv }
         .map { AvklaringsbehovKode(it.kode.name) }.toSet()
 
 val AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK =
@@ -47,5 +47,5 @@ val AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK =
                 PostmottakDefinisjon.BehovType.MANUELT_FRIVILLIG
             )
         }
-        .filter { it.løsesAv.contains(Rolle.SAKSBEHANDLER_OPPFOLGING) }
+        .filter { Rolle.SAKSBEHANDLER_OPPFOLGING in it.løsesAv }
         .map { AvklaringsbehovKode(it.kode.name) }.toSet()

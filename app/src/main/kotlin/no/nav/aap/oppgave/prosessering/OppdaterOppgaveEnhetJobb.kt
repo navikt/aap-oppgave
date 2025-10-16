@@ -44,7 +44,7 @@ class OppdaterOppgaveEnhetJobb(
             .map { it.ident }
 
         val oppgaverSomMåOppdateres = oppgaverForIdent
-            .filterKeys { identerMedStrengtFortroligAdresse.contains(it) }
+            .filterKeys { it in identerMedStrengtFortroligAdresse }
             .flatMap { it.value }
 
         val antallOppdatert = if (oppgaverSomMåOppdateres.isNotEmpty()) {

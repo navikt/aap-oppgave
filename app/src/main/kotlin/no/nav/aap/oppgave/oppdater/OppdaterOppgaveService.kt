@@ -229,7 +229,7 @@ class OppdaterOppgaveService(
         return (avklaringsbehov.avklaringsbehovKode.kode in setOf(
             Definisjon.KVALITETSSIKRING.kode.name,
             Definisjon.FATTE_VEDTAK.kode.name,
-        ) && avklaringsbehov.endringer.map { it.status }.contains(AvklaringsbehovStatus.AVSLUTTET))
+        ) && avklaringsbehov.endringer.any { it.status == AvklaringsbehovStatus.AVSLUTTET })
     }
 
     private fun gjenÅpneOppgaveEtterReturFraKvalitetssikrer(

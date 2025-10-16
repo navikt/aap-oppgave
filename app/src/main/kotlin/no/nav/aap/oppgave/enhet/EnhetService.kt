@@ -63,7 +63,7 @@ class EnhetService(
 
     override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
         return msGraphClient.hentEnhetsgrupper(ident, currentToken).groups
-                .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
+            .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
     }
 
     override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
@@ -112,7 +112,7 @@ class EnhetService(
         currentToken: OidcToken
     ): Boolean {
         return msGraphClient.hentFortroligAdresseGruppe(ident, currentToken).groups
-            .map { it.name }.contains(FORTROLIG_ADRESSE_GROUP)
+            .any { it.name == FORTROLIG_ADRESSE_GROUP }
     }
 
     private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
@@ -200,7 +200,7 @@ class EnhetService(
             }
 
         val enhetForKø = enhetFraArena ?: enhetFraNorg
-        val skalVarsle = !GodkjentEnhet.entries.map { it.enhetNr }.contains(enhetForKø) && enhetForKø != Enhet.NAV_UTLAND.kode
+        val skalVarsle = !GodkjentEnhet.entries.any { it.enhetNr == enhetForKø } && enhetForKø != Enhet.NAV_UTLAND.kode
         if (skalVarsle && unleashService.isEnabled(FeatureToggles.VarsleHvisEnhetIkkeGodkjent)) {
             log.error("Oppgave har lagt seg på køen til enhet $enhetForKø, som ikke har tatt Kelvin i bruk enda. Saksnummer: $saksnummer")
         }
