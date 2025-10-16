@@ -82,28 +82,28 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 log.info("Ingen endring på enhet for oppgave ${oppgaveIdMedVersjon.id}, er allerede satt til $nyEnhetForKø")
             } else {
                 log.info("Oppdaterer enhet for oppgave ${oppgaveIdMedVersjon.id} fra ${oppgave.enhetForKø()} til $nyEnhetForKø")
-
-                oppgaveRepository.oppdatereOppgave(
-                    oppgaveId = oppgaveIdMedVersjon,
-                    ident = "Kelvin",
-                    personIdent = oppgave.personIdent,
-                    enhet = nyEnhet.enhet,
-                    påVentTil = oppgave.påVentTil,
-                    påVentÅrsak = oppgave.påVentÅrsak,
-                    påVentBegrunnelse = oppgave.venteBegrunnelse,
-                    oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
-                    veilederArbeid = oppgave.veilederArbeid,
-                    veilederSykdom = oppgave.veilederSykdom,
-                    vurderingsbehov = oppgave.vurderingsbehov,
-                    harFortroligAdresse = oppgave.harFortroligAdresse,
-                    returInformasjon = oppgave.returInformasjon
-                )
-
-                sendOppgaveStatusOppdatering(
-                    oppgaveIdMedVersjon, HendelseType.OPPDATERT,
-                    FlytJobbRepository(connection),
-                )
             }
+
+            oppgaveRepository.oppdatereOppgave(
+                oppgaveId = oppgaveIdMedVersjon,
+                ident = "Kelvin",
+                personIdent = oppgave.personIdent,
+                enhet = nyEnhet.enhet,
+                påVentTil = oppgave.påVentTil,
+                påVentÅrsak = oppgave.påVentÅrsak,
+                påVentBegrunnelse = oppgave.venteBegrunnelse,
+                oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
+                veilederArbeid = oppgave.veilederArbeid,
+                veilederSykdom = oppgave.veilederSykdom,
+                vurderingsbehov = oppgave.vurderingsbehov,
+                harFortroligAdresse = oppgave.harFortroligAdresse,
+                returInformasjon = oppgave.returInformasjon
+            )
+
+            sendOppgaveStatusOppdatering(
+                oppgaveIdMedVersjon, HendelseType.OPPDATERT,
+                FlytJobbRepository(connection),
+            )
 
             EnhetSynkroniseringRespons(oppgave.enhetForKø(), nyEnhetForKø)
         }
