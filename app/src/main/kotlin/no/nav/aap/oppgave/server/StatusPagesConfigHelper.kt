@@ -17,7 +17,7 @@ object StatusPagesConfigHelper {
 
             when (cause) {
                 is HttpTimeoutException -> {
-                    logger.warn(cause.cause?.message ?: cause.message)
+                    logger.warn((cause.cause?.message ?: cause.message), cause)
                     call.respondWithError(
                         ApiException(
                             status = HttpStatusCode.RequestTimeout,
