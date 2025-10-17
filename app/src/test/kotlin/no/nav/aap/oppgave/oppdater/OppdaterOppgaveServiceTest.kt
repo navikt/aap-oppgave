@@ -31,10 +31,10 @@ import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.GroupMembers
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
-import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
-import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
+import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
+import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -1288,8 +1288,8 @@ class OppdaterOppgaveServiceTest {
                 UnleashService(FakeUnleash().apply {
                     enableAll()
                 }),
-                veilarbarboppfolgingKlient,
-                sykefravarsoppfolgingKlient,
+                veilarbarboppfolgingGateway,
+                sykefravarsoppfolgingGateway,
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
@@ -1305,8 +1305,8 @@ class OppdaterOppgaveServiceTest {
                 UnleashService(FakeUnleash().apply {
                     enableAll()
                 }),
-                veilarbarboppfolgingKlient,
-                sykefravarsoppfolgingKlient,
+                veilarbarboppfolgingGateway,
+                sykefravarsoppfolgingGateway,
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
@@ -1355,7 +1355,7 @@ class OppdaterOppgaveServiceTest {
         }
     }
 
-    val graphClient = object : IMsGraphClient {
+    val graphClient = object : IMsGraphGateway {
         override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf {
             return MemberOf(
                 groups = listOf(
@@ -1373,11 +1373,11 @@ class OppdaterOppgaveServiceTest {
         }
     }
 
-    val veilarbarboppfolgingKlient = object : IVeilarbarboppfolgingKlient {
+    val veilarbarboppfolgingGateway = object : IVeilarbarboppfolgingGateway {
         override fun hentVeileder(personIdent: String) = null
     }
 
-    val sykefravarsoppfolgingKlient = object : ISykefravarsoppfolgingKlient {
+    val sykefravarsoppfolgingGateway = object : ISykefravarsoppfolgingGateway {
         override fun hentVeileder(personIdent: String) = null
     }
 

@@ -10,7 +10,7 @@ import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 import java.util.UUID
 
-object BehandlingsflytKlient {
+object BehandlingsflytGateway {
     private val baseUrl = URI.create(requiredConfigForKey("integrasjon.behandlingsflyt.url"))
     private val clientConfig =
         ClientConfig(

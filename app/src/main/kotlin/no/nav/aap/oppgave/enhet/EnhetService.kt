@@ -6,19 +6,19 @@ import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
-import no.nav.aap.oppgave.klienter.arena.VeilarbarenaClient
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
-import no.nav.aap.oppgave.klienter.nom.skjerming.NomSkjermingKlient
-import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingKlient
+import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaGateway
+import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
+import no.nav.aap.oppgave.klienter.nom.skjerming.NomSkjermingGateway
+import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingGateway
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
-import no.nav.aap.oppgave.klienter.norg.INorgKlient
-import no.nav.aap.oppgave.klienter.norg.NorgKlient
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
+import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
-import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
-import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.klienter.pdl.IPdlGateway
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -52,11 +52,11 @@ interface IEnhetService {
  * https://aap-sysdoc.ansatt.nav.no/funksjonalitet/Oppgave/
  */
 class EnhetService(
-    private val msGraphClient: IMsGraphClient,
-    private val pdlGraphqlKlient: IPdlKlient = PdlGraphqlKlient.withClientCredentialsRestClient(),
-    private val nomSkjermingKlient: SkjermingKlient = NomSkjermingKlient(),
-    private val norgKlient: INorgKlient = NorgKlient(),
-    private val veilarbarenaKlient: IVeilarbarenaClient = VeilarbarenaClient(),
+    private val msGraphClient: IMsGraphGateway,
+    private val pdlGraphqlKlient: IPdlGateway = PdlGraphqlGateway.withClientCredentialsRestClient(),
+    private val nomSkjermingGateway: SkjermingGateway = NomSkjermingGateway(),
+    private val norgKlient: INorgGateway = NorgGateway(),
+    private val veilarbarenaKlient: IVeilarbarenaGateway = VeilarbarenaGateway(),
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 ) : IEnhetService {
     private val log = LoggerFactory.getLogger(EnhetService::class.java)
@@ -238,7 +238,7 @@ class EnhetService(
             val geografiskTilknytning = pdlData.hentGeografiskTilknytning
 
             val diskresjonskode = mapDiskresjonskode(pdlData.hentPerson?.adressebeskyttelse?.map { it.gradering })
-            val erSkjermet = nomSkjermingKlient.erSkjermet(ident)
+            val erSkjermet = nomSkjermingGateway.erSkjermet(ident)
             return TilknytningOgSkjerming(
                 geografiskTilknytning,
                 diskresjonskode,

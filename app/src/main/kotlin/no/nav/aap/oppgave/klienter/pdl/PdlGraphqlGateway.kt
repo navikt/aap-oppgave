@@ -12,15 +12,15 @@ import no.nav.aap.oppgave.metrikker.prometheus
 import java.io.InputStream
 import java.net.URI
 
-interface IPdlKlient {
+interface IPdlGateway {
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
     fun hentPersoninfoForIdenter(identer: List<String>): PdlData
     fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData
 }
 
-class PdlGraphqlKlient(
+class PdlGraphqlGateway(
     private val restClient: RestClient<InputStream>
-) : IPdlKlient {
+) : IPdlGateway {
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
 
     companion object {
@@ -31,7 +31,7 @@ class PdlGraphqlKlient(
         private const val BEHANDLINGSNUMMER_AAP_SAKSBEHANDLING = "B287"
 
         fun withClientCredentialsRestClient() =
-            PdlGraphqlKlient(
+            PdlGraphqlGateway(
                 RestClient(
                     config = getClientConfig(),
                     tokenProvider = ClientCredentialsTokenProvider,

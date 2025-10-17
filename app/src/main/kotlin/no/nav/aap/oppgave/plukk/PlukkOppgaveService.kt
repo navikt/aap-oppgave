@@ -9,8 +9,8 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
-import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytKlient
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiKlient
+import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.Logger
@@ -22,7 +22,7 @@ class PlukkOppgaveService(
     val flytJobbRepository: FlytJobbRepository,
     val filterRepository: FilterRepository,
 ) {
-    private val ansattInfoKlient = NomApiKlient.withClientCredentialsRestClient()
+    private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
     fun plukkNesteOppgave(
@@ -47,7 +47,7 @@ class PlukkOppgaveService(
             val oppgaveId = OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon)
             val harTilgang = TilgangGateway.sjekkTilgang(nesteOppgave.avklaringsbehovReferanse, token)
             if (harTilgang) {
-                oppgaveRepository.reserverOppgave(oppgaveId, ident, ident, ansattInfoKlient.hentAnsattNavnHvisFinnes(ident))
+                oppgaveRepository.reserverOppgave(oppgaveId, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
                 sendOppgaveStatusOppdatering(oppgaveId, HendelseType.RESERVERT, flytJobbRepository)
                 log.info(
                     "Fant neste oppgave med id ${nesteOppgave.oppgaveId} etter ${i + 1} forsøk for filterId $filterId"
@@ -82,7 +82,7 @@ class PlukkOppgaveService(
                 oppgaveIdMedVersjon,
                 ident,
                 ident,
-                ansattInfoKlient.hentAnsattNavnHvisFinnes(ident)
+                ansattInfoGateway.hentAnsattNavnHvisFinnes(ident)
             )
             sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
             return oppgave
@@ -113,7 +113,7 @@ class PlukkOppgaveService(
         val behandlingRef = requireNotNull(oppgave.behandlingRef) {
             "Oppgave $oppgaveId mangler behandlingsreferanse"
         }
-        val relaterteIdenter = BehandlingsflytKlient.hentRelevanteIdenterPåBehandling(behandlingRef)
+        val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
         val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, relaterteIdenter)
 
         if (harFortroligAdresse != (oppgave.harFortroligAdresse == true)) {
@@ -128,7 +128,7 @@ class PlukkOppgaveService(
         val behandlingRef = requireNotNull(oppgave.behandlingRef) {
             "Oppgave $oppgaveId mangler behandlingsreferanse"
         }
-        val relaterteIdenter = BehandlingsflytKlient.hentRelevanteIdenterPåBehandling(behandlingRef)
+        val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
         val nyEnhet =
             enhetService.utledEnhetForOppgave(
                 AvklaringsbehovKode(oppgave.avklaringsbehovKode),

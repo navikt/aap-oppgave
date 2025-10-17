@@ -1,12 +1,12 @@
 package no.nav.aap.oppgave.tildel
 
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
+import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import org.slf4j.LoggerFactory
 
 class TildelOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
-    private val msGraphClient: MsGraphClient,
+    private val msGraphClient: MsGraphGateway,
 ){
     private val log = LoggerFactory.getLogger(TildelOppgaveService::class.java)
 

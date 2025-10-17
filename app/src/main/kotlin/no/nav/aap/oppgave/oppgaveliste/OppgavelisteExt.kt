@@ -2,7 +2,7 @@ package no.nav.aap.oppgave.oppgaveliste
 
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.enhet.Enhet
-import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import kotlin.collections.map
 import kotlin.collections.mapNotNull
 
@@ -12,7 +12,7 @@ fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> {
         return this
     }
     val navnMap =
-        PdlGraphqlKlient
+        PdlGraphqlGateway
             .withClientCredentialsRestClient()
             .hentPersoninfoForIdenter(identer)
             ?.hentPersonBolk
