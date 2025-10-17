@@ -15,10 +15,7 @@ fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> {
         PdlGraphqlKlient
             .withClientCredentialsRestClient()
             .hentPersoninfoForIdenter(identer)
-            ?.hentPersonBolk
-            ?.associate {
-                it.ident to it.person?.navn?.firstOrNull()
-            } ?: emptyMap()
+            .associate { it.ident to it.person?.navn?.firstOrNull() }
 
     return map {
         val personIdent = it.personIdent
