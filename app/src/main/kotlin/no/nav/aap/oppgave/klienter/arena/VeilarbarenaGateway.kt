@@ -40,10 +40,6 @@ class VeilarbarenaGateway : IVeilarbarenaGateway {
         prometheus = prometheus
     )
 
-    init {
-        CaffeineCacheMetrics.monitor(prometheus, oppfølgingsenhetCache, "veilarbarena_enhet")
-    }
-
     override fun hentOppfølgingsenhet(personIdent: String): String? =
         oppfølgingsenhetCache.get(personIdent) {
             val hentStatusUrl = url.resolve("/veilarbarena/api/v2/arena/hent-status")
@@ -69,6 +65,10 @@ class VeilarbarenaGateway : IVeilarbarenaGateway {
             .expireAfterWrite(Duration.ofHours(4))
             .recordStats()
             .build<String, HentOppfølgingsenhetResponse>()
+
+        init {
+            CaffeineCacheMetrics.monitor(prometheus, oppfølgingsenhetCache, "veilarbarena_enhet")
+        }
 
         fun invalidateCache(personIdent: String) = oppfølgingsenhetCache.invalidate(personIdent)
     }

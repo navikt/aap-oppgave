@@ -48,11 +48,6 @@ class NorgGateway: INorgGateway {
         prometheus = prometheus
     )
 
-    init {
-        CaffeineCacheMetrics.monitor(prometheus, enheterCache, "norg2_enheter")
-        CaffeineCacheMetrics.monitor(prometheus, fylkesenheterCache, "norg2_fylkesenheter")
-    }
-
     override fun finnEnhet(
         geografiskTilknyttning: String?,
         erNavansatt: Boolean,
@@ -122,5 +117,10 @@ class NorgGateway: INorgGateway {
             .expireAfterWrite(Duration.ofHours(6))
             .recordStats()
             .build<String, List<String>>()
+
+        init {
+            CaffeineCacheMetrics.monitor(prometheus, enheterCache, "norg2_enheter")
+            CaffeineCacheMetrics.monitor(prometheus, fylkesenheterCache, "norg2_fylkesenheter")
+        }
     }
 }

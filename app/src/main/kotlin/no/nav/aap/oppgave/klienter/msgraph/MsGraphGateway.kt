@@ -14,6 +14,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.komponenter.miljo.Miljø
+import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
@@ -49,12 +50,6 @@ class MsGraphGateway(
     )
 
     private val log = LoggerFactory.getLogger(MsGraphGateway::class.java)
-
-    init {
-        CaffeineCacheMetrics.monitor(prometheus, enhetsgrupperCache, "msgraph_enhetsgrupper")
-        CaffeineCacheMetrics.monitor(prometheus, medlemmerCache, "msgraph_medlemmer")
-        CaffeineCacheMetrics.monitor(prometheus, fortroligAdresseCache, "msgraph_fortrolig_adresse")
-    }
 
     override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf =
         enhetsgrupperCache.get(ident) {
@@ -149,6 +144,12 @@ class MsGraphGateway(
             .expireAfterWrite(Duration.ofMinutes(10))
             .recordStats()
             .build<String, MemberOf>()
+
+        init {
+            CaffeineCacheMetrics.monitor(prometheus, enhetsgrupperCache, "msgraph_enhetsgrupper")
+            CaffeineCacheMetrics.monitor(prometheus, medlemmerCache, "msgraph_medlemmer")
+            CaffeineCacheMetrics.monitor(prometheus, fortroligAdresseCache, "msgraph_fortrolig_adresse")
+        }
     }
 }
 

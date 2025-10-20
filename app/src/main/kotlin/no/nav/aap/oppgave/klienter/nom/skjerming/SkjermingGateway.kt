@@ -31,10 +31,6 @@ class NomSkjermingGateway : SkjermingGateway {
         prometheus = prometheus
     )
 
-    init {
-        CaffeineCacheMetrics.monitor(prometheus, skjermingCache, "nom_skjermet")
-    }
-
     override fun erSkjermet(ident: String): Boolean =
         skjermingCache.get(ident) {
             val egenansattUrl = url.resolve("/skjermet")
@@ -53,6 +49,9 @@ class NomSkjermingGateway : SkjermingGateway {
             .recordStats()
             .build<String, Boolean>()
 
+        init {
+            CaffeineCacheMetrics.monitor(prometheus, skjermingCache, "nom_skjermet")
+        }
     }
 
 }

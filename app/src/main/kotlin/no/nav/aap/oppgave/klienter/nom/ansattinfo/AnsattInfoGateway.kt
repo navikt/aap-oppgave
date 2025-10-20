@@ -24,10 +24,6 @@ class NomApiGateway(
     private val log = LoggerFactory.getLogger(NomApiGateway::class.java)
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.nom.api.url"))
 
-    init {
-        CaffeineCacheMetrics.monitor(prometheus, saksbehandlerNavnCache, "nom_ansatt")
-    }
-
     companion object {
         private val saksbehandlerNavnCache = Caffeine.newBuilder()
             .maximumSize(1000)
@@ -38,6 +34,10 @@ class NomApiGateway(
         private fun getClientConfig() = ClientConfig(
             scope = requiredConfigForKey("integrasjon.nom.api.scope"),
         )
+
+        init {
+            CaffeineCacheMetrics.monitor(prometheus, saksbehandlerNavnCache, "nom_ansatt")
+        }
 
         fun withClientCredentialsRestClient() =
             NomApiGateway(
