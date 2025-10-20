@@ -12,7 +12,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.TransientFilterDto
-import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
+import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringRepository
@@ -31,7 +31,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry
 ) {
-    val enhetService = EnhetService(MsGraphClient(prometheus))
+    val enhetService = EnhetService(MsGraphGateway(prometheus))
 
     route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()

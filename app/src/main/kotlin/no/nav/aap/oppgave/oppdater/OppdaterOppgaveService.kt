@@ -16,11 +16,11 @@ import no.nav.aap.oppgave.ReturInformasjon
 import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.IEnhetService
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
-import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingKlient
-import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingKlient
-import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingKlient
-import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingKlient
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
+import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
+import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
+import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingGateway
+import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
@@ -51,10 +51,10 @@ private val AVSLUTTEDE_STATUSER = setOf(
 private const val KELVIN = "Kelvin"
 
 class OppdaterOppgaveService(
-    msGraphClient: IMsGraphClient,
+    msGraphClient: IMsGraphGateway,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
-    private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingKlient = VeilarbarboppfolgingKlient,
-    private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingKlient = SykefravarsoppfolgingKlient,
+    private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingGateway = VeilarbarboppfolgingGateway,
+    private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingGateway = SykefravarsoppfolgingGateway,
     private val enhetService: IEnhetService = EnhetService(msGraphClient),
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,

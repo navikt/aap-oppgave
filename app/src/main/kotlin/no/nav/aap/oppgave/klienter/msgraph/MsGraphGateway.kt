@@ -20,15 +20,15 @@ import java.time.Duration
 import java.util.*
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.tokenx.OnBehalfOfTokenProvider as TexasOnBehalfOfTokenProvider
 
-interface IMsGraphClient {
+interface IMsGraphGateway {
     fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf
     fun hentFortroligAdresseGruppe(ident: String, currentToken: OidcToken): MemberOf
     fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers
 }
 
-class MsGraphClient(
+class MsGraphGateway(
     prometheus: PrometheusMeterRegistry
-) : IMsGraphClient {
+) : IMsGraphGateway {
     private val baseUrl = URI.create(requiredConfigForKey("ms.graph.base.url"))
     private val clientConfig = ClientConfig(
         scope = requiredConfigForKey("ms.graph.scope")
@@ -48,7 +48,7 @@ class MsGraphClient(
         prometheus = prometheus,
     )
 
-    private val log = LoggerFactory.getLogger(MsGraphClient::class.java)
+    private val log = LoggerFactory.getLogger(MsGraphGateway::class.java)
 
     init {
         CaffeineCacheMetrics.monitor(prometheus, enhetsgrupperCache, "msgraph_enhetsgrupper")

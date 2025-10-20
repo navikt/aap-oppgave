@@ -10,7 +10,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
@@ -20,7 +20,7 @@ import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphClient,
+    msGraphClient: IMsGraphGateway,
     prometheus: PrometheusMeterRegistry
 ) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
@@ -45,7 +45,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
 
 fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphClient,
+    msGraphClient: IMsGraphGateway,
     prometheus: PrometheusMeterRegistry
 ) = route("/oppdater-postmottak-oppgaver").authorizedPost<Unit, Unit, DokumentflytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(

@@ -12,10 +12,10 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.arena.VeilarbarenaClient
-import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytKlient
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
-import no.nav.aap.oppgave.klienter.norg.NorgKlient
+import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
+import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
+import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.server.authenticate.ident
@@ -23,11 +23,11 @@ import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
-fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphClient, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
     route("/enheter").get<Unit, List<EnhetDto>> {
         prometheus.httpCallCounter("/enheter").increment()
         val enheter = EnhetService(msGraphClient).hentEnheter(ident(), token())
-        val enhetNrTilNavn = NorgKlient().hentEnheter()
+        val enhetNrTilNavn = NorgGateway().hentEnheter()
         val enheterMedNavn = enheter.map { EnhetDto(it, enhetNrTilNavn[it] ?: "") }
         respond(enheterMedNavn)
     }
@@ -47,7 +47,7 @@ data class EnhetSynkroniseringRespons(
 
 fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphClient,
+    msGraphClient: IMsGraphGateway,
     prometheus: PrometheusMeterRegistry
 ) =
     route("/synkroniser-enhet-paa-oppgave").post<Unit, EnhetSynkroniseringRespons, EnhetSynkroniseringRequest> { _, request ->
@@ -65,9 +65,9 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
             val behandlingRef = requireNotNull(oppgave.behandlingRef) {
                 "Synkoniser oppgave: Oppgave ${oppgaveIdMedVersjon.id} mangler behandlingsreferanse"
             }
-            val relaterteIdenter = BehandlingsflytKlient.hentRelevanteIdenterPåBehandling(behandlingRef)
+            val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
 
-            relaterteIdenter.forEach { VeilarbarenaClient.invalidateCache(it) }
+            relaterteIdenter.forEach { VeilarbarenaGateway.invalidateCache(it) }
 
             val nyEnhet =
                 enhetService.utledEnhetForOppgave(

@@ -14,11 +14,11 @@ import java.time.Duration
 
 private data class EgenansattRequest(val personident: String)
 
-interface SkjermingKlient {
+interface SkjermingGateway {
     fun erSkjermet(ident: String): Boolean
 }
 
-class NomSkjermingKlient : SkjermingKlient {
+class NomSkjermingGateway : SkjermingGateway {
     private val url = URI.create(requiredConfigForKey("integrasjon.nom.url"))
 
     private val config = ClientConfig(

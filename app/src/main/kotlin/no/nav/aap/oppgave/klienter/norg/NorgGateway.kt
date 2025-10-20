@@ -30,15 +30,15 @@ data class FinnNavenhetRequest(
 
 enum class Diskresjonskode(val prioritet: Int) { ANY(0), SPFO(1), SPSF(2) }
 
-interface INorgKlient {
+interface INorgGateway {
     fun finnEnhet(geografiskTilknyttning: String?, erNavansatt: Boolean, diskresjonskode: Diskresjonskode): String
     fun hentEnheter(): Map<String, String>
     fun hentOverordnetFylkesenheter(enhetsnummer: String): List<String>
 }
 
-class NorgKlient: INorgKlient {
+class NorgGateway: INorgGateway {
 
-    private val log = LoggerFactory.getLogger(NorgKlient::class.java)
+    private val log = LoggerFactory.getLogger(NorgGateway::class.java)
 
     private val url = URI.create(requiredConfigForKey("integrasjon.norg.url"))
     private val config = ClientConfig()

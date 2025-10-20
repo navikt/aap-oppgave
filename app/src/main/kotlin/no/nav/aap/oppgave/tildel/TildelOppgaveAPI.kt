@@ -7,7 +7,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
+import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.tilgang.Beslutter
@@ -25,7 +25,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
         val saksbehandlereMedTilgang = dataSource.transaction { connection ->
             TildelOppgaveService(
                 oppgaveRepository = OppgaveRepository(connection),
-                msGraphClient = MsGraphClient(prometheus),
+                msGraphClient = MsGraphGateway(prometheus),
             ).søkEtterSaksbehandlere(
                 søketekst = request.søketekst,
                 oppgaver = request.oppgaver,

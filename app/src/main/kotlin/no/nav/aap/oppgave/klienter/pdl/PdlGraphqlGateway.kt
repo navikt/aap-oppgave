@@ -15,15 +15,15 @@ import java.io.InputStream
 import java.net.URI
 import java.time.Duration
 
-interface IPdlKlient {
+interface IPdlGateway {
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
     fun hentPersoninfoForIdenter(identer: List<String>): List<HentPersonBolkResult>
     fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData
 }
 
-class PdlGraphqlKlient(
+class PdlGraphqlGateway(
     private val restClient: RestClient<InputStream>
-) : IPdlKlient {
+) : IPdlGateway {
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
 
     init {
@@ -44,7 +44,7 @@ class PdlGraphqlKlient(
             .build<String, HentPersonBolkResult>()
 
         fun withClientCredentialsRestClient() =
-            PdlGraphqlKlient(
+            PdlGraphqlGateway(
                 RestClient(
                     config = getClientConfig(),
                     tokenProvider = ClientCredentialsTokenProvider,

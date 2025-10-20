@@ -4,14 +4,14 @@ import io.getunleash.FakeUnleash
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.fakes.AzureTokenGen
-import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaClient
+import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.GroupMembers
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphClient
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
-import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingKlient
+import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingGateway
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
-import no.nav.aap.oppgave.klienter.norg.INorgKlient
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.Code
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
@@ -19,7 +19,7 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.Gradering
 import no.nav.aap.oppgave.klienter.pdl.HentPersonBolkResult
 import no.nav.aap.oppgave.klienter.pdl.HentPersonResult
-import no.nav.aap.oppgave.klienter.pdl.IPdlKlient
+import no.nav.aap.oppgave.klienter.pdl.IPdlGateway
 import no.nav.aap.oppgave.klienter.pdl.PdlData
 import no.nav.aap.oppgave.klienter.pdl.PdlPerson
 import no.nav.aap.oppgave.unleash.UnleashService
@@ -37,7 +37,7 @@ class EnhetServiceTest {
 
     @Test
     fun `lister kun opp enhets-roller`() {
-        val service = EnhetService(graphClient, PdlKlientMock(), nomKlient, NorgKlientMock(), VeilarbarenaKlientMock(),
+        val service = EnhetService(graphGateway, PdlGatewayMock(), nomGateway, NorgGatewayMock(), VeilarbarenaGatewayMock(),
             UnleashService(FakeUnleash().apply {
                 enableAll()
             }),)
@@ -54,9 +54,9 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal utlede riktig enhet basert på avklaringsbehovkode`() {
-        val nomKlient = NomKlientMock.medRespons(erEgenansatt = false)
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), unleashService = UnleashService(FakeUnleash().apply {
+        val nomGateway = NomGatewayMock.medRespons(erEgenansatt = false)
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), unleashService = UnleashService(FakeUnleash().apply {
             enableAll()
         }),)
 
@@ -76,8 +76,8 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal kunne hente fylkeskontor for enhet`() {
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }),)
 
@@ -90,11 +90,11 @@ class EnhetServiceTest {
     
     @Test
     fun `Oppfølgingsenhet skal ikke overstyre hvis nasjonal oppfølgingsenhet`() {
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"))
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = ("0403"))
         
-        val veilarbarenaClient = VeilarbarenaKlientMock.medRespons("4154")
+        val veilarbarenaGateway = VeilarbarenaGatewayMock.medRespons("4154")
         
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient,veilarbarenaClient, UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway,veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
 
@@ -106,8 +106,8 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal ikke prøve å omgjøre til fylkesenhet for vikafossen`() {
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (Enhet.NAV_VIKAFOSSEN.kode))
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = (Enhet.NAV_VIKAFOSSEN.kode))
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList())
@@ -125,8 +125,8 @@ class EnhetServiceTest {
         val oppfolgingsenhet = "0212"
         val overordnetOppfolgingsenhet = "0200"
 
-        val veilarbarenaClient = VeilarbarenaKlientMock.medRespons(oppfolgingsenhet)
-        val norgKlient = NorgKlientMock.medRespons(
+        val veilarbarenaGateway = VeilarbarenaGatewayMock.medRespons(oppfolgingsenhet)
+        val norgGateway = NorgGatewayMock.medRespons(
             responsEnhet = enhet,
             enhetTilOverordnetEnhetMap = mapOf(
                 enhet to listOf(overordnetEnhet),
@@ -134,7 +134,7 @@ class EnhetServiceTest {
             )
         )
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient, UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList())
@@ -145,8 +145,8 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal bruke fylkesenhet med like 2 første siffer om NORG2 returnerer mer enn 1 overordnet fylkesenhet`() {
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0300", "0400"))
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0300", "0400"))
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
 
@@ -158,8 +158,8 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal bruke den første fylkesenheten om NORG2 returnerer mer enn 1 overordnet fylkesenhet ingen starter med samme siffer`() {
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0200", "0500"))
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0200", "0500"))
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
 
@@ -172,8 +172,8 @@ class EnhetServiceTest {
     @Test
     fun `Skal ikke prøve å omgjøre til fylkesenhet for egne ansatte-enheter`() {
         val egneAnsatteOslo = "0383"
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = (egneAnsatteOslo))
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
 
@@ -187,14 +187,14 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal returnere NAY-kontor for egen ansatt dersom egen ansatt`() {
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
             )
         )
-        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
+        val nomGateway = NomGatewayMock.medRespons(erEgenansatt = true)
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, NorgGatewayMock(), VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -204,16 +204,16 @@ class EnhetServiceTest {
     @Test
     fun `Skal returnere lokal-kontor for egen ansatt dersom egen ansatt`() {
         val egneAnsatteOslo = "0383"
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
             )
         )
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
-        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = (egneAnsatteOslo))
+        val nomGateway = NomGatewayMock.medRespons(erEgenansatt = true)
 
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -223,16 +223,16 @@ class EnhetServiceTest {
     @Test
     fun `Skal ikke sette oppfølgingsenhet for egen ansatt`() {
         val egneAnsatteOslo = "0383"
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
             )
         )
-        val norgKlient = NorgKlientMock.medRespons(responsEnhet = (egneAnsatteOslo))
-        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
-        val veilarbarenaClient = VeilarbarenaKlientMock(oppfølgingsenhet = "1111")
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = (egneAnsatteOslo))
+        val nomGateway = NomGatewayMock.medRespons(erEgenansatt = true)
+        val veilarbarenaGateway = VeilarbarenaGatewayMock(oppfølgingsenhet = "1111")
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient, UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -246,14 +246,14 @@ class EnhetServiceTest {
 
     @Test
     fun `Vikafossen skal overstyre egne ansatte`() {
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.STRENGT_FORTROLIG)))
             )
         )
-        val nomKlient = NomKlientMock.medRespons(erEgenansatt = true)
+        val nomGateway = NomGatewayMock.medRespons(erEgenansatt = true)
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, NorgKlientMock(), VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, NorgGatewayMock(), VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -262,7 +262,7 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal sette veileders enhet til NAV_UTLAND for saker knyttet til brukere fra Danmark`() {
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
                 hentGeografiskTilknytning = GeografiskTilknytning(
@@ -272,9 +272,9 @@ class EnhetServiceTest {
             )
         )
 
-        val norgKlient = NorgKlientMock.medRespons()
+        val norgGateway = NorgGatewayMock.medRespons()
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -284,7 +284,7 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal sette kvalitetssikrers enhet til NAV_UTLAND for saker knyttet til brukere fra Danmark`() {
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
                 hentGeografiskTilknytning = GeografiskTilknytning(
@@ -294,9 +294,9 @@ class EnhetServiceTest {
             )
         )
 
-        val norgKlient = NorgKlientMock.medRespons()
+        val norgGateway = NorgGatewayMock.medRespons()
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -320,7 +320,7 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal sette NAYs enhet til NAY_UTLAND for saker knyttet til brukere fra Danmark`() {
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
                 hentGeografiskTilknytning = GeografiskTilknytning(
@@ -330,9 +330,9 @@ class EnhetServiceTest {
             )
         )
 
-        val norgKlient = NorgKlientMock.medRespons()
+        val norgGateway = NorgGatewayMock.medRespons()
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -342,14 +342,14 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal rutes til NAY Utland når oppfølgingskontor er NAV Utland`() {
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
             )
         )
-        val veilarbarenaClient = VeilarbarenaKlientMock(oppfølgingsenhet = Enhet.NAV_UTLAND.kode)
-        val norgKlient = NorgKlientMock.medRespons()
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient, UnleashService(FakeUnleash().apply {
+        val veilarbarenaGateway = VeilarbarenaGatewayMock(oppfølgingsenhet = Enhet.NAV_UTLAND.kode)
+        val norgGateway = NorgGatewayMock.medRespons()
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -358,14 +358,14 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal kvalitetssikres av NAY Utland når oppfølgingskontor er NAV Utland`() {
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT)))
             )
         )
-        val veilarbarenaClient = VeilarbarenaKlientMock(oppfølgingsenhet = Enhet.NAV_UTLAND.kode)
-        val norgKlient = NorgKlientMock.medRespons(overordnetFylkesEnheter = listOf("0600"), responsEnhet = "0621")
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, veilarbarenaClient, UnleashService(FakeUnleash().apply {
+        val veilarbarenaGateway = VeilarbarenaGatewayMock(oppfølgingsenhet = Enhet.NAV_UTLAND.kode)
+        val norgGateway = NorgGatewayMock.medRespons(overordnetFylkesEnheter = listOf("0600"), responsEnhet = "0621")
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
@@ -374,7 +374,7 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal sette adressebeskyttelse når relaterte identer har adressebeskyttelse`() {
-        val pdlKlient = PdlKlientMock.medRespons(
+        val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
                 // relatert ident har strengt fortrolig adresse i PDL
@@ -400,9 +400,9 @@ class EnhetServiceTest {
             )
         )
 
-        val norgKlient = NorgKlientMock.medRespons()
+        val norgGateway = NorgGatewayMock.medRespons()
 
-        val service = EnhetService(graphClient, pdlKlient, nomKlient, norgKlient, VeilarbarenaKlientMock(), UnleashService(FakeUnleash().apply {
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
         val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", listOf("barn"))
@@ -412,9 +412,9 @@ class EnhetServiceTest {
 
     @Test
     fun `Behandling av klage på lokalkontor skal rutes til enten fylkeskontor eller lokalkontor`() {
-        val norgKlientVestViken = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0600"))
+        val norgGatewayVestViken = NorgGatewayMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0600"))
 
-        val serviceVestViken = EnhetService(graphClient, pdlKlient, nomKlient, norgKlientVestViken, VeilarbarenaKlientMock(), unleashService = UnleashService(FakeUnleash().apply {
+        val serviceVestViken = EnhetService(graphGateway, pdlGateway, nomGateway, norgGatewayVestViken, VeilarbarenaGatewayMock(), unleashService = UnleashService(FakeUnleash().apply {
             enableAll()
         }))
 
@@ -425,8 +425,8 @@ class EnhetServiceTest {
         assertThat(enhetForVanligOppgave.enhet).isEqualTo("0403")
 
         // Når oppgaven ikke skal til fylkeskontor
-        val norgKlientInnlandet = NorgKlientMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
-        val serviceInnlandet = EnhetService(graphClient, pdlKlient, nomKlient, norgKlientInnlandet, VeilarbarenaKlientMock(), unleashService = UnleashService(FakeUnleash().apply {
+        val norgGatewayInnlandet = NorgGatewayMock.medRespons(responsEnhet = ("0403"), overordnetFylkesEnheter = listOf("0400"))
+        val serviceInnlandet = EnhetService(graphGateway, pdlGateway, nomGateway, norgGatewayInnlandet, VeilarbarenaGatewayMock(), unleashService = UnleashService(FakeUnleash().apply {
             enableAll()
         }))
 
@@ -435,7 +435,7 @@ class EnhetServiceTest {
     }
 
     companion object {
-        val graphClient = object : IMsGraphClient {
+        val graphGateway = object : IMsGraphGateway {
             override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf {
                 return MemberOf(
                     groups = listOf(
@@ -453,13 +453,13 @@ class EnhetServiceTest {
             }
         }
 
-        val nomKlient = object : SkjermingKlient {
+        val nomGateway = object : SkjermingGateway {
             override fun erSkjermet(ident: String): Boolean {
                 return ident == IDENT_MED_SKJERMING
             }
         }
 
-        val pdlKlient = object : IPdlKlient {
+        val pdlGateway = object : IPdlGateway {
             override fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken?): PdlData {
                 return PdlData(
                     hentGeografiskTilknytning = GeografiskTilknytning(
@@ -480,10 +480,10 @@ class EnhetServiceTest {
             }
         }
 
-        class NomKlientMock(val erEgenansatt: Boolean?) : SkjermingKlient {
+        class NomGatewayMock(val erEgenansatt: Boolean?) : SkjermingGateway {
             companion object {
-                fun medRespons(erEgenansatt: Boolean): NomKlientMock {
-                    return NomKlientMock(erEgenansatt)
+                fun medRespons(erEgenansatt: Boolean): NomGatewayMock {
+                    return NomGatewayMock(erEgenansatt)
                 }
             }
 
@@ -492,10 +492,10 @@ class EnhetServiceTest {
             }
         }
 
-        class PdlKlientMock(val pdlDataRespons: PdlData? = null) : IPdlKlient {
+        class PdlGatewayMock(val pdlDataRespons: PdlData? = null) : IPdlGateway {
             companion object {
-                fun medRespons(pdlDataRespons: PdlData): PdlKlientMock {
-                    return PdlKlientMock(pdlDataRespons)
+                fun medRespons(pdlDataRespons: PdlData): PdlGatewayMock {
+                    return PdlGatewayMock(pdlDataRespons)
                 }
             }
 
@@ -512,20 +512,20 @@ class EnhetServiceTest {
             }
         }
 
-        class NorgKlientMock(
+        class NorgGatewayMock(
             val responsEnhet: String? = null,
             val enhetsNavnRespons: Map<String, String>? = null,
             val overordnetFylkesEnheter: List<String>? = null,
             val enhetTilOverordnetEnhetMap: Map<String, List<String>>? = null,
-        ) : INorgKlient {
+        ) : INorgGateway {
             companion object {
                 fun medRespons(
                     responsEnhet: String? = null,
                     enhetsNavnRespons: Map<String, String>? = null,
                     overordnetFylkesEnheter: List<String>? = null,
                     enhetTilOverordnetEnhetMap: Map<String, List<String>>? = null
-                ): NorgKlientMock {
-                    return NorgKlientMock(
+                ): NorgGatewayMock {
+                    return NorgGatewayMock(
                         responsEnhet,
                         enhetsNavnRespons,
                         overordnetFylkesEnheter,
@@ -553,12 +553,12 @@ class EnhetServiceTest {
             }
         }
 
-        class VeilarbarenaKlientMock(
+        class VeilarbarenaGatewayMock(
             val oppfølgingsenhet: String? = null
-        ) : IVeilarbarenaClient {
+        ) : IVeilarbarenaGateway {
             companion object {
-                fun medRespons(oppfølgingsenhet: String? = null): VeilarbarenaKlientMock {
-                    return VeilarbarenaKlientMock(oppfølgingsenhet)
+                fun medRespons(oppfølgingsenhet: String? = null): VeilarbarenaGatewayMock {
+                    return VeilarbarenaGatewayMock(oppfølgingsenhet)
                 }
             }
 

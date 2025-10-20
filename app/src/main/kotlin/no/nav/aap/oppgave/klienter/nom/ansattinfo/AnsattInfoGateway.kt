@@ -14,14 +14,14 @@ import java.io.InputStream
 import java.net.URI
 import java.time.Duration
 
-interface AnsattInfoKlient {
+interface AnsattInfoGateway {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
 }
 
-class NomApiKlient(
+class NomApiGateway(
     private val restClient: RestClient<InputStream>,
-): AnsattInfoKlient {
-    private val log = LoggerFactory.getLogger(NomApiKlient::class.java)
+): AnsattInfoGateway {
+    private val log = LoggerFactory.getLogger(NomApiGateway::class.java)
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.nom.api.url"))
 
     init {
@@ -40,7 +40,7 @@ class NomApiKlient(
         )
 
         fun withClientCredentialsRestClient() =
-            NomApiKlient(
+            NomApiGateway(
                 RestClient(
                     config = getClientConfig(),
                     tokenProvider = ClientCredentialsTokenProvider,
