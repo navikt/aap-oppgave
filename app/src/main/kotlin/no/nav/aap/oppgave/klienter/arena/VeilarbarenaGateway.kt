@@ -22,11 +22,11 @@ private data class HentOppfølgingsenhetResponse(
     val oppfolgingsenhet: String?
 )
 
-interface IVeilarbarenaClient {
+interface IVeilarbarenaGateway {
     fun hentOppfølgingsenhet(personIdent: String): String?
 }
 
-class VeilarbarenaClient : IVeilarbarenaClient {
+class VeilarbarenaGateway : IVeilarbarenaGateway {
 
     private val url = URI.create(requiredConfigForKey("integrasjon.veilarbarena.url"))
 

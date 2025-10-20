@@ -17,11 +17,11 @@ private data class HentVeilederSykefravarsoppfolgingResponse(
     val tildeltVeilederident: String?,
 )
 
-interface ISykefravarsoppfolgingKlient {
+interface ISykefravarsoppfolgingGateway {
     fun hentVeileder(personIdent: String): String?
 }
 
-object SykefravarsoppfolgingKlient : ISykefravarsoppfolgingKlient {
+object SykefravarsoppfolgingGateway : ISykefravarsoppfolgingGateway {
     private val syfoVeilederCache = Caffeine.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(Duration.ofHours(4))

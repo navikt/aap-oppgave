@@ -14,7 +14,7 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
-import no.nav.aap.oppgave.klienter.msgraph.MsGraphClient
+import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.tilgang.Beslutter
@@ -34,7 +34,7 @@ fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: Prometh
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/neste-oppgave").increment()
-        val enhetService = EnhetService(msGraphClient = MsGraphClient(prometheus))
+        val enhetService = EnhetService(msGraphClient = MsGraphGateway(prometheus))
         val nesteOppgave = dataSource.transaction { connection ->
             PlukkOppgaveService(
                 enhetService,
@@ -56,7 +56,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: Prome
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
-        val enhetService = EnhetService(msGraphClient = MsGraphClient(prometheus))
+        val enhetService = EnhetService(msGraphClient = MsGraphGateway(prometheus))
         val oppgave = dataSource.transaction { connection ->
             PlukkOppgaveService(
                 enhetService,

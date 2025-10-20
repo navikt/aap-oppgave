@@ -11,7 +11,7 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
-import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlKlient
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
 
@@ -32,7 +32,7 @@ class OppdaterOppgaveEnhetJobb(
         val identerMedStrengtFortroligAdresse = oppgaverForIdent.keys.toList()
             .chunked(1000)
             .flatMap { identBatch ->
-                PdlGraphqlKlient.withClientCredentialsRestClient()
+                PdlGraphqlGateway.withClientCredentialsRestClient()
                     .hentAdressebeskyttelseForIdenter(identBatch).hentPersonBolk ?: emptyList()
             }
             .filter {

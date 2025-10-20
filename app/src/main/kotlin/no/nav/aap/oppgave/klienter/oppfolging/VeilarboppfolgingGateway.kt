@@ -22,11 +22,11 @@ private data class HentVeilederResponse(
     val veilederIdent: String?
 )
 
-interface IVeilarbarboppfolgingKlient {
+interface IVeilarbarboppfolgingGateway {
     fun hentVeileder(personIdent: String): String?
 }
 
-object VeilarbarboppfolgingKlient : IVeilarbarboppfolgingKlient {
+object VeilarbarboppfolgingGateway : IVeilarbarboppfolgingGateway {
     private val veilarboppVeiledercache = Caffeine.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(Duration.ofHours(4))

@@ -5,7 +5,7 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiKlient
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
@@ -16,7 +16,7 @@ class ReserverOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
 ) {
-    private val ansattInfoKlient = NomApiKlient.withClientCredentialsRestClient()
+    private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun reserverOppgave(
@@ -33,7 +33,7 @@ class ReserverOppgaveService(
         val harTilgang = TilgangGateway.sjekkTilgang(avklaringsbehovReferanse, token)
         if (harTilgang) {
             oppgaverSomSkalReserveres.forEach {
-                oppgaveRepository.reserverOppgave(it, ident, ident, ansattInfoKlient.hentAnsattNavnHvisFinnes(ident))
+                oppgaveRepository.reserverOppgave(it, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
                 sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
             }
             return oppgaverSomSkalReserveres
@@ -61,7 +61,7 @@ class ReserverOppgaveService(
         var c = 0
         oppgaverSomSkalReserveres.forEach {
             if (ident != KELVIN) {
-                oppgaveRepository.reserverOppgave(it, ident, ident, ansattInfoKlient.hentAnsattNavnHvisFinnes(ident))
+                oppgaveRepository.reserverOppgave(it, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
                 sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
                 c++
             }
@@ -79,7 +79,7 @@ class ReserverOppgaveService(
         val oppgaverSomSkalReserveres = oppgaver.map { oppgaveRepository.hentOppgave(it) }
         var c = 0
         oppgaverSomSkalReserveres.forEach {
-            oppgaveRepository.reserverOppgave(oppgaveId = OppgaveId(it.id!!, it.versjon), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent, reservertAvNavn = ansattInfoKlient.hentAnsattNavnHvisFinnes(tildelTilIdent))
+            oppgaveRepository.reserverOppgave(oppgaveId = OppgaveId(it.id!!, it.versjon), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent, reservertAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(tildelTilIdent))
             sendOppgaveStatusOppdatering(OppgaveId(it.id!!, it.versjon), HendelseType.RESERVERT, flytJobbRepository)
             c++
         }
