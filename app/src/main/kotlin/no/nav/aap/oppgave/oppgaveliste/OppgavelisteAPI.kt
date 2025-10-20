@@ -17,6 +17,7 @@ import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource

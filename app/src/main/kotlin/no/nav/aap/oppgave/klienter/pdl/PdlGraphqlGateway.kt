@@ -17,7 +17,7 @@ import java.time.Duration
 
 interface IPdlGateway {
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
-    fun hentPersoninfoForIdenter(identer: List<String>): List<HentPersonBolkResult>
+    fun hentPersoninfoForIdenter(identer: List<String>): PdlData
     fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData
 }
 
@@ -26,22 +26,12 @@ class PdlGraphqlGateway(
 ) : IPdlGateway {
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
 
-    init {
-        CaffeineCacheMetrics.monitor(prometheus, personinfoCache, "pdl_personinfo")
-    }
-
     companion object {
         private fun getClientConfig() = ClientConfig(
             scope = requiredConfigForKey("integrasjon.pdl.scope"),
         )
 
         private const val BEHANDLINGSNUMMER_AAP_SAKSBEHANDLING = "B287"
-
-        private val personinfoCache = Caffeine.newBuilder()
-            .maximumSize(1_000)
-            .expireAfterWrite(Duration.ofHours(1))
-            .recordStats()
-            .build<String, HentPersonBolkResult>()
 
         fun withClientCredentialsRestClient() =
             PdlGraphqlGateway(
@@ -62,25 +52,15 @@ class PdlGraphqlGateway(
         return response.data ?: error("Unexpected response from PDL: ${response.errors}")
     }
 
-    override fun hentPersoninfoForIdenter(identer: List<String>): List<HentPersonBolkResult> {
-        val (identerMangler, identerICache) = identer.partition { personinfoCache.getIfPresent(it) == null }
-
-        val fraCache = identerICache.mapNotNull(personinfoCache::getIfPresent)
-        if (identerMangler.isEmpty()) {
-            return fraCache
-        }
-
-        val request = PdlRequest.hentPersoninfoForIdenter(identerMangler)
+    override fun hentPersoninfoForIdenter(identer: List<String>): PdlData {
+        val request = PdlRequest.hentPersoninfoForIdenter(identer)
         val response = graphqlQuery(request)
 
         requireNotNull(response.data) {
             "Ukjent respons fra PDL: ${response.errors}"
         }
 
-        val res = response.data.hentPersonBolk.orEmpty()
-            .onEach { personinfoCache.put(it.ident, it) }
-
-        return res + fraCache
+        return response.data
     }
 
     override fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData {

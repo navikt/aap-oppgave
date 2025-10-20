@@ -17,6 +17,8 @@ import no.nav.aap.oppgave.SøkDto
 import no.nav.aap.oppgave.SøkResponse
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.harAdressebeskyttelse
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.plukk.TilgangGateway
 import no.nav.aap.tilgang.Operasjon
 import org.slf4j.LoggerFactory

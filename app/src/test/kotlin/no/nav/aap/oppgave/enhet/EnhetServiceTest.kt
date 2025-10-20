@@ -469,7 +469,7 @@ class EnhetServiceTest {
                 )
             }
 
-            override fun hentPersoninfoForIdenter(identer: List<String>): List<HentPersonBolkResult> {
+            override fun hentPersoninfoForIdenter(identer: List<String>): PdlData {
                 TODO("Not yet implemented")
             }
 
@@ -503,8 +503,8 @@ class EnhetServiceTest {
                 return pdlDataRespons ?: TODO("Not yet implemented")
             }
 
-            override fun hentPersoninfoForIdenter(identer: List<String>): List<HentPersonBolkResult> {
-                return pdlDataRespons?.hentPersonBolk ?: TODO("Not yet implemented")
+            override fun hentPersoninfoForIdenter(identer: List<String>): PdlData {
+                return pdlDataRespons ?: TODO("Not yet implemented")
             }
 
             override fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData {

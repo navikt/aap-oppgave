@@ -14,6 +14,7 @@ import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 
 const val maksOppgaver = 50
 
