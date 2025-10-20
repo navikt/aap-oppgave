@@ -1,7 +1,5 @@
 package no.nav.aap.oppgave.klienter.pdl
 
-import com.github.benmanes.caffeine.cache.Caffeine
-import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -13,7 +11,6 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.Client
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.io.InputStream
 import java.net.URI
-import java.time.Duration
 
 interface IPdlGateway {
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
