@@ -1339,22 +1339,6 @@ class OppdaterOppgaveServiceTest {
             mottattDokumenter = listOf(),
             avklaringsbehov = listOf(
                 AvklaringsbehovHendelseDto(
-                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
-                    status = AvklaringsbehovStatus.AVBRUTT,
-                    endringer = listOf(
-                        EndringDTO(
-                            status = AvklaringsbehovStatus.OPPRETTET,
-                            endretAv = "Kelvin",
-                            tidsstempel = nå.minusHours(2)
-                        ),
-                        EndringDTO(
-                            status = AvklaringsbehovStatus.AVBRUTT,
-                            endretAv = "Kelvin",
-                            tidsstempel = nå.minusHours(1)
-                        )
-                    )
-                ),
-                AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.VURDER_TREKK_AV_SØKNAD,
                     status = AvklaringsbehovStatus.OPPRETTET,
                     endringer = listOf(
@@ -1362,6 +1346,17 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(1)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
                         )
                     )
                 ),

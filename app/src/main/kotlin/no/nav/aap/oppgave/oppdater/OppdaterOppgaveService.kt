@@ -307,7 +307,7 @@ class OppdaterOppgaveService(
             return false
         }
         val sisteAvsluttetAvklaringsbehov = oppgaveOppdatering.avklaringsbehov
-            .filter { it.status in AVSLUTTEDE_STATUSER }
+            .filter { it.avklaringsbehovKode.kode != Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name }
             .maxByOrNull { it.sistEndret() }
 
         return sisteAvsluttetAvklaringsbehov?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
