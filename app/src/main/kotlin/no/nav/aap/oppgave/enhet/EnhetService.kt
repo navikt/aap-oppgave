@@ -42,7 +42,7 @@ enum class FylkeskontorSomSkalBehandleKlager(val enhetsnummer: String) {
 
 interface IEnhetService {
     fun hentEnheter(ident: String, currentToken: OidcToken): List<String>
-    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null): EnhetForOppgave
+    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null, skalOverstyresTilLokalkontor: Boolean? = false): EnhetForOppgave
     fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean
 }
 
@@ -66,7 +66,10 @@ class EnhetService(
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
     }
 
-    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
+    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?, skalOverstyresTilLokalkontor: Boolean?): EnhetForOppgave {
+        if (skalOverstyresTilLokalkontor == true) {
+            finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
+        }
         return if (avklaringsbehovKode in
             AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
             + AVKLARINGSBEHOV_FOR_BESLUTTER

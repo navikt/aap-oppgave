@@ -300,17 +300,32 @@ class OppdaterOppgaveService(
         )
     }
 
+    private fun skalOverstyresTilNavKontor(oppgaveOppdatering: OppgaveOppdatering, avklaringsbehovHendelse: AvklaringsbehovHendelse): Boolean {
+        // Hvis trekk søknad skal oppgaven gå til lokalkontor dersom saken lå på lokalkontor i det trekk søknad ble valgt
+        if (avklaringsbehovHendelse.avklaringsbehovKode.kode != Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name || !unleashService.isEnabled(
+                FeatureToggles.TrekkSøknadTilNavKontor)) {
+            return false
+        }
+        val sisteAvsluttetAvklaringsbehov = oppgaveOppdatering.avklaringsbehov
+            .filter { it.status in AVSLUTTEDE_STATUSER }
+            .maxByOrNull { it.sistEndret() }
+
+        return sisteAvsluttetAvklaringsbehov?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
+    }
+
     private fun opprettOppgaver(
         oppgaveOppdatering: OppgaveOppdatering,
         avklaringsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelse>
     ) {
         avklaringsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
             val personIdent = oppgaveOppdatering.personIdent
+            val skalOverstyresTilLokalkontor = skalOverstyresTilNavKontor(oppgaveOppdatering, avklaringsbehovHendelse)
             val enhetForOppgave = enhetService.utledEnhetForOppgave(
                 avklaringsbehovHendelse.avklaringsbehovKode,
                 personIdent,
                 oppgaveOppdatering.relevanteIdenter,
-                oppgaveOppdatering.saksnummer
+                oppgaveOppdatering.saksnummer,
+                skalOverstyresTilLokalkontor
             )
 
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null

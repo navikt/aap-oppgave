@@ -1280,6 +1280,103 @@ class OppdaterOppgaveServiceTest {
         assertThat(returTilToTrinn.avklaringsbehovKode).isEqualTo(Definisjon.FATTE_VEDTAK.kode.name)
     }
 
+    @Test
+    fun `Trekk søknad-oppgaver kan rutes til båd Nav-kontor og NAY`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+        )
+        val nå = LocalDateTime.now()
+
+        // sak på sykdomssteget
+        val tilSykdom = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(tilSykdom)
+
+        val oppgaveSykdom = hentOppgaverForBehandling(behandlingsref).first()
+        assertThat(oppgaveSykdom.avklaringsbehovKode).isEqualTo(Definisjon.AVKLAR_SYKDOM.kode.name)
+
+        // søknad trekkes fra sykdomssteget
+        val trekkSøknad = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.AVBRUTT,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVBRUTT,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.VURDER_TREKK_AV_SØKNAD,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1)
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD", "SØKNAD_TRUKKET"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(trekkSøknad)
+
+        val oppgaveSøknadTrukket = hentOppgaverForBehandling(behandlingsref).first { it.status != Status.AVSLUTTET }
+        assertThat(oppgaveSøknadTrukket.avklaringsbehovKode).isEqualTo(Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name)
+        assertThat(oppgaveSøknadTrukket.enhet).isEqualTo(ENHET_NAV_ASKER)
+    }
+
 
     private fun sendBehandlingFlytStoppetHendelse(hendelse: BehandlingFlytStoppetHendelse) {
         dataSource.transaction { connection ->
@@ -1382,6 +1479,7 @@ class OppdaterOppgaveServiceTest {
     }
 
     private val FORTROLIG_ADRESSE_IDENT = "11111000000"
+    private val ENHET_NAV_ASKER = "0220"
     val enhetService = object : IEnhetService {
 
         override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
@@ -1392,10 +1490,13 @@ class OppdaterOppgaveServiceTest {
             avklaringsbehovKode: AvklaringsbehovKode,
             ident: String?,
             relevanteIdenter: List<String>,
-            saksnummer: String?
+            saksnummer: String?,
+            skalOverstyresTilLokalkontor: Boolean?
         ): EnhetForOppgave {
             if ((relevanteIdenter + ident).contains(STRENGT_FORTROLIG_IDENT)) {
                 return EnhetForOppgave(Enhet.NAV_VIKAFOSSEN.kode, null)
+            } else if (skalOverstyresTilLokalkontor == true) {
+                return EnhetForOppgave(ENHET_NAV_ASKER, null)
             }
             return EnhetForOppgave(ENHET_NAV_LØRENSKOG, null)
         }
