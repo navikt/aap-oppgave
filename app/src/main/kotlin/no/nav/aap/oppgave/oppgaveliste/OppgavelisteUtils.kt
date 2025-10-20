@@ -3,7 +3,6 @@ package no.nav.aap.oppgave.oppgaveliste
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.oppgave.OppgaveDto
-import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.time.Duration
@@ -62,11 +61,4 @@ object OppgavelisteUtils {
 
         return this.copy(personNavn = personNavn)
     }
-
-    fun harAdressebeskyttelse(oppgave: OppgaveDto): Boolean =
-        (
-                oppgave.enhet == Enhet.NAV_VIKAFOSSEN.kode ||
-                        oppgave.enhet.endsWith("83") || // alle kontorer for egen ansatt slutter på 83
-                        oppgave.harFortroligAdresse == true
-                )
 }

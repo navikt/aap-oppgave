@@ -15,9 +15,9 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SøkDto
 import no.nav.aap.oppgave.SøkResponse
+import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
-import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.harAdressebeskyttelse
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.plukk.TilgangGateway
 import no.nav.aap.tilgang.Operasjon
@@ -93,5 +93,10 @@ fun NormalOpenAPIRoute.søkApi(
         )
     }
 }
+
+private fun harAdressebeskyttelse(oppgave: OppgaveDto): Boolean =
+    oppgave.enhet == Enhet.NAV_VIKAFOSSEN.kode ||
+            oppgave.enhet.endsWith("83") || // alle kontorer for egen ansatt slutter på 83
+            oppgave.harFortroligAdresse == true
 
 private fun OppgaveDto.hentPersonNavn() = listOf(this).hentPersonNavn().first()
