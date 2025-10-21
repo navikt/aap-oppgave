@@ -114,12 +114,14 @@ class OppdaterOppgaveService(
         val personIdent = oppgaveOppdatering.personIdent
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
+            val skalOverstyresTilLokalkontor = skalOverstyresTilLokalKontor(oppgaveOppdatering, avklaringsbehov)
             val enhetForOppgave =
                 enhetService.utledEnhetForOppgave(
                     avklaringsbehov.avklaringsbehovKode,
                     personIdent,
                     oppgaveOppdatering.relevanteIdenter,
-                    oppgaveOppdatering.saksnummer
+                    oppgaveOppdatering.saksnummer,
+                    skalOverstyresTilLokalkontor,
                 )
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
             val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
@@ -309,15 +311,14 @@ class OppdaterOppgaveService(
                 FeatureToggles.OverstyrTilNavKontor)) {
             return false
         }
-        val sisteAvsluttetAvklaringsbehov = oppgaveOppdatering.avklaringsbehov
+        val varForrigeOppgaveHosNavKontor = oppgaveOppdatering.avklaringsbehov
             .filter { avklaringsbehov -> avklaringsbehov.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller }
-            .maxByOrNull { it.sistEndret() }
+            .maxByOrNull { it.sistEndret() }?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
 
-        val skalOverstyres = sisteAvsluttetAvklaringsbehov?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
-        if (skalOverstyres) {
+        if (varForrigeOppgaveHosNavKontor) {
             log.info("Oppgave overstyres til Nav-kontor for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode.kode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
         }
-        return skalOverstyres
+        return varForrigeOppgaveHosNavKontor
     }
 
     private fun opprettOppgaver(
