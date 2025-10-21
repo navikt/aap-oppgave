@@ -68,7 +68,7 @@ class EnhetService(
 
     override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?, skalOverstyresTilLokalkontor: Boolean?): EnhetForOppgave {
         if (skalOverstyresTilLokalkontor == true) {
-            finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
+            return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
         }
         return if (avklaringsbehovKode in
             AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
