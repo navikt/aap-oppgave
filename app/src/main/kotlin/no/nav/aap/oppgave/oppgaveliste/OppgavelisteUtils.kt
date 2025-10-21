@@ -5,12 +5,16 @@ import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.metrikker.prometheus
+import org.flywaydb.core.api.logging.LogFactory
 import java.time.Duration
+import kotlin.time.measureTimedValue
 
 object OppgavelisteUtils {
+    private val logger = LogFactory.getLog(OppgavelisteUtils::class.java)
+
     private val personinfoCache = Caffeine.newBuilder()
-        .maximumSize(1_000)
-        .expireAfterWrite(Duration.ofHours(6))
+        .maximumSize(5_000)
+        .expireAfterWrite(Duration.ofHours(12))
         .recordStats()
         .build<String, String>() // <Ident, Navn>
 
@@ -18,9 +22,18 @@ object OppgavelisteUtils {
         CaffeineCacheMetrics.monitor(prometheus, personinfoCache, "oppgave_navn")
     }
 
-    fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> {
+    fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> =
+        measureTimedValue {
+            leggTilPersonNavn()
+        }.let {
+            logger.info("Hentet navn for ${this.size} oppgaver på ${it.duration} ms")
+            it.value
+        }
+
+    private fun List<OppgaveDto>.leggTilPersonNavn(): List<OppgaveDto> {
         val identer = mapNotNull { it.personIdent }.distinct()
         if (identer.isEmpty()) {
+            logger.info("Ingen identer å hente navn for")
             return this
         }
 
@@ -31,6 +44,7 @@ object OppgavelisteUtils {
             .filterNot { it.value.isNullOrBlank() }
 
         if (identerMangler.isEmpty()) {
+            logger.info("Alle identer har cachet navn")
             return this.map { it.medNavn(it.personIdent, navnMapFraCache) }
         }
 

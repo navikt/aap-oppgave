@@ -46,18 +46,18 @@ class PdlGraphqlGateway(
         val request = PdlRequest.hentAdressebeskyttelseOgGeografiskTilknytning(personident)
         val response = graphqlQuery(request, currentToken)
 
-        return response.data ?: error("Unexpected response from PDL: ${response.errors}")
+        return requireNotNull(response.data) {
+            "Ukjent respons fra PDL: ${response.errors}"
+        }
     }
 
     override fun hentPersoninfoForIdenter(identer: List<String>): PdlData {
         val request = PdlRequest.hentPersoninfoForIdenter(identer)
         val response = graphqlQuery(request)
 
-        requireNotNull(response.data) {
+        return requireNotNull(response.data) {
             "Ukjent respons fra PDL: ${response.errors}"
         }
-
-        return response.data
     }
 
     override fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData {
