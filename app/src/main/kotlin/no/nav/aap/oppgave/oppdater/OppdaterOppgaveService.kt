@@ -6,6 +6,7 @@ import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
@@ -300,14 +301,16 @@ class OppdaterOppgaveService(
         )
     }
 
-    private fun skalOverstyresTilNavKontor(oppgaveOppdatering: OppgaveOppdatering, avklaringsbehovHendelse: AvklaringsbehovHendelse): Boolean {
-        // Hvis trekk søknad skal oppgaven gå til lokalkontor dersom saken lå på lokalkontor i det trekk søknad ble valgt
-        if (avklaringsbehovHendelse.avklaringsbehovKode.kode != Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name || !unleashService.isEnabled(
+    private fun skalOverstyresTilLokalKontor(oppgaveOppdatering: OppgaveOppdatering, avklaringsbehovHendelse: AvklaringsbehovHendelse): Boolean {
+        // Hvis avklaringsbehov kan løses av begge roller, skal oppgaven gå til lokalkontor dersom forrige oppgave på behandling var på lokalkontor
+        // P.t. gjelder dette trekk søknad og trekk klage
+        val avklaringsbehovForBeggeRoller = AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode }
+        if (avklaringsbehovHendelse.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller || !unleashService.isEnabled(
                 FeatureToggles.TrekkSøknadTilNavKontor)) {
             return false
         }
         val sisteAvsluttetAvklaringsbehov = oppgaveOppdatering.avklaringsbehov
-            .filter { it.avklaringsbehovKode.kode != Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name }
+            .filter { avklaringsbehov -> avklaringsbehov.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller }
             .maxByOrNull { it.sistEndret() }
 
         return sisteAvsluttetAvklaringsbehov?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
@@ -319,7 +322,7 @@ class OppdaterOppgaveService(
     ) {
         avklaringsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
             val personIdent = oppgaveOppdatering.personIdent
-            val skalOverstyresTilLokalkontor = skalOverstyresTilNavKontor(oppgaveOppdatering, avklaringsbehovHendelse)
+            val skalOverstyresTilLokalkontor = skalOverstyresTilLokalKontor(oppgaveOppdatering, avklaringsbehovHendelse)
             val enhetForOppgave = enhetService.utledEnhetForOppgave(
                 avklaringsbehovHendelse.avklaringsbehovKode,
                 personIdent,

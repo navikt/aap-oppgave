@@ -22,6 +22,13 @@ val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER =
         .map { AvklaringsbehovKode(it.kode.name) }
         .toSet()
 
+val AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER =
+    Definisjon.entries
+        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
+        .filter { Rolle.SAKSBEHANDLER_OPPFOLGING in it.løsesAv && Rolle.SAKSBEHANDLER_NASJONAL in it.løsesAv }
+        .map { AvklaringsbehovKode(it.kode.name) }
+        .toSet()
+
 val AVKLARINGSBEHOV_FOR_BESLUTTER = Definisjon.entries
     .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
     .filter { Rolle.BESLUTTER in it.løsesAv }

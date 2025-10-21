@@ -1281,7 +1281,7 @@ class OppdaterOppgaveServiceTest {
     }
 
     @Test
-    fun `Trekk søknad-oppgaver kan rutes til båd Nav-kontor og NAY`() {
+    fun `Trekk søknad-oppgaver rutes til Nav-kontor dersom de lå hos Nav-kontor fra før av`() {
         val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
