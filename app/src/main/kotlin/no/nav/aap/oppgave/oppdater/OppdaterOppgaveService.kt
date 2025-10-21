@@ -306,14 +306,18 @@ class OppdaterOppgaveService(
         // P.t. gjelder dette trekk søknad og trekk klage
         val avklaringsbehovForBeggeRoller = AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode }
         if (avklaringsbehovHendelse.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller || !unleashService.isEnabled(
-                FeatureToggles.TrekkSøknadTilNavKontor)) {
+                FeatureToggles.OverstyrTilNavKontor)) {
             return false
         }
         val sisteAvsluttetAvklaringsbehov = oppgaveOppdatering.avklaringsbehov
             .filter { avklaringsbehov -> avklaringsbehov.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller }
             .maxByOrNull { it.sistEndret() }
 
-        return sisteAvsluttetAvklaringsbehov?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
+        val skalOverstyres = sisteAvsluttetAvklaringsbehov?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
+        if (skalOverstyres) {
+            log.info("Oppgave overstyres til Nav-kontor for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode.kode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+        }
+        return skalOverstyres
     }
 
     private fun opprettOppgaver(
