@@ -303,6 +303,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 RESERVERT_AV = NULL,
                 RESERVERT_TIDSPUNKT = NULL,
+                RESERVERT_AV_NAVN = NULL,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -539,7 +540,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE 
             SET 
                 ENHET = ?,
-                RESERVERT_AV = NULL,
+                RESERVERT_AV = NULL, 
+                RESERVERT_TIDSPUNKT = NULL,
+                RESERVERT_AV_NAVN = NULL,
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 VERSJON = VERSJON + 1
