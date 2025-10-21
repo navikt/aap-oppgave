@@ -22,18 +22,9 @@ object OppgavelisteUtils {
         CaffeineCacheMetrics.monitor(prometheus, personinfoCache, "oppgave_navn")
     }
 
-    fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> =
-        measureTimedValue {
-            leggTilPersonNavn()
-        }.let {
-            logger.info("Hentet navn for ${this.size} oppgaver på ${it.duration} ms")
-            it.value
-        }
-
-    private fun List<OppgaveDto>.leggTilPersonNavn(): List<OppgaveDto> {
+    fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> {
         val identer = mapNotNull { it.personIdent }.distinct()
         if (identer.isEmpty()) {
-            logger.info("Ingen identer å hente navn for")
             return this
         }
 
@@ -44,7 +35,6 @@ object OppgavelisteUtils {
             .filterNot { it.value.isNullOrBlank() }
 
         if (identerMangler.isEmpty()) {
-            logger.info("Alle identer har cachet navn")
             return this.map { it.medNavn(it.personIdent, navnMapFraCache) }
         }
 
@@ -53,18 +43,25 @@ object OppgavelisteUtils {
         return this.map { it.medNavn(it.personIdent, navnMap) }
     }
 
-    private fun hentNavnFraPDL(identer: List<String>): Map<String, String> {
-        return PdlGraphqlGateway
-            .withClientCredentialsRestClient()
-            .hentPersoninfoForIdenter(identer)
-            .hentPersonBolk
-            ?.associate {
-                val navn = it.person?.navn?.firstOrNull()?.fulltNavn() ?: ""
-                personinfoCache.put(it.ident, navn)
+    private fun hentNavnFraPDL(identer: List<String>): Map<String, String> = measureTimedValue {
+        runCatching {
+            PdlGraphqlGateway
+                .withClientCredentialsRestClient()
+                .hentPersoninfoForIdenter(identer)
+                .hentPersonBolk
+                ?.associate {
+                    val navn = it.person?.navn?.firstOrNull()?.fulltNavn() ?: ""
+                    personinfoCache.put(it.ident, navn)
 
-                it.ident to navn
-            }
-            ?: emptyMap()
+                    it.ident to navn
+                }
+                ?: emptyMap()
+        }
+    }.let { (result, duration) ->
+        if (result.isSuccess) logger.info("Hentet navn for ${identer.size} identer fra PDL (tid: $duration)")
+        else logger.error("Feil ved henting av ${identer.size} identer fra PDL (tid: $duration)")
+
+        result.getOrThrow()
     }
 
     private fun OppgaveDto.medNavn(
