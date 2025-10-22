@@ -9,6 +9,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.motor.FlytJobbRepository
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
@@ -69,12 +70,16 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
 
             relaterteIdenter.forEach { VeilarbarenaGateway.invalidateCache(it) }
 
+            // må sjekke om oppgaven tidligere er overstyrt til lokalkontor. Da skal den bli det igjen.
+            val erOverstyrtTilLokalkontor = oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
+
             val nyEnhet =
                 enhetService.utledEnhetForOppgave(
                     AvklaringsbehovKode(oppgave.avklaringsbehovKode),
                     oppgave.personIdent,
                     relaterteIdenter,
-                    oppgave.saksnummer
+                    oppgave.saksnummer,
+                    erOverstyrtTilLokalkontor
                 )
 
             val nyEnhetForKø = nyEnhet.oppfølgingsenhet ?: nyEnhet.enhet

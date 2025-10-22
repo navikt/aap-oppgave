@@ -8,3 +8,5 @@ enum class Enhet(val kode: String) {
     NAY_UTLAND("4402"),
     NASJONAL_OPPFØLGINGSENHET("4154")
 }
+
+val NAY_ENHETER = listOf(Enhet.NAY_UTLAND, Enhet.NAY_EGNE_ANSATTE, Enhet.NAY)

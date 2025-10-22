@@ -6,6 +6,7 @@ import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER
+import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
@@ -113,12 +114,14 @@ class OppdaterOppgaveService(
         val personIdent = oppgaveOppdatering.personIdent
         val eksisterendeOppgave = oppgaveMap[avklaringsbehov.avklaringsbehovKode]
         if (eksisterendeOppgave != null) {
+            val skalOverstyresTilLokalkontor = skalOverstyresTilLokalKontor(oppgaveOppdatering, avklaringsbehov)
             val enhetForOppgave =
                 enhetService.utledEnhetForOppgave(
                     avklaringsbehov.avklaringsbehovKode,
                     personIdent,
                     oppgaveOppdatering.relevanteIdenter,
-                    oppgaveOppdatering.saksnummer
+                    oppgaveOppdatering.saksnummer,
+                    skalOverstyresTilLokalkontor,
                 )
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
             val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
@@ -300,17 +303,32 @@ class OppdaterOppgaveService(
         )
     }
 
+    private fun skalOverstyresTilLokalKontor(oppgaveOppdatering: OppgaveOppdatering, avklaringsbehovHendelse: AvklaringsbehovHendelse): Boolean {
+        // Hvis avklaringsbehov kan løses av begge roller, skal oppgaven gå til lokalkontor dersom forrige oppgave på behandling var på lokalkontor
+        // P.t. gjelder dette trekk søknad og trekk klage
+        val avklaringsbehovForBeggeRoller = AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode }
+        if (avklaringsbehovHendelse.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller) {
+            return false
+        }
+        val varForrigeOppgaveHosNavKontor = oppgaveOppdatering.avklaringsbehov
+            .filter { avklaringsbehov -> avklaringsbehov.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller }
+            .maxByOrNull { it.sistEndret() }?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
+        return varForrigeOppgaveHosNavKontor
+    }
+
     private fun opprettOppgaver(
         oppgaveOppdatering: OppgaveOppdatering,
         avklaringsbehovSomDetSkalOpprettesOppgaverFor: List<AvklaringsbehovHendelse>
     ) {
         avklaringsbehovSomDetSkalOpprettesOppgaverFor.forEach { avklaringsbehovHendelse ->
             val personIdent = oppgaveOppdatering.personIdent
+            val skalOverstyresTilLokalkontor = skalOverstyresTilLokalKontor(oppgaveOppdatering, avklaringsbehovHendelse)
             val enhetForOppgave = enhetService.utledEnhetForOppgave(
                 avklaringsbehovHendelse.avklaringsbehovKode,
                 personIdent,
                 oppgaveOppdatering.relevanteIdenter,
-                oppgaveOppdatering.saksnummer
+                oppgaveOppdatering.saksnummer,
+                skalOverstyresTilLokalkontor
             )
 
             val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
