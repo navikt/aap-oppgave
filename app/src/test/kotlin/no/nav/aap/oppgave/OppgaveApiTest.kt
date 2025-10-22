@@ -591,6 +591,17 @@ class OppgaveApiTest {
         // Når ingen matcher returneres tom liste
         val ingenSaksbehandlere = søkEtterSaksbehandlere("xxxxx", listOf(oppgave.id!!, oppgave2.id!!))?.saksbehandlere
         assertThat(ingenSaksbehandlere).isEmpty()
+
+        // Kan søke på fullt navn
+        val naySaksbehandler = søkEtterSaksbehandlere("test naysen", listOf(oppgave2.id!!))?.saksbehandlere
+        assertThat(naySaksbehandler).hasSize(1)
+        assertThat(naySaksbehandler?.first()?.navIdent).isEqualTo("NayVeileder123")
+
+        // Kan søke på NAV-ident
+        val naySaksbehandlerIdent = søkEtterSaksbehandlere("nayveileder123", listOf(oppgave2.id!!))?.saksbehandlere
+        assertThat(naySaksbehandlerIdent).hasSize(1)
+        assertThat(naySaksbehandlerIdent?.first()?.navIdent).isEqualTo("NayVeileder123")
+
     }
 
     @Test

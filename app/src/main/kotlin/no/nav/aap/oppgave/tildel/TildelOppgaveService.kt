@@ -31,9 +31,9 @@ class TildelOppgaveService(
 
     private fun List<SaksbehandlerDto>.filtrerSøkPåNavn(søketekst: String): List<SaksbehandlerDto> {
         return this.filter { saksbehandler ->
-            saksbehandler.navn?.split(" ")?.any {
-                it.startsWith(søketekst, ignoreCase = true)
-            } == true
+            (saksbehandler.navn?.split(" ")?.any { it.startsWith(søketekst, ignoreCase = true) } == true)
+                    || (saksbehandler.navn?.startsWith(søketekst, ignoreCase = true) == true)
+                    || (saksbehandler.navIdent.equals(søketekst, ignoreCase = true))
         }
     }
 }
