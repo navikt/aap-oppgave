@@ -307,17 +307,12 @@ class OppdaterOppgaveService(
         // Hvis avklaringsbehov kan løses av begge roller, skal oppgaven gå til lokalkontor dersom forrige oppgave på behandling var på lokalkontor
         // P.t. gjelder dette trekk søknad og trekk klage
         val avklaringsbehovForBeggeRoller = AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode }
-        if (avklaringsbehovHendelse.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller || !unleashService.isEnabled(
-                FeatureToggles.OverstyrTilNavKontor)) {
+        if (avklaringsbehovHendelse.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller) {
             return false
         }
         val varForrigeOppgaveHosNavKontor = oppgaveOppdatering.avklaringsbehov
             .filter { avklaringsbehov -> avklaringsbehov.avklaringsbehovKode.kode !in avklaringsbehovForBeggeRoller }
             .maxByOrNull { it.sistEndret() }?.avklaringsbehovKode?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
-
-        if (varForrigeOppgaveHosNavKontor) {
-            log.info("Oppgave overstyres til Nav-kontor for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode.kode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
-        }
         return varForrigeOppgaveHosNavKontor
     }
 

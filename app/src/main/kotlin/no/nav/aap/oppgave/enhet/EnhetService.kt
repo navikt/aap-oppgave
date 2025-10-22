@@ -67,7 +67,8 @@ class EnhetService(
     }
 
     override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?, skalOverstyresTilLokalkontor: Boolean?): EnhetForOppgave {
-        if (skalOverstyresTilLokalkontor == true) {
+        if (skalOverstyresTilLokalkontor == true && unleashService.isEnabled(FeatureToggles.OverstyrTilNavKontor)) {
+            log.info("Oppgave overstyres til Nav-kontor for avklaringsbehov ${avklaringsbehovKode.kode}. Saksnummer: $saksnummer")
             return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
         }
         return if (avklaringsbehovKode in
