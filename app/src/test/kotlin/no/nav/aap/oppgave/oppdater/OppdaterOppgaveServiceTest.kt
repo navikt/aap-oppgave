@@ -1386,7 +1386,7 @@ class OppdaterOppgaveServiceTest {
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
                 MottattDokumentRepository(connection),
-            ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
+            ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }
 
@@ -1404,7 +1404,7 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 MottattDokumentRepository(connection),
 
-                ).oppdaterOppgaver(hendelse.tilOppgaveOppdatering())
+                ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }
 

@@ -36,7 +36,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
-        ).oppdaterOppgaver(
+        ).håndterNyOppgaveOppdatering(
             request.tilOppgaveOppdatering()
         )
     }
@@ -61,7 +61,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
-        ).oppdaterOppgaver(request.tilOppgaveOppdatering())
+        ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
     }
     respondWithStatus(HttpStatusCode.OK)
 }
