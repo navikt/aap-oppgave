@@ -15,21 +15,6 @@ import no.nav.aap.oppgave.verdityper.Status
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
-    route("/avreserver-oppgave").post<Unit, List<OppgaveId>, AvklaringsbehovReferanseDto> { _, dto ->
-        prometheus.httpCallCounter("avreserver-oppgave").increment()
-        val oppgaver = dataSource.transaction { connection ->
-            val oppgaveSomSkalAvreserveres = OppgaveRepository(connection).hentÅpneOppgaver(dto)
-            val reserverOppgaveService = ReserverOppgaveService(
-                OppgaveRepository(connection),
-                FlytJobbRepository(connection),
-            )
-            val ident = ident()
-            reserverOppgaveService.avreserverOppgave(oppgaveSomSkalAvreserveres, ident)
-            oppgaveSomSkalAvreserveres
-        }
-        respond(listOf(oppgaver))
-    }
-
     route("/avreserver-oppgaver").post<Unit, List<OppgaveId>, AvreserverOppgaveDto> { _, dto ->
         prometheus.httpCallCounter("avreserver-oppgaver").increment()
         val oppgaver = dataSource.transaction { connection ->
@@ -51,9 +36,6 @@ fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: Pro
     }
 }
 
-
-
-
 fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
 
     route("/flytt-oppgave").post<Unit, List<OppgaveId>, FlyttOppgaveDto> { _, dto ->
@@ -69,5 +51,4 @@ fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: Promethe
             reserverOppgaveService.reserverOppgave(dto.avklaringsbehovReferanse, innloggetBrukerIdent, token)
         }
         respond(listOf(oppgave))
-
     }
