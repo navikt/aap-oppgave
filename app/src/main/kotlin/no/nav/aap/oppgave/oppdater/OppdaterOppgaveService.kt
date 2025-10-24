@@ -144,9 +144,6 @@ class OppdaterOppgaveService(
                 oppgaveOppdatering.saksnummer,
                 skalOverstyresTilLokalkontor,
             )
-        val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
-        val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
-
         val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
         val harFortroligAdresse = enhetService.skalHaFortroligAdresse(
             oppgaveOppdatering.personIdent,
@@ -160,8 +157,8 @@ class OppdaterOppgaveService(
             personIdent = personIdent,
             enhet = enhetForOppgave.enhet,
             oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
-            veilederArbeid = veilederArbeid,
-            veilederSykdom = veilederSykdom,
+            veilederArbeid = hentVeilederArbeidsoppfølging(personIdent),
+            veilederSykdom = hentVeilederSykefraværoppfølging(personIdent),
             påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
             påVentÅrsak = årsakTilSattPåVent,
             påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
@@ -351,9 +348,6 @@ class OppdaterOppgaveService(
             oppgaveOppdatering.saksnummer,
             skalOverstyresTilLokalkontor
         )
-
-        val veilederArbeid = if (personIdent != null) hentVeilederArbeidsoppfølging(personIdent) else null
-        val veilederSykdom = if (personIdent != null) hentVeilederSykefraværoppfølging(personIdent) else null
         val harFortroligAdresse =
             enhetService.skalHaFortroligAdresse(personIdent, oppgaveOppdatering.relevanteIdenter)
 
@@ -364,8 +358,8 @@ class OppdaterOppgaveService(
             ident = KELVIN,
             enhet = enhetForOppgave.enhet,
             oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
-            veilederArbeid = veilederArbeid,
-            veilederSykdom = veilederSykdom,
+            veilederArbeid = hentVeilederArbeidsoppfølging(personIdent),
+            veilederSykdom = hentVeilederSykefraværoppfølging(personIdent),
             påVentTil = oppgaveOppdatering.venteInformasjon?.frist,
             påVentÅrsak = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent,
             venteBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
@@ -382,13 +376,12 @@ class OppdaterOppgaveService(
         val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
         if (hvemLøsteForrigeAvklaringsbehov != null) {
             val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
-            val nyttAvklaringsbehov = avklaringsbehovHendelse
-            if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, nyttAvklaringsbehov.avklaringsbehovKode)) {
+            if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
                 val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
                     saksnummer = oppgaveOppdatering.saksnummer,
                     referanse = oppgaveOppdatering.referanse,
                     null,
-                    nyttAvklaringsbehov.avklaringsbehovKode.kode
+                    avklaringsbehovHendelse.avklaringsbehovKode.kode
                 )
                 reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                     avklaringsbehovReferanse,
@@ -397,7 +390,7 @@ class OppdaterOppgaveService(
                 log.info("Ny oppgave(id=${oppgaveId.id}) ble automatisk tilordnet: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}")
 
             } else {
-                log.info("Ingen automatisk tilordning: Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${nyttAvklaringsbehov.avklaringsbehovKode}")
+                log.info("Ingen automatisk tilordning: Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
             }
         }
         håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, avklaringsbehovHendelse, oppgaveId)
