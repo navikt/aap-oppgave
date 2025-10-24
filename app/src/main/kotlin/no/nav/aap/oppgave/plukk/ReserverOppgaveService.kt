@@ -23,8 +23,8 @@ class ReserverOppgaveService(
         avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
         ident: String,
         token: OidcToken
-    ): List<OppgaveId> {
-        val oppgaverSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
+    ): OppgaveId {
+        val oppgaveSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
 
         require(avklaringsbehovReferanse.referanse != null || avklaringsbehovReferanse.journalpostId != null) {
             "AvklaringsbehovReferanse må ha referanse til enten behandling eller journalpost"
@@ -32,13 +32,10 @@ class ReserverOppgaveService(
 
         val harTilgang = TilgangGateway.sjekkTilgang(avklaringsbehovReferanse, token)
         if (harTilgang) {
-            oppgaverSomSkalReserveres.forEach {
-                oppgaveRepository.reserverOppgave(it, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
-                sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
-            }
-            return oppgaverSomSkalReserveres
+            oppgaveRepository.reserverOppgave(oppgaveSomSkalReserveres, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
+            sendOppgaveStatusOppdatering(oppgaveSomSkalReserveres, HendelseType.RESERVERT, flytJobbRepository)
         }
-        return listOf()
+        return oppgaveSomSkalReserveres
     }
 
     fun avreserverOppgave(
@@ -56,18 +53,15 @@ class ReserverOppgaveService(
     fun reserverOppgaveUtenTilgangskontroll(
         avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
         ident: String
-    ): List<OppgaveId> {
-        val oppgaverSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
-        var c = 0
-        oppgaverSomSkalReserveres.forEach {
-            if (ident != KELVIN) {
-                oppgaveRepository.reserverOppgave(it, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
-                sendOppgaveStatusOppdatering(it, HendelseType.RESERVERT, flytJobbRepository)
-                c++
-            }
+    ): OppgaveId {
+        val oppgaveSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
+        if (ident != KELVIN) {
+            oppgaveRepository.reserverOppgave(oppgaveSomSkalReserveres, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
+            sendOppgaveStatusOppdatering(oppgaveSomSkalReserveres, HendelseType.RESERVERT, flytJobbRepository)
         }
-        log.info("Reserverte $c oppgaver uten tilgangskontroll for $ident.")
-        return oppgaverSomSkalReserveres
+
+        log.info("Reserverte oppgave $oppgaveSomSkalReserveres uten tilgangskontroll for $ident.")
+        return oppgaveSomSkalReserveres
     }
 
     fun tildelOppgaver(
@@ -86,6 +80,4 @@ class ReserverOppgaveService(
         log.info("Tildelte $c oppgaver til $tildelTilIdent. Saksnumre: ${oppgaverSomSkalReserveres.joinToString(", ") { it.saksnummer.toString() }}")
         return oppgaverSomSkalReserveres.mapNotNull { it.id }
     }
-
-
 }
