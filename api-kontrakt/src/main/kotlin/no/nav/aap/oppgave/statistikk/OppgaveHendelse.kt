@@ -40,5 +40,6 @@ data class OppgaveTilStatistikkDto(
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
-    val versjon: Long = 0
+    val versjon: Long = 0,
+    val harHasteMarkering: Boolean? = false
 )
