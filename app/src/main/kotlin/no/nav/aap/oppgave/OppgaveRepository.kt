@@ -220,7 +220,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(6, oppgaveId.id)
                 setLong(7, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) { "Forventer bare at én oppgave gjenåpnes. Fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
+            setResultValidator { require(it == 1) { "Forventer bare at én oppgave gjenåpnes. Fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
     }
 
@@ -289,7 +289,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(17, oppgaveId.id)
                 setLong(18, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave-Id: ${oppgaveId.id}" } }
+            setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
     }
 
@@ -341,7 +341,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(2, oppgaveId.id)
                 setLong(3, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) }
+            setResultValidator { require(it == 1) { "Prøvde å avreservere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
     }
 
@@ -394,7 +394,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(2, oppgaveId.id)
                 setLong(3, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) }
+            setResultValidator { require(it == 1) { "Prøvde å oppdatere fortrolig adresse for én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
     }
 
@@ -417,7 +417,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(2, oppgaveId.id)
                 setLong(3, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) }
+            setResultValidator { require(it == 1) { "Prøvde å oppdatere uleste dokumenter-feltet for én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
     }
 
@@ -627,7 +627,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(4, oppgaveId.id)
                 setLong(5, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) }
+            setResultValidator { require(it == 1) { "Prøvde å reservere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
     }
 
