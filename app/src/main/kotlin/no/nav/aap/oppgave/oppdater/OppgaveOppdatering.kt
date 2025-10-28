@@ -274,7 +274,6 @@ private fun Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
         Status.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
         Status.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
         Status.SENDT_TILBAKE_FRA_BESLUTTER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
-        Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER
         Status.AVBRUTT -> AvklaringsbehovStatus.AVBRUTT
     }
 }
