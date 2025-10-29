@@ -2,7 +2,7 @@
 ktor = "3.3.1"
 jackson = "2.20.0"
 komponenter = "1.0.414"
-tilgang = "1.0.141"
+tilgang = "1.0.143"
 behandlingsflytVersjon = "0.0.471"
 postmottakVersjon = "0.0.131"
 junit = "6.0.0"
