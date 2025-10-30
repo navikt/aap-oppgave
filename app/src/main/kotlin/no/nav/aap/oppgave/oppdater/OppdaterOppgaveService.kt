@@ -35,6 +35,7 @@ import no.nav.aap.oppgave.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 private val ÅPNE_STATUSER = setOf(
     AvklaringsbehovStatus.OPPRETTET,
@@ -78,6 +79,7 @@ class OppdaterOppgaveService(
             BehandlingStatus.LUKKET -> avslutteOppgaver(eksisterendeOppgaver)
             else -> oppdaterOppgaver(oppgaveOppdatering, oppgaveMap)
         }
+        validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
     }
 
     private fun oppdaterOppgaver(
@@ -94,6 +96,9 @@ class OppdaterOppgaveService(
             if (oppgaveMap[åpentAvklaringsbehov.avklaringsbehovKode] == null) {
                 opprettNyOppgaveForAvklaringsbehov(oppgaveOppdatering, oppgaveMap, åpentAvklaringsbehov)
             } else {
+                if (unleashService.isEnabled(FeatureToggles.AvsluttOppgaverVedGjenaapning)) {
+                    avsluttOppgaverSenereIFlyt(oppgaveMap, åpentAvklaringsbehov)
+                }
                 gjenåpneOppgave(oppgaveOppdatering, oppgaveMap, åpentAvklaringsbehov)
             }
         }
@@ -208,6 +213,14 @@ class OppdaterOppgaveService(
         } else {
             null
         }
+    }
+
+    private fun avsluttOppgaverSenereIFlyt(
+        oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
+        åpentAvklaringsbehov: AvklaringsbehovHendelse
+    ) {
+        val oppgaverSomMåAvsluttes = oppgaveMap.values.filter { it.avklaringsbehovKode != åpentAvklaringsbehov.avklaringsbehovKode.kode }
+        avslutteOppgaver(oppgaverSomMåAvsluttes)
     }
 
     private fun opprettNyOppgaveForAvklaringsbehov(
@@ -428,7 +441,7 @@ class OppdaterOppgaveService(
             .filter { it.status != Status.AVSLUTTET }
             .forEach {
                 oppgaveRepository.avsluttOppgave(it.oppgaveId(), KELVIN)
-                log.info("AVsluttet oppgave med ID ${it.oppgaveId()}.")
+                log.info("Avsluttet oppgave med ID ${it.oppgaveId()}. Avklaringsbehov: ${it.avklaringsbehovKode}")
                 sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, flytJobbRepository)
             }
     }
@@ -522,6 +535,15 @@ class OppdaterOppgaveService(
             },
             harUlesteDokumenter = harUlesteDokumenter
         )
+    }
+
+    private fun validerOppgaveTilstandEtterOppdatering(behandlingsreferanse: UUID) {
+        val åpneOppgaver = oppgaveRepository.hentOppgaver(behandlingsreferanse).filter { it.status == Status.OPPRETTET }
+        if (åpneOppgaver.size > 1) {
+            log.error("Fant ${åpneOppgaver.size} åpne oppgaver for behandling $behandlingsreferanse. " +
+                    "Oppgaver: ${åpneOppgaver.map { it.id }.joinToString()} " +
+                    "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}")
+        }
     }
 
     private fun OppgaveDto.oppgaveId() = OppgaveId(this.id!!, this.versjon)
