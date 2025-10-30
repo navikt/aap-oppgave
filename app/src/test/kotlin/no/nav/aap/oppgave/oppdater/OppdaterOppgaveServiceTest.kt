@@ -578,7 +578,56 @@ class OppdaterOppgaveServiceTest {
 
         val nå = LocalDateTime.now()
 
-        val hendelse = BehandlingFlytStoppetHendelse(
+        val tilKvalitetssikrer = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(1)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(3)
+                    )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+
+        //Utfør
+        sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
+
+        val returFraKvalitetssikrer = BehandlingFlytStoppetHendelse(
             personIdent = "12345678901",
             saksnummer = saksnummer,
             referanse = behandlingsref,
@@ -614,6 +663,27 @@ class OppdaterOppgaveServiceTest {
                             ),
                             begrunnelse = "xxx",
                             endretAv = "Kvalitetssikrer",
+                            tidsstempel = nå.minusMinutes(3)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
                             tidsstempel = nå
                         )
                     )
@@ -625,10 +695,13 @@ class OppdaterOppgaveServiceTest {
         )
 
         //Utfør
-        sendBehandlingFlytStoppetHendelse(hendelse)
+        sendBehandlingFlytStoppetHendelse(returFraKvalitetssikrer)
 
         val oppgave = hentOppgave(oppgaveId)
         assertThat(oppgave.reservertAv).isEqualTo("Saksbehandler")
+
+        val åpneoppgaver = hentOppgaverForBehandling(behandlingsref).filter { it.status == Status.OPPRETTET }
+        assertThat(åpneoppgaver.size).isEqualTo(1)
     }
 
     @Test
