@@ -86,6 +86,13 @@ data class OppgaveDto(
         }
     }
 
+    fun oppgaveId(): OppgaveId {
+        val idMedNullsjekk = requireNotNull(this.id) {
+            "OppgaveId kan ikke være null for OppgaveDto. Saksnummer: $saksnummer"
+        }
+        return OppgaveId(idMedNullsjekk, this.versjon)
+    }
+
     fun tilAvklaringsbehovReferanseDto(): AvklaringsbehovReferanseDto {
         return AvklaringsbehovReferanseDto(
             this.saksnummer,

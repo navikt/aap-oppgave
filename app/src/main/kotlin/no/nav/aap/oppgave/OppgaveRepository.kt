@@ -677,52 +677,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    /**
-     * Hent oppgaver som ikke er avsluttet.
-     */
-    fun hentÅpneOppgaver(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): OppgaveId {
-        // TODO: Trenger bare behandlingsreferanse for å hente åpne oppgaver
-        val saksnummerClause =
-            if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
-        val referanseClause =
-            if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
-        val journalpostIdClause =
-            if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
-        val oppgaverForReferanseQuery = """
-            SELECT 
-                ID, VERSJON
-            FROM 
-                OPPGAVE 
-            WHERE 
-                $saksnummerClause AND
-                $referanseClause AND
-                $journalpostIdClause AND
-                AVKLARINGSBEHOV_TYPE = ? AND
-                STATUS != 'AVSLUTTET'
-        """.trimIndent()
-
-        val oppgaver = connection.queryList(oppgaverForReferanseQuery) {
-            setParams {
-                var index = 1
-                if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
-                if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
-                if (avklaringsbehovReferanse.journalpostId != null) setLong(
-                    index++,
-                    avklaringsbehovReferanse.journalpostId
-                )
-                @Suppress("AssignedValueIsNeverRead")
-                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
-            }
-            setRowMapper { row ->
-                OppgaveId(row.getLong("ID"), row.getLong("VERSJON"))
-            }
-        }
-        if (oppgaver.size > 1) {
-            log.error("Hent oppgave skal ikke returnere mer enn 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
-        }
-        return oppgaver.first()
-    }
-
     private fun Filter.whereClause(): String {
         val sb = StringBuilder()
 
