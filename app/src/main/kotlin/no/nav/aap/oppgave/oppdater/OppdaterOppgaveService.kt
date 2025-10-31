@@ -540,7 +540,7 @@ class OppdaterOppgaveService(
     private fun validerOppgaveTilstandEtterOppdatering(behandlingsreferanse: UUID) {
         val åpneOppgaver = oppgaveRepository.hentOppgaver(behandlingsreferanse).filter { it.status == Status.OPPRETTET }
         if (åpneOppgaver.size > 1) {
-            log.error("Fant ${åpneOppgaver.size} åpne oppgaver for behandling $behandlingsreferanse. " +
+            log.warn("Fant ${åpneOppgaver.size} åpne oppgaver for behandling $behandlingsreferanse. " +
                     "Oppgaver: ${åpneOppgaver.map { it.id }.joinToString()} " +
                     "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}")
         }
