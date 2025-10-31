@@ -46,9 +46,8 @@ enum class AvklaringsbehovStatus {
  * @param relevanteIdenter Identer på barn lagret på behandlingen, som påvirker enhetsutledning
  */
 data class OppgaveOppdatering(
-    val personIdent: String? = null,
+    val personIdent: String,
     val saksnummer: String? = null,
-    // antagelse om at referanse aldri er null
     val referanse: UUID,
     val journalpostId: Long? = null,
     val behandlingStatus: BehandlingStatus,
@@ -101,30 +100,32 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         reserverTil = this.reserverTil,
         relevanteIdenter = this.relevanteIdenterPåBehandling ?: emptyList(),
         venteInformasjon = if (this.erPåVent) {
-            val ventebehov =
-                this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() && it.status.erÅpent() }
-            if (ventebehov.size != 1) {
-                logger.warn("Mer enn ett åpent ventebehov. Referanse: ${this.referanse.referanse}. Velger første.")
-            }
-            val førsteVentebehov = ventebehov.first()
-
-            val siste = førsteVentebehov.endringer.tilEndringerForBehandlingsflyt().maxByOrNull { it.tidsstempel }!!
-
-            if (siste.påVentTil == null) {
-                logger.warn("Behandlingen er markert som påVent, men ventebehovet mangler frist. Behov $førsteVentebehov.")
-                null
-            } else {
-                // Her gjør vi noen antakelser om at åpne ventebehov alltid har årsak og frist.
-                VenteInformasjon(
-                    årsakTilSattPåVent = siste.påVentÅrsak,
-                    frist = siste.påVentTil,
-                    sattPåVentAv = siste.endretAv,
-                    begrunnelse = siste.begrunnelse.nullIfBlank()
-                )
-            }
+            this.utledVenteInformasjon()
         } else null,
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
     )
+}
+
+private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformasjon? {
+    val ventebehov =
+        this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() && it.status.erÅpent() }
+    if (ventebehov.size != 1) {
+        logger.warn("Mer enn ett åpent ventebehov. Referanse: ${this.referanse.referanse}. Velger første.")
+    }
+    val førsteVentebehov = ventebehov.first()
+    val siste = førsteVentebehov.endringer.tilEndringerForBehandlingsflyt().maxByOrNull { it.tidsstempel }!!
+    if (siste.påVentTil == null) {
+        logger.warn("Behandlingen er markert som påVent, men ventebehovet mangler frist. Behov $førsteVentebehov.")
+        return null
+    } else {
+        // Her gjør vi noen antakelser om at åpne ventebehov alltid har årsak og frist.
+        return VenteInformasjon(
+            årsakTilSattPåVent = siste.påVentÅrsak,
+            frist = siste.påVentTil,
+            sattPåVentAv = siste.endretAv,
+            begrunnelse = siste.begrunnelse.nullIfBlank()
+        )
+    }
 }
 
 private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): List<MottattDokument> {
@@ -136,7 +137,6 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
         )
     }
 }
-
 
 private fun TypeBehandling.tilBehandlingstype() =
     when (this) {
