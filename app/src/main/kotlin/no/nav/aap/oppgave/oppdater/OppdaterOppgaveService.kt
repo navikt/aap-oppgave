@@ -199,7 +199,7 @@ class OppdaterOppgaveService(
         oppgaveOppdatering: OppgaveOppdatering,
     ): ReturInformasjon? {
         // Setter ReturInformasjon når behandling sendes tilbake til totrinn
-        return if (erReturTilToTrinn(avklaringsbehov) && unleashService.isEnabled(FeatureToggles.ToTrinnForAndreGang)) {
+        return if (erReturTilToTrinn(avklaringsbehov)) {
             log.info("Totrinnsoppgave gjenåpnet, setter retur fra veileder/saksbehandler. Saksnummer: ${oppgaveOppdatering.saksnummer}")
             val forrigeAvklaringsbehovLøstAvVeileder = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
             ReturInformasjon(
