@@ -30,7 +30,6 @@ import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
 import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
-import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.markering.markeringApi
 import no.nav.aap.oppgave.metrikker.prometheus
@@ -102,7 +101,6 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 plukkNesteApi(dataSource, prometheus)
                 plukkOppgaveApi(dataSource, prometheus)
                 avreserverOppgave(dataSource, prometheus)
-                flyttOppgave(dataSource, prometheus)
                 mottattDokumentApi(dataSource, prometheus)
                 tildelOppgaveApi(dataSource, prometheus)
                 // Hent oppgave(r)
