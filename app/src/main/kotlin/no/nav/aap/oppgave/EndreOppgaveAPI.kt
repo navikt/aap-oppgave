@@ -41,7 +41,7 @@ fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: Promethe
     route("/flytt-oppgave").post<Unit, List<OppgaveId>, FlyttOppgaveDto> { _, dto ->
         prometheus.httpCallCounter("flytt-oppgave").increment()
 
-        val oppgave = dataSource.transaction { connection ->
+        val oppgaver = dataSource.transaction { connection ->
             val innloggetBrukerIdent = ident()
             val token = token()
             val reserverOppgaveService = ReserverOppgaveService(
@@ -50,5 +50,5 @@ fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: Promethe
             )
             reserverOppgaveService.reserverOppgave(dto.avklaringsbehovReferanse, innloggetBrukerIdent, token)
         }
-        respond(listOf(oppgave))
+        respond(oppgaver)
     }
