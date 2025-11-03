@@ -23,9 +23,12 @@ class ReserverOppgaveService(
         avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
         ident: String,
         token: OidcToken
-    ): OppgaveId {
+    ): List<OppgaveId> {
         val oppgaveSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
-
+        if (oppgaveSomSkalReserveres == null) {
+            log.warn("Fant ingen åpne oppgaver å reservere gitt avklaringsbehovReferanse $avklaringsbehovReferanse")
+            return emptyList()
+        }
         require(avklaringsbehovReferanse.referanse != null || avklaringsbehovReferanse.journalpostId != null) {
             "AvklaringsbehovReferanse må ha referanse til enten behandling eller journalpost"
         }
@@ -35,7 +38,7 @@ class ReserverOppgaveService(
             oppgaveRepository.reserverOppgave(oppgaveSomSkalReserveres, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
             sendOppgaveStatusOppdatering(oppgaveSomSkalReserveres, HendelseType.RESERVERT, flytJobbRepository)
         }
-        return oppgaveSomSkalReserveres
+        return listOf(oppgaveSomSkalReserveres)
     }
 
     fun avreserverOppgave(
@@ -53,15 +56,17 @@ class ReserverOppgaveService(
     fun reserverOppgaveUtenTilgangskontroll(
         avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
         ident: String
-    ): OppgaveId {
+    ) {
         val oppgaveSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
+        if (oppgaveSomSkalReserveres == null) {
+            log.warn("Fant ingen åpne oppgaver å reservere uten tilgangskontroll gitt avklaringsbehovReferanse $avklaringsbehovReferanse")
+            return
+        }
         if (ident != KELVIN) {
             oppgaveRepository.reserverOppgave(oppgaveSomSkalReserveres, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
             sendOppgaveStatusOppdatering(oppgaveSomSkalReserveres, HendelseType.RESERVERT, flytJobbRepository)
         }
-
-        log.info("Reserverte oppgave $oppgaveSomSkalReserveres uten tilgangskontroll for $ident.")
-        return oppgaveSomSkalReserveres
+        log.info("Reserverte oppgave ${oppgaveSomSkalReserveres.id} uten tilgangskontroll for $ident.")
     }
 
     fun tildelOppgaver(

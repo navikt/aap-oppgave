@@ -680,7 +680,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     /**
      * Hent oppgaver som ikke er avsluttet.
      */
-    fun hentÅpneOppgaver(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): OppgaveId {
+    fun hentÅpneOppgaver(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): OppgaveId? {
         // TODO: Trenger bare behandlingsreferanse for å hente åpne oppgaver
         val saksnummerClause =
             if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
@@ -717,10 +717,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OppgaveId(row.getLong("ID"), row.getLong("VERSJON"))
             }
         }
-        if (oppgaver.size > 1) {
-            log.error("Hent oppgave skal ikke returnere mer enn 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
+        if (oppgaver.size != 1) {
+            log.error("Hent oppgave skal alltid returnere 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
         }
-        return oppgaver.first()
+        return oppgaver.firstOrNull()
     }
 
     private fun Filter.whereClause(): String {
