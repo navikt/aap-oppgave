@@ -718,7 +718,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
         if (oppgaver.size != 1) {
-            log.error("Hent oppgave skal alltid returnere 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
+            log.warn("Hent oppgave skal alltid returnere 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
         }
         return oppgaver.firstOrNull()
     }
