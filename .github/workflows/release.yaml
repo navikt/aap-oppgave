@@ -33,7 +33,7 @@ jobs:
             app-navn: oppgave
             generate-openapi-command: ./gradlew genererOpenApiJson
 
-    publish-kontrakt:
+    publiser-kontrakt:
         needs: gradle
         permissions:
             contents: write
@@ -103,7 +103,7 @@ jobs:
       permissions:
         contents: read
         id-token: write
-      needs: dev
+      needs: [ publiser-kontrakt, dev ]
       concurrency: deploy-prod-gcp
       uses: navikt/aap-workflows/.github/workflows/deploy.yml@main
       secrets: inherit
