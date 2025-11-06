@@ -16,7 +16,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
@@ -43,7 +43,10 @@ import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.postmottak.kontrakt.journalpost.JournalpostId
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.time.LocalDate
@@ -56,8 +59,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 
 @ExtendWith(Fakes::class)
 class OppdaterOppgaveServiceTest {
-
-    private val dataSource = InitTestDatabase.freshDatabase()
 
     companion object {
         @BeforeAll
@@ -72,14 +73,15 @@ class OppdaterOppgaveServiceTest {
         }
     }
 
-    @AfterTest
-    fun tearDown() {
-        @Suppress("SqlWithoutWhere")
-        dataSource.transaction {
-            it.execute("DELETE FROM OPPGAVE_HISTORIKK")
-            it.execute("DELETE FROM OPPGAVE")
-        }
+    private lateinit var dataSource: TestDataSource
+
+    @BeforeEach
+    fun setup() {
+        dataSource = TestDataSource()
     }
+
+    @AfterEach
+    fun tearDown() = dataSource.close()
 
     @Test
     fun `Ved flere åpne avklaringsbehov skal det opprettes oppgave på behovet som historisk først ble opprettet`() {

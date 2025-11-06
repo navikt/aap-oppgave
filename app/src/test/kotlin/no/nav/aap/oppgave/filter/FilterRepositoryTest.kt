@@ -2,19 +2,37 @@ package no.nav.aap.oppgave.filter
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
 import java.time.LocalDateTime
 
+@Execution(ExecutionMode.SAME_THREAD)
 internal class FilterRepositoryTest {
 
-    private val dataSource = InitTestDatabase.freshDatabase()
+    companion object {
+        private lateinit var dataSource: TestDataSource
 
-    @BeforeEach
-    fun setup() {
+        @BeforeAll
+        @JvmStatic
+        fun setup() {
+            dataSource = TestDataSource()
+        }
+
+        @AfterAll
+        @JvmStatic
+        fun tearDown() = dataSource.close()
+    }
+
+    @AfterEach
+    fun afterEach() {
         @Suppress("SqlWithoutWhere")
         dataSource.transaction {
             it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")

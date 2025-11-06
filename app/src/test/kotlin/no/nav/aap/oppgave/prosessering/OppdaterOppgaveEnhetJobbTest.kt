@@ -6,7 +6,7 @@ import io.ktor.server.netty.*
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.AvklaringsbehovKode
@@ -17,34 +17,66 @@ import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
-import no.nav.aap.oppgave.fakes.pdlRequestCounter
 import no.nav.aap.oppgave.fakes.pdlBatchSizes
+import no.nav.aap.oppgave.fakes.pdlRequestCounter
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.postgreSQLContainer
 import no.nav.aap.oppgave.server.server
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.test.AfterTest
 import kotlin.test.Test
 
 // Denne testen kjører i OppgaveApiTest inntil videre
 @Disabled("Må skrive om fakes til å bruke singleton - får problemer med parallelle kjøringer")
 class OppdaterOppgaveEnhetJobbTest {
-    private val dataSource = InitTestDatabase.freshDatabase()
+    private lateinit var dataSource: TestDataSource
 
-    @Suppress("SqlWithoutWhere")
-    @AfterTest
-    fun tearDown() {
-        dataSource.transaction {
-            it.execute("DELETE FROM OPPGAVE_HISTORIKK")
-            it.execute("DELETE FROM OPPGAVE")
+    @BeforeEach
+    fun setup() {
+        dataSource = TestDataSource()
+    }
+
+    @AfterEach
+    fun tearDown() = dataSource.close()
+
+    companion object {
+
+        @JvmStatic
+        @AfterAll
+        fun afterAll() {
+            server.stop()
+            fakes.close()
+            postgres.stop()
         }
+
+        private const val ENHET_NAV_LØRENSKOG = "0230"
+
+        private val postgres = postgreSQLContainer()
+        val fakesConfig: FakesConfig = FakesConfig()
+        private val fakes = Fakes(fakesConfig = fakesConfig)
+        private val dbConfig = DbConfig(
+            jdbcUrl = postgres.jdbcUrl,
+            username = postgres.username,
+            password = postgres.password
+        )
+
+        private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+
+        // Starter server
+        private val server = embeddedServer(Netty, port = 0) {
+            server(dbConfig = dbConfig, prometheus = prometheus)
+            module(fakes)
+        }.start()
+
     }
 
     @Test
@@ -91,40 +123,14 @@ class OppdaterOppgaveEnhetJobbTest {
         assertThat(pdlRequestCounter).withFailMessage("Forventet nøyaktig 2 kall til PDL").isEqualTo(2)
 
         pdlBatchSizes.forEach { batchSize ->
-            assertThat(batchSize).withFailMessage("Batchstørrelsen skal være maksimalt 1000, men var $batchSize").isLessThanOrEqualTo(1000)
+            assertThat(batchSize).withFailMessage("Batchstørrelsen skal være maksimalt 1000, men var $batchSize")
+                .isLessThanOrEqualTo(1000)
         }
 
-        assertThat(pdlBatchSizes.sum()).withFailMessage("Totalt antall behandlede identifikatorer skal være 1500").isEqualTo(1500)
+        assertThat(pdlBatchSizes.sum()).withFailMessage("Totalt antall behandlede identifikatorer skal være 1500")
+            .isEqualTo(1500)
     }
 
-    companion object {
-        private const val ENHET_NAV_LØRENSKOG = "0230"
-
-        private val postgres = postgreSQLContainer()
-        val fakesConfig: FakesConfig = FakesConfig()
-        private val fakes = Fakes(fakesConfig = fakesConfig)
-        private val dbConfig = DbConfig(
-            jdbcUrl = postgres.jdbcUrl,
-            username = postgres.username,
-            password = postgres.password
-        )
-
-        private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
-
-        // Starter server
-        private val server = embeddedServer(Netty, port = 0) {
-            server(dbConfig = dbConfig, prometheus = prometheus)
-            module(fakes)
-        }.start()
-
-        @JvmStatic
-        @AfterAll
-        fun afterAll() {
-            server.stop()
-            fakes.close()
-            postgres.close()
-        }
-    }
 
     private fun opprettOppgave(
         personIdent: String = "12345678901",
