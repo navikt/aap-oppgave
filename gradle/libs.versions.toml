@@ -1,5 +1,5 @@
 [versions]
-ktor = "3.3.1"
+ktor = "3.3.2"
 jackson = "2.20.1"
 komponenter = "1.0.426"
 tilgang = "1.0.149"
