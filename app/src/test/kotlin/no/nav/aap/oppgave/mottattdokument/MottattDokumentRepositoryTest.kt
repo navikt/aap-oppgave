@@ -2,28 +2,33 @@ package no.nav.aap.oppgave.mottattdokument
 
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.komponenter.dbtest.TestDataSource
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.test.AfterTest
 
 class MottattDokumentRepositoryTest {
 
-    private val dataSource = InitTestDatabase.freshDatabase()
+    private lateinit var dataSource: TestDataSource
+
+    @BeforeEach
+    fun setup() {
+        dataSource = TestDataSource()
+    }
+
+    @AfterEach
+    fun tearDown() = dataSource.close()
 
     private val behandlingRef = UUID.randomUUID()
     private val dok1 = dokument(behandlingRef)
     private val dok2 = dokument(behandlingRef)
     private val dok3 = dokument(behandlingRef)
 
-    @AfterTest
-    fun tearDown() {
-        @Suppress("SqlWithoutWhere")
-        dataSource.transaction {
-            it.execute("DELETE FROM MOTTATT_DOKUMENT")
-        }
-    }
 
     @Test
     fun `skal lagre og hente ut to uleste dokumenter`() {

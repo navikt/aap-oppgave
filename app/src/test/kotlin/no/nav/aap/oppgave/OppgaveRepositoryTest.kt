@@ -3,7 +3,7 @@ package no.nav.aap.oppgave
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.dbtest.InitTestDatabase
+import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
@@ -15,6 +15,8 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.SQLException
 import java.time.LocalDate
@@ -24,8 +26,15 @@ import kotlin.test.AfterTest
 import kotlin.test.fail
 
 class OppgaveRepositoryTest {
+    private lateinit var dataSource: TestDataSource
 
-    private val dataSource = InitTestDatabase.freshDatabase()
+    @BeforeEach
+    fun setup() {
+        dataSource = TestDataSource()
+    }
+
+    @AfterEach
+    fun tearDown() = dataSource.close()
 
     private val ENHET_NAV_ENEBAKK = "0229"
     private val ENHET_NAV_LØRENSKOG = "0230"
@@ -33,15 +42,6 @@ class OppgaveRepositoryTest {
 
     private val VEILEDER_IDENT_1 = "Z999999"
     private val VEILEDER_IDENT_2 = "Z111111"
-
-    @AfterTest
-    fun tearDown() {
-        @Suppress("SqlWithoutWhere")
-        dataSource.transaction {
-            it.execute("DELETE FROM OPPGAVE_HISTORIKK")
-            it.execute("DELETE FROM OPPGAVE")
-        }
-    }
 
     @Test
     fun `Opprett ny oppgave`() {
@@ -56,7 +56,7 @@ class OppgaveRepositoryTest {
             opprettOppgave(saksnummer = "999", behandlingRef = uuid)
         } catch (e: SQLException) {
             if (e.sqlState != "23505") {
-                fail("Skulle mottatt sqlSatte 23505 når det blir forsøkt lagret duplikat oppgave")
+                fail("Skulle mottatt sqlState 23505 når det blir forsøkt lagret duplikat oppgave")
             }
         }
     }
