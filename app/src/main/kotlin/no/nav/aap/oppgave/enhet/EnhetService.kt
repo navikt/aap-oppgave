@@ -67,7 +67,7 @@ class EnhetService(
     }
 
     override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?, skalOverstyresTilLokalkontor: Boolean?): EnhetForOppgave {
-        if (skalOverstyresTilLokalkontor == true && unleashService.isEnabled(FeatureToggles.OverstyrTilNavKontor)) {
+        if (skalOverstyresTilLokalkontor == true) {
             log.info("Oppgave overstyres til Nav-kontor for avklaringsbehov ${avklaringsbehovKode.kode}. Saksnummer: $saksnummer")
             return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
         }
@@ -83,9 +83,7 @@ class EnhetService(
                 Definisjon.KVALITETSSIKRING.kode.name -> {
                     finnFylkesEnhet(ident, relevanteIdenter, saksnummer)
                 }
-                Definisjon.VURDER_KLAGE_KONTOR.kode.name if unleashService.isEnabled(
-                    FeatureToggles.NyRutingAvKlageoppgaver
-                ) -> {
+                Definisjon.VURDER_KLAGE_KONTOR.kode.name -> {
                     finnEnhetForKlageoppgave(ident, relevanteIdenter, saksnummer)
                 }
                 else -> {
