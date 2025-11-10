@@ -42,15 +42,15 @@ tilgangKontrakt = { module = "no.nav.aap.tilgang:api-kontrakt", version.ref = "t
 tilgangPlugin = { module = "no.nav.aap.tilgang:plugin", version.ref = "tilgang" }
 
 commonsCompress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
-micrometerRegistryPrometheus = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.15.5" }
+micrometerRegistryPrometheus = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.16.0" }
 logbackClassic = { module = "ch.qos.logback:logback-classic", version = "1.5.20" }
 logstashLogbackEncoder = { module = "net.logstash.logback:logstash-logback-encoder", version = "8.1" }
 hikariCp = { module = "com.zaxxer:HikariCP", version = "7.0.2" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.3" }
-flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "11.15.0" }
+flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "11.16.0" }
 unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "11.1.1" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
-nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.5" }
+nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.6" }
 
 junitJupiterApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junitJupiterEngine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
