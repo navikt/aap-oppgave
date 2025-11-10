@@ -34,12 +34,13 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
     prometheus: PrometheusMeterRegistry
 ) = route("/{referanse}/hent-oppgave").get<BehandlingReferanse, OppgaveDto> { request ->
     prometheus.httpCallCounter("/hent-oppgave").increment()
-        val oppgave = dataSource.transaction(readOnly = true) { connection ->
-            OppgavelisteService(
-                OppgaveRepository(connection),
-                MarkeringRepository(connection)
-            ).hentAktivOppgave(request)
-        }
+    val oppgave = dataSource.transaction(readOnly = true) { connection ->
+        OppgavelisteService(
+            OppgaveRepository(connection),
+            MarkeringRepository(connection)
+        ).hentAktivOppgave(request)
+    }
+
     if (oppgave != null) {
         respond(oppgave.hentPersonNavn())
     } else {
@@ -68,29 +69,32 @@ fun NormalOpenAPIRoute.søkApi(
 
         if (oppgaver.isEmpty()) {
             log.info("Fant ingen oppgaver basert på søketeksten")
-            respond(SøkResponse(
-                oppgaver = emptyList(),
-                harTilgang = true,
-                harAdressebeskyttelse = false,
-            ))
-        }
-        val harAdressebeskyttelse = oppgaver.any { harAdressebeskyttelse(it) }
-        val harTilgang =
-            oppgaver.all {
-                TilgangGateway.sjekkTilgang(
-                    it.tilAvklaringsbehovReferanseDto(),
-                    token(),
-                    Operasjon.SE
+            respond(
+                SøkResponse(
+                    oppgaver = emptyList(),
+                    harTilgang = true,
+                    harAdressebeskyttelse = false,
                 )
-            }
-
-        respond(
-            SøkResponse(
-                oppgaver = oppgaver.hentPersonNavn(),
-                harTilgang = harTilgang,
-                harAdressebeskyttelse = harAdressebeskyttelse,
             )
-        )
+        } else {
+            val harAdressebeskyttelse = oppgaver.any { harAdressebeskyttelse(it) }
+            val harTilgang =
+                oppgaver.all {
+                    TilgangGateway.sjekkTilgang(
+                        it.tilAvklaringsbehovReferanseDto(),
+                        token(),
+                        Operasjon.SE
+                    )
+                }
+
+            respond(
+                SøkResponse(
+                    oppgaver = oppgaver.hentPersonNavn(),
+                    harTilgang = harTilgang,
+                    harAdressebeskyttelse = harAdressebeskyttelse,
+                )
+            )
+        }
     }
 }
 
