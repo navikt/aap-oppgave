@@ -62,7 +62,7 @@ class PlukkOppgaveService(
             }
         }
 
-        log.info("Fant ikke neste oppgave etter å ha forsøkt ${nesteOppgaver.size} oppgaver for filterId $filterId")
+        log.warn("Fant ikke neste oppgave etter å ha forsøkt ${nesteOppgaver.size} oppgaver for filter med id ${filterId}, navn: ${filter.navn}, enheter: ${filter.enheter.joinToString(", ")}")
         return null
     }
 
