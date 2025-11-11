@@ -704,6 +704,7 @@ class OppgaveApiTest {
 
         // plukk uten tilgang
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
+        fakesConfig.relaterteIdenterPåBehandling = emptyList()
         assertThatThrownBy { plukkOppgave(oppgaveMedNyEnhet.tilOppgaveId()) }.isInstanceOf(
             ManglerTilgangException::class.java
         )

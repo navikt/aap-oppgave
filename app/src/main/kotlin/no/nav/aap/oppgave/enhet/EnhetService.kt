@@ -185,7 +185,9 @@ class EnhetService(
         // Hvis personen er utenlandsk, så vil NORG returnere feil kontor (Den returnerer NAY-kontoret).
         // Vi må derfor hardkode inn dette som et unntak.
         val enhetFraNorg =
-            if (tilknytningOgSkjerming.geografiskTilknytning?.gtType == GeografiskTilknytningType.UTLAND) {
+            if (strengesteGradering == Diskresjonskode.SPSF) {
+                Enhet.NAV_VIKAFOSSEN.kode
+            } else if (skalTilNavUtland(tilknytningOgSkjerming.geografiskTilknytning, tilknytningOgSkjerming.erNavAnsatt)) {
                 Enhet.NAV_UTLAND.kode
             } else {
                 norgKlient.finnEnhet(
@@ -289,6 +291,11 @@ class EnhetService(
         val utlandOppfølgingsenhet = finnOppfølgingsenhet(ident) == Enhet.NAV_UTLAND.kode
         return utlandTilknytning || utlandOppfølgingsenhet
     }
+
+    private fun skalTilNavUtland(geoTilknytning: GeografiskTilknytning?, harSkjerming: Boolean) =
+        // Skal ikke kunne gå til Nav Utland dersom egen ansatt
+        // Hvis PDL returnerer ukjent kommune (9999), eller geotilknytning ikke finnes, eller geotilknytning er utland -> Nav Utland
+        !harSkjerming && (geoTilknytning == null || geoTilknytning.gtType == GeografiskTilknytningType.UTLAND || mapGeografiskTilknytningTilKode(geoTilknytning) == "9999")
 
     companion object {
         private const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
