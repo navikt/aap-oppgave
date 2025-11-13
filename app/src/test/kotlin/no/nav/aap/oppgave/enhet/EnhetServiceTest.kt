@@ -305,6 +305,26 @@ class EnhetServiceTest {
     }
 
     @Test
+    fun `Strengt fortrolig prioriteres over utland`() {
+        val pdlGateway = PdlGatewayMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.STRENGT_FORTROLIG))),
+                hentGeografiskTilknytning = GeografiskTilknytning(
+                    gtType = GeografiskTilknytningType.UTLAND,
+                    gtLand = "DNK"
+                )
+            )
+        )
+
+        val norgGateway = NorgGatewayMock.medRespons()
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
+            enableAll()
+        }))
+        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
+    }
+
+    @Test
     fun `Riktig prioritering av graderinger`() {
         // Strengt fortrolig > Fortrolig > Any
         val strengtFortrolig = listOf(Diskresjonskode.SPSF, Diskresjonskode.SPFO, Diskresjonskode.ANY)
