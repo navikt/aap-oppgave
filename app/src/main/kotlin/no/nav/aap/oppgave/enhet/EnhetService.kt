@@ -19,10 +19,8 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlGateway
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
-import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
-import no.nav.aap.postmottak.kontrakt.enhet.GodkjentEnhet
 import org.slf4j.LoggerFactory
 
 data class EnhetForOppgave(
@@ -202,13 +200,7 @@ class EnhetService(
             } else {
                 null
             }
-
-        val enhetForKø = enhetFraArena ?: enhetFraNorg
-        val skalVarsle = !GodkjentEnhet.entries.any { it.enhetNr == enhetForKø } && enhetForKø != Enhet.NAV_UTLAND.kode
-        if (skalVarsle && unleashService.isEnabled(FeatureToggles.VarsleHvisEnhetIkkeGodkjent)) {
-            log.error("Oppgave har lagt seg på køen til enhet $enhetForKø, som ikke har tatt Kelvin i bruk enda. Saksnummer: $saksnummer")
-        }
-
+        log.info("Lokalkontor for sak $saksnummer utledet til ${enhetFraArena ?: enhetFraNorg}. Arena-enhet: $enhetFraArena, Norg-enhet: $enhetFraNorg")
         return EnhetForOppgave(enhetFraNorg, enhetFraArena)
     }
 
