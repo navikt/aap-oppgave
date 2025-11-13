@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.enhet
 
 import io.getunleash.FakeUnleash
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.VURDER_KLAGE_KONTOR_KODE
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.fakes.AzureTokenGen
@@ -60,15 +61,15 @@ class EnhetServiceTest {
             enableAll()
         }),)
 
-        val utledetEnhetFylke = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
+        val utledetEnhetFylke = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList(), erFørstegangsbehandling = false)
         assertThat(utledetEnhetFylke).isNotNull()
         assertThat(utledetEnhetFylke.enhet).isEqualTo("0400")
 
-        val utledetEnhetLokal = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
+        val utledetEnhetLokal = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910", emptyList(), erFørstegangsbehandling = false)
         assertThat(utledetEnhetLokal).isNotNull()
         assertThat(utledetEnhetLokal.enhet).isEqualTo("0403")
 
-        val utledetEnhetNay = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
+        val utledetEnhetNay = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "12345678910", emptyList(), erFørstegangsbehandling = false)
         assertThat(utledetEnhetNay).isNotNull()
         assertThat(utledetEnhetNay.enhet).isEqualTo(Enhet.NAY.kode)
 
@@ -81,7 +82,7 @@ class EnhetServiceTest {
             enableAll()
         }),)
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList(), erFørstegangsbehandling = false)
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo("0400")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
@@ -98,7 +99,7 @@ class EnhetServiceTest {
             enableAll()
         }))
 
-        val utledetEnhet = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
+        val utledetEnhet = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "12345678910", emptyList(), erFørstegangsbehandling = true)
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo("0403")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
@@ -110,7 +111,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList())
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList(), erFørstegangsbehandling = true)
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(
             Enhet.NAV_VIKAFOSSEN.kode
@@ -137,7 +138,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList())
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList(), erFørstegangsbehandling = true)
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(overordnetEnhet)
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(overordnetOppfolgingsenhet)
@@ -150,7 +151,7 @@ class EnhetServiceTest {
             enableAll()
         }))
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList(), erFørstegangsbehandling = true)
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo("0400")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
@@ -163,7 +164,7 @@ class EnhetServiceTest {
             enableAll()
         }))
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList())
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678910", emptyList(), erFørstegangsbehandling = true)
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo("0200")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
@@ -177,7 +178,7 @@ class EnhetServiceTest {
             enableAll()
         }))
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList())
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList(), erFørstegangsbehandling = true)
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(
             egneAnsatteOslo
@@ -197,7 +198,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, NorgGatewayMock(), VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
         assertThat(res.enhet).isEqualTo(Enhet.NAY_EGNE_ANSATTE.kode)
     }
 
@@ -216,7 +217,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
         assertThat(res.enhet).isEqualTo(egneAnsatteOslo)
     }
 
@@ -235,11 +236,11 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
         assertThat(res.enhet).isEqualTo(egneAnsatteOslo)
         assertThat(res.oppfølgingsenhet).isNull()
 
-        val res2 = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res2 = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
         assertThat(res2.enhet).isEqualTo(egneAnsatteOslo)
         assertThat(res2.oppfølgingsenhet).isNull()
     }
@@ -256,7 +257,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, NorgGatewayMock(), VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
         assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
     }
 
@@ -277,7 +278,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
 
         assertThat(res.enhet).isEqualTo(Enhet.NAV_UTLAND.kode)
     }
@@ -299,7 +300,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
 
         assertThat(res.enhet).isEqualTo(Enhet.NAV_UTLAND.kode)
     }
@@ -320,7 +321,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
         assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
     }
 
@@ -355,7 +356,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
 
         assertThat(res.enhet).isEqualTo(Enhet.NAY_UTLAND.kode)
     }
@@ -372,7 +373,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
         assertThat(res.enhet).isEqualTo(Enhet.NAY_UTLAND.kode)
     }
 
@@ -388,8 +389,56 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, veilarbarenaGateway, UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList())
+        val res = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
         assertThat(res.oppfølgingsenhet).isEqualTo(Enhet.NAV_UTLAND.kode)
+    }
+
+    @Test
+    fun `Førstegangsbehandling skal gå til Nav Sunnfjord når enhet utledes til Nav Kinn`() {
+        val pdlGateway = PdlGatewayMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
+                hentGeografiskTilknytning = GeografiskTilknytning(GeografiskTilknytningType.KOMMUNE, gtKommune = "any")
+            )
+        )
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = "1401")
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
+            enableAll()
+        }))
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = true)
+        assertThat(res.enhet).isEqualTo(Enhet.NAV_REGION_SUNNFJORD.kode)
+    }
+
+    @Test
+    fun `Revurdering skal ikke gå til Nav Sunnfjord når enhet utledes til Nav Kinn`() {
+        val pdlGateway = PdlGatewayMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
+                hentGeografiskTilknytning = GeografiskTilknytning(GeografiskTilknytningType.KOMMUNE, gtKommune = "any")
+            )
+        )
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = "1401")
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
+            enableAll()
+        }))
+        val res = service.utledEnhetForOppgave(VEILEDER_AVKLARINGSBEHOVKODE, "any", emptyList(), erFørstegangsbehandling = false)
+        assertThat(res.enhet).isEqualTo(Enhet.NAV_KINN.kode)
+    }
+
+    @Test
+    fun `Klageoppgave skal gå til Nav Sunnfjord når enhet utledes til Nav Kinn`() {
+        val pdlGateway = PdlGatewayMock.medRespons(
+            PdlData(
+                hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
+                hentGeografiskTilknytning = GeografiskTilknytning(GeografiskTilknytningType.KOMMUNE, gtKommune = "any")
+            )
+        )
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = "1401", overordnetFylkesEnheter = listOf("1400"))
+        val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
+            enableAll()
+        }))
+        val res = service.utledEnhetForOppgave(AvklaringsbehovKode(VURDER_KLAGE_KONTOR_KODE), "any", emptyList(), erFørstegangsbehandling = false)
+        assertThat(res.enhet).isEqualTo(Enhet.NAV_REGION_SUNNFJORD.kode)
     }
 
     @Test
@@ -425,7 +474,7 @@ class EnhetServiceTest {
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
-        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", listOf("barn"))
+        val res = service.utledEnhetForOppgave(NAY_AVKLARINGSBEHOVKODE, "any", listOf("barn"), erFørstegangsbehandling = false)
 
         assertThat(res.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
     }
@@ -438,10 +487,10 @@ class EnhetServiceTest {
             enableAll()
         }))
 
-        val enhetForKlageOppgave = serviceVestViken.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.VURDER_KLAGE_KONTOR.kode.name), "any", emptyList(), "1234567")
+        val enhetForKlageOppgave = serviceVestViken.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.VURDER_KLAGE_KONTOR.kode.name), "any", emptyList(), "1234567", erFørstegangsbehandling = false)
         assertThat(enhetForKlageOppgave.enhet).isEqualTo("0600")
 
-        val enhetForVanligOppgave = serviceVestViken.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SYKDOM.kode.name), "any", emptyList(), "1234567")
+        val enhetForVanligOppgave = serviceVestViken.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SYKDOM.kode.name), "any", emptyList(), "1234567", erFørstegangsbehandling = false)
         assertThat(enhetForVanligOppgave.enhet).isEqualTo("0403")
 
         // Når oppgaven ikke skal til fylkeskontor
@@ -450,7 +499,7 @@ class EnhetServiceTest {
             enableAll()
         }))
 
-        val enhetForKlageOppgaveInnlandet = serviceInnlandet.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.VURDER_KLAGE_KONTOR.kode.name), "any", emptyList(), "1234567")
+        val enhetForKlageOppgaveInnlandet = serviceInnlandet.utledEnhetForOppgave(AvklaringsbehovKode(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.VURDER_KLAGE_KONTOR.kode.name), "any", emptyList(), "1234567", erFørstegangsbehandling = false)
         assertThat(enhetForKlageOppgaveInnlandet.enhet).isEqualTo("0403")
     }
 

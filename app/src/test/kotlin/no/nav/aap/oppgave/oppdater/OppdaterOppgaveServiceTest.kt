@@ -43,7 +43,6 @@ import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.postmottak.kontrakt.journalpost.JournalpostId
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -52,7 +51,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.test.AfterTest
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 
@@ -1561,7 +1559,8 @@ class OppdaterOppgaveServiceTest {
             ident: String?,
             relevanteIdenter: List<String>,
             saksnummer: String?,
-            skalOverstyresTilLokalkontor: Boolean?
+            skalOverstyresTilLokalkontor: Boolean?,
+            erFørstegangsbehandling: Boolean
         ): EnhetForOppgave {
             if ((relevanteIdenter + ident).contains(STRENGT_FORTROLIG_IDENT)) {
                 return EnhetForOppgave(Enhet.NAV_VIKAFOSSEN.kode, null)
