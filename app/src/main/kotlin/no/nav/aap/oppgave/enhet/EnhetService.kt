@@ -35,7 +35,9 @@ data class TilknytningOgSkjerming(
 )
 
 enum class FylkeskontorSomSkalBehandleKlager(val enhetsnummer: String) {
-    NAV_VEST_VIKEN("0600")
+    NAV_VEST_VIKEN("0600"),
+    NAV_NORDLAND("1800"),
+    NAV_TRØNDELAG("5700")
 }
 
 interface IEnhetService {
