@@ -136,6 +136,7 @@ class OppdaterOppgaveService(
     ) {
         val personIdent = oppgaveOppdatering.personIdent
         val skalOverstyresTilLokalkontor = skalOverstyresTilLokalKontor(oppgaveOppdatering, avklaringsbehov)
+        val erFørstegangsbehandling = eksisterendeOppgave.behandlingstype == Behandlingstype.FØRSTEGANGSBEHANDLING
         val enhetForOppgave =
             enhetService.utledEnhetForOppgave(
                 avklaringsbehov.avklaringsbehovKode,
@@ -143,6 +144,7 @@ class OppdaterOppgaveService(
                 oppgaveOppdatering.relevanteIdenter,
                 oppgaveOppdatering.saksnummer,
                 skalOverstyresTilLokalkontor,
+                erFørstegangsbehandling
             )
         val årsakTilSattPåVent = oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent
         val harFortroligAdresse = enhetService.skalHaFortroligAdresse(
@@ -341,12 +343,14 @@ class OppdaterOppgaveService(
     ) {
         val personIdent = oppgaveOppdatering.personIdent
         val skalOverstyresTilLokalkontor = skalOverstyresTilLokalKontor(oppgaveOppdatering, avklaringsbehovHendelse)
+        val erFørstegangsbehandling = oppgaveOppdatering.behandlingstype == Behandlingstype.FØRSTEGANGSBEHANDLING
         val enhetForOppgave = enhetService.utledEnhetForOppgave(
             avklaringsbehovHendelse.avklaringsbehovKode,
             personIdent,
             oppgaveOppdatering.relevanteIdenter,
             oppgaveOppdatering.saksnummer,
-            skalOverstyresTilLokalkontor
+            skalOverstyresTilLokalkontor,
+            erFørstegangsbehandling
         )
         val harFortroligAdresse =
             enhetService.skalHaFortroligAdresse(personIdent, oppgaveOppdatering.relevanteIdenter)

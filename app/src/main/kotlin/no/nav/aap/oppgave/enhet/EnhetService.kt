@@ -26,7 +26,10 @@ import org.slf4j.LoggerFactory
 data class EnhetForOppgave(
     val enhet: String,
     val oppfølgingsenhet: String?,
-)
+) {
+    // Hvis oppfølgingsenhet finnes, skal den alltid overstyre enhet
+    fun gjeldendeEnhet() = this.oppfølgingsenhet ?: this.enhet
+}
 
 data class TilknytningOgSkjerming(
     val geografiskTilknytning: GeografiskTilknytning?,
@@ -34,7 +37,7 @@ data class TilknytningOgSkjerming(
     val erNavAnsatt: Boolean
 )
 
-enum class FylkeskontorSomSkalBehandleKlager(val enhetsnummer: String) {
+enum class FylkesenheterSomSkalBehandleKlager(val enhetsnummer: String) {
     NAV_VEST_VIKEN("0600"),
     NAV_NORDLAND("1800"),
     NAV_TRØNDELAG("5700")
@@ -42,7 +45,7 @@ enum class FylkeskontorSomSkalBehandleKlager(val enhetsnummer: String) {
 
 interface IEnhetService {
     fun hentEnheter(ident: String, currentToken: OidcToken): List<String>
-    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null, skalOverstyresTilLokalkontor: Boolean? = false): EnhetForOppgave
+    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null, skalOverstyresTilLokalkontor: Boolean? = false, erFørstegangsbehandling: Boolean): EnhetForOppgave
     fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean
 }
 
@@ -66,10 +69,10 @@ class EnhetService(
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
     }
 
-    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?, skalOverstyresTilLokalkontor: Boolean?): EnhetForOppgave {
+    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?, skalOverstyresTilLokalkontor: Boolean?, erFørstegangsbehandling: Boolean): EnhetForOppgave {
         if (skalOverstyresTilLokalkontor == true) {
             log.info("Oppgave overstyres til Nav-kontor for avklaringsbehov ${avklaringsbehovKode.kode}. Saksnummer: $saksnummer")
-            return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
+            return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling)
         }
         return if (avklaringsbehovKode in
             AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
@@ -81,13 +84,13 @@ class EnhetService(
         } else {
             when (avklaringsbehovKode.kode) {
                 Definisjon.KVALITETSSIKRING.kode.name -> {
-                    finnFylkesEnhet(ident, relevanteIdenter, saksnummer)
+                    finnFylkesEnhet(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling)
                 }
                 Definisjon.VURDER_KLAGE_KONTOR.kode.name -> {
                     finnEnhetForKlageoppgave(ident, relevanteIdenter, saksnummer)
                 }
                 else -> {
-                    finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
+                    finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling)
                 }
             }
         }
@@ -95,13 +98,20 @@ class EnhetService(
 
     private fun finnEnhetForKlageoppgave(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
         // Ruter klageoppgave til fylkeskontor for de fylkene som har bedt om det
-        val fylkesenhetForOppgave = finnFylkesEnhet(ident, relevanteIdenter, saksnummer)
-        val gjeldendeFylkesenhet = fylkesenhetForOppgave.oppfølgingsenhet ?: fylkesenhetForOppgave.enhet
-        if (gjeldendeFylkesenhet in FylkeskontorSomSkalBehandleKlager.entries.map { it.enhetsnummer }) {
+        val fylkesenhetForOppgave = finnFylkesEnhet(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling = false)
+        if (fylkesenhetForOppgave.gjeldendeEnhet() in FylkesenheterSomSkalBehandleKlager.entries.map { it.enhetsnummer }) {
             log.info("Ruter klageoppgave til fylkesenhet. Saksnummer: $saksnummer")
             return fylkesenhetForOppgave
         }
-        return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
+        val lokalEnhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling = false)
+        if (lokalEnhet.gjeldendeEnhet() in ENHETER_REGION_SUNNFJORD.map { it.kode }) {
+            log.info("Enhet for klageoppgave for lokalkontor utledet til ${lokalEnhet.gjeldendeEnhet()}, ruter oppgaven til Nav Sunnfjord (1476)")
+            return EnhetForOppgave(
+                enhet = Enhet.NAV_REGION_SUNNFJORD.kode,
+                oppfølgingsenhet = null
+            )
+        }
+        return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling = false)
     }
 
     override fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean {
@@ -117,8 +127,8 @@ class EnhetService(
             .any { it.name == FORTROLIG_ADRESSE_GROUP }
     }
 
-    private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
-        val enhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer)
+    private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>, saksnummer: String?, erFørstegangsbehandling: Boolean): EnhetForOppgave {
+        val enhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling)
         if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
             return enhet
         }
@@ -178,7 +188,7 @@ class EnhetService(
         )
     }
 
-    private fun finnEnhetstilknytningForPerson(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
+    private fun finnEnhetstilknytningForPerson(ident: String?, relevanteIdenter: List<String>, saksnummer: String?, erFørstegangsbehandling: Boolean): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident)
         val strengesteGradering = finnStrengesteGradering(tilknytningOgSkjerming.diskresjonskode, relevanteIdenter)
 
@@ -202,6 +212,16 @@ class EnhetService(
             } else {
                 null
             }
+
+        val enhetForKø = enhetFraArena ?: enhetFraNorg
+        if (enhetForKø in ENHETER_REGION_SUNNFJORD.map { it.kode } && erFørstegangsbehandling == true) {
+            log.info("Enhet for førstegangsbehandling ble utledet til $enhetForKø, overstyrer enhet til regionskontoret Nav Sunnfjord (1476).")
+            return EnhetForOppgave(
+                enhet = Enhet.NAV_REGION_SUNNFJORD.kode,
+                oppfølgingsenhet = null
+            )
+        }
+
         log.info("Lokalkontor for sak $saksnummer utledet til ${enhetFraArena ?: enhetFraNorg}. Arena-enhet: $enhetFraArena, Norg-enhet: $enhetFraNorg")
         return EnhetForOppgave(enhetFraNorg, enhetFraArena)
     }

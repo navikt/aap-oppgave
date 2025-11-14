@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -134,6 +135,7 @@ class PlukkOppgaveService(
 
         // må sjekke om oppgaven tidligere er overstyrt til lokalkontor. Da skal den bli det igjen.
         val erOverstyrtTilLokalkontor = oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
+        val erFørstegangsbehandling = oppgave.behandlingstype == Behandlingstype.FØRSTEGANGSBEHANDLING
 
         val nyEnhet =
             enhetService.utledEnhetForOppgave(
@@ -141,7 +143,8 @@ class PlukkOppgaveService(
                 oppgave.personIdent,
                 relaterteIdenter,
                 oppgave.saksnummer,
-                erOverstyrtTilLokalkontor
+                erOverstyrtTilLokalkontor,
+                erFørstegangsbehandling
             )
 
         if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
