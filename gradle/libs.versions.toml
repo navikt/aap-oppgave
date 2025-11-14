@@ -1,9 +1,9 @@
 [versions]
 ktor = "3.3.2"
 jackson = "2.20.1"
-komponenter = "1.0.432"
-tilgang = "1.0.154"
-behandlingsflytVersjon = "0.0.483"
+komponenter = "1.0.435"
+tilgang = "1.0.155"
+behandlingsflytVersjon = "0.0.484"
 postmottakVersjon = "6.0.1"
 junit = "6.0.1"
 testcontainers = "1.21.3"
