@@ -394,14 +394,14 @@ class EnhetServiceTest {
     }
 
     @Test
-    fun `Førstegangsbehandling skal gå til Nav Sunnfjord når enhet utledes til Nav Kinn`() {
+    fun `Førstegangsbehandling skal gå til Nav Sunnfjord når enhet utledes til en av enhetene i Sunnfjord-regionen`() {
         val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
                 hentGeografiskTilknytning = GeografiskTilknytning(GeografiskTilknytningType.KOMMUNE, gtKommune = "any")
             )
         )
-        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = "1401")
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = Enhet.NAV_KINN.kode)
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
@@ -410,14 +410,14 @@ class EnhetServiceTest {
     }
 
     @Test
-    fun `Revurdering skal ikke gå til Nav Sunnfjord når enhet utledes til Nav Kinn`() {
+    fun `Revurdering skal ikke gå til Nav Sunnfjord når enhet utledes til en av enhetene i Sunnfjord-regionen`() {
         val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
                 hentGeografiskTilknytning = GeografiskTilknytning(GeografiskTilknytningType.KOMMUNE, gtKommune = "any")
             )
         )
-        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = "1401")
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = Enhet.NAV_KINN.kode)
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
@@ -426,14 +426,14 @@ class EnhetServiceTest {
     }
 
     @Test
-    fun `Klageoppgave skal gå til Nav Sunnfjord når enhet utledes til Nav Kinn`() {
+    fun `Klageoppgave skal gå til Nav Sunnfjord når enhet utledes til en enhet i Sunnfjord-regionen`() {
         val pdlGateway = PdlGatewayMock.medRespons(
             PdlData(
                 hentPerson = HentPersonResult(adressebeskyttelse = listOf(Gradering(Adressebeskyttelseskode.UGRADERT))),
                 hentGeografiskTilknytning = GeografiskTilknytning(GeografiskTilknytningType.KOMMUNE, gtKommune = "any")
             )
         )
-        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = "1401", overordnetFylkesEnheter = listOf("1400"))
+        val norgGateway = NorgGatewayMock.medRespons(responsEnhet = Enhet.NAV_KINN.kode, overordnetFylkesEnheter = listOf("1400"))
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))

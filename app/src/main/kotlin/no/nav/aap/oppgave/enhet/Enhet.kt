@@ -10,7 +10,7 @@ enum class Enhet(val kode: String) {
     NAV_REGION_SUNNFJORD("1476"),
     NAV_KINN("1401"),
     NAV_ASKVOLL("1428"),
-    NAV_SUNNFJORD_YTRE_SOGN("1432")
+    NAV_SUNNFJORD_YTRE_SOGN("1432"),
 }
 
 val NAY_ENHETER = listOf(Enhet.NAY_UTLAND, Enhet.NAY_EGNE_ANSATTE, Enhet.NAY)

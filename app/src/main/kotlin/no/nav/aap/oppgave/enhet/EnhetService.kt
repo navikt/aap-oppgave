@@ -27,6 +27,7 @@ data class EnhetForOppgave(
     val enhet: String,
     val oppfølgingsenhet: String?,
 ) {
+    // Hvis oppfølgingsenhet finnes, skal den alltid overstyre enhet
     fun gjeldendeEnhet() = this.oppfølgingsenhet ?: this.enhet
 }
 
@@ -36,7 +37,7 @@ data class TilknytningOgSkjerming(
     val erNavAnsatt: Boolean
 )
 
-enum class FylkeskontorSomSkalBehandleKlager(val enhetsnummer: String) {
+enum class FylkesenheterSomSkalBehandleKlager(val enhetsnummer: String) {
     NAV_VEST_VIKEN("0600"),
     NAV_NORDLAND("1800"),
     NAV_TRØNDELAG("5700")
@@ -98,7 +99,7 @@ class EnhetService(
     private fun finnEnhetForKlageoppgave(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
         // Ruter klageoppgave til fylkeskontor for de fylkene som har bedt om det
         val fylkesenhetForOppgave = finnFylkesEnhet(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling = false)
-        if (fylkesenhetForOppgave.gjeldendeEnhet() in FylkeskontorSomSkalBehandleKlager.entries.map { it.enhetsnummer }) {
+        if (fylkesenhetForOppgave.gjeldendeEnhet() in FylkesenheterSomSkalBehandleKlager.entries.map { it.enhetsnummer }) {
             log.info("Ruter klageoppgave til fylkesenhet. Saksnummer: $saksnummer")
             return fylkesenhetForOppgave
         }
