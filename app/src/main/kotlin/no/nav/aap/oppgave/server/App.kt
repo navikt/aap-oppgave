@@ -47,6 +47,7 @@ import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
+import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
@@ -136,7 +137,8 @@ fun Application.motor(dataSource: DataSource, prometheus: MeterRegistry): Motor 
         prometheus = prometheus,
         jobber = listOf(
             StatistikkHendelseJobb,
-            OppdaterOppgaveEnhetJobb
+            OppdaterOppgaveEnhetJobb,
+            VarsleOmOppgaverIkkeEndretJobb
         )
     )
 
