@@ -78,6 +78,8 @@ data class OppgaveDto(
      **/
     val enhetForKø: String = oppfølgingsenhet ?: enhet
 
+    val erPåVent: Boolean = påVentTil != null
+
     init {
         if (journalpostId == null) {
             if (saksnummer == null || behandlingRef == null) {

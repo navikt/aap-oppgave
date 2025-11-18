@@ -20,7 +20,7 @@ class VarsleOmOppgaverIkkeEndretJobb(
     private val log = LoggerFactory.getLogger(VarsleOmOppgaverIkkeEndretJobb::class.java)
 
     override fun utfør(input: JobbInput) {
-        val alleÅpneOppgaverIkkePåVent = oppgaveRepository.hentAlleÅpneOppgaver().filter { it.påVentTil == null }
+        val alleÅpneOppgaverIkkePåVent = oppgaveRepository.hentAlleÅpneOppgaver().filter { !it.erPåVent }
         log.info("Fant ${alleÅpneOppgaverIkkePåVent.size} åpne oppgaver som ikke er på vent")
         val nå = LocalDateTime.now()
         val oppgaverIkkeEndretPå7Dager = alleÅpneOppgaverIkkePåVent.filter { (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusDays(7)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusDays(7)) }
@@ -34,7 +34,7 @@ class VarsleOmOppgaverIkkeEndretJobb(
                             it.id!!,
                             it.versjon
                         )
-                    } for avklaringsbehov ${it.avklaringsbehovKode} på enhet ${it.enhetForKø} er ikke endret siden ${it.endretTidspunkt ?: it.opprettetTidspunkt}. Saksnummer: ${it.saksnummer}"
+                    } for avklaringsbehov ${it.avklaringsbehovKode} på enhet ${it.enhetForKø} er ikke endret siden ${(it.endretTidspunkt ?: it.opprettetTidspunkt).toLocalDate()}. Saksnummer: ${it.saksnummer}"
                 )
             }
         }
