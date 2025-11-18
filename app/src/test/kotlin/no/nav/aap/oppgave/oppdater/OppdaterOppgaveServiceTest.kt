@@ -702,6 +702,218 @@ class OppdaterOppgaveServiceTest {
 
         val åpneoppgaver = hentOppgaverForBehandling(behandlingsref).filter { it.status == Status.OPPRETTET }
         assertThat(åpneoppgaver.size).isEqualTo(1)
+        assertThat(åpneoppgaver.first().reservertAv).isEqualTo("Saksbehandler")
+    }
+
+    @Test
+    fun `Skal kunne fange opp venteinformasjon også etter retur fra kvalitetssikrer`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+
+        val tilKvalitetssikrer = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(1)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(3)
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+
+        //Utfør
+        sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
+
+        val returFraKvalitetssikrer = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(1)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
+                                )
+                            ),
+                            begrunnelse = "xxx",
+                            endretAv = "Kvalitetssikrer",
+                            tidsstempel = nå.minusMinutes(3)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+
+        //Utfør
+        sendBehandlingFlytStoppetHendelse(returFraKvalitetssikrer)
+
+        val settPåVentHendelse = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = true,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(1)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                            årsakTilRetur = listOf(
+                                ÅrsakTilRetur(
+                                    ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
+                                )
+                            ),
+                            begrunnelse = "xxx",
+                            endretAv = "Kvalitetssikrer",
+                            tidsstempel = nå.minusMinutes(3)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.MANUELT_SATT_PÅ_VENT,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå,
+                            frist = nå.plusDays(8).toLocalDate(),
+                            årsakTilSattPåVent = ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER
+                        ),
+                    ),
+                )
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+
+        sendBehandlingFlytStoppetHendelse(settPåVentHendelse)
+
+        val oppgave = hentOppgave(oppgaveId)
+        assertThat(oppgave.reservertAv).isEqualTo("Saksbehandler")
+
+        val åpneoppgaver = hentOppgaverForBehandling(behandlingsref).filter { it.status == Status.OPPRETTET }
+        assertThat(åpneoppgaver.size).isEqualTo(1)
+        assertThat(åpneoppgaver.first().påVentTil).isEqualTo(nå.plusDays(8).toLocalDate())
+        assertThat(åpneoppgaver.first().avklaringsbehovKode).isEqualTo("5003")
+        assertThat(åpneoppgaver.first().returInformasjon?.status).isEqualTo(ReturStatus.RETUR_FRA_KVALITETSSIKRER)
     }
 
     @Test
