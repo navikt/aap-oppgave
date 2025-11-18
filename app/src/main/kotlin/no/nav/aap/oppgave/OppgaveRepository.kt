@@ -187,43 +187,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun gjenåpneOppgave(
-        oppgaveId: OppgaveId,
-        ident: String,
-        returInformasjon: ReturInformasjon?
-    ) {
-        val query = """
-            UPDATE 
-                OPPGAVE 
-            SET 
-                STATUS = 'OPPRETTET', 
-                ENDRET_AV = ?,
-                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
-                RETUR_AARSAK = ?,
-                retur_returnert_av = ?,
-                retur_aarsaker = ?,
-                retur_begrunnelse = ?,
-                VERSJON = VERSJON + 1
-            WHERE 
-                ID = ? AND
-                STATUS = 'AVSLUTTET' AND
-                VERSJON = ?
-        """.trimIndent()
-
-        connection.execute(query) {
-            setParams {
-                setString(1, ident)
-                setEnumName(2, returInformasjon?.status)
-                setString(3, returInformasjon?.endretAv)
-                setArray(4, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(5, returInformasjon?.begrunnelse)
-                setLong(6, oppgaveId.id)
-                setLong(7, oppgaveId.versjon)
-            }
-            setResultValidator { require(it == 1) { "Forventer bare at én oppgave gjenåpnes. Fant $it oppgaver. Oppgave: $oppgaveId" } }
-        }
-    }
-
     fun oppdatereOppgave(
         oppgaveId: OppgaveId,
         ident: String,
