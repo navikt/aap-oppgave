@@ -23,11 +23,11 @@ class VarsleOmOppgaverIkkeEndretJobb(
         val alleÅpneOppgaverIkkePåVent = oppgaveRepository.hentAlleÅpneOppgaver().filter { !it.erPåVent }
         log.info("Fant ${alleÅpneOppgaverIkkePåVent.size} åpne oppgaver som ikke er på vent")
         val nå = LocalDateTime.now()
-        val oppgaverIkkeEndretPå7Dager = alleÅpneOppgaverIkkePåVent.filter { (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusDays(7)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusDays(7)) }
+        val oppgaverIkkeEndretPåFireUker = alleÅpneOppgaverIkkePåVent.filter { (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusWeeks(4)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusWeeks(4)) }
 
-        log.info("Fant ${oppgaverIkkeEndretPå7Dager.size} oppgaver som ikke er endret på mer enn 7 dager")
+        log.info("Fant ${oppgaverIkkeEndretPåFireUker.size} oppgaver som ikke er endret på mer enn fire uker")
         if (unleashService.isEnabled(FeatureToggles.VarsleOmOppgaverEldreEnn7Dager)) {
-            oppgaverIkkeEndretPå7Dager.forEach {
+            oppgaverIkkeEndretPåFireUker.forEach {
                 log.error(
                     "Oppgave ${
                         OppgaveId(
