@@ -6,7 +6,7 @@ import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.httpklient.auth.token
+import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
@@ -64,7 +64,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
 
         respond(
             OppgavelisteRespons(
-                antallTotalt = data.oppgaver.size,
+                antallTotalt = data.antallTotalt,
                 oppgaver = data.oppgaver.hentPersonNavn(),
                 antallGjenstaaende = data.antallGjenstaaende
             )

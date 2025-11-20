@@ -467,16 +467,14 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val alleOppgaverCount = connection.queryFirstOrNull(countQuery) {
             setRowMapper { it.getInt("count") }
-        }
-        val gjenstaaendeOppgaverAntall = if (alleOppgaverCount != null) {
-            maxOf(0, alleOppgaverCount - (offset + oppgaver.size))
-        } else 0
+        } ?: 0
+        val gjenstaaendeOppgaverAntall = maxOf(0, alleOppgaverCount - (offset + oppgaver.size))
 
-        return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall)
+        return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall, alleOppgaverCount)
     }
 
     data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long, val versjon: Long)
-    data class FinnOppgaverDto(val oppgaver: List<OppgaveDto>, val antallGjenstaaende: Int)
+    data class FinnOppgaverDto(val oppgaver: List<OppgaveDto>, val antallGjenstaaende: Int, val antallTotalt: Int)
 
     fun finnÅpneOppgaverIkkeVikafossen(): List<IdentMedOppgaveId> {
         val query = """
