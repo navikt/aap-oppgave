@@ -89,7 +89,8 @@ class OppgavelisteService(
 
         return FinnOppgaverDto(
             oppgaver = oppgaver.filtrerPåTilgang(enhetService, token, ident),
-            antallGjenstaaende = finnOppgaverDto.antallGjenstaaende
+            antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
+            antallTotalt = finnOppgaverDto.antallTotalt,
         )
     }
 

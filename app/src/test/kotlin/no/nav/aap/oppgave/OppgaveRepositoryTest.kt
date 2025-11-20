@@ -22,7 +22,6 @@ import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.test.AfterTest
 import kotlin.test.fail
 
 class OppgaveRepositoryTest {
@@ -116,6 +115,50 @@ class OppgaveRepositoryTest {
             assertThat(plukketOppgaver).hasSize(1)
             assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
         }
+    }
+
+    @Test
+    fun `Teller alle oppgaver gitt enhetsfilter`() {
+        // Lager 20 oppgaver totalt, 10 på hver enhet
+        (1..10).forEach { opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_ENEBAKK) }
+        (1..10).forEach { opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_LØRENSKOG) }
+        val oppgaverBeggeEnheter = dataSource.transaction { connection ->
+            OppgaveRepository(connection).finnOppgaver(
+                filter = FilterDto(
+                    navn = "alle oppgaver",
+                    beskrivelse = "alle oppgaver",
+                    opprettetAv = "saksbehandler",
+                    opprettetTidspunkt = LocalDateTime.now().minusDays(10),
+                ),
+                paging = Paging(
+                    side = 1,
+                    antallPerSide = 5
+                )
+            )
+        }
+        // Sender med 5 oppgaver til frontend, men det finnes 20 totalt
+        assertThat(oppgaverBeggeEnheter.oppgaver.size).isEqualTo(5)
+        assertThat(oppgaverBeggeEnheter.antallTotalt).isEqualTo(20)
+
+        val oppgaverLørenskog = dataSource.transaction { connection ->
+            OppgaveRepository(connection).finnOppgaver(
+                filter = FilterDto(
+                    navn = "alle oppgaver",
+                    beskrivelse = "alle oppgaver",
+                    opprettetAv = "saksbehandler",
+                    opprettetTidspunkt = LocalDateTime.now().minusDays(10),
+                    enheter = setOf(ENHET_NAV_LØRENSKOG)
+                ),
+                paging = Paging(
+                    side = 1,
+                    antallPerSide = 5
+                )
+            )
+        }
+
+        // Teller bare oppgavene for Lørenskog
+        assertThat(oppgaverLørenskog.antallTotalt).isEqualTo(10)
+
     }
 
 
