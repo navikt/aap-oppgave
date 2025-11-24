@@ -100,7 +100,12 @@ fun NormalOpenAPIRoute.søkApi(
 
 private fun harAdressebeskyttelse(oppgave: OppgaveDto): Boolean =
     oppgave.enhet == Enhet.NAV_VIKAFOSSEN.kode ||
-            oppgave.enhet.endsWith("83") || // alle kontorer for egen ansatt slutter på 83
+            erEgenAnsattEnhet(oppgave) ||
             oppgave.harFortroligAdresse == true
 
 private fun OppgaveDto.hentPersonNavn() = listOf(this).hentPersonNavn().first()
+
+private fun erEgenAnsattEnhet(oppgave: OppgaveDto): Boolean {
+    // alle kontorer som slutter på 83 er egen ansatt-kontor, unntatt Nav Værnes
+    return oppgave.enhet.endsWith("83") && oppgave.enhet != Enhet.NAV_VÆRNES.kode
+}
