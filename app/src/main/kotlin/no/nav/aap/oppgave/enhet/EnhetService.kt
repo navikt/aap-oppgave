@@ -47,6 +47,7 @@ interface IEnhetService {
     fun hentEnheter(ident: String, currentToken: OidcToken): List<String>
     fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null, skalOverstyresTilLokalkontor: Boolean? = false, erFørstegangsbehandling: Boolean): EnhetForOppgave
     fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean
+    fun erSkjermet(ident: String?): Boolean
 }
 
 
@@ -125,6 +126,12 @@ class EnhetService(
     ): Boolean {
         return msGraphClient.hentFortroligAdresseGruppe(ident, currentToken).groups
             .any { it.name == FORTROLIG_ADRESSE_GROUP }
+    }
+
+    override fun erSkjermet(ident: String?): Boolean {
+        return nomSkjermingGateway.erSkjermet(requireNotNull(ident) {
+            "Kan ikke utlede skjerming for ident som er null."
+        })
     }
 
     private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>, saksnummer: String?, erFørstegangsbehandling: Boolean): EnhetForOppgave {
@@ -306,10 +313,10 @@ class EnhetService(
         return utlandTilknytning || utlandOppfølgingsenhet
     }
 
-    private fun skalTilNavUtland(geoTilknytning: GeografiskTilknytning?, harSkjerming: Boolean) =
+    private fun skalTilNavUtland(geoTilknytning: GeografiskTilknytning?, erSkjermet: Boolean) =
         // Skal ikke kunne gå til Nav Utland dersom egen ansatt
         // Hvis PDL returnerer ukjent kommune (9999), eller geotilknytning ikke finnes, eller geotilknytning er utland -> Nav Utland
-        !harSkjerming && (geoTilknytning == null || geoTilknytning.gtType == GeografiskTilknytningType.UTLAND || mapGeografiskTilknytningTilKode(geoTilknytning) == "9999")
+        !erSkjermet && (geoTilknytning == null || geoTilknytning.gtType == GeografiskTilknytningType.UTLAND || mapGeografiskTilknytningTilKode(geoTilknytning) == "9999")
 
     companion object {
         private const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"
