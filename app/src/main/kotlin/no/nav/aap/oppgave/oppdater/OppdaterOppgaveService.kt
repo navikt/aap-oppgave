@@ -147,11 +147,12 @@ class OppdaterOppgaveService(
             oppgaveOppdatering.personIdent,
             oppgaveOppdatering.relevanteIdenter
         )
+        val erSkjermet = enhetService.erSkjermet(oppgaveOppdatering.personIdent)
 
         loggOppdatering(eksisterendeOppgave)
         oppgaveRepository.oppdatereOppgave(
             oppgaveId = eksisterendeOppgave.oppgaveId(),
-            ident = KELVIN,
+            endretAvIdent = KELVIN,
             personIdent = personIdent,
             enhet = enhetForOppgave.enhet,
             oppfølgingsenhet = enhetForOppgave.oppfølgingsenhet,
@@ -162,6 +163,7 @@ class OppdaterOppgaveService(
             påVentBegrunnelse = oppgaveOppdatering.venteInformasjon?.begrunnelse,
             vurderingsbehov = oppgaveOppdatering.vurderingsbehov,
             harFortroligAdresse = harFortroligAdresse,
+            erSkjermet = erSkjermet,
             harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
             returInformasjon = utledReturInformasjon(avklaringsbehov, oppgaveOppdatering),
         )
@@ -343,6 +345,7 @@ class OppdaterOppgaveService(
         )
         val harFortroligAdresse =
             enhetService.skalHaFortroligAdresse(personIdent, oppgaveOppdatering.relevanteIdenter)
+        val erSkjermet = enhetService.erSkjermet(oppgaveOppdatering.personIdent)
 
         val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
             personIdent = personIdent,
@@ -359,6 +362,7 @@ class OppdaterOppgaveService(
             vurderingsbehov = oppgaveOppdatering.vurderingsbehov,
             årsakTilOpprettelse = oppgaveOppdatering.årsakTilOpprettelse,
             harFortroligAdresse = harFortroligAdresse,
+            erSkjermet = erSkjermet,
             harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
             returInformasjon = utledReturFraToTrinn(avklaringsbehovHendelse),
         )
@@ -479,6 +483,7 @@ class OppdaterOppgaveService(
         vurderingsbehov: List<String>,
         årsakTilOpprettelse: String?,
         harFortroligAdresse: Boolean,
+        erSkjermet: Boolean,
         harUlesteDokumenter: Boolean,
         returInformasjon: ReturInformasjon?,
     ): OppgaveDto {
@@ -503,6 +508,7 @@ class OppdaterOppgaveService(
             vurderingsbehov = vurderingsbehov,
             årsakTilOpprettelse = årsakTilOpprettelse,
             harFortroligAdresse = harFortroligAdresse,
+            erSkjermet = erSkjermet,
             returStatus = returInformasjon?.status,
             returInformasjon = returInformasjon?.let {
                 ReturInformasjon(

@@ -7,7 +7,6 @@ import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.filter.FilterRepository
@@ -57,9 +56,7 @@ class PlukkOppgaveService(
                 )
                 return nesteOppgave
             } else {
-                avreserverHvisTilgangAvslått(oppgaveId, ident)
-                sjekkFortroligAdresse(oppgaveId)
-                oppdaterUtdatertEnhet(oppgaveId)
+                oppdaterOppgaveVedTilgangAvslått(oppgaveId, ident)
             }
         }
 
@@ -91,49 +88,23 @@ class PlukkOppgaveService(
             return oppgave
         } else {
             log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
-            avreserverHvisTilgangAvslått(oppgaveId = oppgaveId, ident = ident)
-            sjekkFortroligAdresse(oppgaveId = oppgaveId)
-            oppdaterUtdatertEnhet(oppgaveId = oppgaveId)
+            oppdaterOppgaveVedTilgangAvslått(oppgaveId = oppgaveId, ident = ident)
         }
         return null
     }
 
-    private fun avreserverHvisTilgangAvslått(
-        oppgaveId: OppgaveId,
-        ident: String,
-    ) {
-        val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
-        if (oppgave.reservertAv == ident) {
-            log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
-            oppgaveRepository.avreserverOppgave(oppgaveId, ident)
-            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, flytJobbRepository)
-        }
-    }
+    private fun oppdaterOppgaveVedTilgangAvslått(oppgaveId: OppgaveId, ident: String) {
+        // avreserverer
+        avreserverHvisTilgangAvslått(oppgaveId, ident)
 
-    private fun sjekkFortroligAdresse(oppgaveId: OppgaveId) {
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
-
         val behandlingRef = requireNotNull(oppgave.behandlingRef) {
             "Oppgave $oppgaveId mangler behandlingsreferanse"
         }
+        // Utleder enhet, fortrolig adresse og skjerming på nytt
         val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
         val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, relaterteIdenter)
-
-        if (harFortroligAdresse != (oppgave.harFortroligAdresse == true)) {
-            oppgaveRepository.settFortroligAdresse(OppgaveId(oppgave.id!!, oppgave.versjon), harFortroligAdresse)
-        }
-    }
-
-    private fun oppdaterUtdatertEnhet(oppgaveId: OppgaveId) {
-        val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
-        val oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon)
-
-        val behandlingRef = requireNotNull(oppgave.behandlingRef) {
-            "Oppgave $oppgaveId mangler behandlingsreferanse"
-        }
-        val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
-
-        // må sjekke om oppgaven tidligere er overstyrt til lokalkontor. Da skal den bli det igjen.
+        val erSkjermet = enhetService.erSkjermet(ident)
         val erOverstyrtTilLokalkontor = oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
         val erFørstegangsbehandling = oppgave.behandlingstype == Behandlingstype.FØRSTEGANGSBEHANDLING
 
@@ -146,25 +117,38 @@ class PlukkOppgaveService(
                 erOverstyrtTilLokalkontor,
                 erFørstegangsbehandling
             )
+        log.info("Oppdaterer enhet for oppgave ${oppgave.id} til ${nyEnhet.gjeldendeEnhet()} etter tilgang avslått på plukk. Saksnummer: ${oppgave.saksnummer}")
+        oppgaveRepository.oppdatereOppgave(
+            oppgaveId = OppgaveId(requireNotNull(oppgave.id) {
+                "OppgaveID kan ikke være null"
+            }, oppgave.versjon),
+            endretAvIdent = "Kelvin",
+            personIdent = oppgave.personIdent,
+            enhet = nyEnhet.enhet,
+            påVentTil = oppgave.påVentTil,
+            påVentÅrsak = oppgave.påVentÅrsak,
+            påVentBegrunnelse = oppgave.venteBegrunnelse,
+            oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
+            veilederArbeid = oppgave.veilederArbeid,
+            veilederSykdom = oppgave.veilederSykdom,
+            vurderingsbehov = oppgave.vurderingsbehov,
+            harFortroligAdresse = harFortroligAdresse,
+            erSkjermet = erSkjermet,
+            returInformasjon = oppgave.returInformasjon
+        )
+        sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, flytJobbRepository)
 
-        if (nyEnhet != EnhetForOppgave(oppgave.enhet, oppgave.oppfølgingsenhet)) {
-            log.info("Oppdaterer enhet for oppgave $oppgaveId fra ${oppgave.oppfølgingsenhet ?: oppgave.enhet} til ${nyEnhet.oppfølgingsenhet ?: nyEnhet.enhet} etter at tilgang ble avslått på plukk.")
-            oppgaveRepository.oppdatereOppgave(
-                oppgaveId = oppgaveId,
-                ident = "Kelvin",
-                personIdent = oppgave.personIdent,
-                enhet = nyEnhet.enhet,
-                påVentTil = oppgave.påVentTil,
-                påVentÅrsak = oppgave.påVentÅrsak,
-                påVentBegrunnelse = oppgave.venteBegrunnelse,
-                oppfølgingsenhet = nyEnhet.oppfølgingsenhet,
-                veilederArbeid = oppgave.veilederArbeid,
-                veilederSykdom = oppgave.veilederSykdom,
-                vurderingsbehov = oppgave.vurderingsbehov,
-                harFortroligAdresse = oppgave.harFortroligAdresse,
-                returInformasjon = oppgave.returInformasjon
-            )
-            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, flytJobbRepository)
+    }
+
+    private fun avreserverHvisTilgangAvslått(
+        oppgaveId: OppgaveId,
+        ident: String,
+    ) {
+        val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
+        if (oppgave.reservertAv == ident) {
+            log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
+            oppgaveRepository.avreserverOppgave(oppgaveId, ident)
+            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, flytJobbRepository)
         }
     }
 
