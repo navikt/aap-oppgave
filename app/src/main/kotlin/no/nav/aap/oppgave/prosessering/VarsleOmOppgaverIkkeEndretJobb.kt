@@ -20,14 +20,14 @@ class VarsleOmOppgaverIkkeEndretJobb(
     private val log = LoggerFactory.getLogger(VarsleOmOppgaverIkkeEndretJobb::class.java)
 
     override fun utfør(input: JobbInput) {
-        val alleÅpneOppgaverIkkePåVent = oppgaveRepository.hentAlleÅpneOppgaver().filter { !it.erPåVent }
-        log.info("Fant ${alleÅpneOppgaverIkkePåVent.size} åpne oppgaver som ikke er på vent")
+        val alleÅpneOppgaverIkkePåVent = oppgaveRepository.hentAlleÅpneOppgaver().filter { !it.erPåVent && it.reservertAv == null }
+        log.info("Fant ${alleÅpneOppgaverIkkePåVent.size} åpne oppgaver som ikke er på vent og ikke er reservert.")
         val nå = LocalDateTime.now()
-        val oppgaverIkkeEndretPåÅtteUker = alleÅpneOppgaverIkkePåVent.filter { (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusWeeks(8)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusWeeks(8)) }
+        val oppgaverIkkeEndretPåFemUker = alleÅpneOppgaverIkkePåVent.filter { (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusWeeks(5)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusWeeks(5)) }
 
-        log.info("Fant ${oppgaverIkkeEndretPåÅtteUker.size} oppgaver som ikke er endret på mer enn åtte uker")
+        log.info("Fant ${oppgaverIkkeEndretPåFemUker.size} oppgaver som ikke er endret på mer enn fem uker")
         if (unleashService.isEnabled(FeatureToggles.VarsleOmOppgaverEldreEnn7Dager)) {
-            oppgaverIkkeEndretPåÅtteUker.forEach {
+            oppgaverIkkeEndretPåFemUker.forEach {
                 log.error(
                     "Oppgave ${
                         OppgaveId(
