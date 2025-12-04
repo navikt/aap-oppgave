@@ -26,7 +26,6 @@ import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
-import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -94,9 +93,7 @@ class OppdaterOppgaveService(
             if (eksisterendeOppgave == null) {
                 opprettNyOppgaveForAvklaringsbehov(oppgaveOppdatering, oppgaveMap, åpentAvklaringsbehov)
             } else {
-                if (unleashService.isEnabled(FeatureToggles.AvsluttOppgaverVedGjenaapning)) {
-                    avsluttOppgaverSenereIFlyt(oppgaveMap, åpentAvklaringsbehov)
-                }
+                avsluttOppgaverSenereIFlyt(oppgaveMap, åpentAvklaringsbehov)
                 oppdaterEksistendeOppgave(oppgaveOppdatering, eksisterendeOppgave, åpentAvklaringsbehov)
             }
         }
