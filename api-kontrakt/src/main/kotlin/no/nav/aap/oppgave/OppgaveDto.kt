@@ -52,6 +52,7 @@ data class OppgaveDto(
     val behandlingstype: Behandlingstype,
     val påVentTil: LocalDate? = null,
     val påVentÅrsak: String? = null,
+    val utløptVentefrist: LocalDate? = null,
     val venteBegrunnelse: String? = null,
     @Deprecated("Bruk returInformasjon")
     val returStatus: ReturStatus? = null,

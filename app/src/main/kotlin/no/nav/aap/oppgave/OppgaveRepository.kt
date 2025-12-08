@@ -11,7 +11,6 @@ import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
-import org.jetbrains.annotations.TestOnly
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.util.UUID
@@ -195,6 +194,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         påVentTil: LocalDate?,
         påVentÅrsak: String?,
         påVentBegrunnelse: String?,
+        utløptVentefrist: LocalDate?,
         oppfølgingsenhet: String?,
         veilederArbeid: String?,
         veilederSykdom: String?,
@@ -225,6 +225,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 retur_returnert_av = ?,
                 retur_aarsaker = ?,
                 RETUR_BEGRUNNELSE = ?,
+                UTLOEPT_VENTEFRIST = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -249,8 +250,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(14, returInformasjon?.endretAv)
                 setArray(15, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
                 setString(16, returInformasjon?.begrunnelse)
-                setLong(17, oppgaveId.id)
-                setLong(18, oppgaveId.versjon)
+                setLocalDate(17, utløptVentefrist)
+                setLong(18, oppgaveId.id)
+                setLong(19, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -267,6 +269,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 RESERVERT_AV = NULL,
                 RESERVERT_TIDSPUNKT = NULL,
                 RESERVERT_AV_NAVN = NULL,
+                UTLOEPT_VENTEFRIST = NULL,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -618,11 +621,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    /**
-     * Brukes i test.
-     */
-    @Suppress("unused")
-    @TestOnly
     fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
         val query = """
             SELECT 
@@ -730,6 +728,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE")),
             påVentTil = row.getLocalDateOrNull("PAA_VENT_TIL"),
             påVentÅrsak = row.getStringOrNull("PAA_VENT_AARSAK"),
+            utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST"),
             venteBegrunnelse = row.getStringOrNull("VENTE_BEGRUNNELSE"),
             årsakerTilBehandling = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             vurderingsbehov = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
@@ -790,7 +789,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             RETUR_BEGRUNNELSE,
             retur_aarsaker,
             retur_returnert_av,
-            AARSAK_TIL_OPPRETTELSE
+            AARSAK_TIL_OPPRETTELSE,
+            UTLOEPT_VENTEFRIST
         """.trimIndent()
     }
 

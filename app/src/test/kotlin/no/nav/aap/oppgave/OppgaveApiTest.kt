@@ -1533,6 +1533,7 @@ class OppgaveApiTest {
                     veilederSykdom = oppgave.veilederSykdom,
                     vurderingsbehov = oppgave.årsakerTilBehandling,
                     returInformasjon = oppgave.returInformasjon,
+                    utløptVentefrist = oppgave.utløptVentefrist
                 )
             }
             return hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))

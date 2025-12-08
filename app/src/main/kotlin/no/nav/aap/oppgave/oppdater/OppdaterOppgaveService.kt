@@ -161,6 +161,7 @@ class OppdaterOppgaveService(
             harFortroligAdresse = harFortroligAdresse,
             harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
             returInformasjon = utledReturInformasjon(avklaringsbehov, oppgaveOppdatering),
+            utløptVentefrist = utledUtløptVentefrist(oppgaveOppdatering, eksisterendeOppgave)
         )
 
         // Automatisk reservasjon enten ved retur eller override fra behandlingsflyt
@@ -197,6 +198,30 @@ class OppdaterOppgaveService(
 
     private fun utledReturInformasjon(avklaringsbehov: AvklaringsbehovHendelse, oppgaveOppdatering: OppgaveOppdatering): ReturInformasjon? {
         return utledReturFraToTrinn(avklaringsbehov) ?: utledReturTilToTrinn(avklaringsbehov, oppgaveOppdatering)
+    }
+
+    private fun utledUtløptVentefrist(
+        oppgaveOppdatering: OppgaveOppdatering,
+        eksisterendeOppgave: OppgaveDto,
+    ): LocalDate? {
+        return if (oppgaveTattAvVentAutomatiskIDenneOppdateringen(oppgaveOppdatering, eksisterendeOppgave)) {
+            // behandling er nettopp tatt av vent, lagre ned nylig utløpt ventefrist
+            eksisterendeOppgave.påVentTil
+        } else if (eksisterendeOppgave.utløptVentefrist != null && oppgaveOppdatering.venteInformasjon?.frist == null) {
+            // oppgaven har allerede en utløptVentefrist og er ikke satt på vent på nytt i denne oppdateringen. Viderefører den forrige.
+            eksisterendeOppgave.utløptVentefrist
+        } else {
+            null
+        }
+    }
+
+    private fun oppgaveTattAvVentAutomatiskIDenneOppdateringen(
+        oppgaveOppdatering: OppgaveOppdatering,
+        eksisterendeOppgave: OppgaveDto
+    ): Boolean {
+        // Eksisterende oppgave er på vent, ventefristen var i dag og behandlingen er ikke lenger på vent
+        // obs: kan ikke 100% garantere at oppgaven ble tatt av vent automatisk
+        return eksisterendeOppgave.påVentTil != null && eksisterendeOppgave.påVentTil!!.isEqual(LocalDate.now()) && oppgaveOppdatering.venteInformasjon?.frist == null
     }
 
     private fun utledReturTilToTrinn(
@@ -478,6 +503,7 @@ class OppdaterOppgaveService(
         harFortroligAdresse: Boolean,
         harUlesteDokumenter: Boolean,
         returInformasjon: ReturInformasjon?,
+        utløptVentefrist: LocalDate? = null
     ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
@@ -509,6 +535,7 @@ class OppdaterOppgaveService(
                     endretAv = it.endretAv
                 )
             },
+            utløptVentefrist = utløptVentefrist,
             harUlesteDokumenter = harUlesteDokumenter
         )
     }
