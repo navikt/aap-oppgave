@@ -8,7 +8,7 @@ import no.nav.aap.tilgang.Rolle
 
 val AVKLARINGSBEHOV_FOR_VEILEDER =
     Definisjon.entries
-        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
+        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG, BehovType.OVERSTYR) }
         .filter { Rolle.SAKSBEHANDLER_OPPFOLGING in it.løsesAv }
         .map { AvklaringsbehovKode(it.kode.name) }
         .toSet()
@@ -16,7 +16,7 @@ val AVKLARINGSBEHOV_FOR_VEILEDER =
 val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER =
     Definisjon.entries
         .asSequence()
-        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
+        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG, BehovType.OVERSTYR) }
         .filter { Rolle.SAKSBEHANDLER_NASJONAL in it.løsesAv }
         .filter { it.løsesISteg != StegType.KVALITETSSIKRING }
         .map { AvklaringsbehovKode(it.kode.name) }
@@ -24,13 +24,13 @@ val AVKLARINGSBEHOV_FOR_SAKSBEHANDLER =
 
 val AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER =
     Definisjon.entries
-        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
+        .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG, BehovType.OVERSTYR) }
         .filter { Rolle.SAKSBEHANDLER_OPPFOLGING in it.løsesAv && Rolle.SAKSBEHANDLER_NASJONAL in it.løsesAv }
         .map { AvklaringsbehovKode(it.kode.name) }
         .toSet()
 
 val AVKLARINGSBEHOV_FOR_BESLUTTER = Definisjon.entries
-    .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG) }
+    .filter { it.type in setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG, BehovType.OVERSTYR) }
     .filter { Rolle.BESLUTTER in it.løsesAv }
     .map { AvklaringsbehovKode(it.kode.name) }
     .toSet()

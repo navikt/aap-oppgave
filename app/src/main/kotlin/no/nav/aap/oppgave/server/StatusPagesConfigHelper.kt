@@ -13,11 +13,12 @@ import java.net.http.HttpTimeoutException
 object StatusPagesConfigHelper {
     fun setup(): StatusPagesConfig.() -> Unit = {
         exception<Throwable> { call, cause ->
+            val uri = call.request.local.uri
             val logger = LoggerFactory.getLogger(javaClass)
 
             when (cause) {
                 is HttpTimeoutException -> {
-                    logger.warn((cause.cause?.message ?: cause.message), cause)
+                    logger.warn("Timeout mot $uri: ", cause)
                     call.respondWithError(
                         ApiException(
                             status = HttpStatusCode.RequestTimeout,
@@ -38,8 +39,7 @@ object StatusPagesConfigHelper {
 
                 else -> {
                     logger.error(
-                        "Ukjent feil ved kall til '{}'. Type: ${cause.javaClass}. Message: ${cause.message}",
-                        call.request.local.uri,
+                        "Ukjent feil ved kall til $uri. Type: ${cause.javaClass}. Message: ${cause.message}",
                         cause
                     )
                     call.respondWithError(InternfeilException("En ukjent feil oppsto"))
@@ -48,12 +48,13 @@ object StatusPagesConfigHelper {
         }
 
         status(HttpStatusCode.NotFound) { call, _ ->
-            call.application.log.error("Fikk kall mot endepunkt som ikke finnes: ${call.request.local.uri}")
+            val uri = call.request.local.uri
+            call.application.log.error("Fikk kall mot endepunkt som ikke finnes: $uri")
 
             call.respondWithError(
                 ApiException(
                     status = HttpStatusCode.NotFound,
-                    message = "Kunne ikke nå endepunkt: ${call.request.local.uri}",
+                    message = "Kunne ikke nå endepunkt: $uri",
                     code = ApiErrorCode.ENDEPUNKT_IKKE_FUNNET
                 )
             )

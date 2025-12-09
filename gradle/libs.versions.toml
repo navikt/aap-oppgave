@@ -1,9 +1,9 @@
 [versions]
 ktor = "3.3.3"
 jackson = "2.20.1"
-komponenter = "1.0.448"
-tilgang = "1.0.164"
-behandlingsflytVersjon = "0.0.492"
+komponenter = "1.0.457"
+tilgang = "1.0.168"
+behandlingsflytVersjon = "0.0.502"
 postmottakVersjon = "6.0.2"
 junit = "6.0.1"
 testcontainers = "1.21.3"
@@ -47,7 +47,7 @@ logbackClassic = { module = "ch.qos.logback:logback-classic", version = "1.5.21"
 logstashLogbackEncoder = { module = "net.logstash.logback:logstash-logback-encoder", version = "9.0" }
 hikariCp = { module = "com.zaxxer:HikariCP", version = "7.0.2" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.3" }
-flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "11.17.1" }
+flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "11.18.0" }
 unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "11.1.1" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
 nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.6" }
