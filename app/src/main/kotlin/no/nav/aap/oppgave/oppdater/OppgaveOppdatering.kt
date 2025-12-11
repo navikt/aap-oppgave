@@ -139,7 +139,7 @@ private fun BehandlingFlytStoppetHendelse.kelvinTokBehandlingAvVent(): Boolean {
     if (sisteLukkedeVentebehov == null) {
         return false
     }
-    val endringerMedFristIDag = sisteLukkedeVentebehov.endringer.tilEndringerForBehandlingsflyt().filter { it.påVentTil == LocalDate.now() }.maxByOrNull { it.tidsstempel }
+    val endringerMedFristIDag = sisteLukkedeVentebehov.endringer.tilEndringerForBehandlingsflyt().filter { it.status == AvklaringsbehovStatus.AVSLUTTET }.maxByOrNull { it.tidsstempel }
     return endringerMedFristIDag?.endretAv?.uppercase() == "KELVIN" }
 
 private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): List<MottattDokument> {
