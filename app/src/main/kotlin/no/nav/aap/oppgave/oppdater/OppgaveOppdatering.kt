@@ -58,6 +58,7 @@ data class OppgaveOppdatering(
     val vurderingsbehov: List<String>,
     val årsakTilOpprettelse: String?,
     val mottattDokumenter: List<MottattDokument>,
+    val tattAvVentAutomatisk: Boolean = false,
     val reserverTil: String? = null,
     val relevanteIdenter: List<String> = emptyList(),
 )
@@ -102,6 +103,11 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         venteInformasjon = if (this.erPåVent) {
             this.utledVenteInformasjon()
         } else null,
+        tattAvVentAutomatisk = if (!this.erPåVent) {
+            this.kelvinTokBehandlingAvVent()
+        } else {
+            false
+        },
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
     )
 }
@@ -127,6 +133,14 @@ private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformas
         )
     }
 }
+
+private fun BehandlingFlytStoppetHendelse.kelvinTokBehandlingAvVent(): Boolean {
+    val sisteLukkedeVentebehov = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() && !it.status.erÅpent() }.maxByOrNull { ventebehov -> ventebehov.endringer.maxOf { it.tidsstempel } }
+    if (sisteLukkedeVentebehov == null) {
+        return false
+    }
+    val endringerMedFristIDag = sisteLukkedeVentebehov.endringer.tilEndringerForBehandlingsflyt().filter { it.påVentTil == LocalDate.now() }.maxByOrNull { it.tidsstempel }
+    return endringerMedFristIDag?.endretAv?.uppercase() == "KELVIN" }
 
 private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): List<MottattDokument> {
     return map {

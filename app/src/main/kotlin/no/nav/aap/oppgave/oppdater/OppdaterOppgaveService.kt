@@ -221,9 +221,8 @@ class OppdaterOppgaveService(
         oppgaveOppdatering: OppgaveOppdatering,
         eksisterendeOppgave: OppgaveDto
     ): Boolean {
-        // Eksisterende oppgave er på vent, ventefristen var i dag og behandlingen er ikke lenger på vent
-        // obs: kan ikke 100% garantere at oppgaven ble tatt av vent automatisk
-        return eksisterendeOppgave.påVentTil != null && eksisterendeOppgave.påVentTil!!.isEqual(LocalDate.now()) && oppgaveOppdatering.venteInformasjon?.frist == null
+        // Eksisterende oppgave er på vent, ventebehov med frist i dag er sist endret av Kelvin, og behandlingen er ikke lenger på vent
+        return eksisterendeOppgave.påVentTil != null && oppgaveOppdatering.tattAvVentAutomatisk && oppgaveOppdatering.venteInformasjon?.frist == null
     }
 
     private fun utledReturTilToTrinn(

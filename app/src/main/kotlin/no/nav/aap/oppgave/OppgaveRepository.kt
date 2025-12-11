@@ -188,7 +188,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun oppdatereOppgave(
         oppgaveId: OppgaveId,
-        ident: String,
+        endretAvIdent: String,
         personIdent: String?,
         enhet: String,
         påVentTil: LocalDate?,
@@ -199,8 +199,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         veilederSykdom: String?,
         vurderingsbehov: List<String>,
         harFortroligAdresse: Boolean? = false,
+        erSkjermet: Boolean? = false,
         harUlesteDokumenter: Boolean? = false,
-        returInformasjon: ReturInformasjon?
+        returInformasjon: ReturInformasjon?,
+        utløptVentefrist: LocalDate? = null
     ) {
         val query = """
             UPDATE 
@@ -234,7 +236,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         """.trimIndent()
         connection.execute(query) {
             setParams {
-                setString(1, ident)
+                setString(1, endretAvIdent)
                 setString(2, enhet)
                 setString(3, oppfølgingsenhet)
                 setLocalDate(4, påVentTil)
@@ -621,11 +623,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    /**
-     * Brukes i test.
-     */
-    @Suppress("unused")
-    @TestOnly
+
     fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
         val query = """
             SELECT 
@@ -745,9 +743,11 @@ class OppgaveRepository(private val connection: DBConnection) {
             endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
             versjon = row.getLong("VERSJON"),
             harFortroligAdresse = row.getBoolean("FORTROLIG_ADRESSE"),
+            erSkjermet = row.getBoolean("ER_SKJERMET"),
             harUlesteDokumenter = row.getBoolean("ULESTE_DOKUMENTER"),
             årsakTilOpprettelse = row.getStringOrNull("AARSAK_TIL_OPPRETTELSE"),
             returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK"),
+            utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST"),
             returInformasjon = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")?.let {
                 ReturInformasjon(
                     status = it,
@@ -788,12 +788,14 @@ class OppgaveRepository(private val connection: DBConnection) {
             VERSJON,
             AARSAKER_TIL_BEHANDLING,
             FORTROLIG_ADRESSE,
+            ER_SKJERMET,
             ULESTE_DOKUMENTER,
             RETUR_AARSAK,
             RETUR_BEGRUNNELSE,
             retur_aarsaker,
             retur_returnert_av,
-            AARSAK_TIL_OPPRETTELSE
+            AARSAK_TIL_OPPRETTELSE,
+            UTLOEPT_VENTEFRIST
         """.trimIndent()
     }
 
