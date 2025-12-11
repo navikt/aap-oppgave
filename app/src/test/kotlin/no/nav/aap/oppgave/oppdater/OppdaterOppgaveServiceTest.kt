@@ -1875,11 +1875,16 @@ class OppdaterOppgaveServiceTest {
     }
 
     private val FORTROLIG_ADRESSE_IDENT = "11111000000"
+    private val EGEN_ANSATT_IDENT = "2222222222"
     private val ENHET_NAV_ASKER = "0220"
     val enhetService = object : IEnhetService {
 
         override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
             TODO("Not yet implemented")
+        }
+
+        override fun erSkjermet(ident: String?): Boolean {
+            return ident == EGEN_ANSATT_IDENT
         }
 
         override fun utledEnhetForOppgave(
@@ -1899,7 +1904,7 @@ class OppdaterOppgaveServiceTest {
         }
 
         override fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean {
-            return ident === FORTROLIG_ADRESSE_IDENT || relevanteIdenter.any { it === FORTROLIG_ADRESSE_IDENT } == true
+            return ident === FORTROLIG_ADRESSE_IDENT || relevanteIdenter.any { it === FORTROLIG_ADRESSE_IDENT }
         }
     }
 }

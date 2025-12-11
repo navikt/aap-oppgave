@@ -70,6 +70,7 @@ data class OppgaveDto(
     val endretTidspunkt: LocalDateTime? = null,
     val versjon: Long = 0,
     val harFortroligAdresse: Boolean? = false,
+    val erSkjermet: Boolean? = false,
     val harUlesteDokumenter: Boolean? = false,
     val markeringer: List<MarkeringDto> = emptyList(),
 ) {

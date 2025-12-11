@@ -94,7 +94,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
 
             oppgaveRepository.oppdatereOppgave(
                 oppgaveId = oppgaveIdMedVersjon,
-                ident = "Kelvin",
+                endretAvIdent = "Kelvin",
                 personIdent = oppgave.personIdent,
                 enhet = nyEnhet.enhet,
                 påVentTil = oppgave.påVentTil,
@@ -105,6 +105,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 veilederSykdom = oppgave.veilederSykdom,
                 vurderingsbehov = oppgave.vurderingsbehov,
                 harFortroligAdresse = oppgave.harFortroligAdresse,
+                erSkjermet = oppgave.erSkjermet == true,
                 returInformasjon = oppgave.returInformasjon,
                 utløptVentefrist = oppgave.utløptVentefrist
             )

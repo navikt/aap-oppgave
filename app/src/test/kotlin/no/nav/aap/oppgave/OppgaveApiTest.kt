@@ -1522,7 +1522,7 @@ class OppgaveApiTest {
             initDatasource(dbConfig(), prometheus).transaction { connection ->
                 OppgaveRepository(connection).oppdatereOppgave(
                     oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
-                    ident = "Kelvin",
+                    endretAvIdent = "Kelvin",
                     personIdent = oppgave.personIdent,
                     enhet = oppgave.enhet,
                     påVentTil = oppgave.påVentTil,
@@ -1532,6 +1532,7 @@ class OppgaveApiTest {
                     veilederArbeid = oppgave.veilederArbeid,
                     veilederSykdom = oppgave.veilederSykdom,
                     vurderingsbehov = oppgave.årsakerTilBehandling,
+                    erSkjermet = oppgave.erSkjermet == true,
                     returInformasjon = oppgave.returInformasjon,
                     utløptVentefrist = oppgave.utløptVentefrist
                 )
