@@ -106,7 +106,8 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
                 vurderingsbehov = oppgave.vurderingsbehov,
                 harFortroligAdresse = oppgave.harFortroligAdresse,
                 erSkjermet = oppgave.erSkjermet == true,
-                returInformasjon = oppgave.returInformasjon
+                returInformasjon = oppgave.returInformasjon,
+                utløptVentefrist = oppgave.utløptVentefrist
             )
 
             sendOppgaveStatusOppdatering(

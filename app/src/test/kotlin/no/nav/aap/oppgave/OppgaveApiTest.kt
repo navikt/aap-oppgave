@@ -1534,6 +1534,7 @@ class OppgaveApiTest {
                     vurderingsbehov = oppgave.årsakerTilBehandling,
                     erSkjermet = oppgave.erSkjermet == true,
                     returInformasjon = oppgave.returInformasjon,
+                    utløptVentefrist = oppgave.utløptVentefrist
                 )
             }
             return hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
