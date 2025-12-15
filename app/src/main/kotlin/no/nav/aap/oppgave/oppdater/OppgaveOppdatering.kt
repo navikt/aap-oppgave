@@ -226,8 +226,18 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         vurderingsbehov = emptyList(),
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
-        venteInformasjon = this.utledVenteinformasjonFraPostmottak()
+        venteInformasjon = this.utledVenteinformasjonFraPostmottak(),
+        tattAvVentAutomatisk = this.kelvinTokBehandlingAvVent(),
     )
+}
+
+private fun DokumentflytStoppetHendelse.kelvinTokBehandlingAvVent(): Boolean {
+    val sisteLukkedeVentebehov = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() && !it.status.erÅpent() }.maxByOrNull { ventebehov -> ventebehov.endringer.maxOf { it.tidsstempel } }
+    if (sisteLukkedeVentebehov == null) {
+        return false
+    }
+    val endringerMedFristIDag = sisteLukkedeVentebehov.endringer.tilEndringerForPostmottak().filter { it.status == AvklaringsbehovStatus.AVSLUTTET }.maxByOrNull { it.tidsstempel }
+    return endringerMedFristIDag?.endretAv?.uppercase() == "KELVIN"
 }
 
 private fun DokumentflytStoppetHendelse.utledVenteinformasjonFraPostmottak(): VenteInformasjon? {
