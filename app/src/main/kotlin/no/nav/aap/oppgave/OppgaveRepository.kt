@@ -46,9 +46,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 retur_begrunnelse,
                 retur_aarsaker,
                 retur_returnert_av,
-                aarsak_til_opprettelse
+                aarsak_til_opprettelse,
+                er_skjermet
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -79,6 +80,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setArray(23, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
                 setString(24, oppgaveDto.returInformasjon?.endretAv)
                 setString(25, oppgaveDto.årsakTilOpprettelse)
+                setBoolean(26, oppgaveDto.erSkjermet)
             }
         }
         return OppgaveId(id, 0L)
@@ -199,7 +201,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         veilederSykdom: String?,
         vurderingsbehov: List<String>,
         harFortroligAdresse: Boolean? = false,
-        erSkjermet: Boolean? = false,
+        erSkjermet: Boolean,
         harUlesteDokumenter: Boolean? = false,
         returInformasjon: ReturInformasjon?,
         utløptVentefrist: LocalDate? = null
@@ -672,7 +674,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                     index++,
                     avklaringsbehovReferanse.journalpostId
                 )
-                @Suppress("AssignedValueIsNeverRead")
                 setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
             }
             setRowMapper { row ->
