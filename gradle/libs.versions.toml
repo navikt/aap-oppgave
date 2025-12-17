@@ -11,7 +11,7 @@ testcontainers = "1.21.3"
 [libraries]
 jacksonDatabind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jacksonDatatypeJsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
-ktorOpenapiGenerator = { module = "no.nav:ktor-openapi-generator", version = "1.0.131" }
+ktorOpenapiGenerator = { module = "no.nav:ktor-openapi-generator", version = "1.0.132" }
 
 ktorServerAuth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
 ktorServerAuthJwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
