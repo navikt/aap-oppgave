@@ -17,6 +17,7 @@ import java.time.LocalDateTime
 import java.util.*
 
 private val logger = LoggerFactory.getLogger(OppgaveOppdatering::class.java)
+const val KELVIN = "Kelvin"
 
 enum class BehandlingStatus {
     ÅPEN,
@@ -97,17 +98,13 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         årsakTilOpprettelse = this.årsakTilOpprettelse,
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflyt(),
+        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(),
         reserverTil = this.reserverTil,
         relevanteIdenter = this.relevanteIdenterPåBehandling ?: emptyList(),
         venteInformasjon = if (this.erPåVent) {
             this.utledVenteInformasjon()
         } else null,
-        tattAvVentAutomatisk = if (!this.erPåVent) {
-            this.kelvinTokBehandlingAvVent()
-        } else {
-            false
-        },
+        tattAvVentAutomatisk = !this.erPåVent && this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }.tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
     )
 }
@@ -134,14 +131,6 @@ private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformas
     }
 }
 
-private fun BehandlingFlytStoppetHendelse.kelvinTokBehandlingAvVent(): Boolean {
-    val sisteLukkedeVentebehov = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() && !it.status.erÅpent() }.maxByOrNull { ventebehov -> ventebehov.endringer.maxOf { it.tidsstempel } }
-    if (sisteLukkedeVentebehov == null) {
-        return false
-    }
-    val endringerMedFristIDag = sisteLukkedeVentebehov.endringer.tilEndringerForBehandlingsflyt().filter { it.status == AvklaringsbehovStatus.AVSLUTTET }.maxByOrNull { it.tidsstempel }
-    return endringerMedFristIDag?.endretAv?.uppercase() == "KELVIN" }
-
 private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): List<MottattDokument> {
     return map {
         MottattDokument(
@@ -164,16 +153,20 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.Aktivitetsplikt11_9 -> Behandlingstype.AKTIVITETSPLIKT_11_9
     }
 
-private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
+private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(): List<AvklaringsbehovHendelse> {
     return this
         .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
-        .map {
-            AvklaringsbehovHendelse(
-                avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
-                status = it.status.tilAvklaringsbehovStatus(),
-                endringer = it.endringer.tilEndringerForBehandlingsflyt(),
-            )
-        }
+        .tilAvklaringsbehovHendelseForBehandlingsflyt()
+}
+
+private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
+    return this.map {
+        AvklaringsbehovHendelse(
+            avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
+            status = it.status.tilAvklaringsbehovStatus(),
+            endringer = it.endringer.tilEndringerForBehandlingsflyt(),
+        )
+    }
 }
 
 private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
@@ -227,17 +220,25 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
         venteInformasjon = this.utledVenteinformasjonFraPostmottak(),
-        tattAvVentAutomatisk = this.kelvinTokBehandlingAvVent(),
+        tattAvVentAutomatisk = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }.tilAvklaringsbehovHendelseForPostmottak().kelvinTokBehandlingAvVent(),
     )
 }
 
-private fun DokumentflytStoppetHendelse.kelvinTokBehandlingAvVent(): Boolean {
-    val sisteLukkedeVentebehov = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() && !it.status.erÅpent() }.maxByOrNull { ventebehov -> ventebehov.endringer.maxOf { it.tidsstempel } }
+private fun List<AvklaringsbehovHendelse>.kelvinTokBehandlingAvVent(): Boolean {
+    val sisteLukkedeVentebehov = this.filter { !it.status.erÅpent() }.maxByOrNull { ventebehov -> ventebehov.endringer.maxOf { it.tidsstempel } }
     if (sisteLukkedeVentebehov == null) {
         return false
     }
-    val endringerMedFristIDag = sisteLukkedeVentebehov.endringer.tilEndringerForPostmottak().filter { it.status == AvklaringsbehovStatus.AVSLUTTET }.maxByOrNull { it.tidsstempel }
-    return endringerMedFristIDag?.endretAv?.uppercase() == "KELVIN"
+
+    val alleEndringerPåSisteLukkedeVentebehov = this.filter { !it.status.erÅpent() }.maxBy { lukketVentebehov -> lukketVentebehov.endringer.maxOf { it.tidsstempel } }.endringer
+    // Endringen som lukket ventebehovet er gjort av Kelvin
+    val sisteVentebehovLukketAvKelvin =
+        alleEndringerPåSisteLukkedeVentebehov.maxByOrNull { it.tidsstempel }?.endretAv.equals(KELVIN, ignoreCase = true)
+
+    // På siste endring der frist var satt, var frist i dag.
+    val ventebehovHaddeFristIDag =
+        alleEndringerPåSisteLukkedeVentebehov.filter { it.påVentTil?.isEqual(LocalDate.now()) == true }.maxByOrNull { it.tidsstempel } == alleEndringerPåSisteLukkedeVentebehov.filter { it.påVentTil != null }.maxByOrNull { it.tidsstempel }
+    return sisteVentebehovLukketAvKelvin && ventebehovHaddeFristIDag
 }
 
 private fun DokumentflytStoppetHendelse.utledVenteinformasjonFraPostmottak(): VenteInformasjon? {
@@ -284,13 +285,17 @@ private fun no.nav.aap.postmottak.kontrakt.behandling.Status.tilBehandlingsstatu
 private fun List<no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForPostmottak(): List<AvklaringsbehovHendelse> {
     return this
         .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
-        .map {
-            AvklaringsbehovHendelse(
-                avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
-                status = it.status.tilAvklaringsbehovStatus(),
-                endringer = it.endringer.tilEndringerForPostmottak(),
-            )
-        }
+        .tilAvklaringsbehovHendelse()
+}
+
+private fun List<no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelse(): List<AvklaringsbehovHendelse> {
+    return this.map {
+        AvklaringsbehovHendelse(
+            avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
+            status = it.status.tilAvklaringsbehovStatus(),
+            endringer = it.endringer.tilEndringerForPostmottak(),
+        )
+    }
 }
 
 private fun Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {

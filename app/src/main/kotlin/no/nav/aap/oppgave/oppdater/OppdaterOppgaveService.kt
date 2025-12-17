@@ -49,8 +49,6 @@ private val AVSLUTTEDE_STATUSER = setOf(
     AvklaringsbehovStatus.TOTRINNS_VURDERT,
 )
 
-private const val KELVIN = "Kelvin"
-
 class OppdaterOppgaveService(
     msGraphClient: IMsGraphGateway,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
