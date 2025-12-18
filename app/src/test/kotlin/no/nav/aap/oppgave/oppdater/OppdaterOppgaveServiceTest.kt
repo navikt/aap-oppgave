@@ -1904,6 +1904,106 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgaveTattAvVent.utløptVentefrist).isNull()
     }
 
+    @Test
+    fun `Lagrer utløpt ventefrist på postmottak-oppgaver`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+        val settPåVentHendelse = DokumentflytStoppetHendelse(
+            journalpostId = JournalpostId(123L),
+            ident = "1234",
+            referanse = behandlingsref.referanse,
+            behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
+            status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            avklaringsbehov = listOf(
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusDays(2)
+                        )
+                    ),
+                ),
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Saksbehandler",
+                            frist = LocalDate.now(),
+                        )
+                    ),
+                ),
+            ),
+            opprettetTidspunkt = nå.minusDays(2),
+            hendelsesTidspunkt = nå.minusHours(5),
+            saksnummer = saksnummer.toString()
+        )
+
+        sendDokumentFlytStoppetHendelse(settPåVentHendelse)
+
+        val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgavePåVent.erPåVent).isTrue()
+        assertThat(oppgavePåVent.avklaringsbehovKode)
+            .isEqualTo(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
+        assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
+
+        val hendelseTattAvVent = DokumentflytStoppetHendelse(
+            journalpostId = JournalpostId(123L),
+            ident = "1234",
+            referanse = behandlingsref.referanse,
+            behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
+            status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            avklaringsbehov = listOf(
+                    no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                        avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
+                        status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                                endretAv = "Kelvin",
+                                tidsstempel = nå.minusDays(2)
+                            )
+                        ),
+                    ),
+                    no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                        avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
+                        status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                                endretAv = "Saksbehandler",
+                                tidsstempel = nå.minusDays(1),
+                                frist = LocalDate.now(),
+                            ),
+                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                                endretAv = "Kelvin",
+                                tidsstempel = nå
+                            )
+                        ),
+                    ),
+                ),
+            opprettetTidspunkt = nå.minusDays(2),
+            hendelsesTidspunkt = nå.minusHours(5),
+            saksnummer = saksnummer.toString()
+        )
+        sendDokumentFlytStoppetHendelse(hendelseTattAvVent)
+
+        val oppgaveTattAvVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgaveTattAvVent.erPåVent).isFalse
+        assertThat(oppgaveTattAvVent.påVentTil).isNull()
+        assertThat(oppgaveTattAvVent.utløptVentefrist).isEqualTo(LocalDate.now())
+    }
+
 
     @Test
     fun `Trekk søknad-oppgaver rutes til Nav-kontor dersom de lå hos Nav-kontor fra før av`() {

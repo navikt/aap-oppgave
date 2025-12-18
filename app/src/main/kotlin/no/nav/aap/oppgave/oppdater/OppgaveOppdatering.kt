@@ -215,12 +215,12 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         behandlingStatus = this.status.tilBehandlingsstatus(),
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForPostmottak(),
+        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForPostmottakUtenVentebehov(),
         vurderingsbehov = emptyList(),
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
         venteInformasjon = this.utledVenteinformasjonFraPostmottak(),
-        tattAvVentAutomatisk = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }.tilAvklaringsbehovHendelseForPostmottak().kelvinTokBehandlingAvVent(),
+        tattAvVentAutomatisk = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }.tilAvklaringsbehovHendelse().kelvinTokBehandlingAvVent(),
     )
 }
 
@@ -230,7 +230,7 @@ private fun List<AvklaringsbehovHendelse>.kelvinTokBehandlingAvVent(): Boolean {
         return false
     }
 
-    val alleEndringerPåSisteLukkedeVentebehov = this.filter { !it.status.erÅpent() }.maxBy { lukketVentebehov -> lukketVentebehov.endringer.maxOf { it.tidsstempel } }.endringer
+    val alleEndringerPåSisteLukkedeVentebehov = sisteLukkedeVentebehov.endringer
     // Endringen som lukket ventebehovet er gjort av Kelvin
     val sisteVentebehovLukketAvKelvin =
         alleEndringerPåSisteLukkedeVentebehov.maxByOrNull { it.tidsstempel }?.endretAv.equals(KELVIN, ignoreCase = true)
@@ -282,7 +282,7 @@ private fun no.nav.aap.postmottak.kontrakt.behandling.Status.tilBehandlingsstatu
     return BehandlingStatus.ÅPEN
 }
 
-private fun List<no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForPostmottak(): List<AvklaringsbehovHendelse> {
+private fun List<no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForPostmottakUtenVentebehov(): List<AvklaringsbehovHendelse> {
     return this
         .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
         .tilAvklaringsbehovHendelse()
