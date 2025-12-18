@@ -230,14 +230,15 @@ private fun List<AvklaringsbehovHendelse>.kelvinTokBehandlingAvVent(): Boolean {
         return false
     }
 
-    val alleEndringerPåSisteLukkedeVentebehov = sisteLukkedeVentebehov.endringer
     // Endringen som lukket ventebehovet er gjort av Kelvin
     val sisteVentebehovLukketAvKelvin =
-        alleEndringerPåSisteLukkedeVentebehov.maxByOrNull { it.tidsstempel }?.endretAv.equals(KELVIN, ignoreCase = true)
+        sisteLukkedeVentebehov.endringer.maxByOrNull { it.tidsstempel }?.endretAv.equals(KELVIN, ignoreCase = true)
 
     // På siste endring der frist var satt, var frist i dag.
     val ventebehovHaddeFristIDag =
-        alleEndringerPåSisteLukkedeVentebehov.filter { it.påVentTil?.isEqual(LocalDate.now()) == true }.maxByOrNull { it.tidsstempel } == alleEndringerPåSisteLukkedeVentebehov.filter { it.påVentTil != null }.maxByOrNull { it.tidsstempel }
+        sisteLukkedeVentebehov.endringer
+            .filter { it.påVentTil?.isEqual(LocalDate.now()) == true }.maxByOrNull { it.tidsstempel } == sisteLukkedeVentebehov.endringer.filter { it.påVentTil != null }.maxByOrNull { it.tidsstempel }
+
     return sisteVentebehovLukketAvKelvin && ventebehovHaddeFristIDag
 }
 
