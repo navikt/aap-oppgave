@@ -2,7 +2,7 @@ isdev: true
 ingress: https://aap-oppgave.intern.dev.nav.no
 pdl_url: pdl-api.dev-fss-pub.nais.io
 veilarb_arena_url: veilarbarena.dev-fss-pub.nais.io
-unleash_secret: kelvin-unleash-api-token-v2
+unleash_secret: kelvin-unleash-api-token
 
 groups:
     - name: AAP_SAKSBEHANDLER_NASJONAL
