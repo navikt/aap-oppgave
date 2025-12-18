@@ -49,8 +49,6 @@ private val AVSLUTTEDE_STATUSER = setOf(
     AvklaringsbehovStatus.TOTRINNS_VURDERT,
 )
 
-private const val KELVIN = "Kelvin"
-
 class OppdaterOppgaveService(
     msGraphClient: IMsGraphGateway,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
@@ -163,6 +161,7 @@ class OppdaterOppgaveService(
             erSkjermet = erSkjermet,
             harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
             returInformasjon = utledReturInformasjon(avklaringsbehov, oppgaveOppdatering),
+            utløptVentefrist = utledUtløptVentefrist(oppgaveOppdatering, eksisterendeOppgave)
         )
 
         // Automatisk reservasjon enten ved retur eller override fra behandlingsflyt
@@ -199,6 +198,29 @@ class OppdaterOppgaveService(
 
     private fun utledReturInformasjon(avklaringsbehov: AvklaringsbehovHendelse, oppgaveOppdatering: OppgaveOppdatering): ReturInformasjon? {
         return utledReturFraToTrinn(avklaringsbehov) ?: utledReturTilToTrinn(avklaringsbehov, oppgaveOppdatering)
+    }
+
+    private fun utledUtløptVentefrist(
+        oppgaveOppdatering: OppgaveOppdatering,
+        eksisterendeOppgave: OppgaveDto,
+    ): LocalDate? {
+        return if (oppgaveTattAvVentAutomatiskIDenneOppdateringen(oppgaveOppdatering, eksisterendeOppgave)) {
+            // behandling er nettopp tatt av vent, lagre ned nylig utløpt ventefrist
+            eksisterendeOppgave.påVentTil
+        } else if (eksisterendeOppgave.utløptVentefrist != null && oppgaveOppdatering.venteInformasjon?.frist == null) {
+            // oppgaven har allerede en utløptVentefrist og er ikke satt på vent på nytt i denne oppdateringen. Viderefører den forrige.
+            eksisterendeOppgave.utløptVentefrist
+        } else {
+            null
+        }
+    }
+
+    private fun oppgaveTattAvVentAutomatiskIDenneOppdateringen(
+        oppgaveOppdatering: OppgaveOppdatering,
+        eksisterendeOppgave: OppgaveDto
+    ): Boolean {
+        // Eksisterende oppgave er på vent, ventebehov med frist i dag er sist endret av Kelvin, og behandlingen er ikke lenger på vent
+        return eksisterendeOppgave.påVentTil != null && oppgaveOppdatering.tattAvVentAutomatisk && oppgaveOppdatering.venteInformasjon?.frist == null
     }
 
     private fun utledReturTilToTrinn(
@@ -483,6 +505,7 @@ class OppdaterOppgaveService(
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean,
         returInformasjon: ReturInformasjon?,
+        utløptVentefrist: LocalDate? = null
     ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
@@ -515,6 +538,7 @@ class OppdaterOppgaveService(
                     endretAv = it.endretAv
                 )
             },
+            utløptVentefrist = utløptVentefrist,
             harUlesteDokumenter = harUlesteDokumenter
         )
     }

@@ -1566,6 +1566,446 @@ class OppdaterOppgaveServiceTest {
     }
 
     @Test
+    fun `Lagrer utløpt ventefrist på oppgave når behandling tas av vent`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+
+        val hendelsePåVent = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            erPåVent = true,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1),
+                            frist = LocalDate.now()
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelsePåVent)
+
+        val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgavePåVent.erPåVent).isTrue()
+        assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
+
+        val hendelseTattAvVent = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1),
+                            frist = LocalDate.now()
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå,
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+            erPåVent = false,
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelseTattAvVent)
+
+        val oppgaveTattAvVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgaveTattAvVent.erPåVent).isFalse
+        assertThat(oppgaveTattAvVent.påVentTil).isNull()
+        assertThat(oppgaveTattAvVent.utløptVentefrist).isEqualTo(LocalDate.now())
+
+        // sender oppdatering på oppgave, tidligere utløptVentefrist skal videreføres
+
+        val hendelseOppdatering = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1),
+                            frist = LocalDate.now()
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå,
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+            erPåVent = false,
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelseOppdatering)
+        val oppgaveEtterOppdatering = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgaveEtterOppdatering.utløptVentefrist).isEqualTo(LocalDate.now())
+
+        // setter på vent på nytt, utløptVentefrist skal da bli borte
+        val hendelseSettPåVentIgjen = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1),
+                            frist = LocalDate.now()
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå,
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.plusHours(1),
+                            frist = LocalDate.now().plusDays(1)
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+            erPåVent = true,
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelseSettPåVentIgjen)
+        val settPåVentIgjen = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(settPåVentIgjen.utløptVentefrist).isNull()
+
+    }
+
+    @Test
+    fun `Lagrer ikke utløpt ventefrist hvis saksbehandler tok behandling av vent`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+
+        val hendelsePåVent = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            erPåVent = true,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1),
+                            frist = LocalDate.now()
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelsePåVent)
+
+        val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgavePåVent.erPåVent).isTrue()
+        assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
+
+        val hendelseTattAvVent = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1),
+                            frist = LocalDate.now()
+                        ),
+                        EndringDTO(
+                            // siste endring med status avsluttet på siste avsluttede ventebehov er endret av saksbehandler
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "saksbehandler",
+                            tidsstempel = nå,
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = "SØKNAD",
+            relevanteIdenterPåBehandling = emptyList(),
+            erPåVent = false,
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelseTattAvVent)
+
+        val oppgaveTattAvVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgaveTattAvVent.erPåVent).isFalse
+        assertThat(oppgaveTattAvVent.påVentTil).isNull()
+        assertThat(oppgaveTattAvVent.utløptVentefrist).isNull()
+    }
+
+    @Test
+    fun `Lagrer utløpt ventefrist på postmottak-oppgaver`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+        val settPåVentHendelse = DokumentflytStoppetHendelse(
+            journalpostId = JournalpostId(123L),
+            ident = "1234",
+            referanse = behandlingsref.referanse,
+            behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
+            status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            avklaringsbehov = listOf(
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusDays(2)
+                        )
+                    ),
+                ),
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Saksbehandler",
+                            frist = LocalDate.now(),
+                        )
+                    ),
+                ),
+            ),
+            opprettetTidspunkt = nå.minusDays(2),
+            hendelsesTidspunkt = nå.minusHours(5),
+            saksnummer = saksnummer.toString()
+        )
+
+        sendDokumentFlytStoppetHendelse(settPåVentHendelse)
+
+        val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgavePåVent.erPåVent).isTrue()
+        assertThat(oppgavePåVent.avklaringsbehovKode)
+            .isEqualTo(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
+        assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
+
+        val hendelseTattAvVent = DokumentflytStoppetHendelse(
+            journalpostId = JournalpostId(123L),
+            ident = "1234",
+            referanse = behandlingsref.referanse,
+            behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
+            status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            avklaringsbehov = listOf(
+                    no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                        avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
+                        status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                                endretAv = "Kelvin",
+                                tidsstempel = nå.minusDays(2)
+                            )
+                        ),
+                    ),
+                    no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                        avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
+                        status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                                endretAv = "Saksbehandler",
+                                tidsstempel = nå.minusDays(1),
+                                frist = LocalDate.now(),
+                            ),
+                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                                endretAv = "Kelvin",
+                                tidsstempel = nå
+                            )
+                        ),
+                    ),
+                ),
+            opprettetTidspunkt = nå.minusDays(2),
+            hendelsesTidspunkt = nå.minusHours(5),
+            saksnummer = saksnummer.toString()
+        )
+        sendDokumentFlytStoppetHendelse(hendelseTattAvVent)
+
+        val oppgaveTattAvVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(oppgaveTattAvVent.erPåVent).isFalse
+        assertThat(oppgaveTattAvVent.påVentTil).isNull()
+        assertThat(oppgaveTattAvVent.utløptVentefrist).isEqualTo(LocalDate.now())
+    }
+
+
+    @Test
     fun `Trekk søknad-oppgaver rutes til Nav-kontor dersom de lå hos Nav-kontor fra før av`() {
         val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
@@ -1705,6 +2145,7 @@ class OppdaterOppgaveServiceTest {
         oppfølgingsenhet: String? = null,
         veilederArbeid: String? = null,
         veilederSykdom: String? = null,
+        utløptVentefrist: LocalDate? = null
     ): Triple<OppgaveId, Saksnummer, BehandlingReferanse> {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
@@ -1719,6 +2160,7 @@ class OppdaterOppgaveServiceTest {
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
             opprettetTidspunkt = LocalDateTime.now(),
+            utløptVentefrist = utløptVentefrist
         )
         val oppgaveId = dataSource.transaction { connection ->
             OppgaveRepository(connection).opprettOppgave(oppgaveDto)

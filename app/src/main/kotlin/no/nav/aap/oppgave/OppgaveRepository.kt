@@ -203,7 +203,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         harFortroligAdresse: Boolean? = false,
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean? = false,
-        returInformasjon: ReturInformasjon?
+        returInformasjon: ReturInformasjon?,
+        utløptVentefrist: LocalDate? = null
     ) {
         val query = """
             UPDATE 
@@ -228,6 +229,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 retur_aarsaker = ?,
                 RETUR_BEGRUNNELSE = ?,
                 ER_SKJERMET = ?,
+                UTLOEPT_VENTEFRIST = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -253,8 +255,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setArray(15, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
                 setString(16, returInformasjon?.begrunnelse)
                 setBoolean(17, erSkjermet)
-                setLong(18, oppgaveId.id)
-                setLong(19, oppgaveId.versjon)
+                setLocalDate(18, utløptVentefrist)
+                setLong(19, oppgaveId.id)
+                setLong(20, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -622,6 +625,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+
     fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
         val query = """
             SELECT 
@@ -670,7 +674,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                     index++,
                     avklaringsbehovReferanse.journalpostId
                 )
-                @Suppress("AssignedValueIsNeverRead")
                 setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
             }
             setRowMapper { row ->
@@ -745,6 +748,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             harUlesteDokumenter = row.getBoolean("ULESTE_DOKUMENTER"),
             årsakTilOpprettelse = row.getStringOrNull("AARSAK_TIL_OPPRETTELSE"),
             returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK"),
+            utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST"),
             returInformasjon = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")?.let {
                 ReturInformasjon(
                     status = it,
@@ -791,7 +795,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             RETUR_BEGRUNNELSE,
             retur_aarsaker,
             retur_returnert_av,
-            AARSAK_TIL_OPPRETTELSE
+            AARSAK_TIL_OPPRETTELSE,
+            UTLOEPT_VENTEFRIST
         """.trimIndent()
     }
 

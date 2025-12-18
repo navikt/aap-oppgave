@@ -134,7 +134,8 @@ class PlukkOppgaveService(
             vurderingsbehov = oppgave.vurderingsbehov,
             harFortroligAdresse = harFortroligAdresse,
             erSkjermet = erSkjermet,
-            returInformasjon = oppgave.returInformasjon
+            returInformasjon = oppgave.returInformasjon,
+            utløptVentefrist = oppgave.utløptVentefrist
         )
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPDATERT, flytJobbRepository)
 
