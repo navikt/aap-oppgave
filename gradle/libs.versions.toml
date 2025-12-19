@@ -6,7 +6,7 @@ tilgang = "1.0.176"
 behandlingsflytVersjon = "0.0.510"
 postmottakVersjon = "6.0.3"
 junit = "6.0.1"
-testcontainers = "1.21.3"
+testcontainers = "1.21.4"
 
 [libraries]
 jacksonDatabind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
