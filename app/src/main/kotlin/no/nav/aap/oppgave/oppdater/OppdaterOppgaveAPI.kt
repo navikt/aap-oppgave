@@ -17,6 +17,13 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
+import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
+import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovStatus
+import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
+import no.nav.aap.oppgave.oppdater.hendelse.Endring
+import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
+import no.nav.aap.oppgave.oppdater.hendelse.tilAvklaringsbehovStatus
+import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig

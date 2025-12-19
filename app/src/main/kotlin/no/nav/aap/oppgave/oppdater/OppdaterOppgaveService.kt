@@ -23,6 +23,13 @@ import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
+import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
+import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovStatus
+import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
+import no.nav.aap.oppgave.oppdater.hendelse.Endring
+import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
+import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
+import no.nav.aap.oppgave.oppdater.hendelse.VenteInformasjon
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
