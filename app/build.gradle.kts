@@ -42,7 +42,6 @@ dependencies {
     implementation(libs.ktorServerContentNegotiation)
     implementation(libs.ktorServerMetricsMicrometer)
     implementation(libs.ktorServerNetty)
-    implementation(libs.ktorServerCors)
     implementation(libs.ktorServerStatusPages)
     implementation(libs.ktorSerializationJackson)
 
