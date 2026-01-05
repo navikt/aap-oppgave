@@ -22,7 +22,8 @@ data class Endring(
 )
 
 fun List<AvklaringsbehovHendelse>.kelvinTokBehandlingAvVent(): Boolean {
-    val sisteLukkedeVentebehov = this.filter { !it.status.erÅpent() }.maxByOrNull { ventebehov -> ventebehov.endringer.maxOf { it.tidsstempel } }
+    val sisteLukkedeVentebehov =
+        this.filter { !it.status.erÅpent() }.maxByOrNull { ventebehov -> ventebehov.endringer.maxOf { it.tidsstempel } }
     if (sisteLukkedeVentebehov == null) {
         return false
     }
@@ -34,7 +35,9 @@ fun List<AvklaringsbehovHendelse>.kelvinTokBehandlingAvVent(): Boolean {
     // På siste endring der frist var satt, var frist i dag.
     val ventebehovHaddeFristIDag =
         sisteLukkedeVentebehov.endringer
-            .filter { it.påVentTil?.isEqual(LocalDate.now()) == true }.maxByOrNull { it.tidsstempel } == sisteLukkedeVentebehov.endringer.filter { it.påVentTil != null }.maxByOrNull { it.tidsstempel }
+            .filter { it.påVentTil?.isEqual(LocalDate.now()) == true }
+            .maxByOrNull { it.tidsstempel } == sisteLukkedeVentebehov.endringer.filter { it.påVentTil != null }
+            .maxByOrNull { it.tidsstempel }
 
     return sisteVentebehovLukketAvKelvin && ventebehovHaddeFristIDag
 }
