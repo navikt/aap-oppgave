@@ -36,6 +36,7 @@ import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
+import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype

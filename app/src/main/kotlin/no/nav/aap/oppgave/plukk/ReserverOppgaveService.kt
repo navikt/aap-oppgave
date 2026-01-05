@@ -6,7 +6,7 @@ import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
-import no.nav.aap.oppgave.oppdater.KELVIN
+import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
