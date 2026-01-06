@@ -274,6 +274,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 RESERVERT_AV = NULL,
                 RESERVERT_TIDSPUNKT = NULL,
                 RESERVERT_AV_NAVN = NULL,
+                UTLOEPT_VENTEFRIST = NULL,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
