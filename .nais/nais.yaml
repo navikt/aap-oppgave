@@ -52,8 +52,6 @@ spec:
     initialDelay: 5
     periodSeconds: 5
     failureThreshold: 5
-  secureLogs:
-    enabled: true
   envFrom:
     - secret: {{unleash_secret}}
   accessPolicy:
@@ -92,6 +90,8 @@ spec:
           namespace: poao
         - application: syfooversiktsrv
           namespace: teamsykefravr
+        - application: logging
+          namespace: nais-system
   env:
   {{#each env}}
      - name: {{this.name}}

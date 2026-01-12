@@ -53,7 +53,7 @@ import no.nav.aap.oppgave.tildel.tildelOppgaveApi
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
-private val SECURE_LOGGER = LoggerFactory.getLogger("secureLog")
+private val SECURE_LOGGER = LoggerFactory.getLogger("team-logs")
 private const val ANTALL_WORKERS = 5
 
 fun main() {
