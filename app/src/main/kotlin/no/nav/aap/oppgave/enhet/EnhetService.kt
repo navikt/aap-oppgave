@@ -171,7 +171,7 @@ class EnhetService(
         return enheter.first()
     }
 
-    private fun finnNayEnhet(ident: String, relevanteIdenter: List<String>): EnhetForOppgave {
+    fun finnNayEnhet(ident: String, relevanteIdenter: List<String>): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident)
         val strengesteGradering = finnStrengesteGradering(tilknytningOgSkjerming.diskresjonskode, relevanteIdenter)
 

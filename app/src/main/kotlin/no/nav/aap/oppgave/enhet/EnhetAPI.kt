@@ -34,6 +34,13 @@ fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphGateway, prometheus: 
         respond(enheterMedNavn)
     }
 
+fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
+    route("/enhet/nay/person").post<Unit, EnhetNrDto, EnhetForPersonRequest> { _, request ->
+        prometheus.httpCallCounter("/enhet/nay/person").increment()
+        val enhet = EnhetService(msGraphClient).finnNayEnhet(request.personIdent, request.relevanteIdenter)
+        respond(EnhetNrDto(enhetNr = enhet.enhet))
+    }
+
 /*
  * Synkroniserer enhet på oppgaven etter at oppfølgingsenhet er endret i Arena,
  * midlertidig løsning inntil permanenent løsning for oppfølgingskontor post Arena er på plass
