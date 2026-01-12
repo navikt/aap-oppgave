@@ -128,7 +128,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     }
 }
 
-fun Application.motor(dataSource: DataSource, prometheus: MeterRegistry): Motor {
+fun Application.motor(dataSource: HikariDataSource, prometheus: MeterRegistry): Motor {
     val motor = Motor(
         dataSource = dataSource,
         antallKammer = ANTALL_WORKERS,
@@ -148,12 +148,18 @@ fun Application.motor(dataSource: DataSource, prometheus: MeterRegistry): Motor 
         motor.start()
     }
 
+    monitor.subscribe(ApplicationStopPreparing) { application ->
+        application.log.info("Forbereder stopp av applikasjon, stopper motor")
+        motor.stop()
+    }
+
+    monitor.subscribe(ApplicationStopping) { application ->
+        application.log.info("Server stopper")
+        dataSource.close()
+    }
+
     monitor.subscribe(ApplicationStopped) { application ->
         application.log.info("Server har stoppet")
-        motor.stop()
-
-        monitor.unsubscribe(ApplicationStarted) {}
-        monitor.unsubscribe(ApplicationStopped) {}
     }
 
     return motor
