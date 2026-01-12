@@ -33,6 +33,7 @@ import no.nav.aap.oppgave.oppdater.hendelse.VenteInformasjon
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
+import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -41,7 +42,7 @@ import no.nav.aap.oppgave.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 private val ÅPNE_STATUSER = setOf(
     AvklaringsbehovStatus.OPPRETTET,
@@ -174,12 +175,25 @@ class OppdaterOppgaveService(
         // Automatisk reservasjon enten ved retur eller override fra behandlingsflyt
         if (harBlittSendtTilbakeFraToTrinn(avklaringsbehov) && eksisterendeOppgave.status == Status.AVSLUTTET) {
             utledReservasjonEtterReturFraTotrinn(avklaringsbehov, eksisterendeOppgave)
+        } else if (unleashService.isEnabled(FeatureToggles.SetterIkkeReserverTilPaaOppdatering)) {
+            // reservasjon fra behandlingsflyt skal kun overstyre når oppgave opprettes eller gjenåpnes, ikke når oppgave oppdateres
+            if (eksisterendeOppgave.status == Status.AVSLUTTET) {
+                håndterReservasjonFraBehandlingsflyt(
+                    oppgaveOppdatering,
+                    avklaringsbehov,
+                    eksisterendeOppgave.oppgaveId()
+                )
+            }
         } else {
             håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, avklaringsbehov, eksisterendeOppgave.oppgaveId())
         }
     }
 
-    private fun håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering: OppgaveOppdatering, avklaringsbehov: AvklaringsbehovHendelse, oppgaveId: OppgaveId) {
+    private fun håndterReservasjonFraBehandlingsflyt(
+        oppgaveOppdatering: OppgaveOppdatering,
+        avklaringsbehov: AvklaringsbehovHendelse,
+        oppgaveId: OppgaveId
+    ) {
         if (oppgaveOppdatering.reserverTil != null) {
             val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
                 saksnummer = oppgaveOppdatering.saksnummer,
@@ -203,7 +217,10 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun utledReturInformasjon(avklaringsbehov: AvklaringsbehovHendelse, oppgaveOppdatering: OppgaveOppdatering): ReturInformasjon? {
+    private fun utledReturInformasjon(
+        avklaringsbehov: AvklaringsbehovHendelse,
+        oppgaveOppdatering: OppgaveOppdatering
+    ): ReturInformasjon? {
         return utledReturFraToTrinn(avklaringsbehov) ?: utledReturTilToTrinn(avklaringsbehov, oppgaveOppdatering)
     }
 
@@ -237,7 +254,8 @@ class OppdaterOppgaveService(
         // Setter ReturInformasjon når behandling sendes tilbake til totrinn
         return if (erReturTilToTrinn(avklaringsbehov)) {
             log.info("Totrinnsoppgave gjenåpnet, setter retur fra veileder/saksbehandler. Saksnummer: ${oppgaveOppdatering.saksnummer}")
-            val forrigeAvklaringsbehovLøstAvVeileder = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
+            val forrigeAvklaringsbehovLøstAvVeileder =
+                oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
             ReturInformasjon(
                 status = if (forrigeAvklaringsbehovLøstAvVeileder) {
                     ReturStatus.RETUR_FRA_VEILEDER
@@ -261,7 +279,8 @@ class OppdaterOppgaveService(
         oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
         åpentAvklaringsbehov: AvklaringsbehovHendelse
     ) {
-        val oppgaverSomMåAvsluttes = oppgaveMap.values.filter { it.avklaringsbehovKode != åpentAvklaringsbehov.avklaringsbehovKode.kode }
+        val oppgaverSomMåAvsluttes =
+            oppgaveMap.values.filter { it.avklaringsbehovKode != åpentAvklaringsbehov.avklaringsbehovKode.kode }
         avslutteOppgaver(oppgaverSomMåAvsluttes)
     }
 
@@ -290,7 +309,10 @@ class OppdaterOppgaveService(
         ) && avklaringsbehov.endringer.any { it.status == AvklaringsbehovStatus.AVSLUTTET })
     }
 
-    private fun utledReservasjonEtterReturFraTotrinn(avklaringsbehov: AvklaringsbehovHendelse, eksisterendeOppgave: OppgaveDto) {
+    private fun utledReservasjonEtterReturFraTotrinn(
+        avklaringsbehov: AvklaringsbehovHendelse,
+        eksisterendeOppgave: OppgaveDto
+    ) {
         val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
         if (sistEndretAv != KELVIN) {
             val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
@@ -341,7 +363,10 @@ class OppdaterOppgaveService(
         )
     }
 
-    private fun skalOverstyresTilLokalKontor(oppgaveOppdatering: OppgaveOppdatering, avklaringsbehovHendelse: AvklaringsbehovHendelse): Boolean {
+    private fun skalOverstyresTilLokalKontor(
+        oppgaveOppdatering: OppgaveOppdatering,
+        avklaringsbehovHendelse: AvklaringsbehovHendelse
+    ): Boolean {
         // Hvis avklaringsbehov kan løses av begge roller, skal oppgaven gå til lokalkontor dersom forrige oppgave på behandling var på lokalkontor
         // P.t. gjelder dette trekk søknad og trekk klage
         val avklaringsbehovForBeggeRoller = AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode }
@@ -553,9 +578,11 @@ class OppdaterOppgaveService(
     private fun validerOppgaveTilstandEtterOppdatering(behandlingsreferanse: UUID) {
         val åpneOppgaver = oppgaveRepository.hentOppgaver(behandlingsreferanse).filter { it.status == Status.OPPRETTET }
         if (åpneOppgaver.size > 1) {
-            log.warn("Fant ${åpneOppgaver.size} åpne oppgaver for behandling $behandlingsreferanse. " +
+            log.warn(
+                "Fant ${åpneOppgaver.size} åpne oppgaver for behandling $behandlingsreferanse. " +
                     "Oppgaver: ${åpneOppgaver.map { it.id }.joinToString()} " +
-                    "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}")
+                    "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}"
+            )
         }
     }
 
