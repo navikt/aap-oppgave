@@ -53,7 +53,7 @@ private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformas
             årsakTilSattPåVent = siste.påVentÅrsak,
             frist = siste.påVentTil,
             sattPåVentAv = siste.endretAv,
-            begrunnelse = siste.begrunnelse.nullIfBlank()
+            begrunnelse = siste.begrunnelse
         )
     }
 }
@@ -104,7 +104,7 @@ private fun List<EndringDTO>.tilEndringerForBehandlingsflyt() =
             endretAv = it.endretAv,
             påVentTil = it.frist,
             påVentÅrsak = it.årsakTilSattPåVent?.name,
-            begrunnelse = it.begrunnelse.nullIfBlank(),
+            begrunnelse = it.begrunnelse,
             årsakTilRetur = it.årsakTilRetur.map { årsak -> ÅrsakTilReturKode.valueOf(årsak.årsak.name) }
         )
     }
