@@ -420,6 +420,10 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND RETUR_AARSAK IN $stringListeReturStatuser")
         }
 
+        if (utvidetFilter.ventefristUtløpt == true) {
+            sb.append(" AND UTLOEPT_VENTEFRIST IS NOT NULL")
+        }
+
         if (utvidetFilter.fom != null) {
             sb.append(" AND OPPRETTET_TIDSPUNKT >= '${utvidetFilter.fom}'")
         }

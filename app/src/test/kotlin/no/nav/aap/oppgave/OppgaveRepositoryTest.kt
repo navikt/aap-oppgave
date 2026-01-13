@@ -378,6 +378,13 @@ class OppgaveRepositoryTest {
         )
         markerHasteOppgave(hasterBehandlingsref)
 
+        val oppgave6Id = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            avklaringsbehovKode = AvklaringsbehovKode("5003"),
+        )
+        val oppgave6 = hentOppgave(oppgave6Id)
+        settUtløptVentefrist(oppgave6, utløptVentefrist = LocalDate.now())
+
         val utvidetFilter = UtvidetOppgavelisteFilter(
             årsaker = setOf(),
             behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
@@ -399,6 +406,15 @@ class OppgaveRepositoryTest {
             avklaringsbehovKoder = setOf("5003", "12341234"),
             påVent = true,
             returStatuser = setOf(ReturStatus.RETUR_FRA_BESLUTTER)
+        )
+
+        val utvidetFilterMedStatusVentefristUtløpt = UtvidetOppgavelisteFilter(
+            årsaker = setOf(),
+            behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+            fom = LocalDate.of(2020, 1, 1),
+            tom = LocalDate.now().plusDays(1),
+            avklaringsbehovKoder = setOf("5003", "12341234"),
+            ventefristUtløpt = true
         )
 
         val utvidetFilterMedHastesøk = UtvidetOppgavelisteFilter(
@@ -424,6 +440,12 @@ class OppgaveRepositoryTest {
             utvidetOppgavelisteFilter = utvidetFilterMedStatusPåVentOgReturStatus,
         )
 
+        val søkMedUtvidetFilterVentefristUtløpt = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(),
+            paging = null,
+            utvidetOppgavelisteFilter = utvidetFilterMedStatusVentefristUtløpt
+        )
+
         val søkMedUtvidetFilterHastesøk = finnAlleOppgaverMedUtvidetFilter(
             filter = TransientFilterDto(),
             paging = null,
@@ -436,11 +458,12 @@ class OppgaveRepositoryTest {
             )
         )
 
-        assertThat(alleOppgaver.oppgaver).hasSize(5)
-        assertThat(søkMedUtvidetFilter.oppgaver).hasSize(3)
+        assertThat(alleOppgaver.oppgaver).hasSize(6)
+        assertThat(søkMedUtvidetFilter.oppgaver).hasSize(4)
         assertThat(søkMedutvidetFilterMedStatusPåVentOgReturStatus.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterPåVent.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterHastesøk.oppgaver).hasSize(1)
+        assertThat(søkMedUtvidetFilterVentefristUtløpt.oppgaver).hasSize(1)
     }
 
     @Test
@@ -579,6 +602,35 @@ class OppgaveRepositoryTest {
                 hasterBehandlingsref,
                 BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", "me")
             )
+        }
+    }
+
+    private fun settUtløptVentefrist(oppgave: OppgaveDto, utløptVentefrist: LocalDate?) {
+        return dataSource.transaction { connection ->
+            OppgaveRepository(connection).oppdatereOppgave(
+                oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
+                endretAvIdent = "z123",
+                utløptVentefrist = utløptVentefrist,
+                personIdent = oppgave.personIdent,
+                enhet = oppgave.enhet,
+                oppfølgingsenhet = oppgave.oppfølgingsenhet,
+                vurderingsbehov = oppgave.vurderingsbehov,
+                harFortroligAdresse = oppgave.harFortroligAdresse,
+                erSkjermet = oppgave.erSkjermet == true,
+                harUlesteDokumenter = oppgave.harUlesteDokumenter == true,
+                returInformasjon = null,
+                påVentTil = null,
+                påVentÅrsak = null,
+                påVentBegrunnelse = null,
+                veilederArbeid = null,
+                veilederSykdom = null
+            )
+        }
+    }
+
+    private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
+        return dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentOppgave(oppgaveId.id)
         }
     }
 
