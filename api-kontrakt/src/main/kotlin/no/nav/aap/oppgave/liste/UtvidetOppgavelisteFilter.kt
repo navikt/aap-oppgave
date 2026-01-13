@@ -13,4 +13,5 @@ data class UtvidetOppgavelisteFilter (
     val påVent: Boolean? = null,
     val returStatuser: Set<ReturStatus> = emptySet(),
     val markertHaster: Boolean? = null,
+    val ventefristUtløpt : Boolean? = null
 )
