@@ -44,7 +44,14 @@ class OppgaveRepositoryTest {
 
     @Test
     fun `Opprett ny oppgave`() {
-        opprettOppgave()
+        val id = opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("5099"), avklaringsbehovId = 123)
+
+        val oppgave = dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentOppgave(id.id)
+        }
+
+        assertThat(oppgave.id).isEqualTo(id.id)
+        assertThat(oppgave.avklaringsbehovId).isEqualTo(123)
     }
 
     @Test
@@ -120,8 +127,18 @@ class OppgaveRepositoryTest {
     @Test
     fun `Teller alle oppgaver gitt enhetsfilter`() {
         // Lager 20 oppgaver totalt, 10 på hver enhet
-        (1..10).forEach { opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_ENEBAKK) }
-        (1..10).forEach { opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_LØRENSKOG) }
+        (1..10).forEach {
+            opprettOppgave(
+                behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+                enhet = ENHET_NAV_ENEBAKK
+            )
+        }
+        (1..10).forEach {
+            opprettOppgave(
+                behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+                enhet = ENHET_NAV_LØRENSKOG
+            )
+        }
         val oppgaverBeggeEnheter = dataSource.transaction { connection ->
             OppgaveRepository(connection).finnOppgaver(
                 filter = FilterDto(
@@ -639,6 +656,7 @@ class OppgaveRepositoryTest {
         behandlingRef: UUID = UUID.randomUUID(),
         status: Status = Status.OPPRETTET,
         avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
+        avklaringsbehovId: Long? = null,
         behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
         enhet: String = ENHET_NAV_LØRENSKOG,
         oppfølgingsenhet: String? = null,
@@ -658,6 +676,7 @@ class OppgaveRepositoryTest {
             oppfølgingsenhet = oppfølgingsenhet,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
             avklaringsbehovKode = avklaringsbehovKode.kode,
+            avklaringsbehovId = avklaringsbehovId,
             status = status,
             behandlingstype = behandlingstype,
             opprettetAv = "bruker1",

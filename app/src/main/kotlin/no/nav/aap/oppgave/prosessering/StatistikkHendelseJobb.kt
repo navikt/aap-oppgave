@@ -19,7 +19,10 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("prosessering.StatistikkHendelseJobb")
 
-class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository, private val markeringRepository: MarkeringRepository) : JobbUtfører {
+class StatistikkHendelseJobb(
+    private val oppgaveRepository: OppgaveRepository,
+    private val markeringRepository: MarkeringRepository
+) : JobbUtfører {
     override fun utfør(input: JobbInput) {
         val hendelsesType = HendelseType.valueOf(input.parameter("hendelsesType"))
         val oppgaveId = DefaultJsonMapper.fromJson<OppgaveId>(input.payload())
@@ -66,6 +69,7 @@ private fun fraOppgaveDto(oppgaveDto: OppgaveDto, markeringer: List<BehandlingMa
         journalpostId = oppgaveDto.journalpostId,
         enhet = oppgaveDto.enhetForKø,
         avklaringsbehovKode = oppgaveDto.avklaringsbehovKode,
+        avklaringsbehovId = oppgaveDto.avklaringsbehovId,
         status = oppgaveDto.status,
         behandlingstype = oppgaveDto.behandlingstype,
         reservertAv = oppgaveDto.reservertAv,

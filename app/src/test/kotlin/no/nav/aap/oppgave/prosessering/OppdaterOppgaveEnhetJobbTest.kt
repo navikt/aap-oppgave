@@ -152,6 +152,7 @@ class OppdaterOppgaveEnhetJobbTest {
             oppfølgingsenhet = oppfølgingsenhet,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
             avklaringsbehovKode = avklaringsbehovKode.kode,
+            avklaringsbehovId = null,
             status = status,
             behandlingstype = behandlingstype,
             opprettetAv = "bruker1",

@@ -48,6 +48,7 @@ data class OppgaveDto(
     val veilederSykdom: String? = null,
     val behandlingOpprettet: LocalDateTime,
     val avklaringsbehovKode: String,
+    val avklaringsbehovId: Long?,
     val status: Status = Status.OPPRETTET,
     val behandlingstype: Behandlingstype,
     val påVentTil: LocalDate? = null,
