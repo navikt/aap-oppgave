@@ -41,7 +41,7 @@ tilgangKontrakt = { module = "no.nav.aap.tilgang:api-kontrakt", version.ref = "t
 tilgangPlugin = { module = "no.nav.aap.tilgang:plugin", version.ref = "tilgang" }
 
 commonsCompress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
-micrometerRegistryPrometheus = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.16.1" }
+micrometerRegistryPrometheus = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.16.2" }
 logbackClassic = { module = "ch.qos.logback:logback-classic", version = "1.5.24" }
 logstashLogbackEncoder = { module = "net.logstash.logback:logstash-logback-encoder", version = "9.0" }
 hikariCp = { module = "com.zaxxer:HikariCP", version = "7.0.2" }
