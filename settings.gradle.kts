@@ -1,4 +1,4 @@
-rootProject.name = "aap-oppgave"
+rootProject.name = "oppgave"
 
 include(
     "app",

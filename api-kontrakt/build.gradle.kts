@@ -1,5 +1,5 @@
 plugins {
-    id("oppgave.conventions")
+    id("aap.conventions")
     `maven-publish`
     `java-library`
 }
