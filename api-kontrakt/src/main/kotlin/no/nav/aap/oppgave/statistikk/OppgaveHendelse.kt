@@ -32,6 +32,7 @@ data class OppgaveTilStatistikkDto(
     val journalpostId: Long? = null,
     val enhet: String,
     val avklaringsbehovKode: String,
+    val avklaringsbehovId: Long?,
     val status: Status = Status.OPPRETTET,
     val behandlingstype: Behandlingstype,
     val reservertAv: String? = null,

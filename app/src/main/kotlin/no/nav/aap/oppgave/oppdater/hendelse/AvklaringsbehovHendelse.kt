@@ -6,6 +6,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class AvklaringsbehovHendelse(
+    val id: Long? = null,
     val avklaringsbehovKode: AvklaringsbehovKode,
     val status: AvklaringsbehovStatus,
     val endringer: List<Endring>,

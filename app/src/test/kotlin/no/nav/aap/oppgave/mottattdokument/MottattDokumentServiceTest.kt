@@ -71,6 +71,7 @@ class MottattDokumentServiceTest {
         enhet = "enhet",
         oppfølgingsenhet = "oppfølgingsenhet",
         avklaringsbehovKode = "1000",
+        avklaringsbehovId = null,
         harUlesteDokumenter = true
     )
 }
