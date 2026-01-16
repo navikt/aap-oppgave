@@ -45,23 +45,29 @@ object OppgavelisteUtils {
 
     private fun hentNavnFraPDL(identer: List<String>): Map<String, String> = measureTimedValue {
         runCatching {
-            PdlGraphqlGateway
-                .withClientCredentialsRestClient()
-                .hentPersoninfoForIdenter(identer)
-                .hentPersonBolk
-                ?.associate {
-                    val navn = it.person?.navn?.firstOrNull()?.fulltNavn() ?: ""
-                    personinfoCache.put(it.ident, navn)
-
-                    it.ident to navn
-                }
-                ?: emptyMap()
+            identer.chunked(1000)
+                .flatMap { bolk ->
+                    hentNavnForBolk(bolk)
+                }.toMap()
         }
     }.let { (result, duration) ->
         if (result.isSuccess) logger.info("Hentet navn for ${identer.size} identer fra PDL (tid: $duration)")
         else logger.error("Feil ved henting av ${identer.size} identer fra PDL (tid: $duration)")
 
         result.getOrThrow()
+    }
+
+    private fun hentNavnForBolk(identer: List<String>): List<Pair<String, String>> {
+        return PdlGraphqlGateway
+            .withClientCredentialsRestClient()
+            .hentPersoninfoForIdenter(identer)
+            .hentPersonBolk
+            ?.map {
+                val navn = it.person?.navn?.firstOrNull()?.fulltNavn() ?: ""
+                personinfoCache.put(it.ident, navn)
+                it.ident to navn
+            }
+            ?: emptyList()
     }
 
     private fun OppgaveDto.medNavn(
