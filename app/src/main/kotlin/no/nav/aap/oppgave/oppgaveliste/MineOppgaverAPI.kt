@@ -14,7 +14,11 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
 
-data class MineOppgaverRequest(@param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false)
+data class MineOppgaverRequest(
+    @param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false,
+    @param:QueryParam("Sorter oppgaveliste") val sortby: OppgavelisteSortering? = null,
+    @param:QueryParam("Sorteringsrekkefølge") val sortorder: OppgavelisteSorteringRekkefølge? = null
+)
 
 /**
  * Hent oppgaver reservert til innlogget bruker.
@@ -29,7 +33,12 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
             OppgavelisteService(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection)
-            ).hentMineOppgaver(ident(), req.kunPaaVent)
+            ).hentMineOppgaver(
+                ident = ident(),
+                kunPaaVent = req.kunPaaVent,
+                sortBy = req.sortby,
+                sortOrder = req.sortorder
+            )
         }
     respond(
         OppgavelisteRespons(

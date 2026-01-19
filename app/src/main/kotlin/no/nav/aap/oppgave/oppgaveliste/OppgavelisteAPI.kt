@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.oppgaveliste
 
+import com.papsign.ktor.openapigen.annotations.parameters.QueryParam
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
@@ -24,6 +25,11 @@ import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("oppgavelisteApi")
 
+data class OppgavelisteQueryParams (
+    @param:QueryParam("Sorter oppgaveliste") val sortby: OppgavelisteSortering? = null,
+    @param:QueryParam("Sorteringsrekkefølge") val sortorder: OppgavelisteSorteringRekkefølge? = null
+)
+
 /**
  * Søker etter oppgaver med et predefinert filter angitt med filterId. Det vil bli sjekket om innlogget bruker har tilgang
  * til oppgavene. I tillegg kan det legges på en begrensning på enheter.
@@ -34,7 +40,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
 ) {
     val enhetService = EnhetService(MsGraphGateway(prometheus))
 
-    route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
+    route("/oppgaveliste").post<OppgavelisteQueryParams, OppgavelisteRespons, OppgavelisteRequest> { params, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val data =
             dataSource.transaction(readOnly = true) { connection ->
@@ -58,7 +64,9 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     filter,
                     veilederIdent,
                     token(),
-                    ident()
+                    ident(),
+                    params.sortby,
+                    params.sortorder
                 )
             }
 

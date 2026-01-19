@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.sorterOppgaver
 
 const val maksOppgaver = 50
 
@@ -56,7 +57,9 @@ class OppgavelisteService(
         filter: FilterDto,
         veilederIdent: String?,
         token: OidcToken,
-        ident: String
+        ident: String,
+        sortBy: OppgavelisteSortering?,
+        sortOrder: OppgavelisteSorteringRekkefølge?
     ): FinnOppgaverDto {
         val rekkefølge =
             when (Miljø.er()) {
@@ -87,8 +90,10 @@ class OppgavelisteService(
                 oppgave.leggPåMarkeringer(markeringer.tilDto())
             }
 
+        val sorterteOppgaver = oppgaver.sorterOppgaver(sortBy, sortOrder)
+
         return FinnOppgaverDto(
-            oppgaver = oppgaver.filtrerPåTilgang(enhetService, token, ident),
+            oppgaver = sorterteOppgaver.filtrerPåTilgang(enhetService, token, ident),
             antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
             antallTotalt = finnOppgaverDto.antallTotalt,
         )
@@ -96,7 +101,9 @@ class OppgavelisteService(
 
     fun hentMineOppgaver(
         ident: String,
-        kunPaaVent: Boolean?
+        kunPaaVent: Boolean?,
+        sortBy: OppgavelisteSortering?,
+        sortOrder: OppgavelisteSorteringRekkefølge?
     ): List<OppgaveDto> =
         oppgaveRepository.hentMineOppgaver(ident = ident, kunPåVent = kunPaaVent == true).map {
             it.leggPåMarkeringer(
@@ -104,7 +111,7 @@ class OppgavelisteService(
                     "Fant ikke behandlingsreferanse for oppgave med id ${it.id}"
                 }).tilDto()
             )
-        }.hentPersonNavn()
+        }.hentPersonNavn().sorterOppgaver(sortBy, sortOrder)
 
     private fun settFilter(
         filter: FilterDto,
