@@ -47,7 +47,7 @@ logstashLogbackEncoder = { module = "net.logstash.logback:logstash-logback-encod
 hikariCp = { module = "com.zaxxer:HikariCP", version = "7.0.2" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.3" }
 flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "11.20.1" }
-unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "11.2.1" }
+unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "12.0.1" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
 nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.7" }
 
