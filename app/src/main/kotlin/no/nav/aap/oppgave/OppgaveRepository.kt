@@ -7,6 +7,8 @@ import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteSortering
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteSorteringRekkefølge
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -441,10 +443,11 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun finnOppgaver(
         filter: Filter,
-        rekkefølge: Rekkefølge = Rekkefølge.asc,
+        rekkefølge: OppgavelisteSorteringRekkefølge = OppgavelisteSorteringRekkefølge.ASC,
         paging: Paging? = null,
         kunLedigeOppgaver: Boolean? = true,
-        utvidetFilter: UtvidetOppgavelisteFilter? = null
+        utvidetFilter: UtvidetOppgavelisteFilter? = null,
+        sortBy: OppgavelisteSortering? = null,
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
@@ -455,6 +458,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         val kunLedigeQuery =
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
+        val sortering = oppgaveSorteringQuery(
+            sortBy = sortBy ?: OppgavelisteSortering.BEHANDLING_OPPRETTET,
+        )
+        val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
         val hentNesteOppgaveQuery = """
             SELECT o.*, m.markering_type
@@ -463,7 +470,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             WHERE 
                 ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
-            ORDER BY BEHANDLING_OPPRETTET ${rekkefølge.name}
+            ORDER BY ${sortering} ${sorteringsRekkefølge} 
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
@@ -576,7 +583,12 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun reserverOppgave(oppgaveId: OppgaveId, endretAvIdent: String, reservertAvIdent: String, reservertAvNavn: String?) {
+    fun reserverOppgave(
+        oppgaveId: OppgaveId,
+        endretAvIdent: String,
+        reservertAvIdent: String,
+        reservertAvNavn: String?
+    ) {
         val updaterOppgaveReservasjonQuery = """
             UPDATE 
                 OPPGAVE 
@@ -604,7 +616,11 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentMineOppgaver(ident: String, paging: Paging? = null, kunPåVent: Boolean = false): List<OppgaveDto> {
+    fun hentMineOppgaver(
+        ident: String, paging: Paging? = null, kunPåVent: Boolean = false,
+        sortBy: OppgavelisteSortering? = null,
+        sortOrder: OppgavelisteSorteringRekkefølge? = null
+    ): List<OppgaveDto> {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
         } else {
@@ -613,12 +629,17 @@ class OppgaveRepository(private val connection: DBConnection) {
         val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
 
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
+        val sortering = oppgaveSorteringQuery(
+            sortBy = sortBy ?: OppgavelisteSortering.BEHANDLING_OPPRETTET,
+        )
+        val sorteringRekkefølge = oppgaveRekkefølge(sortOrder ?: OppgavelisteSorteringRekkefølge.ASC)
 
         val query = """
             SELECT $alleOppgaveFelt
             FROM OPPGAVE
             WHERE RESERVERT_AV = ?
               AND STATUS != 'AVSLUTTET' $kunPåVentQuery
+            ORDER BY $sortering $sorteringRekkefølge
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
@@ -764,6 +785,24 @@ class OppgaveRepository(private val connection: DBConnection) {
                 )
             }
         )
+    }
+
+    private fun oppgaveSorteringQuery(sortBy: OppgavelisteSortering): String {
+        return when (sortBy) {
+            OppgavelisteSortering.PERSONIDENT -> "person_ident"
+            OppgavelisteSortering.BEHANDLINGSTYPE -> "behandlingstype"
+            OppgavelisteSortering.BEHANDLING_OPPRETTET -> "behandling_opprettet"
+            OppgavelisteSortering.ÅRSAK_TIL_OPPRETTELSE -> "aarsak_til_opprettelse"
+            OppgavelisteSortering.AVKLARINGSBEHOV_KODE -> "avklaringsbehov_type"
+            OppgavelisteSortering.OPPRETTET_TIDSPUNKT -> "opprettet_tidspunkt"
+        }
+    }
+
+    private fun oppgaveRekkefølge(sortOrder: OppgavelisteSorteringRekkefølge): Rekkefølge {
+        return when (sortOrder) {
+            OppgavelisteSorteringRekkefølge.ASC -> Rekkefølge.asc
+            OppgavelisteSorteringRekkefølge.DESC -> Rekkefølge.desc
+        }
     }
 
     private companion object {

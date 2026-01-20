@@ -79,15 +79,6 @@ object OppgavelisteUtils {
 
         return this.copy(personNavn = personNavn)
     }
-
-    fun List<OppgaveDto>.sorterOppgaver(sortBy: OppgavelisteSortering?, sortOrder: OppgavelisteSorteringRekkefølge?): List<OppgaveDto> {
-        return if (sortBy != null) {
-            val sortPredicate = getOpggavelisteSortPredicate(sortBy, sortOrder)
-            this.sortedWith(sortPredicate)
-        } else {
-            this
-        }
-    }
 }
 
 enum class OppgavelisteSortering {
@@ -97,22 +88,9 @@ enum class OppgavelisteSortering {
     ÅRSAK_TIL_OPPRETTELSE,
     AVKLARINGSBEHOV_KODE,
     OPPRETTET_TIDSPUNKT,
-    RESERVERT_AV_NAVN,
 }
 
 enum class OppgavelisteSorteringRekkefølge {
-    ASCENDING,
-    DESCENDING,
-}
-fun getOpggavelisteSortPredicate(sortBy: OppgavelisteSortering, sortOrder: OppgavelisteSorteringRekkefølge?):  Comparator<OppgaveDto>  {
-    val base = when (sortBy) {
-        OppgavelisteSortering.PERSONIDENT -> compareBy(OppgaveDto::personIdent)
-        OppgavelisteSortering.BEHANDLINGSTYPE -> compareBy(OppgaveDto::behandlingstype)
-        OppgavelisteSortering.BEHANDLING_OPPRETTET -> compareBy(OppgaveDto::behandlingOpprettet)
-        OppgavelisteSortering.ÅRSAK_TIL_OPPRETTELSE -> compareBy(OppgaveDto::årsakTilOpprettelse)
-        OppgavelisteSortering.AVKLARINGSBEHOV_KODE -> compareBy(OppgaveDto::avklaringsbehovKode)
-        OppgavelisteSortering.OPPRETTET_TIDSPUNKT -> compareBy(OppgaveDto::opprettetTidspunkt)
-        OppgavelisteSortering.RESERVERT_AV_NAVN -> compareBy(OppgaveDto::reservertAvNavn)
-    }
-    return if (sortOrder == OppgavelisteSorteringRekkefølge.ASCENDING) base else base.reversed()
+    ASC,
+    DESC,
 }

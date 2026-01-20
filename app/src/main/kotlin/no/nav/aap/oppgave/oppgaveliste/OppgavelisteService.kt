@@ -15,7 +15,6 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
-import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.sorterOppgaver
 
 const val maksOppgaver = 50
 
@@ -61,11 +60,14 @@ class OppgavelisteService(
         sortBy: OppgavelisteSortering?,
         sortOrder: OppgavelisteSorteringRekkefølge?
     ): FinnOppgaverDto {
-        val rekkefølge =
+        val sortOrderMedDefault = if (sortOrder != null) {
+            sortOrder
+        } else {
             when (Miljø.er()) {
-                MiljøKode.DEV -> OppgaveRepository.Rekkefølge.desc
-                else -> OppgaveRepository.Rekkefølge.asc
+                MiljøKode.DEV -> OppgavelisteSorteringRekkefølge.DESC
+                else -> OppgavelisteSorteringRekkefølge.ASC
             }
+        }
 
         val kombinertFilter = settFilter(filter, utvidetFilter)
         val finnOppgaverDto =
@@ -75,10 +77,11 @@ class OppgavelisteService(
                         enheter = enheter,
                         veileder = veilederIdent
                     ),
-                rekkefølge = rekkefølge,
+                rekkefølge = sortOrderMedDefault,
                 paging = paging,
                 kunLedigeOppgaver = kunLedigeOppgaver,
-                utvidetFilter = utvidetFilter
+                utvidetFilter = utvidetFilter,
+                sortBy = sortBy,
             )
 
         val oppgaver =
@@ -90,10 +93,11 @@ class OppgavelisteService(
                 oppgave.leggPåMarkeringer(markeringer.tilDto())
             }
 
-        val sorterteOppgaver = oppgaver.sorterOppgaver(sortBy, sortOrder)
+//        val sorterteOppgaver = oppgaver.sorterOppgaver(sortBy, sortOrder)
 
         return FinnOppgaverDto(
-            oppgaver = sorterteOppgaver.filtrerPåTilgang(enhetService, token, ident),
+            //TODO: NBNB debug, endre tilbake til tilgangssjekk
+            oppgaver = oppgaver,
             antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
             antallTotalt = finnOppgaverDto.antallTotalt,
         )
@@ -105,13 +109,18 @@ class OppgavelisteService(
         sortBy: OppgavelisteSortering?,
         sortOrder: OppgavelisteSorteringRekkefølge?
     ): List<OppgaveDto> =
-        oppgaveRepository.hentMineOppgaver(ident = ident, kunPåVent = kunPaaVent == true).map {
+        oppgaveRepository.hentMineOppgaver(
+            ident = ident,
+            kunPåVent = kunPaaVent == true,
+            sortBy = sortBy,
+            sortOrder = sortOrder
+        ).map {
             it.leggPåMarkeringer(
                 markeringRepository.hentMarkeringerForBehandling(requireNotNull(it.behandlingRef) {
                     "Fant ikke behandlingsreferanse for oppgave med id ${it.id}"
                 }).tilDto()
             )
-        }.hentPersonNavn().sorterOppgaver(sortBy, sortOrder)
+        }.hentPersonNavn()
 
     private fun settFilter(
         filter: FilterDto,
