@@ -96,8 +96,7 @@ class OppgavelisteService(
 //        val sorterteOppgaver = oppgaver.sorterOppgaver(sortBy, sortOrder)
 
         return FinnOppgaverDto(
-            //TODO: NBNB debug, endre tilbake til tilgangssjekk
-            oppgaver = oppgaver,
+            oppgaver = oppgaver.filtrerPåTilgang(enhetService, token, ident),
             antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
             antallTotalt = finnOppgaverDto.antallTotalt,
         )
