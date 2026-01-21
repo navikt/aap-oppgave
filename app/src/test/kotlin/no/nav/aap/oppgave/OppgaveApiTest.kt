@@ -200,7 +200,7 @@ class OppgaveApiTest {
         )
 
         // Sjekk at det ikke er flere oppgaver i køen
-        nesteOppgave = hentNesteOppgave()
+        nesteOppgave = hentNesteOppgaveNAY()
         assertThat(nesteOppgave).isNull()
     }
 
@@ -916,6 +916,7 @@ class OppgaveApiTest {
         )
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse1)
+        fakesConfig.relaterteIdenterPåBehandling = listOf()
         var nesteOppgave = hentNesteOppgave()
         assertThat(nesteOppgave).isNotNull()
         assertThat(nesteOppgave!!.avklaringsbehovReferanse.referanse).isEqualTo(referanse2)
@@ -1398,7 +1399,7 @@ class OppgaveApiTest {
         val nesteOppgave: NesteOppgaveDto? = noTokenClient.post(
             URI.create("http://localhost:$port/neste-oppgave"),
             PostRequest(
-                body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!),
+                body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!, enheter = setOf("4491")),
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerNasjonal.id)).token()}")
                 )
