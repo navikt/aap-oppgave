@@ -93,8 +93,6 @@ class OppgavelisteService(
                 oppgave.leggPåMarkeringer(markeringer.tilDto())
             }
 
-//        val sorterteOppgaver = oppgaver.sorterOppgaver(sortBy, sortOrder)
-
         return FinnOppgaverDto(
             oppgaver = oppgaver.filtrerPåTilgang(enhetService, token, ident),
             antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
