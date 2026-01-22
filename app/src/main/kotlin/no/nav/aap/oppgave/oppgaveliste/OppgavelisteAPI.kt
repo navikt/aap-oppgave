@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.oppgaveliste
 
-import com.papsign.ktor.openapigen.annotations.parameters.QueryParam
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
@@ -25,10 +24,6 @@ import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("oppgavelisteApi")
 
-data class OppgavelisteQueryParams (
-    @param:QueryParam("Sorter oppgaveliste") val sortby: OppgavelisteSortering? = null,
-    @param:QueryParam("Sorteringsrekkefølge") val sortorder: OppgavelisteSorteringRekkefølge? = null
-)
 
 /**
  * Søker etter oppgaver med et predefinert filter angitt med filterId. Det vil bli sjekket om innlogget bruker har tilgang
@@ -40,12 +35,13 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
 ) {
     val enhetService = EnhetService(MsGraphGateway(prometheus))
 
-    route("/oppgaveliste").post<OppgavelisteQueryParams, OppgavelisteRespons, OppgavelisteRequest> { params, request ->
+    route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()
         val data =
             dataSource.transaction(readOnly = true) { connection ->
                 log.info("Henter filter med filterId ${request.filterId}")
-                val filter = requireNotNull(FilterRepository(connection).hent(request.filterId)) {"filterrepository.hent()"}
+                val filter =
+                    requireNotNull(FilterRepository(connection).hent(request.filterId)) { "filterrepository.hent()" }
                 val veilederIdent =
                     if (request.veileder) {
                         ident()
@@ -65,8 +61,8 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     veilederIdent,
                     token(),
                     ident(),
-                    params.sortby,
-                    params.sortorder
+                    request.sortering?.sortBy,
+                    request.sortering?.sortOrder
                 )
             }
 

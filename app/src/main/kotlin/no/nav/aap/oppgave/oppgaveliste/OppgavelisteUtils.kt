@@ -81,16 +81,3 @@ object OppgavelisteUtils {
     }
 }
 
-enum class OppgavelisteSortering {
-    PERSONIDENT,
-    BEHANDLINGSTYPE,
-    BEHANDLING_OPPRETTET,
-    ÅRSAK_TIL_OPPRETTELSE,
-    AVKLARINGSBEHOV_KODE,
-    OPPRETTET_TIDSPUNKT,
-}
-
-enum class OppgavelisteSorteringRekkefølge {
-    ASC,
-    DESC,
-}

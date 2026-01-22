@@ -9,6 +9,8 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
+import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.MarkeringDto
@@ -57,15 +59,15 @@ class OppgavelisteService(
         veilederIdent: String?,
         token: OidcToken,
         ident: String,
-        sortBy: OppgavelisteSortering?,
-        sortOrder: OppgavelisteSorteringRekkefølge?
+        sortBy: OppgaveSorteringFelt?,
+        sortOrder: OppgaveSorteringRekkefølge?
     ): FinnOppgaverDto {
         val sortOrderMedDefault = if (sortOrder != null) {
             sortOrder
         } else {
             when (Miljø.er()) {
-                MiljøKode.DEV -> OppgavelisteSorteringRekkefølge.DESC
-                else -> OppgavelisteSorteringRekkefølge.ASC
+                MiljøKode.DEV -> OppgaveSorteringRekkefølge.DESC
+                else -> OppgaveSorteringRekkefølge.ASC
             }
         }
 
@@ -103,8 +105,8 @@ class OppgavelisteService(
     fun hentMineOppgaver(
         ident: String,
         kunPaaVent: Boolean?,
-        sortBy: OppgavelisteSortering?,
-        sortOrder: OppgavelisteSorteringRekkefølge?
+        sortBy: OppgaveSorteringFelt?,
+        sortOrder: OppgaveSorteringRekkefølge?
     ): List<OppgaveDto> =
         oppgaveRepository.hentMineOppgaver(
             ident = ident,

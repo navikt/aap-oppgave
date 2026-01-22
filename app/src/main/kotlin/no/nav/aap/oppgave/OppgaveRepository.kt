@@ -5,10 +5,10 @@ import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
+import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.oppgaveliste.OppgavelisteSortering
-import no.nav.aap.oppgave.oppgaveliste.OppgavelisteSorteringRekkefølge
 import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -443,11 +443,11 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun finnOppgaver(
         filter: Filter,
-        rekkefølge: OppgavelisteSorteringRekkefølge = OppgavelisteSorteringRekkefølge.ASC,
+        rekkefølge: OppgaveSorteringRekkefølge = OppgaveSorteringRekkefølge.ASC,
         paging: Paging? = null,
         kunLedigeOppgaver: Boolean? = true,
         utvidetFilter: UtvidetOppgavelisteFilter? = null,
-        sortBy: OppgavelisteSortering? = null,
+        sortBy: OppgaveSorteringFelt? = null,
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
@@ -459,7 +459,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
         val sortering = oppgaveSorteringQuery(
-            sortBy = sortBy ?: OppgavelisteSortering.BEHANDLING_OPPRETTET,
+            sortBy = sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
@@ -618,8 +618,8 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun hentMineOppgaver(
         ident: String, paging: Paging? = null, kunPåVent: Boolean = false,
-        sortBy: OppgavelisteSortering? = null,
-        sortOrder: OppgavelisteSorteringRekkefølge? = null
+        sortBy: OppgaveSorteringFelt? = null,
+        sortOrder: OppgaveSorteringRekkefølge? = null
     ): List<OppgaveDto> {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
@@ -630,9 +630,9 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
         val sortering = oppgaveSorteringQuery(
-            sortBy = sortBy ?: OppgavelisteSortering.BEHANDLING_OPPRETTET,
+            sortBy = sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
         )
-        val sorteringRekkefølge = oppgaveRekkefølge(sortOrder ?: OppgavelisteSorteringRekkefølge.ASC)
+        val sorteringRekkefølge = oppgaveRekkefølge(sortOrder ?: OppgaveSorteringRekkefølge.ASC)
 
         val query = """
             SELECT $alleOppgaveFelt
@@ -787,21 +787,21 @@ class OppgaveRepository(private val connection: DBConnection) {
         )
     }
 
-    private fun oppgaveSorteringQuery(sortBy: OppgavelisteSortering): String {
+    private fun oppgaveSorteringQuery(sortBy: OppgaveSorteringFelt): String {
         return when (sortBy) {
-            OppgavelisteSortering.PERSONIDENT -> "person_ident"
-            OppgavelisteSortering.BEHANDLINGSTYPE -> "behandlingstype"
-            OppgavelisteSortering.BEHANDLING_OPPRETTET -> "behandling_opprettet"
-            OppgavelisteSortering.ÅRSAK_TIL_OPPRETTELSE -> "aarsak_til_opprettelse"
-            OppgavelisteSortering.AVKLARINGSBEHOV_KODE -> "avklaringsbehov_type"
-            OppgavelisteSortering.OPPRETTET_TIDSPUNKT -> "opprettet_tidspunkt"
+            OppgaveSorteringFelt.PERSONIDENT -> "person_ident"
+            OppgaveSorteringFelt.BEHANDLINGSTYPE -> "behandlingstype"
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET -> "behandling_opprettet"
+            OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "aarsak_til_opprettelse"
+            OppgaveSorteringFelt.AVKLARINGSBEHOV_KODE -> "avklaringsbehov_type"
+            OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "opprettet_tidspunkt"
         }
     }
 
-    private fun oppgaveRekkefølge(sortOrder: OppgavelisteSorteringRekkefølge): Rekkefølge {
+    private fun oppgaveRekkefølge(sortOrder: OppgaveSorteringRekkefølge): Rekkefølge {
         return when (sortOrder) {
-            OppgavelisteSorteringRekkefølge.ASC -> Rekkefølge.asc
-            OppgavelisteSorteringRekkefølge.DESC -> Rekkefølge.desc
+            OppgaveSorteringRekkefølge.ASC -> Rekkefølge.asc
+            OppgaveSorteringRekkefølge.DESC -> Rekkefølge.desc
         }
     }
 

@@ -7,12 +7,12 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
+import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
+import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.BehandlingMarkering
 import no.nav.aap.oppgave.markering.MarkeringRepository
-import no.nav.aap.oppgave.oppgaveliste.OppgavelisteSortering
-import no.nav.aap.oppgave.oppgaveliste.OppgavelisteSorteringRekkefølge
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
@@ -350,8 +350,8 @@ class OppgaveRepositoryTest {
         val oppgavelisteBehandlingOpprettetAsc = finnAlleOppgaverMedSortering(
             TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             null,
-            OppgavelisteSortering.BEHANDLING_OPPRETTET,
-            OppgavelisteSorteringRekkefølge.ASC
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
         )
         val oppgavelisteSorterteDatoerAsc = oppgavelisteBehandlingOpprettetAsc.oppgaver.map { it.behandlingOpprettet }
         assertEquals(sorterteDatoer.reversed(), oppgavelisteSorterteDatoerAsc)
@@ -360,8 +360,8 @@ class OppgaveRepositoryTest {
         val oppgavelisteBehandlingOpprettetDesc = finnAlleOppgaverMedSortering(
             TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             null,
-            OppgavelisteSortering.BEHANDLING_OPPRETTET,
-            OppgavelisteSorteringRekkefølge.DESC
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.DESC
         )
         val oppgavelisteSorterteDatoerDesc = oppgavelisteBehandlingOpprettetDesc.oppgaver.map { it.behandlingOpprettet }
         assertEquals(sorterteDatoer, oppgavelisteSorterteDatoerDesc)
@@ -370,8 +370,8 @@ class OppgaveRepositoryTest {
         val oppgavelisteBehandlingstypeAsc = finnAlleOppgaverMedSortering(
             TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             null,
-            OppgavelisteSortering.BEHANDLINGSTYPE,
-            OppgavelisteSorteringRekkefølge.ASC
+            OppgaveSorteringFelt.BEHANDLINGSTYPE,
+            OppgaveSorteringRekkefølge.ASC
         )
         val oppgavelisteSorterteBehandlingstyperAsc = oppgavelisteBehandlingstypeAsc.oppgaver.map { it.behandlingstype }
         assertEquals(sorterteBehandlingstyper, oppgavelisteSorterteBehandlingstyperAsc)
@@ -380,8 +380,8 @@ class OppgaveRepositoryTest {
         val oppgavelisteBehandlingstyperDesc = finnAlleOppgaverMedSortering(
             TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             null,
-            OppgavelisteSortering.BEHANDLINGSTYPE,
-            OppgavelisteSorteringRekkefølge.DESC
+            OppgaveSorteringFelt.BEHANDLINGSTYPE,
+            OppgaveSorteringRekkefølge.DESC
         )
         val oppgavelisteSorterteBehandlingstyperDesc = oppgavelisteBehandlingstyperDesc.oppgaver.map { it.behandlingstype }
         assertEquals(sorterteBehandlingstyper.reversed(), oppgavelisteSorterteBehandlingstyperDesc)
@@ -405,8 +405,8 @@ class OppgaveRepositoryTest {
         val oppgavelisteBehandlingOpprettetAsc = finnAlleOppgaverMedSortering(
             TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             Paging(side = 1, antallPerSide = 3),
-            OppgavelisteSortering.BEHANDLING_OPPRETTET,
-            OppgavelisteSorteringRekkefølge.ASC
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
         )
         val oppgavelisteSorterteDatoerAsc = oppgavelisteBehandlingOpprettetAsc.oppgaver.map { it.behandlingOpprettet }
         assertEquals(sorterteDatoer.reversed().subList(0, 3), oppgavelisteSorterteDatoerAsc)
@@ -660,7 +660,7 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun finnAlleOppgaverMedSortering(filter: Filter, paging: Paging? = null, sortBy: OppgavelisteSortering, sortOrder: OppgavelisteSorteringRekkefølge): OppgaveRepository.FinnOppgaverDto {
+    private fun finnAlleOppgaverMedSortering(filter: Filter, paging: Paging? = null, sortBy: OppgaveSorteringFelt, sortOrder: OppgaveSorteringRekkefølge): OppgaveRepository.FinnOppgaverDto {
         return dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = false, sortBy = sortBy, rekkefølge = sortOrder)
         }
