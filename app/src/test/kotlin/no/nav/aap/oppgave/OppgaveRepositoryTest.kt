@@ -354,7 +354,7 @@ class OppgaveRepositoryTest {
             OppgaveSorteringRekkefølge.ASC
         )
         val oppgavelisteSorterteDatoerAsc = oppgavelisteBehandlingOpprettetAsc.oppgaver.map { it.behandlingOpprettet }
-        assertEquals(sorterteDatoer.reversed(), oppgavelisteSorterteDatoerAsc)
+        assertThat(oppgavelisteSorterteDatoerAsc).isEqualTo(sorterteDatoer.reversed())
 
         // Sorter på behandling_opprettet synkende
         val oppgavelisteBehandlingOpprettetDesc = finnAlleOppgaverMedSortering(
@@ -364,7 +364,7 @@ class OppgaveRepositoryTest {
             OppgaveSorteringRekkefølge.DESC
         )
         val oppgavelisteSorterteDatoerDesc = oppgavelisteBehandlingOpprettetDesc.oppgaver.map { it.behandlingOpprettet }
-        assertEquals(sorterteDatoer, oppgavelisteSorterteDatoerDesc)
+        assertThat( oppgavelisteSorterteDatoerDesc).isEqualTo(sorterteDatoer)
 
         // Sorter på behandlingstype stigende
         val oppgavelisteBehandlingstypeAsc = finnAlleOppgaverMedSortering(
@@ -374,7 +374,7 @@ class OppgaveRepositoryTest {
             OppgaveSorteringRekkefølge.ASC
         )
         val oppgavelisteSorterteBehandlingstyperAsc = oppgavelisteBehandlingstypeAsc.oppgaver.map { it.behandlingstype }
-        assertEquals(sorterteBehandlingstyper, oppgavelisteSorterteBehandlingstyperAsc)
+        assertThat( oppgavelisteSorterteBehandlingstyperAsc).isEqualTo(sorterteBehandlingstyper)
 
         // Sorter på behandling_opprettet synkende
         val oppgavelisteBehandlingstyperDesc = finnAlleOppgaverMedSortering(
@@ -384,7 +384,7 @@ class OppgaveRepositoryTest {
             OppgaveSorteringRekkefølge.DESC
         )
         val oppgavelisteSorterteBehandlingstyperDesc = oppgavelisteBehandlingstyperDesc.oppgaver.map { it.behandlingstype }
-        assertEquals(sorterteBehandlingstyper.reversed(), oppgavelisteSorterteBehandlingstyperDesc)
+        assertThat( oppgavelisteSorterteBehandlingstyperDesc).isEqualTo(sorterteBehandlingstyper.reversed())
     }
     @Test
     fun `Kan sortere og endre rekkefølge på oppgaver fra finnOppgaver med paginering`() {
@@ -409,7 +409,7 @@ class OppgaveRepositoryTest {
             OppgaveSorteringRekkefølge.ASC
         )
         val oppgavelisteSorterteDatoerAsc = oppgavelisteBehandlingOpprettetAsc.oppgaver.map { it.behandlingOpprettet }
-        assertEquals(sorterteDatoer.reversed().subList(0, 3), oppgavelisteSorterteDatoerAsc)
+        assertThat( oppgavelisteSorterteDatoerAsc).isEqualTo(sorterteDatoer.reversed().subList(0, 3))
 
     }
 
