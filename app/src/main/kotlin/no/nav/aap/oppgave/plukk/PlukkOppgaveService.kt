@@ -36,7 +36,12 @@ class PlukkOppgaveService(
         val filter = filterRepository.hent(filterId)
             ?: throw IllegalArgumentException("Finner ikke filter med id: $filterId")
 
-        val nesteOppgaver = oppgaveRepository.finnNesteOppgaver(filter.copy(enheter = enheter), MAKS_ANTALL_FORSØK)
+        // Hvis ingen enheter i request, velg blant enheter bruker har tilgang til
+        val enheterForPlukk = enheter.ifEmpty {
+            enhetService.hentEnheter(ident, token).toSet()
+        }
+
+        val nesteOppgaver = oppgaveRepository.finnNesteOppgaver(filter.copy(enheter = enheterForPlukk), MAKS_ANTALL_FORSØK)
 
         nesteOppgaver.forEachIndexed { i, nesteOppgave ->
             require(
