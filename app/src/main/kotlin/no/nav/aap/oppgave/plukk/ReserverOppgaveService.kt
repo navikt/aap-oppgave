@@ -1,8 +1,6 @@
 package no.nav.aap.oppgave.plukk
 
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
-import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
@@ -10,7 +8,7 @@ import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
-
+import java.util.UUID
 
 
 class ReserverOppgaveService(
@@ -19,28 +17,6 @@ class ReserverOppgaveService(
 ) {
     private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log = LoggerFactory.getLogger(javaClass)
-
-    fun reserverOppgave(
-        avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
-        ident: String,
-        token: OidcToken
-    ): List<OppgaveId> {
-        val oppgaveSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
-        if (oppgaveSomSkalReserveres == null) {
-            log.warn("Fant ingen åpne oppgaver å reservere gitt avklaringsbehovReferanse $avklaringsbehovReferanse")
-            return emptyList()
-        }
-        require(avklaringsbehovReferanse.referanse != null || avklaringsbehovReferanse.journalpostId != null) {
-            "AvklaringsbehovReferanse må ha referanse til enten behandling eller journalpost"
-        }
-
-        val harTilgang = TilgangGateway.sjekkTilgang(avklaringsbehovReferanse, token)
-        if (harTilgang) {
-            oppgaveRepository.reserverOppgave(oppgaveSomSkalReserveres, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
-            sendOppgaveStatusOppdatering(oppgaveSomSkalReserveres, HendelseType.RESERVERT, flytJobbRepository)
-        }
-        return listOf(oppgaveSomSkalReserveres)
-    }
 
     fun avreserverOppgave(
         oppgaveId: OppgaveId,
@@ -55,12 +31,12 @@ class ReserverOppgaveService(
      * uten noen innloggingskontekst.
      */
     fun reserverOppgaveUtenTilgangskontroll(
-        avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
+        behandlingsReferanse: UUID,
         ident: String
     ) {
-        val oppgaveSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(avklaringsbehovReferanse)
+        val oppgaveSomSkalReserveres = oppgaveRepository.hentÅpneOppgaver(behandlingsReferanse)
         if (oppgaveSomSkalReserveres == null) {
-            log.warn("Fant ingen åpne oppgaver å reservere uten tilgangskontroll gitt avklaringsbehovReferanse $avklaringsbehovReferanse")
+            log.warn("Fant ingen åpne oppgaver å reservere uten tilgangskontroll gitt behandlingsreferanse $behandlingsReferanse")
             return
         }
         if (ident != KELVIN) {
