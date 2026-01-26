@@ -33,7 +33,6 @@ import no.nav.aap.oppgave.oppdater.hendelse.VenteInformasjon
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
-import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -175,7 +174,7 @@ class OppdaterOppgaveService(
         // Automatisk reservasjon enten ved retur eller override fra behandlingsflyt
         if (harBlittSendtTilbakeFraToTrinn(avklaringsbehov) && eksisterendeOppgave.status == Status.AVSLUTTET) {
             utledReservasjonEtterReturFraTotrinn(avklaringsbehov, eksisterendeOppgave)
-        } else if (unleashService.isEnabled(FeatureToggles.SetterIkkeReserverTilPaaOppdatering)) {
+        } else {
             // reservasjon fra behandlingsflyt skal kun overstyre når oppgave opprettes eller gjenåpnes, ikke når oppgave oppdateres
             if (eksisterendeOppgave.status == Status.AVSLUTTET) {
                 håndterReservasjonFraBehandlingsflyt(
@@ -184,8 +183,6 @@ class OppdaterOppgaveService(
                     eksisterendeOppgave.oppgaveId()
                 )
             }
-        } else {
-            håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, avklaringsbehov, eksisterendeOppgave.oppgaveId())
         }
     }
 
