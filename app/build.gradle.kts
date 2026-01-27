@@ -1,7 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    id("oppgave.conventions")
+    id("aap.conventions")
     id("io.ktor.plugin") version "3.3.3"
 }
 
