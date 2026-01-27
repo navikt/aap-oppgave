@@ -53,6 +53,6 @@ nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.7" }
 
 junitJupiterApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junitJupiterEngine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
-assertjCore = { module = "org.assertj:assertj-core", version = "3.27.6" }
+assertjCore = { module = "org.assertj:assertj-core", version = "3.27.7" }
 testcontainersJunitJupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainersPostgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
