@@ -9,6 +9,8 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
+import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.MarkeringDto
@@ -56,13 +58,18 @@ class OppgavelisteService(
         filter: FilterDto,
         veilederIdent: String?,
         token: OidcToken,
-        ident: String
+        ident: String,
+        sortBy: OppgaveSorteringFelt?,
+        sortOrder: OppgaveSorteringRekkefølge?
     ): FinnOppgaverDto {
-        val rekkefølge =
+        val sortOrderMedDefault = if (sortOrder != null) {
+            sortOrder
+        } else {
             when (Miljø.er()) {
-                MiljøKode.DEV -> OppgaveRepository.Rekkefølge.desc
-                else -> OppgaveRepository.Rekkefølge.asc
+                MiljøKode.DEV -> OppgaveSorteringRekkefølge.DESC
+                else -> OppgaveSorteringRekkefølge.ASC
             }
+        }
 
         val kombinertFilter = settFilter(filter, utvidetFilter)
         val finnOppgaverDto =
@@ -72,10 +79,11 @@ class OppgavelisteService(
                         enheter = enheter,
                         veileder = veilederIdent
                     ),
-                rekkefølge = rekkefølge,
+                rekkefølge = sortOrderMedDefault,
                 paging = paging,
                 kunLedigeOppgaver = kunLedigeOppgaver,
-                utvidetFilter = utvidetFilter
+                utvidetFilter = utvidetFilter,
+                sortBy = sortBy,
             )
 
         val oppgaver =
@@ -96,9 +104,16 @@ class OppgavelisteService(
 
     fun hentMineOppgaver(
         ident: String,
-        kunPaaVent: Boolean?
+        kunPaaVent: Boolean?,
+        sortBy: OppgaveSorteringFelt?,
+        sortOrder: OppgaveSorteringRekkefølge?
     ): List<OppgaveDto> =
-        oppgaveRepository.hentMineOppgaver(ident = ident, kunPåVent = kunPaaVent == true).map {
+        oppgaveRepository.hentMineOppgaver(
+            ident = ident,
+            kunPåVent = kunPaaVent == true,
+            sortBy = sortBy,
+            sortOrder = sortOrder
+        ).map {
             it.leggPåMarkeringer(
                 markeringRepository.hentMarkeringerForBehandling(requireNotNull(it.behandlingRef) {
                     "Fant ikke behandlingsreferanse for oppgave med id ${it.id}"

@@ -6,5 +6,6 @@ data class OppgavelisteRequest(
     val veileder: Boolean = false,
     val paging: Paging,
     val kunLedigeOppgaver: Boolean? = true,
-    val utvidetFilter: UtvidetOppgavelisteFilter? = null
+    val utvidetFilter: UtvidetOppgavelisteFilter? = null,
+    val sortering: OppgaveSortering? = null
 )

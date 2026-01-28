@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.oppgaveliste
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.papsign.ktor.openapigen.annotations.parameters.QueryParam
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
@@ -79,3 +80,4 @@ object OppgavelisteUtils {
         return this.copy(personNavn = personNavn)
     }
 }
+
