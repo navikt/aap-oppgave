@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave
 
-import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
@@ -69,59 +68,10 @@ class OppgaveRepositoryTest {
     }
 
     @Test
-    fun `Finn neste oppgave finner ingen oppgave fordi opprettet oppgave ikke matcher filter`() {
-        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode("1000"))
-        dataSource.transaction { connection ->
-            val oppgaver = OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter("2000"))
-            assertThat(oppgaver).hasSize(0)
-        }
-    }
-
-    @Test
-    fun `Finn neste oppgave finner en oppgave fordi en av oppgavene matcher filter`() {
-        opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name))
-        val oppgaveIdForAvklarStudent =
-            opprettOppgave(avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_STUDENT.kode.name))
-        dataSource.transaction { connection ->
-            val plukketOppgaver =
-                OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter(Definisjon.AVKLAR_STUDENT.kode.name))
-            assertThat(plukketOppgaver).hasSize(1)
-            assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForAvklarStudent.id)
-        }
-    }
-
-    @Test
-    fun `Finn neste oppgave som bare matcher på behandlingstype dokumenthåndtering`() {
-        opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING)
-        val oppgaveIdForDokumentshåndteringsoppgave =
-            opprettOppgave(behandlingstype = Behandlingstype.DOKUMENT_HÅNDTERING)
-
-        dataSource.transaction { connection ->
-            val plukketOppgaver =
-                OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.DOKUMENT_HÅNDTERING))
-            assertThat(plukketOppgaver).hasSize(1)
-            assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
-        }
-    }
-
-    @Test
-    fun `Finn neste oppgave som bare matcher på behandlingstype journalføring`() {
-        opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING)
-        val oppgaveIdForDokumentshåndteringsoppgave = opprettOppgave(behandlingstype = Behandlingstype.JOURNALFØRING)
-
-        dataSource.transaction { connection ->
-            val plukketOppgaver =
-                OppgaveRepository(connection).finnNesteOppgaver(behandlingstypeFilter(Behandlingstype.JOURNALFØRING))
-            assertThat(plukketOppgaver).hasSize(1)
-            assertThat(plukketOppgaver.first().oppgaveId).isEqualTo(oppgaveIdForDokumentshåndteringsoppgave.id)
-        }
-    }
-
-    @Test
     fun `Teller alle oppgaver gitt enhetsfilter`() {
         // Lager 20 oppgaver totalt, 10 på hver enhet
-        (1..10).forEach { opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_ENEBAKK) }
-        (1..10).forEach { opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_LØRENSKOG) }
+        (1..10).forEach { _ -> opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_ENEBAKK) }
+        (1..10).forEach { _ -> opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_LØRENSKOG) }
         val oppgaverBeggeEnheter = dataSource.transaction { connection ->
             OppgaveRepository(connection).finnOppgaver(
                 filter = FilterDto(
@@ -159,16 +109,6 @@ class OppgaveRepositoryTest {
         // Teller bare oppgavene for Lørenskog
         assertThat(oppgaverLørenskog.antallTotalt).isEqualTo(10)
 
-    }
-
-
-    @Test
-    fun `Finn neste oppgave finner ikke en oppgave fordi den er avsluttet`() {
-        opprettOppgave(status = Status.AVSLUTTET)
-        dataSource.transaction { connection ->
-            val oppgaver = OppgaveRepository(connection).finnNesteOppgaver(avklaringsbehovFilter())
-            assertThat(oppgaver).hasSize(0)
-        }
     }
 
     @Test

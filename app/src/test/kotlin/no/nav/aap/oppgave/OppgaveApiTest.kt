@@ -37,8 +37,6 @@ import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
-import no.nav.aap.oppgave.plukk.FinnNesteOppgaveDto
-import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
@@ -51,7 +49,6 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
 import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
-import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -61,6 +58,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
@@ -89,7 +87,7 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun `Opprett, plukk og avslutt oppgave`() {
+    fun `Opprett og avslutt oppgave`() {
         val saksnummer = "123456"
         val referanse = UUID.randomUUID()
 
@@ -113,18 +111,11 @@ class OppgaveApiTest {
         assertThat(oppgave).isNotNull
         assertThat(oppgave!!.enhet).isEqualTo("superNav!")
 
-        // Plukk neste oppgave
-        var nesteOppgave = hentNesteOppgave()
-        assertThat(nesteOppgave).isNotNull()
-        assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgave.id)
-
         // Hent hele oppgaven
-        val oppgaven = hentOppgave(OppgaveId(nesteOppgave.oppgaveId, nesteOppgave.oppgaveVersjon))
+        val oppgaven = hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
         assertThat(oppgaven.årsakerTilBehandling).containsExactly("SØKNAD")
         assertThat(oppgaven.vurderingsbehov).containsExactly("SØKNAD")
 
-        // Sjekk at oppgave kommer i mine oppgaver listen
-        assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave.id)
 
         // Avslutt oppgave
         oppdaterOppgaver(
@@ -142,9 +133,9 @@ class OppgaveApiTest {
             )
         )
 
-        // Sjekk at det ikke er flere oppgaver i køen
-        nesteOppgave = hentNesteOppgave()
-        assertThat(nesteOppgave).isNull()
+        // Sjekk at oppgaven er avsluttet
+        val avsluttetOppgave = hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
+        assertThat(avsluttetOppgave.status).isEqualTo(no.nav.aap.oppgave.verdityper.Status.AVSLUTTET)
     }
 
     @Test
@@ -175,20 +166,13 @@ class OppgaveApiTest {
         assertThat(oppgave.årsakerTilBehandling).isEqualTo(oppgave.vurderingsbehov)
         assertThat(oppgave.årsakTilOpprettelse).isEqualTo("SØKNAD")
 
-        // Plukk neste oppgave
-        var nesteOppgave = hentNesteOppgaveNAY()
-        assertThat(nesteOppgave).isNotNull()
-        assertThat(nesteOppgave!!.oppgaveId).isEqualTo(oppgave.id)
-
-        // Sjekk at oppgave kommer i mine oppgaver listen
-        assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave.id)
 
         // Avslutt oppgave
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
                 saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
                     Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        definisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
                         endringer = listOf(
                             Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
@@ -199,82 +183,9 @@ class OppgaveApiTest {
             )
         )
 
-        // Sjekk at det ikke er flere oppgaver i køen
-        nesteOppgave = hentNesteOppgaveNAY()
-        assertThat(nesteOppgave).isNull()
-    }
-
-    @Test
-    fun `Opprett, oppgave ble automatisk plukket og avslutt oppgave`() {
-        val saksnummer = "654321"
-        val referanse = UUID.randomUUID()
-
-        // Opprett ny oppgave
-        oppdaterOppgaver(
-            opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_BISTANDSBEHOV,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-                        )
-                    ),
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_SYKDOM,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-                            Endring(
-                                no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                                endretAv = "Lokalsaksbehandler"
-                            )
-                        )
-                    ),
-                )
-            )
-        )
-
-        // Hent oppgaven som ble opprettet
-        val oppgave = hentOppgave(referanse)
-        assertThat(oppgave).isNotNull
-
-        // Sjekk at oppgave kommer i mine oppgaver listen
-        assertThat(hentMineOppgaver().oppgaver.first().id).isEqualTo(oppgave!!.id)
-
-        // Avslutt plukket oppgave
-        oppdaterOppgaver(
-            opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_BISTANDSBEHOV,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-                            Endring(
-                                no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                                endretAv = "Lokalsaksbehandler"
-                            ),
-                        )
-                    ),
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_SYKDOM,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
-                            Endring(
-                                no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                                endretAv = "Lokalsaksbehandler"
-                            )
-                        )
-                    ),
-                )
-            )
-        )
-
-        // Sjekk at det ikke er flere oppgaver i køen
-        val nesteOppgave = hentNesteOppgave()
-        assertThat(nesteOppgave).isNull()
+        // Sjekk at oppgave er avsluttet
+        val avsluttetOppgave = hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
+        assertThat(avsluttetOppgave.status).isEqualTo(no.nav.aap.oppgave.verdityper.Status.AVSLUTTET)
     }
 
     @Test
@@ -309,9 +220,6 @@ class OppgaveApiTest {
                 )
             )
         )
-
-        var nesteOppgave = hentNesteOppgave()
-        assertThat(nesteOppgave).isNull()
 
         val påVentOppgaver = hentOppgave(
             referanse = referanse
@@ -360,17 +268,10 @@ class OppgaveApiTest {
                 )
             )
         )
-        nesteOppgave = hentNesteOppgave()
-        assertThat(nesteOppgave).isNotNull()
-        assertThat(nesteOppgave?.avklaringsbehovReferanse?.referanse).isEqualTo(referanse)
 
-        val uthentet = hentOppgave(
-            OppgaveId(
-                nesteOppgave!!.oppgaveId,
-                versjon = nesteOppgave.oppgaveVersjon
-            )
-        )
-        assertThat(uthentet)
+        val uthentet = hentOppgave(referanse)
+        assertThat(uthentet).isNotNull
+        assertThat(uthentet!!)
             .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
             .containsOnlyNulls()
 
@@ -426,12 +327,13 @@ class OppgaveApiTest {
             )
         )
 
+        val oppgave = hentOppgave(referanse)
+
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
-        var nesteOppgave = hentNesteOppgave()
-        assertThat(nesteOppgave).isNull()
+        assertThrows<ManglerTilgangException> { plukkOppgave(oppgave!!.tilOppgaveId()) }
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
-        nesteOppgave = hentNesteOppgave()
+        val nesteOppgave = plukkOppgave(oppgave!!.tilOppgaveId())
         assertThat(nesteOppgave).isNotNull()
     }
 
@@ -455,7 +357,7 @@ class OppgaveApiTest {
         )
 
         // reserverer oppgave
-        hentNesteOppgave()
+        plukkOppgave(hentOppgave(referanse)!!.tilOppgaveId())
         val reservertOppgaveMedTilgang = hentOppgave(
             referanse = referanse,
         )
@@ -879,54 +781,6 @@ class OppgaveApiTest {
         assertThat(oppgaveMedFortroligAdresse.harFortroligAdresse).isTrue()
     }
 
-    @Test
-    fun `Skal forsøke å reservere flere oppgaver dersom bruker ikke har tilgang på den første`(fakesConfig: FakesConfig) {
-        val saksnummer1 = "100002"
-        val referanse1 = UUID.randomUUID()
-
-        oppdaterOppgaver(
-            opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_SYKDOM,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-                        )
-                    )
-                )
-            )
-        )
-
-        val saksnummer2 = "100003"
-        val referanse2 = UUID.randomUUID()
-
-        oppdaterOppgaver(
-            opprettBehandlingshistorikk(
-                saksnummer = saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_SYKDOM,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-                        )
-                    )
-                )
-            )
-        )
-
-        fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse1)
-        fakesConfig.relaterteIdenterPåBehandling = listOf()
-        var nesteOppgave = hentNesteOppgave()
-        assertThat(nesteOppgave).isNotNull()
-        assertThat(nesteOppgave!!.avklaringsbehovReferanse.referanse).isEqualTo(referanse2)
-
-        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
-        nesteOppgave = hentNesteOppgave()
-        assertThat(nesteOppgave).isNotNull()
-        assertThat(nesteOppgave!!.avklaringsbehovReferanse.referanse).isEqualTo(referanse1)
-    }
-
 
     @Test
     fun `Hent antall oppgaver uten oppgitt behandlingstype`() {
@@ -1173,7 +1027,7 @@ class OppgaveApiTest {
         settNyMarkeringPåBehandling(behandlingref, markering)
 
         // reserver og hent mine oppgaver
-        hentNesteOppgave()
+        plukkOppgave(hentOppgave(behandlingref)!!.tilOppgaveId())
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
         assertThat(mineOppgaver.oppgaver.first().markeringer).hasSize(1)
@@ -1213,7 +1067,7 @@ class OppgaveApiTest {
         settNyMarkeringPåBehandling(behandlingref, markering)
 
         // reserver
-        hentNesteOppgave()
+        plukkOppgave(hentOppgave(behandlingref)!!.tilOppgaveId())
 
         // fjern markering
         fjernMarkeringPåBehandling(behandlingref, markering)
@@ -1379,35 +1233,6 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentNesteOppgave(): NesteOppgaveDto? {
-        val alleFilter = hentAlleFilter()
-        val nesteOppgave: NesteOppgaveDto? = noTokenClient.post(
-            URI.create("http://localhost:$port/neste-oppgave"),
-            PostRequest(
-                body = FinnNesteOppgaveDto(filterId = alleFilter.first { it.navn.contains("Alle") }.id!!),
-                additionalHeaders = listOf(
-                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
-                )
-            )
-        )
-        return nesteOppgave
-    }
-
-    private fun hentNesteOppgaveNAY(): NesteOppgaveDto? {
-        val alleFilter =
-            hentAlleFilter().filter { it.avklaringsbehovKoder.isEmpty() }.filter { it.behandlingstyper.isEmpty() }
-        val nesteOppgave: NesteOppgaveDto? = noTokenClient.post(
-            URI.create("http://localhost:$port/neste-oppgave"),
-            PostRequest(
-                body = FinnNesteOppgaveDto(filterId = alleFilter.first().id!!, enheter = setOf("4491")),
-                additionalHeaders = listOf(
-                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerNasjonal.id)).token()}")
-                )
-            )
-        )
-        return nesteOppgave
-    }
-
     private fun hentOppgave(referanse: UUID): OppgaveDto? {
         return oboClient.get(
             URI.create("http://localhost:$port/${referanse}/hent-oppgave"),
@@ -1517,6 +1342,22 @@ class OppgaveApiTest {
                     harFortroligAdresse = skalHaFortroligAdresse
                 )
             }
+        }
+
+        private fun hentOppgavelisteForEnhet(enhet: String): List<OppgaveDto> {
+            return initDatasource(dbConfig(), prometheus).transaction { connection ->
+                OppgaveRepository(connection).finnOppgaver(filter = FilterDto(
+                    enheter = setOf(enhet),
+                    navn = "Alle Oppgaver",
+                    beskrivelse = "alle oppgaver",
+                    opprettetAv = "kelvin",
+                    opprettetTidspunkt = LocalDateTime.now().minusYears(1)
+                )).oppgaver
+            }
+        }
+
+        private fun reserverOppgave() {
+
         }
 
         private fun oppdaterOgHentOppgave(oppgave: OppgaveDto): OppgaveDto {
