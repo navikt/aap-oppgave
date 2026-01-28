@@ -1,7 +1,7 @@
 [versions]
 ktor = "3.3.3"
 jackson = "2.20.1"
-komponenter = "1.0.933"
+komponenter = "1.0.934"
 tilgang = "1.0.178"
 behandlingsflytVersjon = "0.0.539"
 postmottakVersjon = "6.0.4"
@@ -11,7 +11,6 @@ testcontainers = "1.21.4"
 [libraries]
 jacksonDatabind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jacksonDatatypeJsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
-ktorOpenapiGenerator = { module = "no.nav:ktor-openapi-generator", version = "1.0.136" }
 
 ktorServerAuth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
 ktorServerAuthJwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
@@ -34,6 +33,7 @@ server = { module = "no.nav.aap.kelvin:server", version.ref = "komponenter" }
 motor = { module = "no.nav.aap.kelvin:motor", version.ref = "komponenter" }
 motorApi = { module = "no.nav.aap.kelvin:motor-api", version.ref = "komponenter" }
 dbtest = { module = "no.nav.aap.kelvin:dbtest", version.ref = "komponenter" }
+ktorOpenapiGenerator = { module = "no.nav.aap.kelvin:ktor-openapi-generator", version.ref = "komponenter" }
 
 behandlingsflytKontrakt = { module = "no.nav.aap.behandlingsflyt:kontrakt", version.ref = "behandlingsflytVersjon" }
 postmottakKontrakt = { module = "no.nav.aap.postmottak:kontrakt", version.ref = "postmottakVersjon" }
