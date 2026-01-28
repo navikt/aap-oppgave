@@ -23,7 +23,6 @@ import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.NoTokenTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
@@ -34,7 +33,6 @@ import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
-import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
@@ -1155,26 +1153,30 @@ class OppgaveApiTest {
     private fun tildelOppgaver(oppgaver: List<Long>, ident: String): TildelOppgaveResponse? {
         return client.post(
             URI.create("http://localhost:$port/tildel-oppgaver"),
-            PostRequest(body = TildelOppgaveRequest(
-                oppgaver = oppgaver,
-                saksbehandlerIdent = ident
-            ),
+            PostRequest(
+                body = TildelOppgaveRequest(
+                    oppgaver = oppgaver,
+                    saksbehandlerIdent = ident
+                ),
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
-                ))
+                )
+            )
         )
     }
 
     private fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>): SaksbehandlerSøkResponse? {
         return client.post(
             URI.create("http://localhost:$port/saksbehandler-sok"),
-            PostRequest(body = SaksbehandlerSøkRequest(
-                søketekst = søketekst,
-                oppgaver = oppgaver,
-            ),
+            PostRequest(
+                body = SaksbehandlerSøkRequest(
+                    søketekst = søketekst,
+                    oppgaver = oppgaver,
+                ),
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
-                ))
+                )
+            )
         )
     }
 
@@ -1257,14 +1259,6 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentAlleFilter(): List<FilterDto> {
-        return oboClient.get<List<FilterDto>>(
-            URI.create("http://localhost:$port/filter"),
-            GetRequest(currentToken = getOboToken())
-        )!!
-    }
-
-
     companion object {
         @JvmStatic
         @Container
@@ -1287,10 +1281,6 @@ class OppgaveApiTest {
         private val oboClient = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
             tokenProvider = OnBehalfOfTokenProvider
-        )
-        private val noTokenClient = RestClient.withDefaultResponseHandler(
-            config = ClientConfig(scope = "oppgave"),
-            tokenProvider = NoTokenTokenProvider()
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -1342,22 +1332,6 @@ class OppgaveApiTest {
                     harFortroligAdresse = skalHaFortroligAdresse
                 )
             }
-        }
-
-        private fun hentOppgavelisteForEnhet(enhet: String): List<OppgaveDto> {
-            return initDatasource(dbConfig(), prometheus).transaction { connection ->
-                OppgaveRepository(connection).finnOppgaver(filter = FilterDto(
-                    enheter = setOf(enhet),
-                    navn = "Alle Oppgaver",
-                    beskrivelse = "alle oppgaver",
-                    opprettetAv = "kelvin",
-                    opprettetTidspunkt = LocalDateTime.now().minusYears(1)
-                )).oppgaver
-            }
-        }
-
-        private fun reserverOppgave() {
-
         }
 
         private fun oppdaterOgHentOppgave(oppgave: OppgaveDto): OppgaveDto {
