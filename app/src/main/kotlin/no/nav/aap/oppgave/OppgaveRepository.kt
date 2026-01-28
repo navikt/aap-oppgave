@@ -4,10 +4,8 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.filter.Filter
-import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
@@ -313,36 +311,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(3, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å avreservere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
-        }
-    }
-
-    fun finnNesteOppgaver(filterDto: FilterDto, limit: Int = 1): List<NesteOppgaveDto> {
-        val hentNesteOppgaveQuery = """
-            SELECT 
-                ID, VERSJON, SAKSNUMMER, BEHANDLING_REF, JOURNALPOST_ID, AVKLARINGSBEHOV_TYPE
-            FROM 
-                OPPGAVE 
-            WHERE 
-                ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET' AND PAA_VENT_TIL IS NULL
-            ORDER BY BEHANDLING_OPPRETTET
-            LIMIT $limit
-            FOR UPDATE
-            SKIP LOCKED
-        """.trimIndent()
-
-        return connection.queryList(hentNesteOppgaveQuery) {
-            setRowMapper {
-                NesteOppgaveDto(
-                    oppgaveId = it.getLong("ID"),
-                    oppgaveVersjon = it.getLong("VERSJON"),
-                    AvklaringsbehovReferanseDto(
-                        saksnummer = it.getStringOrNull("SAKSNUMMER"),
-                        referanse = it.getUUIDOrNull("BEHANDLING_REF"),
-                        journalpostId = it.getLongOrNull("JOURNALPOST_ID"),
-                        avklaringsbehovKode = it.getString("AVKLARINGSBEHOV_TYPE")
-                    )
-                )
-            }
         }
     }
 
