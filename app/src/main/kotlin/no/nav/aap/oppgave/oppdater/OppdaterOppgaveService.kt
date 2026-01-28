@@ -388,6 +388,7 @@ class OppdaterOppgaveService(
         val nyOppgave = oppgaveOppdatering.opprettNyOppgave(
             personIdent = personIdent,
             avklaringsbehovKode = avklaringsbehovHendelse.avklaringsbehovKode,
+            avklaringsbehovId = avklaringsbehovHendelse.id,
             behandlingstype = oppgaveOppdatering.behandlingstype,
             ident = KELVIN,
             enhet = enhetForOppgave.enhet,
@@ -504,6 +505,7 @@ class OppdaterOppgaveService(
     private fun OppgaveOppdatering.opprettNyOppgave(
         personIdent: String?,
         avklaringsbehovKode: AvklaringsbehovKode,
+        avklaringsbehovId: Long?,
         behandlingstype: Behandlingstype,
         ident: String,
         enhet: String,
@@ -532,6 +534,7 @@ class OppdaterOppgaveService(
             veilederSykdom = veilederSykdom,
             behandlingOpprettet = this.opprettetTidspunkt,
             avklaringsbehovKode = avklaringsbehovKode.kode,
+            avklaringsbehovId = avklaringsbehovId,
             behandlingstype = behandlingstype,
             opprettetAv = ident,
             opprettetTidspunkt = LocalDateTime.now(),

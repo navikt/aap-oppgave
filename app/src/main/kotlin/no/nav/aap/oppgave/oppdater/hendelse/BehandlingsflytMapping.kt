@@ -89,6 +89,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehand
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
     return this.map {
         AvklaringsbehovHendelse(
+            id = it.id,
             avklaringsbehovKode = AvklaringsbehovKode(it.avklaringsbehovDefinisjon.kode.name),
             status = it.status.tilAvklaringsbehovStatus(),
             endringer = it.endringer.tilEndringerForBehandlingsflyt(),

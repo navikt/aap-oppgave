@@ -1019,7 +1019,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgaver på vent skal ikke reserveres på nytt etter avreservering`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
@@ -1568,7 +1568,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Lagrer utløpt ventefrist på oppgave når behandling tas av vent`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
@@ -1793,7 +1793,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Lagrer ikke utløpt ventefrist hvis saksbehandler tok behandling av vent`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
@@ -1907,7 +1907,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Lagrer utløpt ventefrist på postmottak-oppgaver`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
@@ -2008,7 +2008,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Trekk søknad-oppgaver rutes til Nav-kontor dersom de lå hos Nav-kontor fra før av`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
@@ -2155,6 +2155,7 @@ class OppdaterOppgaveServiceTest {
             oppfølgingsenhet = oppfølgingsenhet,
             behandlingOpprettet = LocalDateTime.now().minusDays(3),
             avklaringsbehovKode = avklaringsbehovKode.kode,
+            avklaringsbehovId = null,
             status = status,
             behandlingstype = behandlingstype,
             opprettetAv = "Kelvin",
