@@ -4,7 +4,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.filter.Filter
-import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -702,6 +701,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     private fun oppgaveSorteringQuery(sortBy: OppgaveSorteringFelt): String {
         return when (sortBy) {
             OppgaveSorteringFelt.PERSONIDENT -> "person_ident"
+            OppgaveSorteringFelt.SAKSNUMMER -> "saksnummer"
             OppgaveSorteringFelt.BEHANDLINGSTYPE -> "behandlingstype"
             OppgaveSorteringFelt.BEHANDLING_OPPRETTET -> "behandling_opprettet"
             OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "aarsak_til_opprettelse"

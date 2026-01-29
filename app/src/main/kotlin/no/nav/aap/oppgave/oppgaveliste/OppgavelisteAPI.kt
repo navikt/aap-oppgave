@@ -24,7 +24,6 @@ import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("oppgavelisteApi")
 
-
 /**
  * Søker etter oppgaver med et predefinert filter angitt med filterId. Det vil bli sjekket om innlogget bruker har tilgang
  * til oppgavene. I tillegg kan det legges på en begrensning på enheter.
@@ -41,7 +40,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
             dataSource.transaction(readOnly = true) { connection ->
                 log.info("Henter filter med filterId ${request.filterId}")
                 val filter =
-                    requireNotNull(FilterRepository(connection).hent(request.filterId)) { "filterrepository.hent()" }
+                    requireNotNull(FilterRepository(connection).hent(request.filterId)) { "filter kan ikke være null. filterId: ${request.filterId}" }
                 val veilederIdent =
                     if (request.veileder) {
                         ident()
