@@ -84,46 +84,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         return OppgaveId(id, 0L)
     }
 
-    fun hentOppgave(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): OppgaveDto? {
-        val saksnummerClause =
-            if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
-        val referanseClause =
-            if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
-        val journalpostIdClause =
-            if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
-        val oppgaverForReferanseQuery = """
-            SELECT 
-                $alleOppgaveFelt
-            FROM 
-                OPPGAVE 
-            WHERE 
-                $saksnummerClause AND
-                $referanseClause AND
-                $journalpostIdClause AND
-                AVKLARINGSBEHOV_TYPE = ?
-        """.trimIndent()
-
-        val oppgaver = connection.queryList(oppgaverForReferanseQuery) {
-            setParams {
-                var index = 1
-                if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
-                if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
-                if (avklaringsbehovReferanse.journalpostId != null) setLong(
-                    index++,
-                    avklaringsbehovReferanse.journalpostId
-                )
-                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
-            }
-            setRowMapper { row ->
-                oppgaveMapper(row)
-            }
-        }
-        if (oppgaver.size > 1) {
-            log.warn("Hent oppgaver skal ikke returnere mer en 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
-        }
-        return oppgaver.firstOrNull()
-    }
-
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
         val oppgaverForIdQuery = """
             SELECT 
