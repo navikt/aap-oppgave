@@ -30,7 +30,6 @@ import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
 import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
-import no.nav.aap.oppgave.flyttOppgave
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.markering.markeringApi
 import no.nav.aap.oppgave.metrikker.prometheus
@@ -43,7 +42,6 @@ import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavesøkApi
 import no.nav.aap.oppgave.oppgaveliste.søkApi
-import no.nav.aap.oppgave.plukk.plukkNesteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
@@ -97,10 +95,8 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 oppdaterPostmottakOppgaverApi(dataSource, iMsGraphClient, prometheus)
                 oppdaterTilbakekrevingOppgaverApi(dataSource, iMsGraphClient, prometheus)
                 // Plukk/endre oppgave
-                plukkNesteApi(dataSource, prometheus)
                 plukkOppgaveApi(dataSource, prometheus)
                 avreserverOppgave(dataSource, prometheus)
-                flyttOppgave(dataSource, prometheus)
                 mottattDokumentApi(dataSource, prometheus)
                 tildelOppgaveApi(dataSource, prometheus)
                 // Hent oppgave(r)

@@ -13,7 +13,6 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
-import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
@@ -28,30 +27,7 @@ import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("plukkApi")
 
-fun NormalOpenAPIRoute.plukkNesteApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-    // Trenger ikke ytterligere tilgangskontroll da tilgang kalles for å finne plukkbar oppgave
-    route("/neste-oppgave").authorizedPost<Unit, NesteOppgaveDto, FinnNesteOppgaveDto>(
-        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
-    ) { _, request ->
-        prometheus.httpCallCounter("/neste-oppgave").increment()
-        val enhetService = EnhetService(msGraphClient = MsGraphGateway(prometheus))
-        val nesteOppgave = dataSource.transaction { connection ->
-            PlukkOppgaveService(
-                enhetService,
-                OppgaveRepository(connection),
-                FlytJobbRepository(connection),
-                FilterRepository(connection),
-            ).plukkNesteOppgave(request.filterId, request.enheter, ident(), token())
-        }
-        if (nesteOppgave != null) {
-            respond(nesteOppgave)
-        } else {
-            respondWithStatus(HttpStatusCode.NoContent)
-        }
-    }
-
 fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-    // Trenger ikke ytterligere tilgangskontroll da tilgang kalles ved plukking
     route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
@@ -62,7 +38,6 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: Prome
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
-                FilterRepository(connection),
             ).plukkOppgave(
                 OppgaveId(request.oppgaveId, request.versjon),
                 ident(),

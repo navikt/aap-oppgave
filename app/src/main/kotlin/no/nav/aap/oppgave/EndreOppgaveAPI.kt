@@ -6,7 +6,6 @@ import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
@@ -35,20 +34,3 @@ fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: Pro
         respond(oppgaver)
     }
 }
-
-fun NormalOpenAPIRoute.flyttOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
-    route("/flytt-oppgave").post<Unit, List<OppgaveId>, FlyttOppgaveDto> { _, dto ->
-        prometheus.httpCallCounter("flytt-oppgave").increment()
-
-        val oppgaver = dataSource.transaction { connection ->
-            val innloggetBrukerIdent = ident()
-            val token = token()
-            val reserverOppgaveService = ReserverOppgaveService(
-                OppgaveRepository(connection),
-                FlytJobbRepository(connection),
-            )
-            reserverOppgaveService.reserverOppgave(dto.avklaringsbehovReferanse, innloggetBrukerIdent, token)
-        }
-        respond(oppgaver)
-    }

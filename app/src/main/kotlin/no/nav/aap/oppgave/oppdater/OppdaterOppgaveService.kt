@@ -9,7 +9,6 @@ import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
@@ -33,7 +32,6 @@ import no.nav.aap.oppgave.oppdater.hendelse.VenteInformasjon
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
-import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -124,7 +122,7 @@ class OppdaterOppgaveService(
         // Hvis oppgaven ble satt på vent, reserver til saksbehandler som satte på vent
         if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.påVentTil == null && eksisterendeOppgave.reservertAv == null) {
             log.info("Forsøker å reservere oppgave ${eksisterendeOppgave.oppgaveId()} til saksbehandler som satte den på vent")
-            reserverOppgave(eksisterendeOppgave, oppgaveOppdatering.venteInformasjon)
+            reserverOppgave(oppgaveOppdatering.referanse, oppgaveOppdatering.venteInformasjon)
         }
     }
 
@@ -175,34 +173,24 @@ class OppdaterOppgaveService(
         // Automatisk reservasjon enten ved retur eller override fra behandlingsflyt
         if (harBlittSendtTilbakeFraToTrinn(avklaringsbehov) && eksisterendeOppgave.status == Status.AVSLUTTET) {
             utledReservasjonEtterReturFraTotrinn(avklaringsbehov, eksisterendeOppgave)
-        } else if (unleashService.isEnabled(FeatureToggles.SetterIkkeReserverTilPaaOppdatering)) {
+        } else {
             // reservasjon fra behandlingsflyt skal kun overstyre når oppgave opprettes eller gjenåpnes, ikke når oppgave oppdateres
             if (eksisterendeOppgave.status == Status.AVSLUTTET) {
                 håndterReservasjonFraBehandlingsflyt(
                     oppgaveOppdatering,
-                    avklaringsbehov,
                     eksisterendeOppgave.oppgaveId()
                 )
             }
-        } else {
-            håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, avklaringsbehov, eksisterendeOppgave.oppgaveId())
         }
     }
 
     private fun håndterReservasjonFraBehandlingsflyt(
         oppgaveOppdatering: OppgaveOppdatering,
-        avklaringsbehov: AvklaringsbehovHendelse,
         oppgaveId: OppgaveId
     ) {
         if (oppgaveOppdatering.reserverTil != null) {
-            val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
-                saksnummer = oppgaveOppdatering.saksnummer,
-                referanse = oppgaveOppdatering.referanse,
-                null,
-                avklaringsbehov.avklaringsbehovKode.kode
-            )
             reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
-                avklaringsbehovReferanse,
+                oppgaveOppdatering.referanse,
                 oppgaveOppdatering.reserverTil
             )
             log.info("Oppgave $oppgaveId automatisk reservert ${oppgaveOppdatering.reserverTil}.")
@@ -315,19 +303,19 @@ class OppdaterOppgaveService(
     ) {
         val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
         if (sistEndretAv != KELVIN) {
-            val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
-            val oppdatertOppgave = oppgaveRepository.hentOppgave(avklaringsbehovReferanse)
-            if (oppdatertOppgave != null) {
-                log.info("Reserverer oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-                reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(avklaringsbehovReferanse, sistEndretAv)
-                sendOppgaveStatusOppdatering(
-                    oppdatertOppgave.oppgaveId(),
-                    HendelseType.RESERVERT,
-                    flytJobbRepository
-                )
-            } else {
-                log.warn("Fant ikke oppgave som skulle reserveres: $avklaringsbehovReferanse")
-            }
+            val oppdatertOppgave =
+                oppgaveRepository.hentOppgave(requireNotNull(eksisterendeOppgave.id) { "Eksisterende oppgave-id kan ikke være null" })
+
+            log.info("Reserverer oppgave ${oppdatertOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
+            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(requireNotNull(eksisterendeOppgave.behandlingRef) {
+                "Eksisterende oppgave må ha behandlingsreferanse"
+            }, sistEndretAv)
+            sendOppgaveStatusOppdatering(
+                oppdatertOppgave.oppgaveId(),
+                HendelseType.RESERVERT,
+                flytJobbRepository
+            )
+
         } else {
             log.info("Reserverer ikke oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status} fordi $KELVIN utførte siste endring")
         }
@@ -352,13 +340,12 @@ class OppdaterOppgaveService(
     }
 
     private fun reserverOppgave(
-        eksisterendeOppgave: OppgaveDto,
+        behandlingsReferanse: UUID,
         venteInformasjon: VenteInformasjon
     ) {
-        val avklaringsbehovReferanse = eksisterendeOppgave.tilAvklaringsbehovReferanseDto()
         val endretAv = venteInformasjon.sattPåVentAv
         reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
-            avklaringsbehovReferanse,
+            behandlingsReferanse,
             endretAv
         )
     }
@@ -425,23 +412,18 @@ class OppdaterOppgaveService(
         if (hvemLøsteForrigeAvklaringsbehov != null) {
             val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
             if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
-                val avklaringsbehovReferanse = AvklaringsbehovReferanseDto(
-                    saksnummer = oppgaveOppdatering.saksnummer,
-                    referanse = oppgaveOppdatering.referanse,
-                    null,
-                    avklaringsbehovHendelse.avklaringsbehovKode.kode
-                )
+                log.info("Prøver å tilordne ny oppgave(id=${oppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}")
                 reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
-                    avklaringsbehovReferanse,
+                    oppgaveOppdatering.referanse,
                     hvemLøsteForrigeIdent
                 )
-                log.info("Ny oppgave(id=${oppgaveId.id}) ble automatisk tilordnet: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+
 
             } else {
                 log.info("Ingen automatisk tilordning: Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
             }
         }
-        håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, avklaringsbehovHendelse, oppgaveId)
+        håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, oppgaveId)
     }
 
     private fun hentVeilederSykefraværoppfølging(personIdent: String): String? =
@@ -580,8 +562,8 @@ class OppdaterOppgaveService(
         if (åpneOppgaver.size > 1) {
             log.warn(
                 "Fant ${åpneOppgaver.size} åpne oppgaver for behandling $behandlingsreferanse. " +
-                    "Oppgaver: ${åpneOppgaver.map { it.id }.joinToString()} " +
-                    "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}"
+                        "Oppgaver: ${åpneOppgaver.map { it.id }.joinToString()} " +
+                        "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}"
             )
         }
     }

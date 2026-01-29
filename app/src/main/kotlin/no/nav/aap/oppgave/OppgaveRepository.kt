@@ -9,7 +9,6 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.plukk.NesteOppgaveDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
@@ -86,46 +85,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
         }
         return OppgaveId(id, 0L)
-    }
-
-    fun hentOppgave(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): OppgaveDto? {
-        val saksnummerClause =
-            if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
-        val referanseClause =
-            if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
-        val journalpostIdClause =
-            if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
-        val oppgaverForReferanseQuery = """
-            SELECT 
-                $alleOppgaveFelt
-            FROM 
-                OPPGAVE 
-            WHERE 
-                $saksnummerClause AND
-                $referanseClause AND
-                $journalpostIdClause AND
-                AVKLARINGSBEHOV_TYPE = ?
-        """.trimIndent()
-
-        val oppgaver = connection.queryList(oppgaverForReferanseQuery) {
-            setParams {
-                var index = 1
-                if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
-                if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
-                if (avklaringsbehovReferanse.journalpostId != null) setLong(
-                    index++,
-                    avklaringsbehovReferanse.journalpostId
-                )
-                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
-            }
-            setRowMapper { row ->
-                oppgaveMapper(row)
-            }
-        }
-        if (oppgaver.size > 1) {
-            log.warn("Hent oppgaver skal ikke returnere mer en 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
-        }
-        return oppgaver.firstOrNull()
     }
 
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
@@ -315,36 +274,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(3, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å avreservere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
-        }
-    }
-
-    fun finnNesteOppgaver(filterDto: FilterDto, limit: Int = 1): List<NesteOppgaveDto> {
-        val hentNesteOppgaveQuery = """
-            SELECT 
-                ID, VERSJON, SAKSNUMMER, BEHANDLING_REF, JOURNALPOST_ID, AVKLARINGSBEHOV_TYPE
-            FROM 
-                OPPGAVE 
-            WHERE 
-                ${filterDto.whereClause()} RESERVERT_AV IS NULL AND STATUS != 'AVSLUTTET' AND PAA_VENT_TIL IS NULL
-            ORDER BY BEHANDLING_OPPRETTET
-            LIMIT $limit
-            FOR UPDATE
-            SKIP LOCKED
-        """.trimIndent()
-
-        return connection.queryList(hentNesteOppgaveQuery) {
-            setRowMapper {
-                NesteOppgaveDto(
-                    oppgaveId = it.getLong("ID"),
-                    oppgaveVersjon = it.getLong("VERSJON"),
-                    AvklaringsbehovReferanseDto(
-                        saksnummer = it.getStringOrNull("SAKSNUMMER"),
-                        referanse = it.getUUIDOrNull("BEHANDLING_REF"),
-                        journalpostId = it.getLongOrNull("JOURNALPOST_ID"),
-                        avklaringsbehovKode = it.getString("AVKLARINGSBEHOV_TYPE")
-                    )
-                )
-            }
         }
     }
 
@@ -668,46 +597,29 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     /**
-     * Hent oppgaver som ikke er avsluttet.
+     * Hent åpen oppgave på behandling
      */
-    fun hentÅpneOppgaver(avklaringsbehovReferanse: AvklaringsbehovReferanseDto): OppgaveId? {
-        // TODO: Trenger bare behandlingsreferanse for å hente åpne oppgaver
-        val saksnummerClause =
-            if (avklaringsbehovReferanse.saksnummer != null) "SAKSNUMMER = ?" else "SAKSNUMMER IS NULL"
-        val referanseClause =
-            if (avklaringsbehovReferanse.referanse != null) "BEHANDLING_REF = ?" else "BEHANDLING_REF IS NULL"
-        val journalpostIdClause =
-            if (avklaringsbehovReferanse.journalpostId != null) "JOURNALPOST_ID = ?" else "JOURNALPOST_ID IS NULL"
+    fun hentÅpneOppgaver(behandlingsReferanse: UUID): OppgaveId? {
         val oppgaverForReferanseQuery = """
             SELECT 
                 ID, VERSJON
             FROM 
                 OPPGAVE 
             WHERE 
-                $saksnummerClause AND
-                $referanseClause AND
-                $journalpostIdClause AND
-                AVKLARINGSBEHOV_TYPE = ? AND
+                BEHANDLING_REF = ? AND
                 STATUS != 'AVSLUTTET'
         """.trimIndent()
 
         val oppgaver = connection.queryList(oppgaverForReferanseQuery) {
             setParams {
-                var index = 1
-                if (avklaringsbehovReferanse.saksnummer != null) setString(index++, avklaringsbehovReferanse.saksnummer)
-                if (avklaringsbehovReferanse.referanse != null) setUUID(index++, avklaringsbehovReferanse.referanse)
-                if (avklaringsbehovReferanse.journalpostId != null) setLong(
-                    index++,
-                    avklaringsbehovReferanse.journalpostId
-                )
-                setString(index++, avklaringsbehovReferanse.avklaringsbehovKode)
+                setUUID(1, behandlingsReferanse)
             }
             setRowMapper { row ->
                 OppgaveId(row.getLong("ID"), row.getLong("VERSJON"))
             }
         }
         if (oppgaver.size != 1) {
-            log.warn("Hent oppgave skal alltid returnere 1 oppgave. Kall med $avklaringsbehovReferanse fant ${oppgaver.size} oppgaver.")
+            log.error("Hent oppgave skal alltid returnere 1 oppgave. Kall med behandlingsreferanse $behandlingsReferanse fant ${oppgaver.size} oppgaver.")
         }
         return oppgaver.firstOrNull()
     }
