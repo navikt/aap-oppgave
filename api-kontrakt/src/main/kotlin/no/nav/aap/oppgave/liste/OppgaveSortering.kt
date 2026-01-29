@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.liste
 
 enum class OppgaveSorteringFelt {
     PERSONIDENT,
+    SAKSNUMMER,
     BEHANDLINGSTYPE,
     BEHANDLING_OPPRETTET,
     ÅRSAK_TIL_OPPRETTELSE,
@@ -14,6 +15,6 @@ enum class OppgaveSorteringRekkefølge {
     DESC,
 }
 data class OppgaveSortering (
-    val sortBy: OppgaveSorteringFelt? = null,
-    val sortOrder: OppgaveSorteringRekkefølge? = null
+    val sortBy: OppgaveSorteringFelt?,
+    val sortOrder: OppgaveSorteringRekkefølge?
 )
