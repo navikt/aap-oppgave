@@ -6,6 +6,8 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
+import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
+import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.BehandlingMarkering
@@ -21,6 +23,7 @@ import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class OppgaveRepositoryTest {
@@ -261,6 +264,93 @@ class OppgaveRepositoryTest {
 
         val mineOppgaverPaged = mineOppgaver(bruker, Paging(1, 2))
         assertThat(mineOppgaverPaged).hasSize(2)
+    }
+    @Test
+    fun `Kan sortere og endre rekkefølge på oppgaver fra finnOppgaver`() {
+
+        val sorterteDatoer = listOf(
+            LocalDateTime.of(2027, 1, 1, 0, 0),
+            LocalDateTime.of(2024, 1, 1, 0, 0),
+            LocalDateTime.of(2022, 1, 1, 0, 0),
+            LocalDateTime.of(2019, 1, 1, 0, 0),
+        )
+        val sorterteBehandlingstyper = listOf(
+            Behandlingstype.AKTIVITETSPLIKT,
+            Behandlingstype.DOKUMENT_HÅNDTERING,
+            Behandlingstype.FØRSTEGANGSBEHANDLING,
+            Behandlingstype.REVURDERING,
+        )
+
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[2], behandlingstype = sorterteBehandlingstyper[2])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[0], behandlingstype = sorterteBehandlingstyper[0])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[3], behandlingstype = sorterteBehandlingstyper[3])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[1], behandlingstype = sorterteBehandlingstyper[1])
+
+        // Sorter på behandling_opprettet stigende
+        val oppgavelisteBehandlingOpprettetAsc = finnAlleOppgaverMedSortering(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            null,
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        val oppgavelisteSorterteDatoerAsc = oppgavelisteBehandlingOpprettetAsc.oppgaver.map { it.behandlingOpprettet }
+        assertThat(oppgavelisteSorterteDatoerAsc).isEqualTo(sorterteDatoer.reversed())
+
+        // Sorter på behandling_opprettet synkende
+        val oppgavelisteBehandlingOpprettetDesc = finnAlleOppgaverMedSortering(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            null,
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.DESC
+        )
+        val oppgavelisteSorterteDatoerDesc = oppgavelisteBehandlingOpprettetDesc.oppgaver.map { it.behandlingOpprettet }
+        assertThat( oppgavelisteSorterteDatoerDesc).isEqualTo(sorterteDatoer)
+
+        // Sorter på behandlingstype stigende
+        val oppgavelisteBehandlingstypeAsc = finnAlleOppgaverMedSortering(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            null,
+            OppgaveSorteringFelt.BEHANDLINGSTYPE,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        val oppgavelisteSorterteBehandlingstyperAsc = oppgavelisteBehandlingstypeAsc.oppgaver.map { it.behandlingstype }
+        assertThat( oppgavelisteSorterteBehandlingstyperAsc).isEqualTo(sorterteBehandlingstyper)
+
+        // Sorter på behandling_opprettet synkende
+        val oppgavelisteBehandlingstyperDesc = finnAlleOppgaverMedSortering(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            null,
+            OppgaveSorteringFelt.BEHANDLINGSTYPE,
+            OppgaveSorteringRekkefølge.DESC
+        )
+        val oppgavelisteSorterteBehandlingstyperDesc = oppgavelisteBehandlingstyperDesc.oppgaver.map { it.behandlingstype }
+        assertThat( oppgavelisteSorterteBehandlingstyperDesc).isEqualTo(sorterteBehandlingstyper.reversed())
+    }
+    @Test
+    fun `Kan sortere og endre rekkefølge på oppgaver fra finnOppgaver med paginering`() {
+
+        val sorterteDatoer = listOf(
+            LocalDateTime.of(2027, 1, 1, 0, 0),
+            LocalDateTime.of(2024, 1, 1, 0, 0),
+            LocalDateTime.of(2022, 1, 1, 0, 0),
+            LocalDateTime.of(2019, 1, 1, 0, 0),
+        )
+
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[2])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[0])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[3])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[1])
+
+        // Sorter på behandling_opprettet stigende
+        val oppgavelisteBehandlingOpprettetAsc = finnAlleOppgaverMedSortering(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            Paging(side = 1, antallPerSide = 3),
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        val oppgavelisteSorterteDatoerAsc = oppgavelisteBehandlingOpprettetAsc.oppgaver.map { it.behandlingOpprettet }
+        assertThat( oppgavelisteSorterteDatoerAsc).isEqualTo(sorterteDatoer.reversed().subList(0, 3))
+
     }
 
     @Test
@@ -510,6 +600,12 @@ class OppgaveRepositoryTest {
         }
     }
 
+    private fun finnAlleOppgaverMedSortering(filter: Filter, paging: Paging? = null, sortBy: OppgaveSorteringFelt, sortOrder: OppgaveSorteringRekkefølge): OppgaveRepository.FinnOppgaverDto {
+        return dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = false, sortBy = sortBy, rekkefølge = sortOrder)
+        }
+    }
+
     private fun finnAlleOppgaverMedUtvidetFilter(
         filter: Filter,
         paging: Paging? = null,
@@ -589,14 +685,15 @@ class OppgaveRepositoryTest {
         venteBegrunnelse: String? = null,
         harUlesteDokumenter: Boolean = false,
         returInformasjon: ReturInformasjon? = null,
-        årsakTilOpprettelse: String? = "SØKNAD"
+        årsakTilOpprettelse: String? = "SØKNAD",
+        behandlingOpprettet: LocalDateTime =LocalDateTime.now().minusDays(3)
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
             enhet = enhet,
             oppfølgingsenhet = oppfølgingsenhet,
-            behandlingOpprettet = LocalDateTime.now().minusDays(3),
+            behandlingOpprettet = behandlingOpprettet,
             avklaringsbehovKode = avklaringsbehovKode.kode,
             status = status,
             behandlingstype = behandlingstype,

@@ -39,7 +39,8 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
         val data =
             dataSource.transaction(readOnly = true) { connection ->
                 log.info("Henter filter med filterId ${request.filterId}")
-                val filter = requireNotNull(FilterRepository(connection).hent(request.filterId))
+                val filter =
+                    requireNotNull(FilterRepository(connection).hent(request.filterId)) { "filter kan ikke være null. filterId: ${request.filterId}" }
                 val veilederIdent =
                     if (request.veileder) {
                         ident()
@@ -58,7 +59,9 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     filter,
                     veilederIdent,
                     token(),
-                    ident()
+                    ident(),
+                    request.sortering?.sortBy,
+                    request.sortering?.sortOrder
                 )
             }
 

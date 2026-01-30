@@ -79,3 +79,4 @@ object OppgavelisteUtils {
         return this.copy(personNavn = personNavn)
     }
 }
+
