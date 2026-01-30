@@ -387,7 +387,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
         val sortering = oppgaveSorteringQuery(
-            sortBy = sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
@@ -545,7 +545,9 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     fun hentMineOppgaver(
-        ident: String, paging: Paging? = null, kunPåVent: Boolean = false,
+        ident: String,
+        paging: Paging? = null,
+        kunPåVent: Boolean = false,
         sortBy: OppgaveSorteringFelt? = null,
         sortOrder: OppgaveSorteringRekkefølge? = null
     ): List<OppgaveDto> {
@@ -558,7 +560,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
         val sortering = oppgaveSorteringQuery(
-            sortBy = sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
         )
         val sorteringRekkefølge = oppgaveRekkefølge(sortOrder ?: OppgaveSorteringRekkefølge.ASC)
 
