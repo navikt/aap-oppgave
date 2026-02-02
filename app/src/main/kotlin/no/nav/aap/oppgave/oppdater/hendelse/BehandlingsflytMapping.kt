@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
@@ -85,11 +86,16 @@ private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehand
     val avklaringsbehovUtenVentebehov = this
         .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
         .tilAvklaringsbehovHendelseForBehandlingsflyt()
-    if (avklaringsbehovUtenVentebehov.isEmpty() && this.isNotEmpty()) {
+    if (avklaringsbehovUtenVentebehov.isEmpty() && this.isNotEmpty() && !this.erOppfølgingsbehandlingPåVent()) {
         // når det bare er ventebehov opprettes ikke oppgave, og behandlingen blir borte fra oppgavelista
-        logger.warn("Mottok hendelse fra behandlingsflyt med bare ventebehov: ${this.map { it.avklaringsbehovDefinisjon.name }} på sak $saksnummer")
+        // unntaket er å vente på frist på oppfølgingsbehandling, den skal ikke opprette oppgave.
+        logger.error("Mottok hendelse fra behandlingsflyt med bare ventebehov: ${this.map { it.avklaringsbehovDefinisjon.name }} på sak $saksnummer")
     }
     return avklaringsbehovUtenVentebehov
+}
+
+private fun List<AvklaringsbehovHendelseDto>.erOppfølgingsbehandlingPåVent(): Boolean {
+    return this.map { it.avklaringsbehovDefinisjon } == listOf(Definisjon.VENT_PÅ_OPPFØLGING)
 }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
