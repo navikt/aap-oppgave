@@ -6,6 +6,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
+import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -24,7 +25,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         årsakTilOpprettelse = this.årsakTilOpprettelse,
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(),
+        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(this.saksnummer),
         reserverTil = this.reserverTil,
         relevanteIdenter = this.relevanteIdenterPåBehandling ?: emptyList(),
         venteInformasjon = if (this.erPåVent) {
@@ -80,10 +81,15 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.Aktivitetsplikt11_9 -> Behandlingstype.AKTIVITETSPLIKT_11_9
     }
 
-private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(): List<AvklaringsbehovHendelse> {
-    return this
+private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(saksnummer: Saksnummer): List<AvklaringsbehovHendelse> {
+    val avklaringsbehovUtenVentebehov = this
         .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
         .tilAvklaringsbehovHendelseForBehandlingsflyt()
+    if (avklaringsbehovUtenVentebehov.isEmpty() && this.isNotEmpty()) {
+        // når det bare er ventebehov opprettes ikke oppgave, og behandlingen blir borte fra oppgavelista
+        logger.warn("Mottok hendelse fra behandlingsflyt med bare ventebehov: ${this.map { it.avklaringsbehovDefinisjon.name }} på sak $saksnummer")
+    }
+    return avklaringsbehovUtenVentebehov
 }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
