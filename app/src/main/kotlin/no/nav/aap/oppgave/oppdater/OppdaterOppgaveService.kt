@@ -100,6 +100,11 @@ class OppdaterOppgaveService(
                 avsluttOppgaverSenereIFlyt(oppgaveMap, åpentAvklaringsbehov)
                 oppdaterEksistendeOppgave(oppgaveOppdatering, eksisterendeOppgave, åpentAvklaringsbehov)
             }
+        } else {
+            // hvis behandlingen er åpen men ikke har noen avklaringsbehov (og det ikke er snakk om oppfølgingsbehandling) tyder det på feil
+            if (oppgaveOppdatering.behandlingstype != Behandlingstype.OPPFØLGINGSBEHANDLING) {
+                log.warn("Ingen åpne avklaringsbehov på behandling, men behandlingsstatus er ${oppgaveOppdatering.behandlingStatus.name}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+            }
         }
 
         // Avslutt oppgaver hvor avklaringsbehovet er lukket
@@ -150,7 +155,7 @@ class OppdaterOppgaveService(
         )
         val erSkjermet = enhetService.erSkjermet(oppgaveOppdatering.personIdent)
 
-        loggOppdatering(eksisterendeOppgave)
+        loggOppdatering(eksisterendeOppgave, oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent)
         oppgaveRepository.oppdatereOppgave(
             oppgaveId = eksisterendeOppgave.oppgaveId(),
             endretAvIdent = KELVIN,
@@ -197,9 +202,9 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun loggOppdatering(eksisterendeOppgave: OppgaveDto) {
+    private fun loggOppdatering(eksisterendeOppgave: OppgaveDto, årsakTilSattPåVent: String?) {
         if (eksisterendeOppgave.status == Status.OPPRETTET) {
-            log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}")
+            log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}. Venteinformasjon: $årsakTilSattPåVent")
         } else {
             log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med tidligere status ${eksisterendeOppgave.status} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}")
         }
@@ -405,7 +410,7 @@ class OppdaterOppgaveService(
             returInformasjon = utledReturFraToTrinn(avklaringsbehovHendelse),
         )
         val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
-        log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
+        log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
 
         val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
@@ -472,7 +477,7 @@ class OppdaterOppgaveService(
                 val siste = beh.endringer.maxByOrNull { it.tidsstempel }
                 "${beh.avklaringsbehovKode.kode}:${beh.status} (sistEndret=${siste?.tidsstempel}, av=${siste?.endretAv})"
             }
-            log.info("Fant ingen avsluttede avklaringsbehov. Behovene: [$beskrivelse]")
+            log.info("Fant ingen avsluttede avklaringsbehov. Behovene: [$beskrivelse], saksnummer: ${this.saksnummer}")
             return null
         }
 
