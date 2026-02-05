@@ -16,10 +16,14 @@ import no.nav.aap.oppgave.statistikk.OppgaveHendelse
 import no.nav.aap.oppgave.statistikk.OppgaveTilStatistikkDto
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 
 private val logger = LoggerFactory.getLogger("prosessering.StatistikkHendelseJobb")
 
-class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository, private val markeringRepository: MarkeringRepository) : JobbUtfører {
+class StatistikkHendelseJobb(
+    private val oppgaveRepository: OppgaveRepository,
+    private val markeringRepository: MarkeringRepository
+) : JobbUtfører {
     override fun utfør(input: JobbInput) {
         val hendelsesType = HendelseType.valueOf(input.parameter("hendelsesType"))
         val oppgaveId = DefaultJsonMapper.fromJson<OppgaveId>(input.payload())
@@ -32,7 +36,8 @@ class StatistikkHendelseJobb(private val oppgaveRepository: OppgaveRepository, p
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,
-                    oppgaveTilStatistikkDto = fraOppgaveDto(oppgaveDto, markeringer)
+                    oppgaveTilStatistikkDto = fraOppgaveDto(oppgaveDto, markeringer),
+                    sendtTidspunkt = LocalDateTime.now()
                 )
             )
         }
@@ -89,6 +94,7 @@ fun sendOppgaveStatusOppdatering(
     repository.leggTil(
         JobbInput(StatistikkHendelseJobb).medParameter("hendelsesType", hendelseType.name)
             .medPayload(DefaultJsonMapper.toJson(oppgaveId))
+            .forSak(oppgaveId.id)
     )
     logger.info("Sender oppgave-endring til statistikk-jobb. HendelseType: $hendelseType, oppgaveId: $oppgaveId.")
 }
