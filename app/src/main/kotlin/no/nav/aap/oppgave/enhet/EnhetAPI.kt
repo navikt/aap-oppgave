@@ -18,6 +18,7 @@ import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -101,7 +102,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
 
             oppgaveRepository.oppdatereOppgave(
                 oppgaveId = oppgaveIdMedVersjon,
-                endretAvIdent = "Kelvin",
+                endretAvIdent = KELVIN,
                 personIdent = oppgave.personIdent,
                 enhet = nyEnhet.enhet,
                 påVentTil = oppgave.påVentTil,
