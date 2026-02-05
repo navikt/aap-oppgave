@@ -11,6 +11,7 @@ import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
+import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -84,7 +85,7 @@ class PlukkOppgaveService(
             oppgaveId = OppgaveId(requireNotNull(oppgave.id) {
                 "OppgaveID kan ikke være null"
             }, oppgave.versjon),
-            endretAvIdent = "Kelvin",
+            endretAvIdent = KELVIN,
             personIdent = oppgave.personIdent,
             enhet = nyEnhet.enhet,
             påVentTil = oppgave.påVentTil,
