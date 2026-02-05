@@ -1,4 +1,4 @@
-package no.nav.aap.behandlingsflyt.drift
+package no.nav.aap.oppgave.drift
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
@@ -35,6 +35,7 @@ fun NormalOpenAPIRoute.driftApi(
                                 veilederSykdom = it.veilederSykdom,
                                 opprettetTidspunkt = it.opprettetTidspunkt,
                                 endretTidspunkt = it.endretTidspunkt,
+                                avklaringsbehovKode = it.avklaringsbehovKode,
                             )
                         }
                         .sortedByDescending { it.opprettetTidspunkt }
@@ -57,5 +58,6 @@ private data class OppgaveDriftsinfoDTO(
     val veilederArbeid: String?,
     val veilederSykdom: String?,
     val opprettetTidspunkt: LocalDateTime,
-    val endretTidspunkt: LocalDateTime?
+    val endretTidspunkt: LocalDateTime?,
+    val avklaringsbehovKode: String
 )
