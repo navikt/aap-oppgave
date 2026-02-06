@@ -101,8 +101,7 @@ class OppdaterOppgaveService(
                 oppdaterEksistendeOppgave(oppgaveOppdatering, eksisterendeOppgave, åpentAvklaringsbehov)
             }
         } else {
-            // hvis behandlingen er åpen men ikke har noen avklaringsbehov (og det ikke er snakk om oppfølgingsbehandling) tyder det på feil
-            if (oppgaveOppdatering.behandlingstype != Behandlingstype.OPPFØLGINGSBEHANDLING) {
+            if (oppgaveOppdatering.skalOppretteOppgave()) {
                 log.warn("Ingen åpne avklaringsbehov på behandling, men behandlingsstatus er ${oppgaveOppdatering.behandlingStatus.name}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
             }
         }
@@ -571,6 +570,14 @@ class OppdaterOppgaveService(
                         "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}"
             )
         }
+    }
+
+    private fun OppgaveOppdatering.skalOppretteOppgave(): Boolean {
+        val erOppfølgingsbehandlingPåVent =
+            this.behandlingstype == Behandlingstype.OPPFØLGINGSBEHANDLING &&
+                    this.venteInformasjon?.årsakTilSattPåVent == "VENTER_PÅ_OPPLYSNINGER"
+        // fasttrack-behandling av meldekort skal aldri opprette oppgave
+        return !erOppfølgingsbehandlingPåVent && this.vurderingsbehov != listOf("MELDEKORT")
     }
 
     private fun OppgaveDto.oppgaveId() = OppgaveId(this.id!!, this.versjon)
