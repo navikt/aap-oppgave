@@ -576,8 +576,8 @@ class OppdaterOppgaveService(
         val erOppfølgingsbehandlingPåVent =
             this.behandlingstype == Behandlingstype.OPPFØLGINGSBEHANDLING &&
                     this.venteInformasjon?.årsakTilSattPåVent == "VENTER_PÅ_OPPLYSNINGER"
-        // fasttrack-behandling av meldekort skal aldri opprette oppgave
-        return !erOppfølgingsbehandlingPåVent && this.vurderingsbehov != listOf("MELDEKORT")
+        // fasttrack-behandlinger oppretter ikke avklaringsbehov, og skal derfor ikke ha oppgaver
+        return !erOppfølgingsbehandlingPåVent && this.avklaringsbehov.any { it.status in AVSLUTTEDE_STATUSER }
     }
 
     private fun OppgaveDto.oppgaveId() = OppgaveId(this.id!!, this.versjon)
