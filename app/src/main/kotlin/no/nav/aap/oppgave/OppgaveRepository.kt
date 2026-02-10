@@ -338,6 +338,14 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND AARSAKER_TIL_BEHANDLING && $stringListeÅrsaker")
         }
 
+        if(utvidetFilter.beløpMindreEnn!= null){
+            sb.append(" AND t.belop < ${utvidetFilter.beløpMindreEnn} OR t.belop IS NULL")
+        }
+
+        if (utvidetFilter.beløpMerEnn != null){
+            sb.append(" AND t.belop > ${utvidetFilter.beløpMerEnn} OR t.belop IS NULL")
+        }
+
         val returStatuserNotEmpty = utvidetFilter.returStatuser.isNotEmpty()
         val påVent = utvidetFilter.påVent == true
 
@@ -401,6 +409,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM 
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
             WHERE 
                 ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
             ORDER BY ${sortering} ${sorteringsRekkefølge} 
@@ -417,6 +426,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val countQuery = """
             SELECT COUNT(*) count FROM OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
             WHERE ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
         """.trimIndent()
 
