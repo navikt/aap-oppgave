@@ -3,6 +3,7 @@ package no.nav.aap.oppgave
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -19,6 +20,11 @@ data class ReturInformasjon(
     val årsaker: List<ÅrsakTilReturKode>,
     val begrunnelse: String,
     val endretAv: String,
+)
+
+data class TilbakekrevingsVarsDto(
+    val tilbakekrevings_URL : String,
+    val tilbakekrevings_beløp: BigDecimal
 )
 
 enum class ÅrsakTilReturKode {
@@ -73,6 +79,7 @@ data class OppgaveDto(
     val erSkjermet: Boolean? = false,
     val harUlesteDokumenter: Boolean? = false,
     val markeringer: List<MarkeringDto> = emptyList(),
+    val tilbakekrevingsVarsDto: TilbakekrevingsVarsDto? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.

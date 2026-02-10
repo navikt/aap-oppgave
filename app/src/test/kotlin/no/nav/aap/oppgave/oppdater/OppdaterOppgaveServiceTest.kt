@@ -37,6 +37,7 @@ import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -2111,6 +2112,7 @@ class OppdaterOppgaveServiceTest {
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
+                TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
             ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
@@ -2128,6 +2130,7 @@ class OppdaterOppgaveServiceTest {
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
+                TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
 
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())

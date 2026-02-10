@@ -12,6 +12,8 @@ import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.BehandlingMarkering
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
@@ -19,6 +21,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -73,8 +76,18 @@ class OppgaveRepositoryTest {
     @Test
     fun `Teller alle oppgaver gitt enhetsfilter`() {
         // Lager 20 oppgaver totalt, 10 på hver enhet
-        (1..10).forEach { _ -> opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_ENEBAKK) }
-        (1..10).forEach { _ -> opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, enhet = ENHET_NAV_LØRENSKOG) }
+        (1..10).forEach { _ ->
+            opprettOppgave(
+                behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+                enhet = ENHET_NAV_ENEBAKK
+            )
+        }
+        (1..10).forEach { _ ->
+            opprettOppgave(
+                behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+                enhet = ENHET_NAV_LØRENSKOG
+            )
+        }
         val oppgaverBeggeEnheter = dataSource.transaction { connection ->
             OppgaveRepository(connection).finnOppgaver(
                 filter = FilterDto(
@@ -265,6 +278,7 @@ class OppgaveRepositoryTest {
         val mineOppgaverPaged = mineOppgaver(bruker, Paging(1, 2))
         assertThat(mineOppgaverPaged).hasSize(2)
     }
+
     @Test
     fun `Kan sortere og endre rekkefølge på oppgaver fra finnOppgaver`() {
 
@@ -281,10 +295,26 @@ class OppgaveRepositoryTest {
             Behandlingstype.REVURDERING,
         )
 
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[2], behandlingstype = sorterteBehandlingstyper[2])
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[0], behandlingstype = sorterteBehandlingstyper[0])
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[3], behandlingstype = sorterteBehandlingstyper[3])
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[1], behandlingstype = sorterteBehandlingstyper[1])
+        opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = sorterteDatoer[2],
+            behandlingstype = sorterteBehandlingstyper[2]
+        )
+        opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = sorterteDatoer[0],
+            behandlingstype = sorterteBehandlingstyper[0]
+        )
+        opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = sorterteDatoer[3],
+            behandlingstype = sorterteBehandlingstyper[3]
+        )
+        opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = sorterteDatoer[1],
+            behandlingstype = sorterteBehandlingstyper[1]
+        )
 
         // Sorter på behandling_opprettet stigende
         val oppgavelisteBehandlingOpprettetAsc = finnAlleOppgaverMedSortering(
@@ -304,7 +334,7 @@ class OppgaveRepositoryTest {
             OppgaveSorteringRekkefølge.DESC
         )
         val oppgavelisteSorterteDatoerDesc = oppgavelisteBehandlingOpprettetDesc.oppgaver.map { it.behandlingOpprettet }
-        assertThat( oppgavelisteSorterteDatoerDesc).isEqualTo(sorterteDatoer)
+        assertThat(oppgavelisteSorterteDatoerDesc).isEqualTo(sorterteDatoer)
 
         // Sorter på behandlingstype stigende
         val oppgavelisteBehandlingstypeAsc = finnAlleOppgaverMedSortering(
@@ -314,7 +344,7 @@ class OppgaveRepositoryTest {
             OppgaveSorteringRekkefølge.ASC
         )
         val oppgavelisteSorterteBehandlingstyperAsc = oppgavelisteBehandlingstypeAsc.oppgaver.map { it.behandlingstype }
-        assertThat( oppgavelisteSorterteBehandlingstyperAsc).isEqualTo(sorterteBehandlingstyper)
+        assertThat(oppgavelisteSorterteBehandlingstyperAsc).isEqualTo(sorterteBehandlingstyper)
 
         // Sorter på behandling_opprettet synkende
         val oppgavelisteBehandlingstyperDesc = finnAlleOppgaverMedSortering(
@@ -323,9 +353,11 @@ class OppgaveRepositoryTest {
             OppgaveSorteringFelt.BEHANDLINGSTYPE,
             OppgaveSorteringRekkefølge.DESC
         )
-        val oppgavelisteSorterteBehandlingstyperDesc = oppgavelisteBehandlingstyperDesc.oppgaver.map { it.behandlingstype }
-        assertThat( oppgavelisteSorterteBehandlingstyperDesc).isEqualTo(sorterteBehandlingstyper.reversed())
+        val oppgavelisteSorterteBehandlingstyperDesc =
+            oppgavelisteBehandlingstyperDesc.oppgaver.map { it.behandlingstype }
+        assertThat(oppgavelisteSorterteBehandlingstyperDesc).isEqualTo(sorterteBehandlingstyper.reversed())
     }
+
     @Test
     fun `Kan sortere og endre rekkefølge på oppgaver fra finnOppgaver med paginering`() {
 
@@ -349,7 +381,7 @@ class OppgaveRepositoryTest {
             OppgaveSorteringRekkefølge.ASC
         )
         val oppgavelisteSorterteDatoerAsc = oppgavelisteBehandlingOpprettetAsc.oppgaver.map { it.behandlingOpprettet }
-        assertThat( oppgavelisteSorterteDatoerAsc).isEqualTo(sorterteDatoer.reversed().subList(0, 3))
+        assertThat(oppgavelisteSorterteDatoerAsc).isEqualTo(sorterteDatoer.reversed().subList(0, 3))
 
     }
 
@@ -385,8 +417,23 @@ class OppgaveRepositoryTest {
         assertThat(ledigOppgaveId.id in alleOppgaver.oppgaver.map { it.id })
     }
 
+    fun opprettTilbakekrevingVars(oppgaveId: Long, beløp: BigDecimal, url: String) {
+        dataSource.transaction { connection ->
+            TilbakekrevingRepository(connection).lagre(
+                TilbakekrevingVars(
+                    oppgaveId = oppgaveId,
+                    beløp = beløp,
+                    url = url
+                )
+            )
+        }
+    }
+
     @Test
     fun `Kan bruke utvidet filter`() {
+        val tilbakekrevingOppgave =
+            opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingstype = Behandlingstype.TILBAKEKREVING)
+        opprettTilbakekrevingVars(tilbakekrevingOppgave.id, BigDecimal(1000.00), "http://tilbakekreving.nav.no/oppgave/12345")
         val oppgave1 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgave2 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, avklaringsbehovKode = AvklaringsbehovKode("5003"))
         val oppgave3 = opprettOppgave(
@@ -452,6 +499,27 @@ class OppgaveRepositoryTest {
             markertHaster = true
         )
 
+        val utvidetFilterMerEnnInkludert = UtvidetOppgavelisteFilter(
+            beløpMerEnn = 1001.toBigDecimal()
+        )
+
+        val utvidetFilterMerEnnEksludert = UtvidetOppgavelisteFilter(
+            beløpMerEnn = 900.toBigDecimal()
+        )
+
+        val merEnnSøkInk = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(),
+            paging = null,
+            utvidetOppgavelisteFilter = utvidetFilterMerEnnEksludert,
+        )
+
+        val merEnnSøkEks = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(),
+            paging = null,
+            utvidetOppgavelisteFilter = utvidetFilterMerEnnInkludert,
+        )
+
+
         val søkMedUtvidetFilter = finnAlleOppgaverMedUtvidetFilter(
             filter = TransientFilterDto(),
             paging = null,
@@ -488,12 +556,14 @@ class OppgaveRepositoryTest {
             )
         )
 
-        assertThat(alleOppgaver.oppgaver).hasSize(6)
+        assertThat(alleOppgaver.oppgaver).hasSize(7)
         assertThat(søkMedUtvidetFilter.oppgaver).hasSize(4)
         assertThat(søkMedutvidetFilterMedStatusPåVentOgReturStatus.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterPåVent.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterHastesøk.oppgaver).hasSize(1)
         assertThat(søkMedUtvidetFilterVentefristUtløpt.oppgaver).hasSize(1)
+        assertThat(merEnnSøkEks.oppgaver).hasSize(6)
+        assertThat(merEnnSøkInk.oppgaver).hasSize(7)
     }
 
     @Test
@@ -600,9 +670,20 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun finnAlleOppgaverMedSortering(filter: Filter, paging: Paging? = null, sortBy: OppgaveSorteringFelt, sortOrder: OppgaveSorteringRekkefølge): OppgaveRepository.FinnOppgaverDto {
+    private fun finnAlleOppgaverMedSortering(
+        filter: Filter,
+        paging: Paging? = null,
+        sortBy: OppgaveSorteringFelt,
+        sortOrder: OppgaveSorteringRekkefølge
+    ): OppgaveRepository.FinnOppgaverDto {
         return dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = false, sortBy = sortBy, rekkefølge = sortOrder)
+            OppgaveRepository(connection).finnOppgaver(
+                filter,
+                paging = paging,
+                kunLedigeOppgaver = false,
+                sortBy = sortBy,
+                rekkefølge = sortOrder
+            )
         }
     }
 
@@ -686,7 +767,7 @@ class OppgaveRepositoryTest {
         harUlesteDokumenter: Boolean = false,
         returInformasjon: ReturInformasjon? = null,
         årsakTilOpprettelse: String? = "SØKNAD",
-        behandlingOpprettet: LocalDateTime =LocalDateTime.now().minusDays(3)
+        behandlingOpprettet: LocalDateTime = LocalDateTime.now().minusDays(3)
     ): OppgaveId {
         val oppgaveDto = OppgaveDto(
             saksnummer = saksnummer,

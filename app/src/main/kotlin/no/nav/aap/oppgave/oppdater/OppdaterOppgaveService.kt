@@ -32,6 +32,8 @@ import no.nav.aap.oppgave.oppdater.hendelse.VenteInformasjon
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -63,6 +65,7 @@ class OppdaterOppgaveService(
     private val enhetService: IEnhetService = EnhetService(msGraphClient),
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
+    private val tilbakekrevingRepository: TilbakekrevingRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
 ) {
 
@@ -409,6 +412,13 @@ class OppdaterOppgaveService(
             returInformasjon = utledReturFraToTrinn(avklaringsbehovHendelse),
         )
         val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
+        if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
+            tilbakekrevingRepository.lagre(
+                TilbakekrevingVars(
+                    oppgaveId.id, oppgaveOppdatering.totaltFeilutbetaltBeløp, oppgaveOppdatering.tilbakekrevingsUrl
+                )
+            )
+        }
         log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
 

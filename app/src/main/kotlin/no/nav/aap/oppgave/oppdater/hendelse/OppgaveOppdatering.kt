@@ -1,7 +1,9 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -29,6 +31,8 @@ data class OppgaveOppdatering(
     val tattAvVentAutomatisk: Boolean = false,
     val reserverTil: String? = null,
     val relevanteIdenter: List<String> = emptyList(),
+    val totaltFeilutbetaltBeløp : BigDecimal? = null,
+    val tilbakekrevingsUrl : String? = null,
 )
 
 data class VenteInformasjon(
