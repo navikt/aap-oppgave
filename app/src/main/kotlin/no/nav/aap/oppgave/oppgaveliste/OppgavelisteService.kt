@@ -17,6 +17,7 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
+import java.util.UUID
 
 const val maksOppgaver = 50
 
@@ -120,6 +121,10 @@ class OppgavelisteService(
                 }).tilDto()
             )
         }.hentPersonNavn()
+
+    fun hentOppgaverForBehandling(referanse: UUID): List<OppgaveDto> {
+        return oppgaveRepository.hentOppgaver(referanse)
+    }
 
     private fun settFilter(
         filter: FilterDto,

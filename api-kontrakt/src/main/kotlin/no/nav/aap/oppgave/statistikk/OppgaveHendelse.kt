@@ -15,7 +15,8 @@ enum class HendelseType {
 
 data class OppgaveHendelse(
     val hendelse: HendelseType,
-    val oppgaveTilStatistikkDto: OppgaveTilStatistikkDto
+    val oppgaveTilStatistikkDto: OppgaveTilStatistikkDto,
+    val sendtTidspunkt: LocalDateTime,
 )
 
 /**

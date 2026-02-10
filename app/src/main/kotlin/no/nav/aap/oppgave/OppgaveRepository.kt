@@ -9,6 +9,7 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
@@ -470,7 +471,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(1, enhet)
                 setString(
                     2,
-                    "Kelvin"
+                    KELVIN
                 ) // TODO: Kan øke kolonnestørrelse for å få plass til jobbtype hvis det er interessant
             }
         }

@@ -103,6 +103,10 @@ class OppdaterOppgaveService(
                 avsluttOppgaverSenereIFlyt(oppgaveMap, åpentAvklaringsbehov)
                 oppdaterEksistendeOppgave(oppgaveOppdatering, eksisterendeOppgave, åpentAvklaringsbehov)
             }
+        } else {
+            if (oppgaveOppdatering.skalOppretteOppgave()) {
+                log.warn("Ingen åpne avklaringsbehov på behandling, men behandlingsstatus er ${oppgaveOppdatering.behandlingStatus.name}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+            }
         }
 
         // Avslutt oppgaver hvor avklaringsbehovet er lukket
@@ -153,7 +157,7 @@ class OppdaterOppgaveService(
         )
         val erSkjermet = enhetService.erSkjermet(oppgaveOppdatering.personIdent)
 
-        loggOppdatering(eksisterendeOppgave)
+        loggOppdatering(eksisterendeOppgave, oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent)
         oppgaveRepository.oppdatereOppgave(
             oppgaveId = eksisterendeOppgave.oppgaveId(),
             endretAvIdent = KELVIN,
@@ -200,9 +204,9 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun loggOppdatering(eksisterendeOppgave: OppgaveDto) {
+    private fun loggOppdatering(eksisterendeOppgave: OppgaveDto, årsakTilSattPåVent: String?) {
         if (eksisterendeOppgave.status == Status.OPPRETTET) {
-            log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}")
+            log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}. Venteinformasjon: $årsakTilSattPåVent")
         } else {
             log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med tidligere status ${eksisterendeOppgave.status} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}")
         }
@@ -415,7 +419,7 @@ class OppdaterOppgaveService(
                 )
             )
         }
-        log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}. Venteinformasjon: ${oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent}")
+        log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
 
         val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
@@ -482,7 +486,7 @@ class OppdaterOppgaveService(
                 val siste = beh.endringer.maxByOrNull { it.tidsstempel }
                 "${beh.avklaringsbehovKode.kode}:${beh.status} (sistEndret=${siste?.tidsstempel}, av=${siste?.endretAv})"
             }
-            log.info("Fant ingen avsluttede avklaringsbehov. Behovene: [$beskrivelse]")
+            log.info("Fant ingen avsluttede avklaringsbehov. Behovene: [$beskrivelse], saksnummer: ${this.saksnummer}")
             return null
         }
 
@@ -576,6 +580,14 @@ class OppdaterOppgaveService(
                         "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}"
             )
         }
+    }
+
+    private fun OppgaveOppdatering.skalOppretteOppgave(): Boolean {
+        val erOppfølgingsbehandlingPåVent =
+            this.behandlingstype == Behandlingstype.OPPFØLGINGSBEHANDLING &&
+                    this.venteInformasjon?.årsakTilSattPåVent == "VENTER_PÅ_OPPLYSNINGER"
+        // fasttrack-behandlinger oppretter ikke avklaringsbehov, og skal derfor ikke ha oppgaver
+        return !erOppfølgingsbehandlingPåVent && this.avklaringsbehov.any { it.status in AVSLUTTEDE_STATUSER }
     }
 
     private fun OppgaveDto.oppgaveId() = OppgaveId(this.id!!, this.versjon)
