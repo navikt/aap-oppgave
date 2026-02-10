@@ -24,6 +24,8 @@ import no.nav.aap.oppgave.oppdater.hendelse.Endring
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.tilAvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
@@ -49,6 +51,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
+            tilbakekrevingRepository = TilbakekrevingRepository(connection),
         ).håndterNyOppgaveOppdatering(
             request.tilOppgaveOppdatering()
         )
@@ -74,6 +77,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
+            tilbakekrevingRepository = TilbakekrevingRepository(connection),
         ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
     }
     respondWithStatus(HttpStatusCode.OK)
@@ -97,6 +101,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
+            tilbakekrevingRepository = TilbakekrevingRepository(connection),
         ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
     }
     respondWithStatus(HttpStatusCode.OK)
@@ -116,6 +121,8 @@ private fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering() =
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
         venteInformasjon = null,
+        totaltFeilutbetaltBeløp = this.totaltFeilutbetaltBeløp,
+        tilbakekrevingsUrl = this.saksbehandlingURL
     )
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelse() =

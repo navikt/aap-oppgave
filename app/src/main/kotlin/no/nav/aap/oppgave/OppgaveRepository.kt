@@ -8,6 +8,7 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
@@ -103,7 +104,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setUUID(1, behandlingReferanse.referanse)
             }
             setRowMapper { row ->
-                oppgaveMapper(row)
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
             }
         }
     }
@@ -123,7 +125,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(1, oppgaveId)
             }
             setRowMapper { row ->
-                oppgaveMapper(row)
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
             }
         }
     }
@@ -143,7 +146,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setUUID(1, referanse)
             }
             setRowMapper { row ->
-                oppgaveMapper(row)
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
             }
         }
     }
@@ -403,7 +407,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         """.trimIndent()
 
         val oppgaver = connection.queryList(hentNesteOppgaveQuery) {
-            setRowMapper { oppgaveMapper(it) }
+            setRowMapper { row ->
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
+            }
         }
 
         val countQuery = """
@@ -484,8 +491,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             setParams {
                 setString(1, saksnummer.uppercase())
             }
-            setRowMapper {
-                oppgaveMapper(it)
+            setRowMapper { row ->
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
             }
         }
     }
@@ -505,8 +513,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             setParams {
                 setString(1, personIdent)
             }
-            setRowMapper {
-                oppgaveMapper(it)
+            setRowMapper { row ->
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
             }
         }
     }
@@ -577,7 +586,10 @@ class OppgaveRepository(private val connection: DBConnection) {
             setParams {
                 setString(1, ident)
             }
-            setRowMapper { row -> oppgaveMapper(row) }
+            setRowMapper { row ->
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
+            }
         }
     }
 
@@ -593,7 +605,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         """.trimIndent()
 
         return connection.queryList(query) {
-            setRowMapper { row -> oppgaveMapper(row) }
+            setRowMapper { row ->
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
+            }
         }
     }
 
@@ -654,7 +669,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         return sb.toString()
     }
 
-    private fun oppgaveMapper(row: Row): OppgaveDto {
+    private fun oppgaveMapper(row: Row, tilbakekrevingVars: TilbakekrevingsVarsDto?): OppgaveDto {
         return OppgaveDto(
             id = row.getLong("ID"),
             personIdent = row.getStringOrNull("PERSON_IDENT"),
@@ -696,8 +711,27 @@ class OppgaveRepository(private val connection: DBConnection) {
                     begrunnelse = row.getStringOrNull("RETUR_BEGRUNNELSE") ?: "",
                     endretAv = row.getStringOrNull("retur_returnert_av") ?: "UKJENT",
                 )
-            }
+            },
+            tilbakekrevingsVarsDto = tilbakekrevingVars
         )
+    }
+
+    private fun getTilbakekreving(
+        row: Row,
+        connection: DBConnection
+    ): TilbakekrevingsVarsDto? {
+        var tilbakekrevingVars: TilbakekrevingsVarsDto? = null
+        val behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
+        if (behandlingstype == Behandlingstype.TILBAKEKREVING) {
+            val tilbakekreving = TilbakekrevingRepository(connection).hent(row.getLong("ID"))
+            tilbakekrevingVars =
+                TilbakekrevingsVarsDto(
+                    tilbakekreving.url,
+                    tilbakekreving.beløp
+                )
+
+        }
+        return tilbakekrevingVars
     }
 
     private fun oppgaveSorteringQuery(sortBy: OppgaveSorteringFelt): String {

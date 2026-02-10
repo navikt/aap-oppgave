@@ -14,6 +14,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -36,7 +37,7 @@ class TilbakekrevingRepositoryTest {
             val oppgave = opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING)
             val vars = TilbakekrevingVars(
                 oppgaveId = oppgave.id,
-                beløp = no.nav.aap.komponenter.verdityper.Beløp(1000),
+                beløp = BigDecimal(1000.00),
                 url = "http://tilbakekreving.nav.no/oppgave/12345"
             )
 
@@ -49,7 +50,7 @@ class TilbakekrevingRepositoryTest {
 
             assertNotNull(hentetVars)
             assertEquals(vars.oppgaveId, hentetVars.oppgaveId)
-            assertEquals(vars.beløp, hentetVars.beløp)
+            assertEquals(vars.beløp.toBigInteger(), hentetVars.beløp.toBigInteger())
             assertEquals(vars.url, hentetVars.url)
 
         }

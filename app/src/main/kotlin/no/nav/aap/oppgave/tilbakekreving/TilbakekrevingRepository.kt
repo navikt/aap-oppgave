@@ -15,7 +15,7 @@ class TilbakekrevingRepository(private val connection: DBConnection) {
         connection.execute(sql, {
             setParams {
                 setLong(1, tilbakekrevingVars.oppgaveId)
-                setBigDecimal(2, tilbakekrevingVars.beløp.verdi)
+                setBigDecimal(2, tilbakekrevingVars.beløp)
                 setString(3, tilbakekrevingVars.url)
             }
         })
@@ -32,7 +32,7 @@ class TilbakekrevingRepository(private val connection: DBConnection) {
             setRowMapper {
                 TilbakekrevingVars(
                     oppgaveId = it.getLong("oppgave_id"),
-                    beløp = Beløp(it.getBigDecimal("belop")),
+                    beløp = it.getBigDecimal("belop"),
                     url = it.getString("TILBAKEKREVING_URL")
                 )
             }
