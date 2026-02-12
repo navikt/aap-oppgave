@@ -1,6 +1,6 @@
 [versions]
-ktor = "3.3.3"
-jackson = "2.20.1"
+ktor = "3.4.0"
+jackson = "2.21.0"
 komponenter = "1.0.937"
 tilgang = "1.0.178"
 behandlingsflytVersjon = "0.0.545"
@@ -42,12 +42,12 @@ tilgangPlugin = { module = "no.nav.aap.tilgang:plugin", version.ref = "tilgang" 
 
 commonsCompress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
 micrometerRegistryPrometheus = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.16.2" }
-logbackClassic = { module = "ch.qos.logback:logback-classic", version = "1.5.24" }
+logbackClassic = { module = "ch.qos.logback:logback-classic", version = "1.5.28" }
 logstashLogbackEncoder = { module = "net.logstash.logback:logstash-logback-encoder", version = "9.0" }
 hikariCp = { module = "com.zaxxer:HikariCP", version = "7.0.2" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.3" }
 flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "11.20.2" }
-unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "12.0.1" }
+unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "12.1.1" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
 nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.7" }
 
