@@ -91,7 +91,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     routeConfig = AuthorizationBodyPathConfig(
         operasjon = Operasjon.SAKSBEHANDLE,
         applicationsOnly = true,
-        applicationRole = "oppdater-postmottak-oppgaver"
+        applicationRole = "oppdater-behandlingsflyt-oppgaver"
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-tilbakekreving-oppgaver").increment()
