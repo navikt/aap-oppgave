@@ -8,6 +8,8 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.enhet.NAY_ENHETER
+import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -48,6 +50,18 @@ class OppgavelisteService(
             return oppgave.leggPåMarkeringer(markeringer.tilDto())
         }
         return oppgave
+    }
+
+    fun hentOppgaveEnhetListe(behandlingReferanse: BehandlingReferanse): List<OppgaveEnhetDto> {
+        val oppgaver = oppgaveRepository.hentOppgaver(behandlingReferanse.referanse)
+        return oppgaver.map { oppgave ->
+            val enhet = oppgave.oppfølgingsenhet ?: oppgave.enhet
+            OppgaveEnhetDto(
+                avklaringsbehovKode = oppgave.avklaringsbehovKode,
+                enhet = enhet,
+                erNayEnhet = NAY_ENHETER.map { it.kode }.contains(enhet)
+            )
+        }
     }
 
     fun hentOppgaverMedTilgang(

@@ -61,6 +61,7 @@ spec:
           permissions:
             roles:
               - "oppdater-behandlingsflyt-oppgaver"
+              - "hent-oppgave-enhet"
         - application: postmottak-backend
           permissions:
             roles:
