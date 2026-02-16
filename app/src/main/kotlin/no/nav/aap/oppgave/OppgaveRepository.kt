@@ -390,13 +390,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         utvidetFilter: UtvidetOppgavelisteFilter? = null,
         sortBy: OppgaveSorteringFelt? = null,
     ): FinnOppgaverDto {
-        if (filter.enheter.isEmpty()) {
-            return FinnOppgaverDto(
-                oppgaver = emptyList(),
-                antallGjenstaaende = 0,
-                antallTotalt = 0
-            )
-        }
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
         } else {
@@ -674,8 +667,10 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
         }
         // Enheter
-        val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
-        sb.append("(OPPFOLGINGSENHET IN $stringListeEnheter OR (OPPFOLGINGSENHET IS NULL AND ENHET IN $stringListeEnheter)) AND ")
+        if (enheter.isNotEmpty()) {
+            val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
+            sb.append("(OPPFOLGINGSENHET IN $stringListeEnheter OR (OPPFOLGINGSENHET IS NULL AND ENHET IN $stringListeEnheter)) AND ")
+        }
 
         // Veileder
         if (veileder != null) {

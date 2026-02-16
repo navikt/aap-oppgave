@@ -459,28 +459,6 @@ class OppgaveRepositoryTest {
     }
 
     @Test
-    fun `Når filter ikke har noen enheter, ikke returner oppgaver`() {
-        // Legger inn oppgaver på flere enheter
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
-        opprettOppgave(
-            enhet = ENHET_NAV_ENEBAKK,
-            påVentTil = LocalDate.now().plusDays(3),
-            påVentÅrsak = "årsak",
-            venteBegrunnelse = "grunn"
-        )
-        opprettOppgave(ENHET_NAV_LILLESTRØM)
-        opprettOppgave(ENHET_NAV_LØRENSKOG)
-
-        // Kaller finn oppgave uten enheter
-        val alleOppgaver = finnAlleOppgaver(filter = TransientFilterDto())
-        assertThat(alleOppgaver.oppgaver).isEmpty()
-
-        val enebakkOppgaver = finnAlleOppgaver(filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)))
-        assertThat(enebakkOppgaver.oppgaver).hasSize(2)
-
-    }
-
-    @Test
     fun `Kan bruke utvidet filter`() {
         val tilbakekrevingOppgave =
             opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingstype = Behandlingstype.TILBAKEKREVING)
