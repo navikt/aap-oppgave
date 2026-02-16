@@ -103,10 +103,6 @@ class OppdaterOppgaveService(
                 avsluttOppgaverSenereIFlyt(oppgaveMap, åpentAvklaringsbehov)
                 oppdaterEksistendeOppgave(oppgaveOppdatering, eksisterendeOppgave, åpentAvklaringsbehov)
             }
-        } else {
-            if (oppgaveOppdatering.skalOppretteOppgave()) {
-                log.warn("Ingen åpne avklaringsbehov på behandling, men behandlingsstatus er ${oppgaveOppdatering.behandlingStatus.name}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
-            }
         }
 
         // Avslutt oppgaver hvor avklaringsbehovet er lukket
@@ -582,13 +578,5 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun OppgaveOppdatering.skalOppretteOppgave(): Boolean {
-        val erOppfølgingsbehandlingPåVent =
-            this.behandlingstype == Behandlingstype.OPPFØLGINGSBEHANDLING &&
-                    this.venteInformasjon?.årsakTilSattPåVent == "VENTER_PÅ_OPPLYSNINGER"
-        // fasttrack-behandlinger oppretter ikke avklaringsbehov, og skal derfor ikke ha oppgaver
-        return !erOppfølgingsbehandlingPåVent && this.avklaringsbehov.any { it.status in AVSLUTTEDE_STATUSER }
-    }
-
-    private fun OppgaveDto.oppgaveId() = OppgaveId(this.id!!, this.versjon)
+    private fun OppgaveDto.oppgaveId() = OppgaveId(requireNotNull(this.id) { "Oppgaven må ha ID" }, this.versjon)
 }

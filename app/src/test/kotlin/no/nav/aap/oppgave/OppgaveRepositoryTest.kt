@@ -363,26 +363,55 @@ class OppgaveRepositoryTest {
 
         val sorterteDatoer = listOf(
             LocalDateTime.of(2027, 1, 1, 0, 0),
+            LocalDateTime.of(2026, 1, 1, 0, 0),
+            LocalDateTime.of(2025, 1, 1, 0, 0),
             LocalDateTime.of(2024, 1, 1, 0, 0),
+            LocalDateTime.of(2023, 1, 1, 0, 0),
             LocalDateTime.of(2022, 1, 1, 0, 0),
+            LocalDateTime.of(2021, 1, 1, 0, 0),
+            LocalDateTime.of(2020, 1, 1, 0, 0),
             LocalDateTime.of(2019, 1, 1, 0, 0),
         )
 
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[2])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[6])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[4])
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[0])
-        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[3])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[5])
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[1])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[2])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[8])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[3])
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = sorterteDatoer[7])
 
-        // Sorter på behandling_opprettet stigende
-        val oppgavelisteBehandlingOpprettetAsc = finnAlleOppgaverMedSortering(
+        // Sorter på behandling_opprettet stigende side 1
+        val oppgavelisteBehandlingOpprettetAscEn = finnAlleOppgaverMedSortering(
             TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             Paging(side = 1, antallPerSide = 3),
             OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
             OppgaveSorteringRekkefølge.ASC
         )
-        val oppgavelisteSorterteDatoerAsc = oppgavelisteBehandlingOpprettetAsc.oppgaver.map { it.behandlingOpprettet }
-        assertThat(oppgavelisteSorterteDatoerAsc).isEqualTo(sorterteDatoer.reversed().subList(0, 3))
+        val oppgavelisteSorterteDatoerAscEn = oppgavelisteBehandlingOpprettetAscEn.oppgaver.map { it.behandlingOpprettet }
+        assertThat(oppgavelisteSorterteDatoerAscEn).isEqualTo(sorterteDatoer.reversed().subList(0, 3))
 
+        // Sorter på behandling_opprettet stigende side 2
+        val oppgavelisteBehandlingOpprettetAscTo = finnAlleOppgaverMedSortering(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            Paging(side = 2, antallPerSide = 3),
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        val oppgavelisteSorterteDatoerAscTo = oppgavelisteBehandlingOpprettetAscTo.oppgaver.map { it.behandlingOpprettet }
+        assertThat(oppgavelisteSorterteDatoerAscTo).isEqualTo(sorterteDatoer.reversed().subList(3, 6))
+
+        // Sorter på behandling_opprettet stigende side 3
+        val oppgavelisteBehandlingOpprettetAscTre = finnAlleOppgaverMedSortering(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            Paging(side = 3, antallPerSide = 3),
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        val oppgavelisteSorterteDatoerAscTre = oppgavelisteBehandlingOpprettetAscTre.oppgaver.map { it.behandlingOpprettet }
+        assertThat(oppgavelisteSorterteDatoerAscTre).isEqualTo(sorterteDatoer.reversed().subList(6, 9))
     }
 
     @Test
