@@ -1,7 +1,6 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
-import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import java.math.BigDecimal
 import java.time.LocalDate

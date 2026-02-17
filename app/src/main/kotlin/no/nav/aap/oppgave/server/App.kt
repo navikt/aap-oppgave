@@ -4,17 +4,19 @@ import com.papsign.ktor.openapigen.model.info.InfoModel
 import com.papsign.ktor.openapigen.route.apiRouting
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStarted
+import io.ktor.server.application.ApplicationStopped
+import io.ktor.server.application.install
+import io.ktor.server.application.log
+import io.ktor.server.auth.authenticate
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.routing.routing
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import no.nav.aap.oppgave.drift.driftApi
+import javax.sql.DataSource
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
@@ -24,7 +26,9 @@ import no.nav.aap.komponenter.server.plugins.NavIdentInterceptor
 import no.nav.aap.motor.Motor
 import no.nav.aap.motor.api.motorApi
 import no.nav.aap.motor.retry.RetryService
+import no.nav.aap.oppgave.actuator.actuatorApi
 import no.nav.aap.oppgave.avreserverOppgave
+import no.nav.aap.oppgave.drift.driftApi
 import no.nav.aap.oppgave.enhet.hentEnhetApi
 import no.nav.aap.oppgave.enhet.nayEnhetForPerson
 import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
@@ -38,8 +42,8 @@ import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterTilbakekrevingOppgaverApi
-import no.nav.aap.oppgave.oppgaveliste.hentOppgavEnhetApi
 import no.nav.aap.oppgave.oppgaveliste.hentOppgaveApi
+import no.nav.aap.oppgave.oppgaveliste.hentOppgaveEnhetApi
 import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavesøkApi
@@ -51,7 +55,6 @@ import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
 import org.slf4j.LoggerFactory
-import javax.sql.DataSource
 
 private val SECURE_LOGGER = LoggerFactory.getLogger("team-logs")
 private const val ANTALL_WORKERS = 5
@@ -104,7 +107,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
                 oppgavelisteApi(dataSource, prometheus)
-                hentOppgavEnhetApi(dataSource, prometheus)
+                hentOppgaveEnhetApi(dataSource, prometheus)
                 oppgavesøkApi(dataSource, prometheus)
                 mineOppgaverApi(dataSource, prometheus)
                 søkApi(dataSource, prometheus)
@@ -125,7 +128,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 driftApi(dataSource)
             }
         }
-        actuator(prometheus)
+        actuatorApi(prometheus)
     }
 }
 
@@ -178,21 +181,3 @@ fun initDatasource(dbConfig: DbConfig, meterRegistry: MeterRegistry) = HikariDat
 })
 
 internal data class ErrorRespons(val message: String?)
-
-private fun Routing.actuator(prometheus: PrometheusMeterRegistry) {
-    route("/actuator") {
-        get("/metrics") {
-            call.respond(prometheus.scrape())
-        }
-
-        get("/live") {
-            val status = HttpStatusCode.OK
-            call.respond(status, "Oppe!")
-        }
-
-        get("/ready") {
-            val status = HttpStatusCode.OK
-            call.respond(status, "Oppe!")
-        }
-    }
-}
