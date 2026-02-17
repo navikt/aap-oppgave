@@ -56,14 +56,14 @@ import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
 import org.slf4j.LoggerFactory
 
-private val SECURE_LOGGER = LoggerFactory.getLogger("team-logs")
+val secureLogger = LoggerFactory.getLogger("team-logs")
 private const val ANTALL_WORKERS = 5
 
 fun main() {
     Thread.currentThread().setUncaughtExceptionHandler { _, e ->
         LoggerFactory.getLogger("App")
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
-        SECURE_LOGGER.error("Uhåndtert feil", e)
+        secureLogger.error("Uhåndtert feil", e)
     }
     val serverPort = System.getenv("HTTP_PORT")?.toInt() ?: 8080
     embeddedServer(Netty, serverPort) { server(DbConfig(), prometheus) }.start(wait = true)
