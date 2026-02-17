@@ -12,13 +12,14 @@ class TilbakekrevingRepository(private val connection: DBConnection) {
                 belop = EXCLUDED.belop,
                 tilbakekreving_url = EXCLUDED.tilbakekreving_url
         """.trimIndent()
-        connection.execute(sql, {
+        val key = connection.executeReturnKey(sql, {
             setParams {
                 setLong(1, tilbakekrevingVars.oppgaveId)
                 setBigDecimal(2, tilbakekrevingVars.beløp)
                 setString(3, tilbakekrevingVars.url)
             }
         })
+        key.toString()
     }
 
     fun hent(oppgaveId: Long): TilbakekrevingVars {

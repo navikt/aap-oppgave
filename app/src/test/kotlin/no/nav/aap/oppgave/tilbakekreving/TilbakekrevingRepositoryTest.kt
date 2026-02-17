@@ -52,10 +52,7 @@ class TilbakekrevingRepositoryTest {
             assertEquals(vars.oppgaveId, hentetVars.oppgaveId)
             assertEquals(vars.beløp.toBigInteger(), hentetVars.beløp.toBigInteger())
             assertEquals(vars.url, hentetVars.url)
-
         }
-
-
     }
 
     private fun opprettOppgave(
