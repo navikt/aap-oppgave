@@ -11,6 +11,8 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.dokumenter.TilbakekrevingBehandlingsstatus
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilRetur
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
@@ -35,12 +37,14 @@ import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
+import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkRequest
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkResponse
 import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
@@ -304,6 +308,76 @@ class OppgaveApiTest {
         assertThat(oppgaveDto.reservertAv)
             .withFailMessage { "reserverTil skal implisere at oppgaven blir reservert til denne personen" }
             .isEqualTo("U12345")
+    }
+
+    @Test
+    fun`Tilbakekreving hendelse til oppgave`(fakesConfig: FakesConfig){
+        val saksnummer = Saksnummer("100002")
+        val referanse = BehandlingReferanse(UUID.randomUUID())
+
+        oppdaterTilbakekrevingOppgaver(
+            TilbakekrevingsbehandlingOppdatertHendelse(
+                personIdent = "12345678910",
+                saksnummer = saksnummer,
+                behandlingref = referanse,
+                behandlingStatus = TilbakekrevingBehandlingsstatus.OPPRETTET,
+                sakOpprettet = LocalDateTime.now(),
+                avklaringsbehov = listOf<AvklaringsbehovHendelseDto>(AvklaringsbehovHendelseDto(
+                    id=null,
+                    avklaringsbehovDefinisjon = Definisjon.REFUSJON_KRAV,
+                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            tidsstempel = LocalDateTime.now(),
+                            frist = LocalDate.now().plusWeeks(4),
+                            endretAv = "12324L",
+                            årsakTilSattPåVent = null,
+                            årsakTilRetur = emptyList(),
+                            begrunnelse = null
+                        )
+                    )
+                )),
+                totaltFeilutbetaltBeløp = 21321321.toBigDecimal(),
+                saksbehandlingURL = "testUrl",
+            )
+        )
+
+        oppdaterTilbakekrevingOppgaver(
+            TilbakekrevingsbehandlingOppdatertHendelse(
+                personIdent = "12345678910",
+                saksnummer = saksnummer,
+                behandlingref = referanse,
+                behandlingStatus = TilbakekrevingBehandlingsstatus.TIL_BEHANDLING,
+                sakOpprettet = LocalDateTime.now(),
+                avklaringsbehov = listOf(AvklaringsbehovHendelseDto(
+                    id=null,
+                    avklaringsbehovDefinisjon = Definisjon.REFUSJON_KRAV,
+                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+                            tidsstempel = LocalDateTime.now().plusDays(1),
+                            frist = LocalDate.now().plusWeeks(4),
+                            endretAv = "12324L",
+                            årsakTilSattPåVent = null,
+                            årsakTilRetur = emptyList(),
+                            begrunnelse = "dsadsadsadsadsa"
+                        )
+                    )
+                )),
+                totaltFeilutbetaltBeløp = 21321321.toBigDecimal(),
+                saksbehandlingURL = "testUrl",
+            )
+        )
+
+        initDatasource(dbConfig(), prometheus).transaction {
+            val oppgaver = OppgaveRepository(it).hentAlleÅpneOppgaver()
+            assertThat(oppgaver).hasSize(1)
+            assertThat(oppgaver.first().saksnummer).isEqualTo(saksnummer.toString())
+            val tilbakekrevingsVars = TilbakekrevingRepository(it).hent(oppgaver.first().id!!)
+            assertThat(tilbakekrevingsVars).isNotNull
+        }
     }
 
     @Test
@@ -1147,6 +1221,13 @@ class OppgaveApiTest {
         return client.post(
             URI.create("http://localhost:$port/oppdater-oppgaver"),
             PostRequest(body = behandlingFlytStoppetHendelse)
+        )
+    }
+
+    private fun oppdaterTilbakekrevingOppgaver(tilbakekrevingsbehandlingOppdatertHendelse: TilbakekrevingsbehandlingOppdatertHendelse): Unit? {
+        return client.post(
+            URI.create("http://localhost:$port/oppdater-tilbakekreving-oppgaver"),
+            PostRequest(body = tilbakekrevingsbehandlingOppdatertHendelse)
         )
     }
 

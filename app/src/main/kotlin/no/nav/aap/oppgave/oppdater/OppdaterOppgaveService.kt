@@ -122,6 +122,14 @@ class OppdaterOppgaveService(
             HendelseType.OPPDATERT,
             flytJobbRepository
         )
+        if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
+            tilbakekrevingRepository.lagre(
+                TilbakekrevingVars(
+                    eksisterendeOppgave.oppgaveId().id, oppgaveOppdatering.totaltFeilutbetaltBeløp, oppgaveOppdatering.tilbakekrevingsUrl
+                )
+            )
+        }
+
         // Hvis oppgaven ble satt på vent, reserver til saksbehandler som satte på vent
         if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.påVentTil == null && eksisterendeOppgave.reservertAv == null) {
             log.info("Forsøker å reservere oppgave ${eksisterendeOppgave.oppgaveId()} til saksbehandler som satte den på vent")
@@ -172,6 +180,14 @@ class OppdaterOppgaveService(
             returInformasjon = utledReturInformasjon(avklaringsbehov, oppgaveOppdatering),
             utløptVentefrist = utledUtløptVentefrist(oppgaveOppdatering, eksisterendeOppgave)
         )
+
+        if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
+            tilbakekrevingRepository.lagre(
+                TilbakekrevingVars(
+                    eksisterendeOppgave.oppgaveId().id, oppgaveOppdatering.totaltFeilutbetaltBeløp, oppgaveOppdatering.tilbakekrevingsUrl
+                )
+            )
+        }
 
         // Automatisk reservasjon enten ved retur eller override fra behandlingsflyt
         if (harBlittSendtTilbakeFraToTrinn(avklaringsbehov) && eksisterendeOppgave.status == Status.AVSLUTTET) {

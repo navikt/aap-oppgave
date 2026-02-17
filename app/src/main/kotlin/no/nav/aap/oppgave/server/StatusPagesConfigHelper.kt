@@ -1,14 +1,16 @@
 package no.nav.aap.oppgave.server
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.log
+import io.ktor.server.plugins.statuspages.StatusPagesConfig
+import io.ktor.server.response.respond
+import java.net.http.HttpTimeoutException
+import java.sql.SQLException
 import no.nav.aap.komponenter.httpklient.exception.ApiErrorCode
 import no.nav.aap.komponenter.httpklient.exception.ApiException
 import no.nav.aap.komponenter.httpklient.exception.InternfeilException
 import org.slf4j.LoggerFactory
-import java.net.http.HttpTimeoutException
 
 object StatusPagesConfigHelper {
     fun setup(): StatusPagesConfig.() -> Unit = {
@@ -35,6 +37,13 @@ object StatusPagesConfigHelper {
                 is ApiException -> {
                     logger.warn(cause.message, cause)
                     call.respondWithError(cause)
+                }
+
+                is SQLException -> {
+                    logger.error("SQL-feil av type '${cause.javaClass.name}'. Se sikker logs for flere detaljer.")
+                    secureLogger.error("SQL-feil: ", cause)
+
+                    call.respondWithError(InternfeilException("En feil oppsto. Prøv igjen om litt."))
                 }
 
                 else -> {

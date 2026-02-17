@@ -14,7 +14,7 @@ import no.nav.aap.tilgang.AuthorizationParamPathConfig
 import no.nav.aap.tilgang.authorizedGet
 import javax.sql.DataSource
 
-fun NormalOpenAPIRoute.hentOppgavEnhetApi(
+fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry
 ) = route("/{referanse}/hent-oppgave-enhet").authorizedGet<BehandlingReferanse, OppgaveEnhetResponse>(
