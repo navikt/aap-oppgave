@@ -7,6 +7,8 @@ import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopped
+import io.ktor.server.application.ApplicationStopping
+import io.ktor.server.application.ServerReady
 import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.auth.authenticate
@@ -88,7 +90,9 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
     val iMsGraphClient = MsGraphGateway(prometheus)
 
-    motor(dataSource, prometheus)
+    val motor = initMotor(dataSource, prometheus)
+
+    lifecycleHooks(motor)
 
     routing {
         authenticate(AZURE) {
@@ -132,7 +136,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     }
 }
 
-fun Application.motor(dataSource: DataSource, prometheus: MeterRegistry): Motor {
+fun initMotor(dataSource: DataSource, prometheus: MeterRegistry): Motor {
     val motor = Motor(
         dataSource = dataSource,
         antallKammer = ANTALL_WORKERS,
@@ -148,19 +152,26 @@ fun Application.motor(dataSource: DataSource, prometheus: MeterRegistry): Motor 
         RetryService(dbConnection).enable()
     }
 
+    return motor
+}
+
+private fun Application.lifecycleHooks(motor: Motor) {
     monitor.subscribe(ApplicationStarted) {
         motor.start()
     }
-
-    monitor.subscribe(ApplicationStopped) { application ->
-        application.log.info("Server har stoppet")
+    monitor.subscribe(ServerReady) {
+        ReadinessState.setReady()
+    }
+    monitor.subscribe(ApplicationStopping) { app ->
+        ReadinessState.setStopping()
+        app.log.info("Server stopper, stopper motor...")
         motor.stop()
-
+    }
+    monitor.subscribe(ApplicationStopped) { app ->
+        app.log.info("Application stopped")
         monitor.unsubscribe(ApplicationStarted) {}
         monitor.unsubscribe(ApplicationStopped) {}
     }
-
-    return motor
 }
 
 class DbConfig(

@@ -6,6 +6,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import no.nav.aap.oppgave.server.ReadinessState
 
 fun Routing.actuatorApi(prometheus: PrometheusMeterRegistry) {
     route("/actuator") {
@@ -18,7 +19,11 @@ fun Routing.actuatorApi(prometheus: PrometheusMeterRegistry) {
         }
 
         get("/ready") {
-            call.respond(HttpStatusCode.OK, "Ready")
+            if (ReadinessState.isReady()) {
+                call.respond(HttpStatusCode.OK, "Ready")
+            } else {
+                call.respond(HttpStatusCode.ServiceUnavailable, "Not ready")
+            }
         }
     }
 }
