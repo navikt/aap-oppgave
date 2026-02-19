@@ -136,7 +136,8 @@ class EnhetService(
 
     private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>, saksnummer: String?, erFørstegangsbehandling: Boolean): EnhetForOppgave {
         val enhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling)
-        if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erEgneAnsatteKontor(enhet.enhet)) {
+        // Vikafossen + egen ansatt-enheter kvalitetssikrer egne saker
+        if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erSkjermet(ident)) {
             return enhet
         }
 
@@ -299,10 +300,6 @@ class EnhetService(
         }
         val alleGraderinger = graderingerForRelevanteIdenter?.plus(søkersGradering) ?: listOf(søkersGradering)
         return alleGraderinger.max()
-    }
-
-    private fun erEgneAnsatteKontor(enhet: String): Boolean {
-        return enhet.endsWith("83")
     }
 
     private fun skalTilNayUtland(ident: String, geografiskTilknytningType: GeografiskTilknytningType?): Boolean {

@@ -171,14 +171,14 @@ class EnhetServiceTest {
     }
 
     @Test
-    fun `Skal ikke prøve å omgjøre til fylkesenhet for egne ansatte-enheter`() {
+    fun `Skal ikke prøve å omgjøre til fylkesenhet for ident med skjerming`() {
         val egneAnsatteOslo = "0383"
         val norgGateway = NorgGatewayMock.medRespons(responsEnhet = (egneAnsatteOslo))
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, norgGateway, VeilarbarenaGatewayMock(), UnleashService(FakeUnleash().apply {
             enableAll()
         }))
 
-        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, "12345678911", emptyList(), erFørstegangsbehandling = true)
+        val utledetEnhet = service.utledEnhetForOppgave(KVALITETSSIKRER_AVKLARINGSBEHOVKODE, IDENT_MED_SKJERMING, emptyList(), erFørstegangsbehandling = true)
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(
             egneAnsatteOslo
