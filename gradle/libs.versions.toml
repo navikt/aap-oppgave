@@ -5,7 +5,7 @@ komponenter = "2.0.2"
 tilgang = "1.0.179"
 behandlingsflytVersjon = "0.0.552"
 postmottakVersjon = "6.0.4"
-junit = "6.0.2"
+junit = "6.0.3"
 testcontainers = "1.21.4"
 
 [libraries]
