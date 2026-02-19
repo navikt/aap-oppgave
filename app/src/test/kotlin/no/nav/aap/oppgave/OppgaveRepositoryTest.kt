@@ -26,7 +26,6 @@ import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class OppgaveRepositoryTest {
@@ -95,6 +94,7 @@ class OppgaveRepositoryTest {
                     beskrivelse = "alle oppgaver",
                     opprettetAv = "saksbehandler",
                     opprettetTidspunkt = LocalDateTime.now().minusDays(10),
+                    enheter = setOf(ENHET_NAV_LØRENSKOG, ENHET_NAV_ENEBAKK)
                 ),
                 paging = Paging(
                     side = 1,
@@ -179,7 +179,7 @@ class OppgaveRepositoryTest {
         opprettOppgave(veilederArbeid = VEILEDER_IDENT_2)
         val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
 
-        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1, enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
 
         assertThat(oppgaver).hasSize(1)
         assertThat(oppgaver.map { it.id }).contains(oppgaveId2.id)
@@ -190,7 +190,7 @@ class OppgaveRepositoryTest {
         opprettOppgave(veilederSykdom = VEILEDER_IDENT_2)
         val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
 
-        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1, enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
 
         assertThat(oppgaver).hasSize(1)
         assertThat(oppgaver.map { it.id }).contains(oppgaveId2.id)
@@ -202,7 +202,7 @@ class OppgaveRepositoryTest {
         val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
         val oppgaveId3 = opprettOppgave(veilederSykdom = VEILEDER_IDENT_1)
 
-        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1)).oppgaver
+        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1, enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
 
         assertThat(oppgaver).hasSize(2)
         assertThat(oppgaver.map { it.id }).containsAll(setOf(oppgaveId2.id, oppgaveId3.id))
@@ -537,44 +537,44 @@ class OppgaveRepositoryTest {
         )
 
         val merEnnSøkInk = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(),
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             paging = null,
             utvidetOppgavelisteFilter = utvidetFilterMerEnnEksludert,
         )
 
         val merEnnSøkEks = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(),
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             paging = null,
             utvidetOppgavelisteFilter = utvidetFilterMerEnnInkludert,
         )
 
 
         val søkMedUtvidetFilter = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(),
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             paging = null,
             utvidetOppgavelisteFilter = utvidetFilter,
         )
 
         val søkMedUtvidetFilterPåVent = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(),
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             paging = null,
             utvidetOppgavelisteFilter = utvidetFilterMedStatusPåVent,
         )
 
         val søkMedutvidetFilterMedStatusPåVentOgReturStatus = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(),
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             paging = null,
             utvidetOppgavelisteFilter = utvidetFilterMedStatusPåVentOgReturStatus,
         )
 
         val søkMedUtvidetFilterVentefristUtløpt = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(),
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             paging = null,
             utvidetOppgavelisteFilter = utvidetFilterMedStatusVentefristUtløpt
         )
 
         val søkMedUtvidetFilterHastesøk = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(),
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
             paging = null,
             utvidetOppgavelisteFilter = utvidetFilterMedHastesøk,
         )
