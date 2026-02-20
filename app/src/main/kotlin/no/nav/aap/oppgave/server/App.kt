@@ -7,6 +7,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopped
+import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.auth.authenticate
@@ -149,15 +150,17 @@ fun Application.motor(dataSource: DataSource, prometheus: MeterRegistry): Motor 
     }
 
     monitor.subscribe(ApplicationStarted) {
+        log.info("Serveren har startet – starter motor...")
         motor.start()
     }
 
-    monitor.subscribe(ApplicationStopped) { application ->
-        application.log.info("Server har stoppet")
+    monitor.subscribe(ApplicationStopping) {
+        log.info("Serveren stopper – stopper motor...")
         motor.stop()
+    }
 
-        monitor.unsubscribe(ApplicationStarted) {}
-        monitor.unsubscribe(ApplicationStopped) {}
+    monitor.subscribe(ApplicationStopped) {
+        log.info("Serveren har stoppet")
     }
 
     return motor
