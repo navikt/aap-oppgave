@@ -222,7 +222,7 @@ class EnhetService(
             }
 
         val enhetForKø = enhetFraArena ?: enhetFraNorg
-        if (enhetForKø in ENHETER_REGION_SUNNFJORD.map { it.kode } && erFørstegangsbehandling == true) {
+        if (enhetForKø in ENHETER_REGION_SUNNFJORD.map { it.kode } && erFørstegangsbehandling) {
             log.info("Enhet for førstegangsbehandling ble utledet til $enhetForKø, overstyrer enhet til regionskontoret Nav Sunnfjord (1476).")
             return EnhetForOppgave(
                 enhet = Enhet.NAV_REGION_SUNNFJORD.kode,
