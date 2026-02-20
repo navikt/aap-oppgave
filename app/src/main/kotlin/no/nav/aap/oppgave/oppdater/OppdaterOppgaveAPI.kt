@@ -25,7 +25,6 @@ import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.tilAvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
-import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
@@ -148,15 +147,19 @@ private fun List<EndringDTO>.tilEndring() =
     }
 
 private fun TilbakekrevingBehandlingsstatus.tilBehandlingsstatus() =
-    when(this) {
+    when (this) {
         TilbakekrevingBehandlingsstatus.OPPRETTET -> BehandlingStatus.ÅPEN
         TilbakekrevingBehandlingsstatus.TIL_BEHANDLING -> BehandlingStatus.ÅPEN
         TilbakekrevingBehandlingsstatus.AVSLUTTET -> BehandlingStatus.LUKKET
+        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> BehandlingStatus.ÅPEN
+        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> BehandlingStatus.ÅPEN
     }
 
 private fun TilbakekrevingBehandlingsstatus.tilStatus() =
-    when(this) {
+    when (this) {
         TilbakekrevingBehandlingsstatus.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
         TilbakekrevingBehandlingsstatus.TIL_BEHANDLING -> AvklaringsbehovStatus.OPPRETTET
         TilbakekrevingBehandlingsstatus.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
+        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> AvklaringsbehovStatus.OPPRETTET
+        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
     }
