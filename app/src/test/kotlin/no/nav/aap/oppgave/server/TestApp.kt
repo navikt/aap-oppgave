@@ -13,22 +13,31 @@ import java.time.Duration
 import java.time.temporal.ChronoUnit
 
 fun main() {
+    val dbConfig = initDbConfig()
+
     val fakes = Fakes().also { it.setProperties() }
     embeddedServer(Netty, port = 8084) {
-        val dbConfig = if (System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_JDBC_URL").isNullOrBlank()) {
-             val postgres = postgreSQLContainer()
-             DbConfig(
-                username = postgres.username,
-                password = postgres.password,
-                jdbcUrl = postgres.jdbcUrl,
-            )
-        } else {
-            DbConfig()
-        }
         server(dbConfig, PrometheusMeterRegistry(PrometheusConfig.DEFAULT))
         module(fakes)
     }.start(wait = true)
 }
+
+private fun initDbConfig(): DbConfig {
+    return if (System.getenv("NAIS_DATABASE_OPPGAVE_OPPGAVE_JDBC_URL").isNullOrBlank()) {
+        val postgres = postgreSQLContainer()
+
+        DbConfig(
+            jdbcUrl = postgres.jdbcUrl,
+            username = postgres.username,
+            password = postgres.password
+        )
+    } else {
+        DbConfig()
+    }.also {
+        println("----\nDATABASE URL: \n${it.jdbcUrl}?user=${it.username}&password=${it.password}\n----")
+    }
+}
+
 
 internal fun postgreSQLContainer(): PostgreSQLContainer<Nothing> {
     val postgres = PostgreSQLContainer<Nothing>("postgres:16")

@@ -32,7 +32,7 @@
       <env name="INTEGRASJON_SYFO_SCOPE" value="api://dev-gcp.teamsykefravr.syfooversiktsrv/.default" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="no.nav.aap.oppgave.server.AppKt" />
-    <module name="aap-oppgave.app.main" />
+    <module name="oppgave.app.main" />
     <extension name="net.ashald.envfile">
       <option name="IS_ENABLED" value="true" />
       <option name="IS_SUBST" value="false" />

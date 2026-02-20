@@ -117,7 +117,9 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         System.setProperty("integrasjon.syfo.url", "http://localhost:${sykefravavaroppfolging.port()}")
         System.setProperty("integrasjon.syfo.scope", "scope")
         // Behandlingsflyt
-        System.setProperty("integrasjon.behandlingsflyt.url", "http://localhost:${behandlingsflyt.port()}")
+        if (System.getProperty("INTEGRASJON_BEHANDLINGSFLYT_URL").isNullOrEmpty()) {
+            System.setProperty("integrasjon.behandlingsflyt.url", "http://localhost:${behandlingsflyt.port()}")
+        }
         System.setProperty("integrasjon.behandlingsflyt.scope", "scope")
         // Statistikk
         System.setProperty("integrasjon.statistikk.url", "http://localhost:${statistikkFake.port()}")
