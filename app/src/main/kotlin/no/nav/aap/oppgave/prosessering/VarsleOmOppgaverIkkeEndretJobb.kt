@@ -7,6 +7,7 @@ import no.nav.aap.motor.JobbUtfører
 import no.nav.aap.motor.cron.CronExpression
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -24,10 +25,11 @@ class VarsleOmOppgaverIkkeEndretJobb(
         log.info("Fant ${alleÅpneOppgaverIkkePåVent.size} åpne oppgaver som ikke er på vent og ikke er reservert.")
         val nå = LocalDateTime.now()
         val oppgaverIkkeEndretPåFemUker = alleÅpneOppgaverIkkePåVent.filter { (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusWeeks(5)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusWeeks(5)) }
+        val oppgaverIkkeHosNay = oppgaverIkkeEndretPåFemUker.filterNot { oppgave -> NAY_ENHETER.map { it.kode }.contains(oppgave.enhetForKø) }
 
-        log.info("Fant ${oppgaverIkkeEndretPåFemUker.size} oppgaver som ikke er endret på mer enn fem uker")
+        log.info("Fant ${oppgaverIkkeEndretPåFemUker.size} oppgaver som ikke er endret på mer enn fem uker, hvorav ${oppgaverIkkeHosNay.size} ikke er hos NAY.")
         if (unleashService.isEnabled(FeatureToggles.VarsleOmOppgaverEldreEnn7Dager)) {
-            oppgaverIkkeEndretPåFemUker.forEach {
+            oppgaverIkkeHosNay.forEach {
                 log.error(
                     "Oppgave ${
                         OppgaveId(
