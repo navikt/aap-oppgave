@@ -11,6 +11,8 @@ import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.auth.authenticate
+import io.ktor.server.engine.EngineConnectorBuilder
+import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.statuspages.StatusPages
@@ -18,6 +20,7 @@ import io.ktor.server.routing.routing
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import javax.sql.DataSource
+import kotlin.time.Duration.Companion.seconds
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
@@ -66,8 +69,13 @@ fun main() {
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
         secureLogger.error("Uhåndtert feil", e)
     }
-    val serverPort = System.getenv("HTTP_PORT")?.toInt() ?: 8080
-    embeddedServer(Netty, serverPort) { server(DbConfig(), prometheus) }.start(wait = true)
+    embeddedServer(Netty, configure = {
+        connector {
+            port = System.getenv("HTTP_PORT")?.toInt() ?: 8080
+        }
+        shutdownGracePeriod = 25.seconds.inWholeMilliseconds
+        shutdownTimeout = 30.seconds.inWholeMilliseconds
+    }) { server(DbConfig(), prometheus) }.start(wait = true)
 }
 
 internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterRegistry) {
