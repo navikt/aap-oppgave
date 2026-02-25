@@ -4,6 +4,7 @@ import io.getunleash.FakeUnleash
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.ÅrsakTilOpprettelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
@@ -189,7 +190,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(hendelse)
@@ -403,7 +404,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = listOf(STRENGT_FORTROLIG_IDENT),
         )
 
@@ -445,7 +446,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = listOf(FORTROLIG_ADRESSE_IDENT),
         )
 
@@ -491,7 +492,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -622,7 +623,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -692,7 +693,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -759,7 +760,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -824,7 +825,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -902,7 +903,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -959,7 +960,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -1007,7 +1008,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -1070,7 +1071,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(hendelse)
@@ -1127,7 +1128,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(nyttMottattDokument)
@@ -1195,7 +1196,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
@@ -1263,7 +1264,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(returFraKvalitetssikrer)
@@ -1343,7 +1344,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(returTilKvalitetssikrer)
@@ -1408,7 +1409,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(tilBeslutter)
@@ -1476,7 +1477,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(returFraBeslutter)
@@ -1556,7 +1557,7 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(returTilBeslutter)
@@ -1615,7 +1616,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -1667,7 +1668,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
             erPåVent = false,
         )
@@ -1723,7 +1724,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
             erPåVent = false,
         )
@@ -1781,7 +1782,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
             erPåVent = true,
         )
@@ -1840,7 +1841,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
 
@@ -1893,7 +1894,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
             erPåVent = false,
         )
@@ -2043,7 +2044,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(tilSykdom)
@@ -2089,7 +2090,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             vurderingsbehov = listOf("SØKNAD", "SØKNAD_TRUKKET"),
-            årsakTilOpprettelse = "SØKNAD",
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
             relevanteIdenterPåBehandling = emptyList(),
         )
         sendBehandlingFlytStoppetHendelse(trekkSøknad)
