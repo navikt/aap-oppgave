@@ -8,6 +8,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.ÅrsakTilOpprettelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
@@ -37,7 +38,6 @@ import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
-import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
@@ -1213,7 +1213,7 @@ class OppgaveApiTest {
             mottattDokumenter = listOf(),
             reserverTil = reserverTil,
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = "SØKNAD"
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD
         )
     }
 

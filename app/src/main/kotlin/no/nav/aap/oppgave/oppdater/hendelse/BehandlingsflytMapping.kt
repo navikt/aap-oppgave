@@ -23,7 +23,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         referanse = this.referanse.referanse,
         vurderingsbehov = this.vurderingsbehov,
         behandlingStatus = this.status.tilBehandlingsstatus(),
-        årsakTilOpprettelse = this.årsakTilOpprettelse,
+        årsakTilOpprettelse = this.årsakTilOpprettelse.name,
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(this.saksnummer),
