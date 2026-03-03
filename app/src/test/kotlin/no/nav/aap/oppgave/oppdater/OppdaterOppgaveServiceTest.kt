@@ -2100,6 +2100,79 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgaveSøknadTrukket.enhet).isEqualTo(ENHET_NAV_ASKER)
     }
 
+    @Test
+    fun `Hvis postmottak-hendelse ikke har saksnummer, utled saksnummeret fra oppgavehistorikk på bruker`() {
+        val saksnummer = Saksnummer("112233")
+        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
+        val nå = LocalDateTime.now()
+
+        val opprett115Hendelse = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD", "SØKNAD_TRUKKET"),
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(opprett115Hendelse)
+
+        // sjekker at det finnes oppgave med saksnummer
+        val oppgaveSykdom = hentOppgaverForBehandling(behandlingsref).first()
+        assertThat(oppgaveSykdom.saksnummer).isEqualTo(saksnummer.toString())
+
+        val behandlingsRefPostmottak = BehandlingReferanse(UUID.randomUUID())
+
+        val dokumentflytHendelseUtenSaksnummer = DokumentflytStoppetHendelse(
+            journalpostId = JournalpostId(123L),
+            ident = "12345678901",
+            referanse = behandlingsRefPostmottak.referanse,
+            behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
+            status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            avklaringsbehov = listOf(
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusDays(2)
+                        )
+                    ),
+                ),
+            ),
+            opprettetTidspunkt = nå.minusDays(2),
+            hendelsesTidspunkt = nå.minusHours(5),
+        )
+
+        sendDokumentFlytStoppetHendelse(dokumentflytHendelseUtenSaksnummer)
+
+        // postmottak-oppgaven skal ha samme saksnummer som behandlingsflyt sendte med tidligere
+        val oppgavePostmottak = hentOppgaverForBehandling(behandlingsRefPostmottak).first()
+        assertThat(oppgavePostmottak.saksnummer).isEqualTo(saksnummer.toString())
+    }
+
 
     private fun sendBehandlingFlytStoppetHendelse(hendelse: BehandlingFlytStoppetHendelse) {
         dataSource.transaction { connection ->
