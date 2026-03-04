@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.oppdater.kelvinTokBehandlingAvVent
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
