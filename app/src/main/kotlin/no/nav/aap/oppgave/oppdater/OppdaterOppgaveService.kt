@@ -422,6 +422,7 @@ class OppdaterOppgaveService(
             erSkjermet = erSkjermet,
             harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
             returInformasjon = utledReturFraToTrinn(avklaringsbehovHendelse),
+            saksnummer = oppgaveOppdatering.saksnummer ?: utledSaksnummerFraIdent(oppgaveOppdatering.personIdent),
         )
         val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
@@ -476,6 +477,12 @@ class OppdaterOppgaveService(
             in AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK if avklaringsbehovKode2 in AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK -> true
             else -> false
         }
+    }
+
+    private fun utledSaksnummerFraIdent(ident: String): String? {
+        // gitt at postmottak ikke sender saksnummer, utled fra behandlingsflyt-oppgaver om de finnes
+        val oppgaverPåBruker = oppgaveRepository.hentOppgaverForIdent(ident)
+        return oppgaverPåBruker.map { it.saksnummer }.firstOrNull()
     }
 
     private fun avslutteOppgaver(oppgaver: List<OppgaveDto>) {
@@ -545,11 +552,12 @@ class OppdaterOppgaveService(
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean,
         returInformasjon: ReturInformasjon?,
-        utløptVentefrist: LocalDate? = null
+        utløptVentefrist: LocalDate? = null,
+        saksnummer: String? = null,
     ): OppgaveDto {
         return OppgaveDto(
             personIdent = personIdent,
-            saksnummer = this.saksnummer,
+            saksnummer = saksnummer,
             behandlingRef = this.referanse,
             journalpostId = this.journalpostId,
             enhet = enhet,

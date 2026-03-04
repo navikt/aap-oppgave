@@ -111,6 +111,28 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    fun hentOppgaverForIdent(ident: String): List<OppgaveDto> {
+        val oppgaverForIdQuery = """
+            SELECT 
+                $alleOppgaveFelt
+            FROM 
+                OPPGAVE 
+            WHERE 
+                PERSON_IDENT = ?
+            ORDER BY OPPRETTET_TIDSPUNKT DESC
+        """.trimIndent()
+
+        return connection.queryList(oppgaverForIdQuery) {
+            setParams {
+                setString(1, ident)
+            }
+            setRowMapper { row ->
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
+            }
+        }
+    }
+
     fun hentOppgave(oppgaveId: Long): OppgaveDto {
         val oppgaverForIdQuery = """
             SELECT 
@@ -509,7 +531,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnOppgaverGittPersonident(personIdent: String): List<OppgaveDto> {
+    fun finnÅpneOppgaverGittPersonident(personIdent: String): List<OppgaveDto> {
         val hentOppgaverGittPersonidentQuery = """
             SELECT 
                    $alleOppgaveFelt
