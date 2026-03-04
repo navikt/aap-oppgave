@@ -762,6 +762,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "aarsak_til_opprettelse"
             OppgaveSorteringFelt.AVKLARINGSBEHOV_KODE -> "avklaringsbehov_type"
             OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "opprettet_tidspunkt"
+            OppgaveSorteringFelt.RESERVERT_AV -> "reservert_av"
         }
     }
 
