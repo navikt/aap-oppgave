@@ -338,6 +338,13 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND AARSAKER_TIL_BEHANDLING && $stringListeÅrsaker")
         }
 
+        if (utvidetFilter.saksbehandlere.isNotEmpty()) {
+            val stringListeSaksbehandlere =
+                utvidetFilter.saksbehandlere
+                    .joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
+            sb.append(" AND RESERVERT_AV IN $stringListeSaksbehandlere")
+        }
+
         if(utvidetFilter.beløpMindreEnn!= null){
             sb.append(" AND t.belop < ${utvidetFilter.beløpMindreEnn} OR t.belop IS NULL")
         }

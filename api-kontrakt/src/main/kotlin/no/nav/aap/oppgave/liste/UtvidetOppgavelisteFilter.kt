@@ -17,4 +17,5 @@ data class UtvidetOppgavelisteFilter (
     val ventefristUtløpt : Boolean? = null,
     val beløpMerEnn : BigDecimal? = null,
     val beløpMindreEnn: BigDecimal? = null,
+    val saksbehandlere: Set<String> = emptySet(),
 )
