@@ -104,8 +104,8 @@ class OppgaveRepositoryTest {
         val oppgaverOppfølgingNavKontor = dataSource.transaction { connection ->
             OppgaveRepository(connection).finnOppgaver(
                 filter = FilterDto(
-                    navn = "Kontor oppfølgingsoppgave",
-                    beskrivelse = "Kontor oppfølgingsoppgave",
+                    navn = "Oppfølgingsoppgave kontor",
+                    beskrivelse = "Oppfølgingsoppgave kontor",
                     opprettetAv = "en geit",
                     opprettetTidspunkt = LocalDateTime.now().minusDays(10),
                     enheter = setOf(Enhet.NAV_UTLAND.kode)
