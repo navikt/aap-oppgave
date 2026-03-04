@@ -44,8 +44,9 @@ class ReturInformasjonUtleder {
         // Setter ReturInformasjon når behandling sendes tilbake til totrinn
         return if (erReturTilToTrinn(avklaringsbehov)) {
             log.info("Totrinnsoppgave gjenåpnet, setter retur fra veileder/saksbehandler. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+            val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
             val forrigeAvklaringsbehovLøstAvVeileder =
-                oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
+                hvemLøsteForrigeAvklaringsbehov?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
             ReturInformasjon(
                 status = if (forrigeAvklaringsbehovLøstAvVeileder) {
                     ReturStatus.RETUR_FRA_VEILEDER
@@ -53,7 +54,7 @@ class ReturInformasjonUtleder {
                     ReturStatus.RETUR_FRA_SAKSBEHANDLER
                 },
                 årsaker = emptyList(),
-                endretAv = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.second ?: "Ukjent",
+                endretAv = hvemLøsteForrigeAvklaringsbehov?.second ?: "Ukjent",
                 begrunnelse = if (forrigeAvklaringsbehovLøstAvVeileder) {
                     "Retur fra veileder"
                 } else {

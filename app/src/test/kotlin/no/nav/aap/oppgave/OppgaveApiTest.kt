@@ -231,7 +231,7 @@ class OppgaveApiTest {
             .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name, "Bedre ting å gjøre")
 
         val uthentetPåVent = hentOppgave(
-            påVentOppgaver.tilOppgaveId()
+            påVentOppgaver.oppgaveId()
         )
         assertThat(uthentetPåVent)
             .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
@@ -402,10 +402,10 @@ class OppgaveApiTest {
         val oppgave = hentOppgave(referanse)
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
-        assertThrows<ManglerTilgangException> { plukkOppgave(oppgave!!.tilOppgaveId()) }
+        assertThrows<ManglerTilgangException> { plukkOppgave(oppgave!!.oppgaveId()) }
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
-        val nesteOppgave = plukkOppgave(oppgave!!.tilOppgaveId())
+        val nesteOppgave = plukkOppgave(oppgave!!.oppgaveId())
         assertThat(nesteOppgave).isNotNull()
     }
 
@@ -429,7 +429,7 @@ class OppgaveApiTest {
         )
 
         // reserverer oppgave
-        plukkOppgave(hentOppgave(referanse)!!.tilOppgaveId())
+        plukkOppgave(hentOppgave(referanse)!!.oppgaveId())
         val reservertOppgaveMedTilgang = hentOppgave(
             referanse = referanse,
         )
@@ -441,14 +441,14 @@ class OppgaveApiTest {
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         assertThatThrownBy {
             plukkOppgave(
-                reservertOppgaveMedTilgang!!.tilOppgaveId()
+                reservertOppgaveMedTilgang!!.oppgaveId()
             )
         }
             .isInstanceOf(ManglerTilgangException::class.java)
 
         // sjekk at reservasjon er fjernet
         val oppgaveUtenReservasjon =
-            hentOppgave(reservertOppgaveMedTilgang!!.tilOppgaveId())
+            hentOppgave(reservertOppgaveMedTilgang!!.oppgaveId())
         assertThat(oppgaveUtenReservasjon).isNotNull()
         assertThat(oppgaveUtenReservasjon.reservertAv == null)
         assertThat(oppgaveUtenReservasjon.reservertTidspunkt == null)
@@ -493,8 +493,8 @@ class OppgaveApiTest {
         // reserverer begge oppgaver
         val oppgave1 = hentOppgave(referanse1)
         val oppgave2 = hentOppgave(referanse2)
-        reserverOppgave(oppgave1!!.tilOppgaveId(), "saksbehandler1", "saksbehandler1")
-        reserverOppgave(oppgave2!!.tilOppgaveId(), "saksbehandler2", "saksbehandler2")
+        reserverOppgave(oppgave1!!.oppgaveId(), "saksbehandler1", "saksbehandler1")
+        reserverOppgave(oppgave2!!.oppgaveId(), "saksbehandler2", "saksbehandler2")
 
         // kall endepunkt for avreservering
         val avreserverteOppgaveIds = avreserverOppgaver(listOf(oppgave1.id!!, oppgave2.id!!))
@@ -679,12 +679,12 @@ class OppgaveApiTest {
         // plukk uten tilgang
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         fakesConfig.relaterteIdenterPåBehandling = emptyList()
-        assertThatThrownBy { plukkOppgave(oppgaveMedNyEnhet.tilOppgaveId()) }.isInstanceOf(
+        assertThatThrownBy { plukkOppgave(oppgaveMedNyEnhet.oppgaveId()) }.isInstanceOf(
             ManglerTilgangException::class.java
         )
 
         // enhet skal ha blitt oppdatert etter mislykket plukk
-        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedNyEnhet.tilOppgaveId())
+        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedNyEnhet.oppgaveId())
         assertThat(oppgaveEtterOppdatering).isNotNull()
         assertThat(oppgaveEtterOppdatering.enhet).isEqualTo("superNav!")
         assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
@@ -717,12 +717,12 @@ class OppgaveApiTest {
         // plukk uten tilgang - det har kommet ny relatert ident på sak fra behandlingsflyt-pip
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         fakesConfig.relaterteIdenterPåBehandling = listOf(STRENGT_FORTROLIG_IDENT)
-        assertThatThrownBy { plukkOppgave(oppgaveMedGammelEnhet!!.tilOppgaveId()) }.isInstanceOf(
+        assertThatThrownBy { plukkOppgave(oppgaveMedGammelEnhet!!.oppgaveId()) }.isInstanceOf(
             ManglerTilgangException::class.java
         )
 
         // enhet skal ha blitt oppdatert med hensyn til relatert ident etter mislykket plukk
-        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedGammelEnhet!!.tilOppgaveId())
+        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedGammelEnhet!!.oppgaveId())
         assertThat(oppgaveEtterOppdatering).isNotNull()
         assertThat(oppgaveEtterOppdatering.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
         assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
@@ -843,12 +843,12 @@ class OppgaveApiTest {
 
         // sett fortrolig adresse
         settFortroligAdresseForOppgave(
-            oppgaveId = oppgaveUtenFortroligAdresse!!.tilOppgaveId(), skalHaFortroligAdresse = true
+            oppgaveId = oppgaveUtenFortroligAdresse!!.oppgaveId(), skalHaFortroligAdresse = true
         )
 
         // hent på nytt
         val oppgaveMedFortroligAdresse = hentOppgave(
-            oppgaveUtenFortroligAdresse.tilOppgaveId()
+            oppgaveUtenFortroligAdresse.oppgaveId()
         )
         assertThat(oppgaveMedFortroligAdresse.harFortroligAdresse).isTrue()
     }
@@ -1023,8 +1023,6 @@ class OppgaveApiTest {
         assertEquals(oppgave2Før, oppgave2Etter)
     }
 
-    private fun OppgaveDto.tilOppgaveId() = OppgaveId(requireNotNull(this.id), this.versjon)
-
     private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
         return client.post(
             URI.create("http://localhost:$port/produksjonsstyring/antall-oppgaver"),
@@ -1099,7 +1097,7 @@ class OppgaveApiTest {
         settNyMarkeringPåBehandling(behandlingref, markering)
 
         // reserver og hent mine oppgaver
-        plukkOppgave(hentOppgave(behandlingref)!!.tilOppgaveId())
+        plukkOppgave(hentOppgave(behandlingref)!!.oppgaveId())
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
         assertThat(mineOppgaver.oppgaver.first().markeringer).hasSize(1)
@@ -1139,7 +1137,7 @@ class OppgaveApiTest {
         settNyMarkeringPåBehandling(behandlingref, markering)
 
         // reserver
-        plukkOppgave(hentOppgave(behandlingref)!!.tilOppgaveId())
+        plukkOppgave(hentOppgave(behandlingref)!!.oppgaveId())
 
         // fjern markering
         fjernMarkeringPåBehandling(behandlingref, markering)
