@@ -531,7 +531,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnOppgaverGittPersonident(personIdent: String): List<OppgaveDto> {
+    fun finnÅpneOppgaverGittPersonident(personIdent: String): List<OppgaveDto> {
         val hentOppgaverGittPersonidentQuery = """
             SELECT 
                    $alleOppgaveFelt

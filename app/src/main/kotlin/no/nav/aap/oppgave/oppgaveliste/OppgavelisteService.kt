@@ -28,7 +28,7 @@ class OppgavelisteService(
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {
-            oppgaveRepository.finnOppgaverGittPersonident(søketekst)
+            oppgaveRepository.finnÅpneOppgaverGittPersonident(søketekst)
         } else {
             oppgaveRepository.finnOppgaverGittSaksnummer(søketekst)
         }
