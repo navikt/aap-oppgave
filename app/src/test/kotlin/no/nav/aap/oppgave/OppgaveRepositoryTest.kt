@@ -3,6 +3,8 @@ package no.nav.aap.oppgave
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
+import no.nav.aap.oppgave.enhet.Enhet
+import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
@@ -70,6 +72,49 @@ class OppgaveRepositoryTest {
         dataSource.transaction { connection ->
             OppgaveRepository(connection).avsluttOppgave(oppgaveId, "test")
         }
+    }
+
+    @Test
+    fun `Henter oppfølgingsoppgaver korrekt`() {
+        (1..10).forEach { _ ->
+            opprettOppgave(
+                behandlingstype = Behandlingstype.OPPFØLGINGSBEHANDLING,
+                enhet = Enhet.NAY.kode
+            )
+        }
+        (1..5).forEach { _ ->
+            opprettOppgave(
+                behandlingstype = Behandlingstype.OPPFØLGINGSBEHANDLING,
+                enhet = Enhet.NAV_UTLAND.kode
+            )
+        }
+
+        val oppgaverOppfølgingNay = dataSource.transaction { connection ->
+            OppgaveRepository(connection).finnOppgaver(
+                filter = FilterDto(
+                    navn = "NAY oppfølgingsoppgave",
+                    beskrivelse = "NAY oppfølgingsoppgave",
+                    opprettetAv = "naboens katt",
+                    opprettetTidspunkt = LocalDateTime.now().minusDays(10),
+                    enheter = setOf(Enhet.NAY.kode)
+                )
+            )
+        }
+
+        val oppgaverOppfølgingNavKontor = dataSource.transaction { connection ->
+            OppgaveRepository(connection).finnOppgaver(
+                filter = FilterDto(
+                    navn = "Oppfølgingsoppgave kontor",
+                    beskrivelse = "Oppfølgingsoppgave kontor",
+                    opprettetAv = "en geit",
+                    opprettetTidspunkt = LocalDateTime.now().minusDays(10),
+                    enheter = setOf(Enhet.NAV_UTLAND.kode)
+                )
+            )
+        }
+
+        assertThat(oppgaverOppfølgingNay.oppgaver.size).isEqualTo(10)
+        assertThat(oppgaverOppfølgingNavKontor.oppgaver.size).isEqualTo(5)
     }
 
     @Test
@@ -179,7 +224,12 @@ class OppgaveRepositoryTest {
         opprettOppgave(veilederArbeid = VEILEDER_IDENT_2)
         val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
 
-        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1, enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
+        val oppgaver = finnLedigeOppgaver(
+            TransientFilterDto(
+                veileder = VEILEDER_IDENT_1,
+                enheter = setOf(ENHET_NAV_LØRENSKOG)
+            )
+        ).oppgaver
 
         assertThat(oppgaver).hasSize(1)
         assertThat(oppgaver.map { it.id }).contains(oppgaveId2.id)
@@ -190,7 +240,12 @@ class OppgaveRepositoryTest {
         opprettOppgave(veilederSykdom = VEILEDER_IDENT_2)
         val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
 
-        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1, enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
+        val oppgaver = finnLedigeOppgaver(
+            TransientFilterDto(
+                veileder = VEILEDER_IDENT_1,
+                enheter = setOf(ENHET_NAV_LØRENSKOG)
+            )
+        ).oppgaver
 
         assertThat(oppgaver).hasSize(1)
         assertThat(oppgaver.map { it.id }).contains(oppgaveId2.id)
@@ -202,7 +257,12 @@ class OppgaveRepositoryTest {
         val oppgaveId2 = opprettOppgave(veilederArbeid = VEILEDER_IDENT_1)
         val oppgaveId3 = opprettOppgave(veilederSykdom = VEILEDER_IDENT_1)
 
-        val oppgaver = finnLedigeOppgaver(TransientFilterDto(veileder = VEILEDER_IDENT_1, enheter = setOf(ENHET_NAV_LØRENSKOG))).oppgaver
+        val oppgaver = finnLedigeOppgaver(
+            TransientFilterDto(
+                veileder = VEILEDER_IDENT_1,
+                enheter = setOf(ENHET_NAV_LØRENSKOG)
+            )
+        ).oppgaver
 
         assertThat(oppgaver).hasSize(2)
         assertThat(oppgaver.map { it.id }).containsAll(setOf(oppgaveId2.id, oppgaveId3.id))
@@ -390,7 +450,8 @@ class OppgaveRepositoryTest {
             OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
             OppgaveSorteringRekkefølge.ASC
         )
-        val oppgavelisteSorterteDatoerAscEn = oppgavelisteBehandlingOpprettetAscEn.oppgaver.map { it.behandlingOpprettet }
+        val oppgavelisteSorterteDatoerAscEn =
+            oppgavelisteBehandlingOpprettetAscEn.oppgaver.map { it.behandlingOpprettet }
         assertThat(oppgavelisteSorterteDatoerAscEn).isEqualTo(sorterteDatoer.reversed().subList(0, 3))
 
         // Sorter på behandling_opprettet stigende side 2
@@ -400,7 +461,8 @@ class OppgaveRepositoryTest {
             OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
             OppgaveSorteringRekkefølge.ASC
         )
-        val oppgavelisteSorterteDatoerAscTo = oppgavelisteBehandlingOpprettetAscTo.oppgaver.map { it.behandlingOpprettet }
+        val oppgavelisteSorterteDatoerAscTo =
+            oppgavelisteBehandlingOpprettetAscTo.oppgaver.map { it.behandlingOpprettet }
         assertThat(oppgavelisteSorterteDatoerAscTo).isEqualTo(sorterteDatoer.reversed().subList(3, 6))
 
         // Sorter på behandling_opprettet stigende side 3
@@ -410,7 +472,8 @@ class OppgaveRepositoryTest {
             OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
             OppgaveSorteringRekkefølge.ASC
         )
-        val oppgavelisteSorterteDatoerAscTre = oppgavelisteBehandlingOpprettetAscTre.oppgaver.map { it.behandlingOpprettet }
+        val oppgavelisteSorterteDatoerAscTre =
+            oppgavelisteBehandlingOpprettetAscTre.oppgaver.map { it.behandlingOpprettet }
         assertThat(oppgavelisteSorterteDatoerAscTre).isEqualTo(sorterteDatoer.reversed().subList(6, 9))
     }
 
@@ -462,7 +525,11 @@ class OppgaveRepositoryTest {
     fun `Kan bruke utvidet filter`() {
         val tilbakekrevingOppgave =
             opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingstype = Behandlingstype.TILBAKEKREVING)
-        opprettTilbakekrevingVars(tilbakekrevingOppgave.id, BigDecimal(1000.00), "http://tilbakekreving.nav.no/oppgave/12345")
+        opprettTilbakekrevingVars(
+            tilbakekrevingOppgave.id,
+            BigDecimal(1000.00),
+            "http://tilbakekreving.nav.no/oppgave/12345"
+        )
         val oppgave1 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgave2 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, avklaringsbehovKode = AvklaringsbehovKode("5003"))
         val oppgave3 = opprettOppgave(
