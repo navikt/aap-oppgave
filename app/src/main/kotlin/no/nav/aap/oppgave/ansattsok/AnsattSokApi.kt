@@ -7,6 +7,7 @@ import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomRessursAnsattSøk
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.unleash.FeatureToggles
 
 
 data class AnsattSokRequest (
@@ -21,6 +22,7 @@ fun NormalOpenAPIRoute.ansattSokApi(
 ) {
     route("/ansatt-sok").post<Unit, List<NomRessursAnsattSøk>, AnsattSokRequest> { _, request ->
         prometheus.httpCallCounter("/ansatt-sok").increment()
+
         val søkeResultat = AnsattSokService().ansattSok(request.søketekst)
         respond(søkeResultat)
     }
