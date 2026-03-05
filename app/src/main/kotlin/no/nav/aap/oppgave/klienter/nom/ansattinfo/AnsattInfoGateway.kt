@@ -16,6 +16,7 @@ import java.time.Duration
 
 interface AnsattInfoGateway {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
+    fun ansattSøk(searchTerm: String) : List<NomRessursAnsattSøk>
 }
 
 class NomApiGateway(
@@ -60,6 +61,16 @@ class NomApiGateway(
         }
     }
 
+    override fun ansattSøk(searchTerm: String): List<NomRessursAnsattSøk> {
+        return try {
+            søkAnsatt(searchTerm).data?.searchRessurs ?: emptyList()
+        } catch (e: Exception) {
+            log.warn("Feil ved ansattsøk", e)
+           emptyList()
+        }
+    }
+
+
     private fun hentAnsattNavn(navIdent: String): String =
         saksbehandlerNavnCache.get(navIdent) {
             val request = AnsattInfoRequest(navnQuery, AnsattInfoVariables(navIdent))
@@ -74,6 +85,12 @@ class NomApiGateway(
         val httpRequest = PostRequest(body = request)
         return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
+
+    private fun søkAnsatt(searchTerm: String): AnsattSøkRespons {
+        val request = SearchAnsattRequest(searchQuery, SearchAnsattVariables(searchTerm))
+        val httpRequest = PostRequest(body = request)
+        return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
+    }
 }
 
 private const val navIdent = "\$navIdent"
@@ -81,6 +98,20 @@ val navnQuery = """
     query($navIdent: String!) {
       ressurs(where: {navident: $navIdent}) {
         visningsnavn
+      }
+    }
+""".trimIndent()
+
+private const val searchTerm = "\$searchTerm"
+val searchQuery = """
+    query($searchTerm: String!) {
+      searchRessurs(term: $searchTerm, filter:  {
+        limit: LIMIT_10,
+        sektorSelection: ALLE,
+        statusSelection: ALLE
+      }) {
+        visningsnavn,
+        navident
       }
     }
 """.trimIndent()

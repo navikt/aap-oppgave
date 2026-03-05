@@ -11,7 +11,6 @@ import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.auth.authenticate
-import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -57,6 +56,7 @@ import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
+import no.nav.aap.oppgave.ansattsok.ansattSokApi
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
 import org.slf4j.LoggerFactory
 
@@ -131,6 +131,8 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 hentEnhetApi(iMsGraphClient, prometheus)
                 nayEnhetForPerson(iMsGraphClient, prometheus)
                 synkroniserEnhetPåOppgaveApi(dataSource, iMsGraphClient, prometheus)
+                // Saksbehandlersøk
+                ansattSokApi(prometheus)
                 // Motor-API
                 motorApi(dataSource)
                 // Drifts-API
