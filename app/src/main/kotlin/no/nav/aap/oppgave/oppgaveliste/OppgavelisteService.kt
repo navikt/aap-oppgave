@@ -18,6 +18,9 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import java.util.UUID
 
 const val maksOppgaver = 50
@@ -25,6 +28,7 @@ const val maksOppgaver = 50
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {
@@ -149,6 +153,14 @@ class OppgavelisteService(
         utvidetFilter: UtvidetOppgavelisteFilter?
     ): FilterDto {
         if (utvidetFilter == null) return filter
+
+        if (unleashService.isEnabled(FeatureToggles.FiltrereInnadOppgaveKo)) {
+            return filter.copy(
+                behandlingstyper = filter.behandlingstyper + utvidetFilter.behandlingstyper,
+                avklaringsbehovKoder = filter.avklaringsbehovKoder + utvidetFilter.avklaringsbehovKoder
+            )
+        }
+
         return filter.copy(
             behandlingstyper = utvidetFilter.behandlingstyper,
             avklaringsbehovKoder = utvidetFilter.avklaringsbehovKoder
