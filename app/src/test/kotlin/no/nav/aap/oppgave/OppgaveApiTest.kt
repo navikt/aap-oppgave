@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.micrometer.prometheusmetrics.PrometheusConfig
@@ -32,11 +33,17 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBeha
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
+import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.filter.FilterRepository
+import no.nav.aap.oppgave.filter.OpprettFilter
+import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
+import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
@@ -51,6 +58,7 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
 import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -371,13 +379,28 @@ class OppgaveApiTest {
             )
         )
 
-        initDatasource(dbConfig(), prometheus).transaction {
+        val oppgave = initDatasource(dbConfig(), prometheus).transaction {
             val oppgaver = OppgaveRepository(it).hentAlleÅpneOppgaver()
             assertThat(oppgaver).hasSize(1)
             assertThat(oppgaver.first().saksnummer).isEqualTo(saksnummer.toString())
             val tilbakekrevingsVars = TilbakekrevingRepository(it).hent(oppgaver.first().id!!)
             assertThat(tilbakekrevingsVars).isNotNull
+            val filterId = FilterRepository(it).hentAlle()
+            val riktigFilterId = filterId.first()
+
+
+            val oppgavelist = hentOppgaveList(
+                OppgavelisteRequest(
+                    riktigFilterId.id!!,setOf("superNav!"), false, Paging()
+                )
+            )
+
+            assertThat(oppgavelist?.oppgaver?.first()?.id).isEqualTo(oppgaver.first().id)
+            assertThat(oppgavelist?.oppgaver?.first()?.behandlingstype).isEqualTo(oppgaver.first().behandlingstype)
         }
+
+
+
     }
 
     @Test
@@ -1221,6 +1244,16 @@ class OppgaveApiTest {
         return client.post(
             URI.create("http://localhost:$port/oppdater-oppgaver"),
             PostRequest(body = behandlingFlytStoppetHendelse)
+        )
+    }
+
+    private fun hentOppgaveList(oppgavelisteReq: OppgavelisteRequest): OppgavelisteRespons?{
+        return client.post<OppgavelisteRequest, OppgavelisteRespons>(
+            URI.create("http://localhost:$port/oppgaveliste"),
+            PostRequest(
+                oppgavelisteReq,
+                additionalHeaders = listOf(Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerNasjonal.id)).token()}"))
+            )
         )
     }
 
