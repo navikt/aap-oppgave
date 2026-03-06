@@ -24,6 +24,7 @@ import no.nav.aap.oppgave.oppdater.hendelse.Endring
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.tilAvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
+import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
@@ -115,7 +116,7 @@ private fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering() =
         behandlingStatus = this.behandlingStatus.tilBehandlingsstatus(),
         behandlingstype = Behandlingstype.TILBAKEKREVING,
         opprettetTidspunkt = this.sakOpprettet,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelse(),
+        avklaringsbehov = this.behandlingStatus.tilAvklaringsBehov(),
         vurderingsbehov = emptyList(),
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
@@ -123,6 +124,43 @@ private fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering() =
         totaltFeilutbetaltBeløp = this.totaltFeilutbetaltBeløp,
         tilbakekrevingsUrl = this.saksbehandlingURL
     )
+
+fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHendelse> {
+    return when (this) {
+        TilbakekrevingBehandlingsstatus.AVSLUTTET -> emptyList()
+        TilbakekrevingBehandlingsstatus.OPPRETTET -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+            )
+        )
+
+        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
+            )
+        )
+
+        TilbakekrevingBehandlingsstatus.TIL_BEHANDLING -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+            )
+        )
+
+        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.KVALITETSIKRE_VEDTAK_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.KVALITETSSIKRET, emptyList()
+            )
+        )
+    }
+}
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelse() =
     map {
