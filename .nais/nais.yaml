@@ -67,6 +67,10 @@ spec:
             roles:
               - "oppdater-postmottak-oppgaver"
         - application: paw-patrol
+        - application: api-intern
+          permissions:
+            - roles:
+                - "hent-enhet"
         - application: saksbehandling
         {{#if isdev}}
         - application: saksbehandling-lokal # For lokal utvikling. IKKE kopier denne til prod.yaml
@@ -82,7 +86,6 @@ spec:
       rules:
         - application: tilgang
         - application: statistikk
-        - application: api-intern
         - application: behandlingsflyt
         - application: skjermede-personer-pip
           namespace: nom

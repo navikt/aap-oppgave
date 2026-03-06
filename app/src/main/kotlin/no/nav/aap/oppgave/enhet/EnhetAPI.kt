@@ -25,7 +25,10 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.tilgang.AuthorizationBodyPathConfig
+import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.Rolle
+import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -53,7 +56,13 @@ fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometh
  * vil vi returnere null.
  */
 fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
-    route("/enhet/status/person").post<Unit, EnhetOgOversendelse, PersonRequest> { _, request ->
+    route("/enhet/status/person").authorizedPost<Unit, EnhetOgOversendelse, PersonRequest>(
+        routeConfig = AuthorizationBodyPathConfig(
+            operasjon = Operasjon.SE,
+            applicationsOnly = true,
+            applicationRole = "hent-enhet",
+        )
+    ) { _, request ->
         val log = LoggerFactory.getLogger("enhet-status")
 
         val respons = dataSource.transaction { connection ->
