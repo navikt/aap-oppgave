@@ -55,18 +55,22 @@ fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometh
 fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
     route("/enhet/status/person").post<Unit, EnhetOgOversendelse, PersonRequest> { _, request ->
         val log = LoggerFactory.getLogger("enhet-status")
+
         val respons = dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection)
                 .hentOppgaverForIdent(request.ident)
                 // Filtrer kun oppgaver med behandlingsreferanse
-                .filter { it.behandlingRef != null && it.erÅpen}
+                .filter { it.behandlingRef != null }
                 .sortedBy { it.opprettetTidspunkt }
 
             val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
                 { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
 
-            val lokalkontor =
-                oppgaver.firstOrNull { oppgave ->
+            val erBeslutterOppgave: (oppgave: OppgaveDto) -> Boolean =
+                { oppgave -> Rolle.BESLUTTER in Definisjon.forKode(oppgave.avklaringsbehovKode).løsesAv }
+
+            val lokalkontoroppgaver =
+                oppgaver.filter { oppgave ->
                     !erHosNAY(oppgave)
                 }
 
@@ -77,50 +81,65 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                 }
 
             val kvalitetssikrer =
-                oppgaver.firstOrNull { oppgave ->
+                oppgaver.filter { oppgave ->
                     oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name
                 }
 
             val oversendtTilNay =
-                oppgaver.firstOrNull { oppgave -> erHosNAY(oppgave) }
+                oppgaver.filter { oppgave ->
+                    erHosNAY(oppgave)
+                            && !erBeslutterOppgave(oppgave)
+                }
 
-            val beslutter = oppgaver.firstOrNull { oppgave ->
+            val beslutter = oppgaver.filter { oppgave ->
                 erHosNAY(oppgave)
-                        && Rolle.BESLUTTER in Definisjon.forKode(oppgave.avklaringsbehovKode).løsesAv
+                        && erBeslutterOppgave(oppgave)
             }
 
 
             return@transaction when {
                 // Eneste avklaringsbehov hos NAY som er før lokalkontor
-                medlemskap != null -> NåværendeEnhet(
+                medlemskap != null && medlemskap.erÅpen -> NåværendeEnhet(
                     oversendtDato = medlemskap.opprettetTidspunkt.toLocalDate(),
                     oppgaveKategori = OppgaveKategori.MEDLEMSKAP,
                     enhet = medlemskap.enhetForKø
                 )
 
-                lokalkontor != null -> NåværendeEnhet(
-                    oversendtDato = lokalkontor.opprettetTidspunkt.toLocalDate(),
-                    oppgaveKategori = OppgaveKategori.LOKALKONTOR,
-                    enhet = lokalkontor.enhetForKø
-                )
+                lokalkontoroppgaver.isNotEmpty() && lokalkontoroppgaver.any { it.erÅpen } -> {
+                    val førsteOppgave = lokalkontoroppgaver.first()
+                    NåværendeEnhet(
+                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.LOKALKONTOR,
+                        enhet = førsteOppgave.enhetForKø
+                    )
+                }
 
-                kvalitetssikrer != null -> NåværendeEnhet(
-                    oversendtDato = kvalitetssikrer.opprettetTidspunkt.toLocalDate(),
-                    oppgaveKategori = OppgaveKategori.KVALITETSSIKRING,
-                    enhet = kvalitetssikrer.enhetForKø
-                )
+                kvalitetssikrer.isNotEmpty() && kvalitetssikrer.any { it.erÅpen } -> {
+                    val førsteOppgave = kvalitetssikrer.first()
+                    NåværendeEnhet(
+                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.KVALITETSSIKRING,
+                        enhet = førsteOppgave.enhetForKø
+                    )
+                }
 
-                oversendtTilNay != null -> NåværendeEnhet(
-                    oversendtDato = oversendtTilNay.opprettetTidspunkt.toLocalDate(),
-                    oppgaveKategori = OppgaveKategori.NAY,
-                    enhet = oversendtTilNay.enhetForKø
-                )
+                oversendtTilNay.isNotEmpty() -> {
+                    val førsteOppgave = oversendtTilNay.first()
+                    NåværendeEnhet(
+                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.NAY,
+                        enhet = førsteOppgave.enhetForKø
+                    )
+                }
 
-                beslutter != null -> NåværendeEnhet(
-                    oversendtDato = beslutter.opprettetTidspunkt.toLocalDate(),
-                    oppgaveKategori = OppgaveKategori.BESLUTTER,
-                    enhet = beslutter.enhetForKø
-                )
+                beslutter.isNotEmpty() && beslutter.any { it.erÅpen } -> {
+                    val førsteOppgave = beslutter.first()
+                    NåværendeEnhet(
+                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.BESLUTTER,
+                        enhet = førsteOppgave.enhetForKø
+                    )
+                }
 
                 oppgaver.isNotEmpty() -> {
                     log.info("Uventet kategori. Velger enhet for siste åpne oppgave.")
