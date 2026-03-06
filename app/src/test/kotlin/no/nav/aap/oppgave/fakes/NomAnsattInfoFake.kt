@@ -8,12 +8,16 @@ import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoData
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoRespons
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattSøkData
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattSøkRespons
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomRessurs
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomRessursAnsattSøk
 import no.nav.aap.oppgave.server.ErrorRespons
 import kotlin.collections.emptyList
 
@@ -36,16 +40,27 @@ fun Application.nomAnsattInfoFake() {
 
     routing {
         post {
-            val data = AnsattInfoData(
-                NomRessurs(
-                    visningsnavn = "Test Testesen"
+            val requestBody = call.receiveText()
+            val data = if (requestBody.contains("searchRessurs")) {
+                AnsattSøkRespons(
+                    AnsattSøkData(
+                        listOf(
+                            NomRessursAnsattSøk("Navn Navnesen", "GBK123K"),
+                            NomRessursAnsattSøk("Sak Behandlersen", "GDFD98")
+                        )
+                    ),
+                    emptyList()
                 )
-            )
-            val response = AnsattInfoRespons(
-                data,
-                emptyList()
-            )
-            call.respond(response)
+            } else {
+                AnsattInfoRespons(
+                    AnsattInfoData(
+                        NomRessurs(
+                            visningsnavn = "Test Testesen"
+                        )
+                    ), emptyList()
+                )
+            }
+            call.respond(data)
         }
     }
 }

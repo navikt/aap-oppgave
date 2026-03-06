@@ -57,6 +57,7 @@ import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
+import no.nav.aap.oppgave.ansattsok.ansattSokApi
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -133,6 +134,8 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 hentEnhetApi(iMsGraphClient, prometheus)
                 nayEnhetForPerson(iMsGraphClient, prometheus)
                 synkroniserEnhetPåOppgaveApi(dataSource, iMsGraphClient, prometheus)
+                // Saksbehandlersøk
+                ansattSokApi(prometheus)
                 // Motor-API
                 motorApi(dataSource)
                 // Drifts-API
