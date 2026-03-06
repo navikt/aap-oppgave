@@ -546,7 +546,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE 
             WHERE 
                 PERSON_IDENT = ? AND STATUS != 'AVSLUTTET'
-            ORDER BY BEHANDLING_OPPRETTET
+            ORDER BY BEHANDLING_OPPRETTET, opprettet_tidspunkt
         """.trimIndent()
 
         return connection.queryList(hentOppgaverGittPersonidentQuery) {
@@ -715,7 +715,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             id = row.getLong("ID"),
             personIdent = row.getStringOrNull("PERSON_IDENT"),
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
-            behandlingRef = row.getUUIDOrNull("BEHANDLING_REF"),
+            behandlingRef = row.getUUID("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),

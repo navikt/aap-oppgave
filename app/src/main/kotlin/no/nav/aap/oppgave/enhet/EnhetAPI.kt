@@ -6,11 +6,13 @@ import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
@@ -23,6 +25,10 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.tilgang.AuthorizationBodyPathConfig
+import no.nav.aap.tilgang.Operasjon
+import no.nav.aap.tilgang.Rolle
+import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
@@ -40,6 +46,129 @@ fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometh
         prometheus.httpCallCounter("/enhet/nay/person").increment()
         val enhet = EnhetService(msGraphClient).finnNayEnhet(request.personIdent, request.relevanteIdenter)
         respond(EnhetNrDto(enhetNr = enhet.enhet))
+    }
+
+/**
+ * Ment for NKS via api-intern. Skal returnere hvilken enhet som behandler en sak for en person
+ * på tidspunktet spørringen skjer. Hvis det ikke finnes noen åpne oppgaver, returneres null.
+ *
+ * Gir kun svar hvis det finnes en åpen behandling. Så hvis eneste oppgave er journalføring
+ * vil vi returnere null.
+ */
+fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
+    route("/enhet/status/person").authorizedPost<Unit, EnhetOgOversendelse, PersonRequest>(
+        routeConfig = AuthorizationBodyPathConfig(
+            operasjon = Operasjon.SE,
+            applicationsOnly = true,
+            applicationRole = "hent-enhet",
+        )
+    ) { _, request ->
+        val log = LoggerFactory.getLogger("enhet-status")
+
+        val respons = dataSource.transaction { connection ->
+            val oppgaver = OppgaveRepository(connection)
+                .hentOppgaverForIdent(request.ident)
+                // Filtrer kun oppgaver med behandlingsreferanse
+                .filter { it.behandlingstype.fraBehandlingsflyt }
+                .sortedBy { it.opprettetTidspunkt }
+
+            val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
+                { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
+
+            val erBeslutterOppgave: (oppgave: OppgaveDto) -> Boolean =
+                { oppgave -> Rolle.BESLUTTER in Definisjon.forKode(oppgave.avklaringsbehovKode).løsesAv }
+
+            val lokalkontoroppgaver =
+                oppgaver.filter { oppgave ->
+                    !erHosNAY(oppgave)
+                }
+
+            val medlemskap =
+                oppgaver.firstOrNull { oppgave ->
+                    erHosNAY(oppgave)
+                            && oppgave.avklaringsbehovKode == Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name
+                }
+
+            val kvalitetssikrer =
+                oppgaver.filter { oppgave ->
+                    oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name
+                }
+
+            val oversendtTilNay =
+                oppgaver.filter { oppgave ->
+                    erHosNAY(oppgave)
+                            && !erBeslutterOppgave(oppgave)
+                            && oppgave.avklaringsbehovKode != Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name
+                }
+
+            val beslutter = oppgaver.filter { oppgave ->
+                erHosNAY(oppgave)
+                        && erBeslutterOppgave(oppgave)
+            }
+
+
+            return@transaction when {
+                // Eneste avklaringsbehov hos NAY som er før lokalkontor
+                medlemskap != null && medlemskap.erÅpen -> NåværendeEnhet(
+                    oversendtDato = medlemskap.opprettetTidspunkt.toLocalDate(),
+                    oppgaveKategori = OppgaveKategori.MEDLEMSKAP,
+                    enhet = medlemskap.enhetForKø
+                )
+
+                lokalkontoroppgaver.isNotEmpty() && lokalkontoroppgaver.any { it.erÅpen } -> {
+                    val førsteOppgave = lokalkontoroppgaver.first()
+                    NåværendeEnhet(
+                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.LOKALKONTOR,
+                        enhet = førsteOppgave.enhetForKø
+                    )
+                }
+
+                kvalitetssikrer.isNotEmpty() && kvalitetssikrer.any { it.erÅpen } -> {
+                    val førsteOppgave = kvalitetssikrer.first()
+                    NåværendeEnhet(
+                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.KVALITETSSIKRING,
+                        enhet = førsteOppgave.enhetForKø
+                    )
+                }
+
+                oversendtTilNay.isNotEmpty() -> {
+                    val førsteOppgave = oversendtTilNay.first()
+                    NåværendeEnhet(
+                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.NAY,
+                        enhet = førsteOppgave.enhetForKø
+                    )
+                }
+
+                beslutter.isNotEmpty() && beslutter.any { it.erÅpen } -> {
+                    val førsteOppgave = beslutter.first()
+                    NåværendeEnhet(
+                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.BESLUTTER,
+                        enhet = førsteOppgave.enhetForKø
+                    )
+                }
+
+                oppgaver.isNotEmpty() -> {
+                    log.info("Uventet kategori. Velger enhet for siste åpne oppgave.")
+                    val sistÅpnedeOppgave = oppgaver.last()
+                    NåværendeEnhet(
+                        oversendtDato = sistÅpnedeOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = if (erHosNAY(sistÅpnedeOppgave)) OppgaveKategori.NAY else OppgaveKategori.LOKALKONTOR,
+                        enhet = sistÅpnedeOppgave.enhetForKø
+                    )
+                }
+
+                else -> {
+                    log.info("Fant ingen åpne oppgaver. Returnerer null")
+                    null
+                }
+            }
+        }
+
+        respond(EnhetOgOversendelse(respons))
     }
 
 /*
@@ -72,15 +201,14 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
             val oppgave = oppgaveRepository.hentOppgave(request.oppgaveId)
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
 
-            val behandlingRef = requireNotNull(oppgave.behandlingRef) {
-                "Synkoniser oppgave: Oppgave ${oppgaveIdMedVersjon.id} mangler behandlingsreferanse"
-            }
+            val behandlingRef = oppgave.behandlingRef
             val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
 
             relaterteIdenter.forEach { VeilarbarenaGateway.invalidateCache(it) }
 
             // må sjekke om oppgaven tidligere er overstyrt til lokalkontor. Da skal den bli det igjen.
-            val erOverstyrtTilLokalkontor = oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
+            val erOverstyrtTilLokalkontor =
+                oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
             val erFørstegangsbehandling = oppgave.behandlingstype == Behandlingstype.FØRSTEGANGSBEHANDLING
 
             val nyEnhet =
@@ -128,33 +256,3 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
 
         respond(respons)
     }
-
-/*
- * Kode brukt for å populere enhetsfeltet på oppgave på gamle oppgaver. Lar det ligge en stund i tilfelle
- * det skal bli aktuelt å gjøre det igjen.
-data class EnhetsoppdateringRapport(val antallOppgaverUtenEnhet: Int, val oppgaveOgPersonListe: List<OppgaveOgPerson>)
-
-fun NormalOpenAPIRoute.oppdaterEnhetPåOppgaver(dataSource: DataSource, msGraphClient: IMsGraphClient) =
-
-    route("/oppdater-enheter").get<Unit, EnhetsoppdateringRapport> {
-        val log = LoggerFactory.getLogger("oppdater-enheter")
-
-        val oppgaverUtenEnhet = dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).finnOppgaverUtenEnhet()
-        }
-
-        val enhetService = EnhetService(msGraphClient)
-        oppgaverUtenEnhet.take(100).forEach { oppgaveOgPerson ->
-            try {
-                dataSource.transaction { connection ->
-                    val enhet = enhetService.finnEnhet(oppgaveOgPerson.personIdent)
-                    OppgaveRepository(connection).oppdaterEnhet(oppgaveOgPerson.oppgaveId, enhet)
-                }
-            } catch (e: Exception) {
-                log.warn("Fikk feil under prosessering av: $oppgaveOgPerson", e)
-            }
-        }
-
-        respond(EnhetsoppdateringRapport(oppgaverUtenEnhet.size, oppgaverUtenEnhet.take(100)))
-    }
- */

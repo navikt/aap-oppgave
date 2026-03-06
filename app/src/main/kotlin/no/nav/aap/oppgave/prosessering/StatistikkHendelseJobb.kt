@@ -29,10 +29,7 @@ class StatistikkHendelseJobb(
         val oppgaveId = DefaultJsonMapper.fromJson<OppgaveId>(input.payload())
 
         oppgaveRepository.hentOppgave(oppgaveId.id).let { oppgaveDto ->
-            val behandlingsReferanse = requireNotNull(oppgaveDto.behandlingRef) {
-                "Kan ikke sende hendelse til statistikk for oppgave som mangler behandlingsreferanse. OppgaveId: ${oppgaveDto.id}"
-            }
-            val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingsReferanse)
+            val markeringer = markeringRepository.hentMarkeringerForBehandling(oppgaveDto.behandlingRef)
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,

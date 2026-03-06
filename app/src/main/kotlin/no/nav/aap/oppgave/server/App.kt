@@ -11,7 +11,6 @@ import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.auth.authenticate
-import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -33,6 +32,7 @@ import no.nav.aap.motor.retry.RetryService
 import no.nav.aap.oppgave.actuator.actuatorApi
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.drift.driftApi
+import no.nav.aap.oppgave.enhet.enhetStatus
 import no.nav.aap.oppgave.enhet.hentEnhetApi
 import no.nav.aap.oppgave.enhet.nayEnhetForPerson
 import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
@@ -58,9 +58,10 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-val secureLogger = LoggerFactory.getLogger("team-logs")
+val secureLogger: Logger = LoggerFactory.getLogger("team-logs")
 private const val ANTALL_WORKERS = 5
 
 fun main() {
@@ -128,6 +129,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 // Produksjonsstyring
                 hentAntallOppgaver(dataSource, prometheus)
                 // Enheter
+                enhetStatus(dataSource)
                 hentEnhetApi(iMsGraphClient, prometheus)
                 nayEnhetForPerson(iMsGraphClient, prometheus)
                 synkroniserEnhetPåOppgaveApi(dataSource, iMsGraphClient, prometheus)

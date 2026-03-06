@@ -29,7 +29,12 @@ fun Application.azureFake() {
         post("/token") {
             val body = call.receiveText()
             val erCc = body.contains("grant_type=client_credentials")
-            val roller = if (erCc) call.rolesClaim() else emptyList()
+            val roller = if (erCc) {
+                // Legg til "hent-enhet" i standardrollene for testing
+                listOf("oppdater-postmottak-oppgaver", "oppdater-behandlingsflyt-oppgaver", "hent-enhet")
+            } else {
+                emptyList()
+            }
             val token = AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(erCc, roller)
             call.respond(TestToken(access_token = token))
         }

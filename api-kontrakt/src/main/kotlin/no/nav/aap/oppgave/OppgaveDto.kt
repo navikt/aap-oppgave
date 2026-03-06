@@ -46,7 +46,7 @@ data class OppgaveDto(
     val personIdent: String? = null,
     val personNavn: String? = null,
     val saksnummer: String? = null,
-    val behandlingRef: UUID? = null,
+    val behandlingRef: UUID,
     val journalpostId: Long? = null,
     val enhet: String,
     val oppfølgingsenhet: String?,
@@ -89,9 +89,11 @@ data class OppgaveDto(
 
     val erPåVent: Boolean = påVentTil != null
 
+    val erÅpen: Boolean = status == Status.OPPRETTET
+
     init {
         if (journalpostId == null) {
-            if (saksnummer == null || behandlingRef == null) {
+            if (saksnummer == null) {
                 throw IllegalArgumentException("Saksnummer og behandlingRef kan ikke være null dersom journalpostId er null")
             }
         }
@@ -104,5 +106,4 @@ data class OppgaveDto(
             avklaringsbehovKode = this.avklaringsbehovKode
         )
     }
-
 }

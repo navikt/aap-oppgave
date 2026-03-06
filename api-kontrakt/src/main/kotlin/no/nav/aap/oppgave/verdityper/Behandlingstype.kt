@@ -1,17 +1,17 @@
 package no.nav.aap.oppgave.verdityper
 
-enum class Behandlingstype {
+enum class Behandlingstype(val fraBehandlingsflyt: Boolean) {
     // Fra behandlingsflyt
-    FØRSTEGANGSBEHANDLING,
-    REVURDERING,
-    TILBAKEKREVING,
-    KLAGE,
-    SVAR_FRA_ANDREINSTANS,
-    OPPFØLGINGSBEHANDLING,
-    AKTIVITETSPLIKT,
-    AKTIVITETSPLIKT_11_9,
+    FØRSTEGANGSBEHANDLING(true),
+    REVURDERING(true),
+    TILBAKEKREVING(true),
+    KLAGE(true),
+    SVAR_FRA_ANDREINSTANS(true),
+    OPPFØLGINGSBEHANDLING(true),
+    AKTIVITETSPLIKT(true),
+    AKTIVITETSPLIKT_11_9(true),
 
     // Fra postmottak
-    DOKUMENT_HÅNDTERING,
-    JOURNALFØRING
+    DOKUMENT_HÅNDTERING(false),
+    JOURNALFØRING(false)
 }

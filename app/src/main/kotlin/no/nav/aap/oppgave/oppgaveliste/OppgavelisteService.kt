@@ -38,10 +38,7 @@ class OppgavelisteService(
         }
 
         return oppgaver.map { oppgave ->
-            val behandlingRef = requireNotNull(oppgave.behandlingRef) {
-                "Fant ikke behandlingsreferanse for oppgave med id ${oppgave.id}"
-            }
-            val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingRef)
+            val markeringer = markeringRepository.hentMarkeringerForBehandling(oppgave.behandlingRef)
             oppgave.leggPåMarkeringer(markeringer.tilDto())
         }
     }
@@ -111,9 +108,7 @@ class OppgavelisteService(
 
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
-                val behandlingRef = requireNotNull(oppgave.behandlingRef) {
-                    "Fant ikke behandlingsreferanse for oppgave med id ${oppgave.id}"
-                }
+                val behandlingRef = oppgave.behandlingRef
                 val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingRef)
                 oppgave.leggPåMarkeringer(markeringer.tilDto())
             }

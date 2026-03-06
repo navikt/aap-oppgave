@@ -217,7 +217,7 @@ class OppdaterOppgaveService(
     }
 
     private fun loggOppdatering(eksisterendeOppgave: OppgaveDto, årsakTilSattPåVent: String?) {
-        if (eksisterendeOppgave.status == Status.OPPRETTET) {
+        if (eksisterendeOppgave.erÅpen) {
             log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}. Venteinformasjon: $årsakTilSattPåVent")
         } else {
             log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med tidligere status ${eksisterendeOppgave.status} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}")
@@ -326,9 +326,7 @@ class OppdaterOppgaveService(
                 oppgaveRepository.hentOppgave(requireNotNull(eksisterendeOppgave.id) { "Eksisterende oppgave-id kan ikke være null" })
 
             log.info("Reserverer oppgave ${oppdatertOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(requireNotNull(eksisterendeOppgave.behandlingRef) {
-                "Eksisterende oppgave må ha behandlingsreferanse"
-            }, sistEndretAv)
+            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(eksisterendeOppgave.behandlingRef, sistEndretAv)
             sendOppgaveStatusOppdatering(
                 oppdatertOppgave.oppgaveId(),
                 HendelseType.RESERVERT,

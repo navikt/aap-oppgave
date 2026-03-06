@@ -61,9 +61,7 @@ class PlukkOppgaveService(
         avreserverHvisTilgangAvslått(oppgaveId, ident)
 
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
-        val behandlingRef = requireNotNull(oppgave.behandlingRef) {
-            "Oppgave $oppgaveId mangler behandlingsreferanse"
-        }
+        val behandlingRef = oppgave.behandlingRef
         // Utleder enhet, fortrolig adresse og skjerming på nytt
         val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
         val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, relaterteIdenter)

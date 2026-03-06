@@ -26,7 +26,7 @@ fun NormalOpenAPIRoute.driftApi(
                         .map {
                             OppgaveDriftsinfoDTO(
                                 oppgaveId = it.id!!,
-                                behandlingRef = it.behandlingRef!!,
+                                behandlingRef = it.behandlingRef,
                                 status = it.status,
                                 enhet = it.enhet,
                                 oppfølgingsenhet = it.oppfølgingsenhet,
