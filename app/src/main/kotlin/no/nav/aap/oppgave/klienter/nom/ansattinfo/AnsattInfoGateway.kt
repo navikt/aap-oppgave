@@ -65,7 +65,7 @@ class NomApiGateway(
         return try {
             søkAnsatt(searchTerm).data?.searchRessurs ?: emptyList()
         } catch (e: Exception) {
-            log.warn("Feil ved ansattsøk", e)
+           log.warn("Feil ved ansattsøk", e)
            emptyList()
         }
     }
