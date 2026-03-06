@@ -89,6 +89,8 @@ data class OppgaveDto(
 
     val erPåVent: Boolean = påVentTil != null
 
+    val erÅpen: Boolean = status == Status.OPPRETTET
+
     init {
         if (journalpostId == null) {
             if (saksnummer == null || behandlingRef == null) {
@@ -104,5 +106,4 @@ data class OppgaveDto(
             avklaringsbehovKode = this.avklaringsbehovKode
         )
     }
-
 }

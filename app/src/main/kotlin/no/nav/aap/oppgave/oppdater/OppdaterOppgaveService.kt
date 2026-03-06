@@ -217,7 +217,7 @@ class OppdaterOppgaveService(
     }
 
     private fun loggOppdatering(eksisterendeOppgave: OppgaveDto, årsakTilSattPåVent: String?) {
-        if (eksisterendeOppgave.status == Status.OPPRETTET) {
+        if (eksisterendeOppgave.erÅpen) {
             log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}. Venteinformasjon: $årsakTilSattPåVent")
         } else {
             log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med tidligere status ${eksisterendeOppgave.status} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}")

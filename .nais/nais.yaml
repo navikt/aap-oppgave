@@ -82,6 +82,7 @@ spec:
       rules:
         - application: tilgang
         - application: statistikk
+        - application: api-intern
         - application: behandlingsflyt
         - application: skjermede-personer-pip
           namespace: nom
