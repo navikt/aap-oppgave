@@ -5,7 +5,6 @@ import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
@@ -24,12 +23,14 @@ import no.nav.aap.oppgave.oppdater.hendelse.Endring
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.tilAvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
+import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
 import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
+import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
@@ -94,6 +95,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-tilbakekreving-oppgaver").increment()
+    LoggerFactory.getLogger("tilbakekreving").info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
     dataSource.transaction { connection ->
         OppdaterOppgaveService(
             msGraphClient,
@@ -115,7 +117,7 @@ private fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering() =
         behandlingStatus = this.behandlingStatus.tilBehandlingsstatus(),
         behandlingstype = Behandlingstype.TILBAKEKREVING,
         opprettetTidspunkt = this.sakOpprettet,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelse(),
+        avklaringsbehov = this.behandlingStatus.tilAvklaringsBehov(),
         vurderingsbehov = emptyList(),
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
@@ -124,14 +126,43 @@ private fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering() =
         tilbakekrevingsUrl = this.saksbehandlingURL
     )
 
-private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelse() =
-    map {
-        AvklaringsbehovHendelse(
-            avklaringsbehovKode = AvklaringsbehovKode(kode = it.avklaringsbehovDefinisjon.kode.name),
-            status = it.status.tilAvklaringsbehovStatus(),
-            endringer = it.endringer.tilEndring(),
+fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHendelse> {
+    return when (this) {
+        TilbakekrevingBehandlingsstatus.AVSLUTTET -> emptyList()
+        TilbakekrevingBehandlingsstatus.OPPRETTET -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+            )
+        )
+
+        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
+            )
+        )
+
+        TilbakekrevingBehandlingsstatus.TIL_BEHANDLING -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+            )
+        )
+
+        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.KVALITETSSIKRET, emptyList()
+            )
         )
     }
+}
+
 
 private fun List<EndringDTO>.tilEndring() =
     map {
