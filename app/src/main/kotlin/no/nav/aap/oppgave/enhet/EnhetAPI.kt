@@ -50,11 +50,12 @@ fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometh
  * på tidspunktet spørringen skjer. Hvis det ikke finnes noen åpne oppgaver, returneres null.
  */
 fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
-    route("/enhet/status/person").post<Unit, EnhetOgEversendelse, PersonRequest> { _, request ->
+    route("/enhet/status/person").post<Unit, EnhetOgOversendelse, PersonRequest> { _, request ->
         val log = LoggerFactory.getLogger("enhet-status")
         val respons = dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection)
                 .hentOppgaverForIdent(request.ident)
+                .sortedBy { it.opprettetTidspunkt }
                 .filter { it.erÅpen }
 
             val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
@@ -134,7 +135,7 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
             }
         }
 
-        respond(EnhetOgEversendelse(respons))
+        respond(EnhetOgOversendelse(respons))
     }
 
 /*

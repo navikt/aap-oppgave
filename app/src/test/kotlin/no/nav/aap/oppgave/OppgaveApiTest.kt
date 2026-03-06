@@ -32,7 +32,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBeha
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
-import no.nav.aap.oppgave.enhet.EnhetOgEversendelse
+import no.nav.aap.oppgave.enhet.EnhetOgOversendelse
 import no.nav.aap.oppgave.enhet.OppgaveKategori
 import no.nav.aap.oppgave.enhet.PersonRequest
 import no.nav.aap.oppgave.fakes.AzureTokenGen
@@ -1175,7 +1175,7 @@ class OppgaveApiTest {
         )
 
         // Hent enhetstatus for personen - skal returnere lokalkontor
-        val response = client.post<PersonRequest, EnhetOgEversendelse>(
+        val response = client.post<PersonRequest, EnhetOgOversendelse>(
             URI.create("http://localhost:$port/enhet/status/person"),
             PostRequest(
                 body = PersonRequest(ident = personIdent)
@@ -1212,7 +1212,7 @@ class OppgaveApiTest {
         )
 
         // Hent enhet historikk igjen - lokalkontor har fortsatt prioritet
-        val response2 = client.post<PersonRequest, EnhetOgEversendelse>(
+        val response2 = client.post<PersonRequest, EnhetOgOversendelse>(
             URI.create("http://localhost:$port/enhet/status/person"),
             PostRequest(
                 body = PersonRequest(ident = personIdent)

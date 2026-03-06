@@ -19,7 +19,7 @@ data class NåværendeEnhet(
     val enhet: String,
 )
 
-data class EnhetOgEversendelse(
+data class EnhetOgOversendelse(
     val tilstand: NåværendeEnhet?
 )
 
