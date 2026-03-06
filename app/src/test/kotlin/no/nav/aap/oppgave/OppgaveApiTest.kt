@@ -33,12 +33,14 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBeha
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
+import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterRepository
+import no.nav.aap.oppgave.filter.OpprettFilter
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.liste.Paging
@@ -383,18 +385,22 @@ class OppgaveApiTest {
             assertThat(oppgaver.first().saksnummer).isEqualTo(saksnummer.toString())
             val tilbakekrevingsVars = TilbakekrevingRepository(it).hent(oppgaver.first().id!!)
             assertThat(tilbakekrevingsVars).isNotNull
+            val filterId = FilterRepository(it).hentAlle()
+            val riktigFilterId = filterId.first()
 
-            oppgaver.first()
+
+            val oppgavelist = hentOppgaveList(
+                OppgavelisteRequest(
+                    riktigFilterId.id!!,setOf("superNav!"), false, Paging()
+                )
+            )
+
+            assertThat(oppgavelist?.oppgaver?.first()?.id).isEqualTo(oppgaver.first().id)
+            assertThat(oppgavelist?.oppgaver?.first()?.behandlingstype).isEqualTo(oppgaver.first().behandlingstype)
         }
 
-        val oppgavelist = hentOppgaveList(
-            OppgavelisteRequest(
-                12L,setOf("superNav!"), false, Paging()
-            )
-        )
 
-        assertThat(oppgavelist?.oppgaver?.first()?.id).isEqualTo(oppgave.id)
-        assertThat(oppgavelist?.oppgaver?.first()?.behandlingstype).isEqualTo(oppgave.behandlingstype)
+
     }
 
     @Test
