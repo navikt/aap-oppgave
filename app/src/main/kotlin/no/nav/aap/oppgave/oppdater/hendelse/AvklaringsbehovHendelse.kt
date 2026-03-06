@@ -4,12 +4,31 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.NoSuchElementException
 
 data class AvklaringsbehovHendelse(
     val avklaringsbehovKode: AvklaringsbehovKode,
     val status: AvklaringsbehovStatus,
     val endringer: List<Endring>,
-)
+) {
+
+    fun sisteEndring(status: AvklaringsbehovStatus = this.status): Endring {
+        return try {
+            endringer
+                .sortedBy { it.tidsstempel }
+                .last { it.status == status }
+        } catch (e: NoSuchElementException) {
+            throw IllegalStateException(
+                "Ingen endringer med status $status. Endringer: ${this.endringer}. Avklaringsbehovkode: ${this.avklaringsbehovKode}",
+                e
+            )
+        }
+    }
+
+    fun sistEndretAv(status: AvklaringsbehovStatus = this.status): String {
+        return sisteEndring(status).endretAv
+    }
+}
 
 data class Endring(
     val status: AvklaringsbehovStatus,
@@ -20,24 +39,3 @@ data class Endring(
     val begrunnelse: String? = null,
     val årsakTilRetur: List<ÅrsakTilReturKode> = emptyList()
 )
-
-fun List<AvklaringsbehovHendelse>.kelvinTokBehandlingAvVent(): Boolean {
-    val sisteLukkedeVentebehov =
-        this.filter { !it.status.erÅpent() }.maxByOrNull { ventebehov -> ventebehov.endringer.maxOf { it.tidsstempel } }
-    if (sisteLukkedeVentebehov == null) {
-        return false
-    }
-
-    // Endringen som lukket ventebehovet er gjort av Kelvin
-    val sisteVentebehovLukketAvKelvin =
-        sisteLukkedeVentebehov.endringer.maxByOrNull { it.tidsstempel }?.endretAv.equals(KELVIN, ignoreCase = true)
-
-    // På siste endring der frist var satt, var frist i dag.
-    val ventebehovHaddeFristIDag =
-        sisteLukkedeVentebehov.endringer
-            .filter { it.påVentTil?.isEqual(LocalDate.now()) == true }
-            .maxByOrNull { it.tidsstempel } == sisteLukkedeVentebehov.endringer.filter { it.påVentTil != null }
-            .maxByOrNull { it.tidsstempel }
-
-    return sisteVentebehovLukketAvKelvin && ventebehovHaddeFristIDag
-}

@@ -99,6 +99,8 @@ data class OppgaveDto(
         }
     }
 
+    fun oppgaveId() = OppgaveId(requireNotNull(this.id) { "Oppgaven må ha ID" }, this.versjon)
+
     fun tilAvklaringsbehovReferanseDto(): AvklaringsbehovReferanseDto {
         return AvklaringsbehovReferanseDto(
             referanse = this.behandlingRef,

@@ -10,6 +10,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
+import no.nav.aap.oppgave.oppdater.kelvinTokBehandlingAvVent
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
 import java.util.UUID

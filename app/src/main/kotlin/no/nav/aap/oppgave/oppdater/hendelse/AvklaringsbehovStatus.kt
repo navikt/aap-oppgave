@@ -16,6 +16,22 @@ enum class AvklaringsbehovStatus {
             SENDT_TILBAKE_FRA_KVALITETSSIKRER
         )
     }
+
+    fun erAvsluttet(): Boolean {
+        return this in setOf(
+            AVSLUTTET,
+            AVBRUTT,
+            KVALITETSSIKRET,
+            TOTRINNS_VURDERT
+        )
+    }
+
+    fun harBlittSendtTilbakeFraTotrinn(): Boolean {
+        return this in setOf(
+            SENDT_TILBAKE_FRA_BESLUTTER,
+            SENDT_TILBAKE_FRA_KVALITETSSIKRER
+        )
+    }
 }
 
 enum class BehandlingStatus {
