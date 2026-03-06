@@ -326,9 +326,7 @@ class OppdaterOppgaveService(
                 oppgaveRepository.hentOppgave(requireNotNull(eksisterendeOppgave.id) { "Eksisterende oppgave-id kan ikke være null" })
 
             log.info("Reserverer oppgave ${oppdatertOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
-            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(requireNotNull(eksisterendeOppgave.behandlingRef) {
-                "Eksisterende oppgave må ha behandlingsreferanse"
-            }, sistEndretAv)
+            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(eksisterendeOppgave.behandlingRef, sistEndretAv)
             sendOppgaveStatusOppdatering(
                 oppdatertOppgave.oppgaveId(),
                 HendelseType.RESERVERT,

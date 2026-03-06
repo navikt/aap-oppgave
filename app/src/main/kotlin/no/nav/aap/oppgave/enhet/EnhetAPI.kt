@@ -60,7 +60,7 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
             val oppgaver = OppgaveRepository(connection)
                 .hentOppgaverForIdent(request.ident)
                 // Filtrer kun oppgaver med behandlingsreferanse
-                .filter { it.behandlingRef != null }
+                .filter { it.behandlingstype.fraBehandlingsflyt }
                 .sortedBy { it.opprettetTidspunkt }
 
             val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
@@ -191,9 +191,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
             val oppgave = oppgaveRepository.hentOppgave(request.oppgaveId)
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
 
-            val behandlingRef = requireNotNull(oppgave.behandlingRef) {
-                "Synkoniser oppgave: Oppgave ${oppgaveIdMedVersjon.id} mangler behandlingsreferanse"
-            }
+            val behandlingRef = oppgave.behandlingRef
             val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
 
             relaterteIdenter.forEach { VeilarbarenaGateway.invalidateCache(it) }

@@ -715,7 +715,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             id = row.getLong("ID"),
             personIdent = row.getStringOrNull("PERSON_IDENT"),
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
-            behandlingRef = row.getUUIDOrNull("BEHANDLING_REF"),
+            behandlingRef = row.getUUID("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
