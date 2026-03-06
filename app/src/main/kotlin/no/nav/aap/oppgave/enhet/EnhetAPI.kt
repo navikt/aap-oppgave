@@ -45,8 +45,12 @@ fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometh
         respond(EnhetNrDto(enhetNr = enhet.enhet))
     }
 
+/**
+ * Ment for NKS via api-intern. Skal returnere hvilken enhet som behandler en sak for en person
+ * på tidspunktet spørringen skjer. Hvis det ikke finnes noen åpne oppgaver, returneres null.
+ */
 fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
-    route("/enhet/historikk/person").post<Unit, EnhetOgEversendelse, PersonRequest> { _, request ->
+    route("/enhet/status/person").post<Unit, EnhetOgEversendelse, PersonRequest> { _, request ->
         val log = LoggerFactory.getLogger("enhet-status")
         val respons = dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection)

@@ -32,6 +32,9 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBeha
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
+import no.nav.aap.oppgave.enhet.EnhetOgEversendelse
+import no.nav.aap.oppgave.enhet.OppgaveKategori
+import no.nav.aap.oppgave.enhet.PersonRequest
 import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
@@ -73,6 +76,8 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 import kotlin.test.AfterTest
+
+private const val TEST_IDENT = "01010012345"
 
 @ExtendWith(Fakes::class)
 @Testcontainers
@@ -311,7 +316,7 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun`Tilbakekreving hendelse til oppgave`(fakesConfig: FakesConfig){
+    fun`Tilbakekreving hendelse til oppgave`(){
         val saksnummer = Saksnummer("100002")
         val referanse = BehandlingReferanse(UUID.randomUUID())
 
@@ -1148,6 +1153,78 @@ class OppgaveApiTest {
         assertThat(mineOppgaver.oppgaver.first().markeringer).isEmpty()
     }
 
+    @Test
+    fun `hent enhet-status for person`() {
+        val personIdent = TEST_IDENT  // Standard ident brukt i opprettBehandlingshistorikk
+        val saksnummer = "987654"
+        val referanse = UUID.randomUUID()
+
+        // Opprett lokalkontor-oppgave
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        // Hent enhetstatus for personen - skal returnere lokalkontor
+        val response = client.post<PersonRequest, EnhetOgEversendelse>(
+            URI.create("http://localhost:$port/enhet/status/person"),
+            PostRequest(
+                body = PersonRequest(ident = personIdent)
+            )
+        )
+
+        assertThat(response).isNotNull()
+        assertThat(response!!.tilstand).isNotNull()
+        val tilstand = response.tilstand!!
+        assertThat(tilstand.oppgaveKategori).isEqualTo(OppgaveKategori.LOKALKONTOR)
+        assertThat(tilstand.enhet).isEqualTo("superNav!")
+
+        // Opprett NAY-oppgave
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET)
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        // Hent enhet historikk igjen - lokalkontor har fortsatt prioritet
+        val response2 = client.post<PersonRequest, EnhetOgEversendelse>(
+            URI.create("http://localhost:$port/enhet/status/person"),
+            PostRequest(
+                body = PersonRequest(ident = personIdent)
+            )
+        )
+
+        assertThat(response2).isNotNull()
+        assertThat(response2!!.tilstand).isNotNull()
+        assertThat(response2.tilstand!!.oppgaveKategori).isEqualTo(OppgaveKategori.NAY)
+        assertThat(response2.tilstand!!.enhet).isEqualTo("4491")
+    }
+
     private data class Behandlingsbehov(
         val definisjon: Definisjon,
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1198,7 +1275,7 @@ class OppgaveApiTest {
             )
         }
         return BehandlingFlytStoppetHendelse(
-            personIdent = "01010012345",
+            personIdent = TEST_IDENT,
             saksnummer = Saksnummer(saksnummer),
             referanse = BehandlingReferanse(referanse),
             behandlingType = typeBehandling,
