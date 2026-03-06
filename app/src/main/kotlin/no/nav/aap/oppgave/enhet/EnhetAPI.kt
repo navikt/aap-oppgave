@@ -48,6 +48,9 @@ fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometh
 /**
  * Ment for NKS via api-intern. Skal returnere hvilken enhet som behandler en sak for en person
  * på tidspunktet spørringen skjer. Hvis det ikke finnes noen åpne oppgaver, returneres null.
+ *
+ * Gir kun svar hvis det finnes en åpen behandling. Så hvis eneste oppgave er journalføring
+ * vil vi returnere null.
  */
 fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
     route("/enhet/status/person").post<Unit, EnhetOgOversendelse, PersonRequest> { _, request ->
@@ -55,8 +58,9 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
         val respons = dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection)
                 .hentOppgaverForIdent(request.ident)
+                // Filtrer kun oppgaver med behandlingsreferanse
+                .filter { it.behandlingRef != null && it.erÅpen}
                 .sortedBy { it.opprettetTidspunkt }
-                .filter { it.erÅpen }
 
             val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
                 { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
