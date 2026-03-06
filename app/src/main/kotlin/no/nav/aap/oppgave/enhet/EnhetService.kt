@@ -19,6 +19,7 @@ import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlGateway
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
+import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import org.slf4j.LoggerFactory
@@ -79,6 +80,8 @@ class EnhetService(
             AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
             + AVKLARINGSBEHOV_FOR_BESLUTTER
             + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
+            + TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING
+            + TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING
         ) {
             requireNotNull(ident) { "Kan ikke utlede oppgavens enhet uten ident. Saksnummer $saksnummer" }
             finnNayEnhet(ident, relevanteIdenter)
