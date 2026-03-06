@@ -89,6 +89,7 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                 oppgaver.filter { oppgave ->
                     erHosNAY(oppgave)
                             && !erBeslutterOppgave(oppgave)
+                            && oppgave.avklaringsbehovKode != Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name
                 }
 
             val beslutter = oppgaver.filter { oppgave ->
