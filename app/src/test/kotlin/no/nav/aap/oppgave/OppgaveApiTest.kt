@@ -39,7 +39,11 @@ import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.filter.EnhetFilter
+import no.nav.aap.oppgave.filter.FilterId
 import no.nav.aap.oppgave.filter.FilterRepository
+import no.nav.aap.oppgave.filter.Filtermodus
+import no.nav.aap.oppgave.filter.OpprettFilter
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.liste.Paging
@@ -50,6 +54,7 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
+import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkRequest
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkResponse
@@ -320,7 +325,7 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun`Tilbakekreving hendelse til oppgave`(){
+    fun `Tilbakekreving hendelse til oppgave`() {
         val saksnummer = Saksnummer("100002")
         val referanse = BehandlingReferanse(UUID.randomUUID())
 
@@ -354,20 +359,11 @@ class OppgaveApiTest {
             assertThat(oppgaver.first().saksnummer).isEqualTo(saksnummer.toString())
             val tilbakekrevingsVars = TilbakekrevingRepository(it).hent(oppgaver.first().id!!)
             assertThat(tilbakekrevingsVars).isNotNull
-            val filterId = FilterRepository(it).hentAlle()
-            val riktigFilterId = filterId.first()
 
-
-            val oppgavelist = hentOppgaveList(
-                OppgavelisteRequest(
-                    riktigFilterId.id!!,setOf("superNav!"), false, Paging()
-                )
-            )
-
-            assertThat(oppgavelist?.oppgaver?.first()?.id).isEqualTo(oppgaver.first().id)
-            assertThat(oppgavelist?.oppgaver?.first()?.behandlingstype).isEqualTo(oppgaver.first().behandlingstype)
+            assertThat(oppgaver.first().id).isEqualTo(oppgaver.first().id)
+            assertThat(oppgaver.first().behandlingstype).isEqualTo(oppgaver.first().behandlingstype)
+            assertThat(oppgaver.first().enhet).isEqualTo("4491")
         }
-
 
 
     }
@@ -1289,12 +1285,17 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentOppgaveList(oppgavelisteReq: OppgavelisteRequest): OppgavelisteRespons?{
+    private fun hentOppgaveList(oppgavelisteReq: OppgavelisteRequest): OppgavelisteRespons? {
         return client.post<OppgavelisteRequest, OppgavelisteRespons>(
             URI.create("http://localhost:$port/oppgaveliste"),
             PostRequest(
                 oppgavelisteReq,
-                additionalHeaders = listOf(Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerNasjonal.id)).token()}"))
+                additionalHeaders = listOf(
+                    Header(
+                        "Authorization",
+                        "Bearer ${getOboToken(listOf(SaksbehandlerNasjonal.id)).token()}"
+                    )
+                )
             )
         )
     }

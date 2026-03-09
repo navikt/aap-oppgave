@@ -80,8 +80,8 @@ class EnhetService(
             AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
             + AVKLARINGSBEHOV_FOR_BESLUTTER
             + AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
-            + TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING
-            + TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING
+            + TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.tilAvklaringsbehovKode()
+            + TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.tilAvklaringsbehovKode()
         ) {
             requireNotNull(ident) { "Kan ikke utlede oppgavens enhet uten ident. Saksnummer $saksnummer" }
             finnNayEnhet(ident, relevanteIdenter)
