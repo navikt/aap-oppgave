@@ -331,22 +331,6 @@ class OppgaveApiTest {
                 behandlingref = referanse,
                 behandlingStatus = TilbakekrevingBehandlingsstatus.OPPRETTET,
                 sakOpprettet = LocalDateTime.now(),
-                avklaringsbehov = listOf<AvklaringsbehovHendelseDto>(AvklaringsbehovHendelseDto(
-                    id=null,
-                    avklaringsbehovDefinisjon = Definisjon.REFUSJON_KRAV,
-                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                    endringer = listOf(
-                        EndringDTO(
-                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                            tidsstempel = LocalDateTime.now(),
-                            frist = LocalDate.now().plusWeeks(4),
-                            endretAv = "12324L",
-                            årsakTilSattPåVent = null,
-                            årsakTilRetur = emptyList(),
-                            begrunnelse = null
-                        )
-                    )
-                )),
                 totaltFeilutbetaltBeløp = 21321321.toBigDecimal(),
                 saksbehandlingURL = "testUrl",
             )
@@ -359,22 +343,6 @@ class OppgaveApiTest {
                 behandlingref = referanse,
                 behandlingStatus = TilbakekrevingBehandlingsstatus.TIL_BEHANDLING,
                 sakOpprettet = LocalDateTime.now(),
-                avklaringsbehov = listOf(AvklaringsbehovHendelseDto(
-                    id=null,
-                    avklaringsbehovDefinisjon = Definisjon.REFUSJON_KRAV,
-                    status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-                    endringer = listOf(
-                        EndringDTO(
-                            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-                            tidsstempel = LocalDateTime.now().plusDays(1),
-                            frist = LocalDate.now().plusWeeks(4),
-                            endretAv = "12324L",
-                            årsakTilSattPåVent = null,
-                            årsakTilRetur = emptyList(),
-                            begrunnelse = "dsadsadsadsadsa"
-                        )
-                    )
-                )),
                 totaltFeilutbetaltBeløp = 21321321.toBigDecimal(),
                 saksbehandlingURL = "testUrl",
             )
