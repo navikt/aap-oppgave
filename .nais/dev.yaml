@@ -58,3 +58,5 @@ env:
       value: http://behandlingsflyt
     - name: INTEGRASJON_BEHANDLINGSFLYT_SCOPE
       value: api://dev-gcp.aap.behandlingsflyt/.default
+    - name: AZP_API_INTERN
+      value: a809fc0a-eabb-4107-8231-61210adc2b70

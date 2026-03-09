@@ -7,6 +7,7 @@ import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.motor.FlytJobbRepository
@@ -26,10 +27,12 @@ import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
+import no.nav.aap.tilgang.AuthorizationMachineToMachineConfig
 import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
+import java.util.UUID
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
@@ -57,10 +60,8 @@ fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometh
  */
 fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
     route("/enhet/status/person").authorizedPost<Unit, EnhetOgOversendelse, PersonRequest>(
-        routeConfig = AuthorizationBodyPathConfig(
-            operasjon = Operasjon.SE,
-            applicationsOnly = true,
-            applicationRole = "hent-enhet",
+        routeConfig = AuthorizationMachineToMachineConfig(
+            authorizedAzps = listOf(UUID.fromString(requiredConfigForKey("AZP_API_INTERN")))
         )
     ) { _, request ->
         val log = LoggerFactory.getLogger("enhet-status")

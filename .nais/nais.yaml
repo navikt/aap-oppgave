@@ -68,9 +68,6 @@ spec:
               - "oppdater-postmottak-oppgaver"
         - application: paw-patrol
         - application: api-intern
-          permissions:
-            roles:
-              - "hent-enhet"
         - application: saksbehandling
         {{#if isdev}}
         - application: saksbehandling-lokal # For lokal utvikling. IKKE kopier denne til prod.yaml

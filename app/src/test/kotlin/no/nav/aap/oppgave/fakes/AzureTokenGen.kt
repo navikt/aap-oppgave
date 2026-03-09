@@ -35,6 +35,7 @@ internal class AzureTokenGen(private val issuer: String, private val audience: S
         if (isApp) {
             builder
                 .claim("idtyp", "app")
+                .claim("azp", System.getProperty("AZP_API_INTERN"))
                 .claim(
                     "roles", roller.ifEmpty {
                         listOf(
