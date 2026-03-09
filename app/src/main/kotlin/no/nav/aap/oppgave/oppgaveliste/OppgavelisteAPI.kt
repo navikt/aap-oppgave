@@ -36,7 +36,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
 
     route("/oppgaveliste").post<Unit, OppgavelisteRespons, OppgavelisteRequest> { _, request ->
         prometheus.httpCallCounter("/oppgaveliste").increment()
-        val data =
+        val (data, bruktBehanlingstyperIFilter) =
             dataSource.transaction(readOnly = true) { connection ->
                 log.info("Henter filter med filterId ${request.filterId}")
                 val filter =
@@ -47,7 +47,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     } else {
                         null
                     }
-                OppgavelisteService(
+                Pair(OppgavelisteService(
                     oppgaveRepository = OppgaveRepository(connection),
                     markeringRepository = MarkeringRepository(connection),
                 ).hentOppgaverMedTilgang(
@@ -62,14 +62,15 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     ident(),
                     request.sortering?.sortBy,
                     request.sortering?.sortOrder
-                )
+                ), filter.behandlingstyper)
             }
 
         respond(
             OppgavelisteRespons(
                 antallTotalt = data.antallTotalt,
                 oppgaver = data.oppgaver.hentPersonNavn(),
-                antallGjenstaaende = data.antallGjenstaaende
+                antallGjenstaaende = data.antallGjenstaaende,
+                sattFilterBehandlingstyper = bruktBehanlingstyperIFilter
             )
         )
     }
