@@ -1206,6 +1206,7 @@ class OppgaveApiTest {
         val tilstand = response.tilstand!!
         assertThat(tilstand.oppgaveKategori).isEqualTo(OppgaveKategori.LOKALKONTOR)
         assertThat(tilstand.enhet).isEqualTo("superNav!")
+        assertThat(tilstand.saksnummer).isEqualTo(saksnummer)
 
         // Opprett NAY-oppgave
         oppdaterOppgaver(

@@ -17,6 +17,7 @@ data class NåværendeEnhet(
     val løstDato: LocalDate? = null, // trengs denne?
     val oppgaveKategori: OppgaveKategori,
     val enhet: String,
+    val saksnummer: String
 )
 
 data class EnhetOgOversendelse(
