@@ -26,13 +26,11 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.tilgang.AuthorizationBodyPathConfig
 import no.nav.aap.tilgang.AuthorizationMachineToMachineConfig
-import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
-import java.util.UUID
+import java.util.*
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
@@ -153,6 +151,18 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oppgaveKategori = OppgaveKategori.BESLUTTER,
                         enhet = førsteOppgave.enhetForKø,
                         saksnummer = requireNotNull(førsteOppgave.saksnummer)
+                    )
+                }
+
+                oppgaver.isNotEmpty() && oppgaver.none { it.erÅpen } && lokalkontoroppgaver.isNotEmpty() -> {
+                    log.info("Ingen åpne oppgaver. Velger enhet for siste åpne lokalkontoroppgave.")
+                    val sistÅpnedeOppgave = lokalkontoroppgaver.last()
+
+                    NåværendeEnhet(
+                        oversendtDato = sistÅpnedeOppgave.opprettetTidspunkt.toLocalDate(),
+                        oppgaveKategori = OppgaveKategori.LOKALKONTOR,
+                        enhet = sistÅpnedeOppgave.enhetForKø,
+                        saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer)
                     )
                 }
 
