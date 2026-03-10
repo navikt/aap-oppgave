@@ -7,11 +7,12 @@ plugins {
     id("aap.conventions")
 }
 
-
 // Call the tasks of the subprojects
-for (taskName in listOf<String>("clean", "build", "check")) {
+subprojects {
+    // no-op; just ensuring subprojects are configured
+}
+for (taskName in listOf<String>("clean", "build", "assemble", "check")) {
     tasks.named(taskName) {
         dependsOn(subprojects.map { it.path + ":$taskName" })
     }
 }
-
