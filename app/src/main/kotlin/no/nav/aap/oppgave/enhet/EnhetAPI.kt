@@ -74,12 +74,15 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
             val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
                 { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
 
+            val erKvalitetssikring: (oppgave: OppgaveDto) -> Boolean =
+                { oppgave -> oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name }
+
             val erBeslutterOppgave: (oppgave: OppgaveDto) -> Boolean =
                 { oppgave -> Rolle.BESLUTTER in Definisjon.forKode(oppgave.avklaringsbehovKode).løsesAv }
 
             val lokalkontoroppgaver =
                 oppgaver.filter { oppgave ->
-                    !erHosNAY(oppgave)
+                    !erHosNAY(oppgave) && !erKvalitetssikring(oppgave)
                 }
 
             val medlemskap =
@@ -89,9 +92,7 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                 }
 
             val kvalitetssikrer =
-                oppgaver.filter { oppgave ->
-                    oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name
-                }
+                oppgaver.filter { oppgave -> erKvalitetssikring(oppgave) }
 
             val oversendtTilNay =
                 oppgaver.filter { oppgave ->
