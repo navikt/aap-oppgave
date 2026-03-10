@@ -29,6 +29,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
             ).søkEtterSaksbehandlere(
                 søketekst = request.søketekst,
                 oppgaver = request.oppgaver,
+                enheter = request.enheter,
             )
         }
 

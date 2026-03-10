@@ -1322,13 +1322,14 @@ class OppgaveApiTest {
         )
     }
 
-    private fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>): SaksbehandlerSøkResponse? {
+    private fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>, enheter: List<String> = emptyList()): SaksbehandlerSøkResponse? {
         return client.post(
             URI.create("http://localhost:$port/saksbehandler-sok"),
             PostRequest(
                 body = SaksbehandlerSøkRequest(
                     søketekst = søketekst,
                     oppgaver = oppgaver,
+                    enheter = enheter,
                 ),
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
