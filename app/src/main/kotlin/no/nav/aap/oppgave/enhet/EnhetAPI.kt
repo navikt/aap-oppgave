@@ -134,7 +134,7 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                     )
                 }
 
-                oversendtTilNay.isNotEmpty() -> {
+                oversendtTilNay.isNotEmpty() && oversendtTilNay.any { it.erÅpen } -> {
                     val førsteOppgave = oversendtTilNay.first()
                     NåværendeEnhet(
                         oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
