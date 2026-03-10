@@ -74,6 +74,9 @@ spec:
         - application: azure-token-generator # Ikke i prod :)
           namespace: nais
           cluster: dev-gcp
+          permissions:
+            roles:
+              - "hent-oppgave-enhet"
         {{/if}}
     outbound:
       external:
