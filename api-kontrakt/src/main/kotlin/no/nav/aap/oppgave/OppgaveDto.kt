@@ -102,6 +102,7 @@ data class OppgaveDto(
     fun tilAvklaringsbehovReferanseDto(): AvklaringsbehovReferanseDto {
         return AvklaringsbehovReferanseDto(
             referanse = this.behandlingRef,
+            saksnummer = this.saksnummer,
             journalpostId = this.journalpostId,
             avklaringsbehovKode = this.avklaringsbehovKode,
             behandlingstype = this.behandlingstype
