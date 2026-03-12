@@ -147,7 +147,7 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
             AvklaringsbehovHendelse(
                 AvklaringsbehovKode(
                     TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+                ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
             )
         )
 
