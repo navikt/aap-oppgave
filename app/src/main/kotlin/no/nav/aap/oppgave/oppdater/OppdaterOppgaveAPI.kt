@@ -172,6 +172,19 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
                 ), AvklaringsbehovStatus.OPPRETTET, emptyList()
             )
         )
+
+        TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.AVSLUTTET, emptyList()
+            ),
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+            )
+        )
     }
 }
 
