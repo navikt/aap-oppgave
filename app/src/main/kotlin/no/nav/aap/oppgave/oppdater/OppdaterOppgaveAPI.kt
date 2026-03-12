@@ -209,13 +209,6 @@ private fun TilbakekrevingBehandlingsstatus.tilBehandlingsstatus() =
         TilbakekrevingBehandlingsstatus.AVSLUTTET -> BehandlingStatus.LUKKET
         TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> BehandlingStatus.ÅPEN
         TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> BehandlingStatus.ÅPEN
+        TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> BehandlingStatus.ÅPEN
     }
 
-private fun TilbakekrevingBehandlingsstatus.tilStatus() =
-    when (this) {
-        TilbakekrevingBehandlingsstatus.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
-        TilbakekrevingBehandlingsstatus.TIL_BEHANDLING -> AvklaringsbehovStatus.OPPRETTET
-        TilbakekrevingBehandlingsstatus.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
-        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> AvklaringsbehovStatus.OPPRETTET
-        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
-    }
