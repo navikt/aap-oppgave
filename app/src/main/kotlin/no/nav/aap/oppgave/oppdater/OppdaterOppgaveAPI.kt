@@ -95,7 +95,8 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-tilbakekreving-oppgaver").increment()
-    LoggerFactory.getLogger("tilbakekreving").info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
+    LoggerFactory.getLogger("tilbakekreving")
+        .info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
     dataSource.transaction { connection ->
         OppdaterOppgaveService(
             msGraphClient,
@@ -140,6 +141,11 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
         TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> listOf(
             AvklaringsbehovHendelse(
                 AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
+            ),
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
                     TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
                 ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
             )
@@ -154,6 +160,25 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
         )
 
         TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> listOf(
+
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.AVSLUTTET, emptyList()
+            ),
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+            )
+        )
+
+        TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.AVSLUTTET, emptyList()
+            ),
             AvklaringsbehovHendelse(
                 AvklaringsbehovKode(
                     TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
@@ -184,13 +209,6 @@ private fun TilbakekrevingBehandlingsstatus.tilBehandlingsstatus() =
         TilbakekrevingBehandlingsstatus.AVSLUTTET -> BehandlingStatus.LUKKET
         TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> BehandlingStatus.ÅPEN
         TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> BehandlingStatus.ÅPEN
+        TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> BehandlingStatus.ÅPEN
     }
 
-private fun TilbakekrevingBehandlingsstatus.tilStatus() =
-    when (this) {
-        TilbakekrevingBehandlingsstatus.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
-        TilbakekrevingBehandlingsstatus.TIL_BEHANDLING -> AvklaringsbehovStatus.OPPRETTET
-        TilbakekrevingBehandlingsstatus.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
-        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> AvklaringsbehovStatus.OPPRETTET
-        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
-    }
