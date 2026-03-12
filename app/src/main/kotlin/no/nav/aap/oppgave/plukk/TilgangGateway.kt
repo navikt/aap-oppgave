@@ -11,10 +11,13 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.tokenx.OnBehal
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.metrikker.prometheus
+import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.tilgang.BehandlingTilgangRequest
 import no.nav.aap.tilgang.JournalpostTilgangRequest
 import no.nav.aap.tilgang.Operasjon
+import no.nav.aap.tilgang.Rolle
+import no.nav.aap.tilgang.TilbakekrevingTilgangRequest
 import no.nav.aap.tilgang.TilgangResponse
 import java.net.URI
 
@@ -28,7 +31,11 @@ object TilgangGateway {
         prometheus = prometheus
     )
 
-    fun sjekkTilgang(avklaringsbehovReferanse: AvklaringsbehovReferanseDto, token: OidcToken, operasjon: Operasjon = Operasjon.SAKSBEHANDLE): Boolean {
+    fun sjekkTilgang(
+        avklaringsbehovReferanse: AvklaringsbehovReferanseDto,
+        token: OidcToken,
+        operasjon: Operasjon = Operasjon.SAKSBEHANDLE
+    ): Boolean {
         return if (avklaringsbehovReferanse.journalpostId != null) {
             harTilgangTilJournalpost(
                 JournalpostTilgangRequest(
@@ -41,6 +48,8 @@ object TilgangGateway {
             harTilgangTilTilbakekrevingsbehandling(
                 TilbakekrevingTilgangRequest(
                     behandlingsreferanse = avklaringsbehovReferanse.referanse!!,
+                    saksnummer = avklaringsbehovReferanse.saksnummer!!,
+                    påkrevdRolle = utledPåkrevdRolleForTilbakekreving(avklaringsbehovReferanse.avklaringsbehovKode),
                     operasjon = operasjon
                 ), token
             )
@@ -83,7 +92,10 @@ object TilgangGateway {
         return respons.tilgang
     }
 
-    private fun harTilgangTilTilbakekrevingsbehandling(body: TilbakekrevingTilgangRequest, currentToken: OidcToken): Boolean {
+    private fun harTilgangTilTilbakekrevingsbehandling(
+        body: TilbakekrevingTilgangRequest,
+        currentToken: OidcToken
+    ): Boolean {
         val httpRequest = PostRequest(
             body = body,
             currentToken = currentToken
@@ -96,5 +108,12 @@ object TilgangGateway {
         )
         return respons.tilgang
     }
-    
+
+    private fun utledPåkrevdRolleForTilbakekreving(avklaringsbehovKode: String): Rolle {
+        val kode = TilbakeKrevingAvklaringsbehovKoder.valueOf(avklaringsbehovKode)
+        return when (kode) {
+            TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING -> Rolle.BESLUTTER
+            TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING -> Rolle.SAKSBEHANDLER_NASJONAL
+        }
+    }
 }
