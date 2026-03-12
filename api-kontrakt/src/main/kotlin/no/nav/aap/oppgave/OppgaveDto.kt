@@ -103,7 +103,8 @@ data class OppgaveDto(
         return AvklaringsbehovReferanseDto(
             referanse = this.behandlingRef,
             journalpostId = this.journalpostId,
-            avklaringsbehovKode = this.avklaringsbehovKode
+            avklaringsbehovKode = this.avklaringsbehovKode,
+            behandlingstype = this.behandlingstype
         )
     }
 }
