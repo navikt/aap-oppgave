@@ -95,7 +95,8 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-tilbakekreving-oppgaver").increment()
-    LoggerFactory.getLogger("tilbakekreving").info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
+    LoggerFactory.getLogger("tilbakekreving")
+        .info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
     dataSource.transaction { connection ->
         OppdaterOppgaveService(
             msGraphClient,
@@ -140,8 +141,13 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
         TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> listOf(
             AvklaringsbehovHendelse(
                 AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                    TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
                 ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
+            ),
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
             )
         )
 
@@ -154,6 +160,12 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
         )
 
         TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> listOf(
+
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.AVSLUTTET, emptyList()
+            ),
             AvklaringsbehovHendelse(
                 AvklaringsbehovKode(
                     TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
