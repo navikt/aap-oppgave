@@ -110,7 +110,7 @@ object TilgangGateway {
     }
 
     private fun utledPåkrevdRolleForTilbakekreving(avklaringsbehovKode: String): Rolle {
-        val kode = TilbakeKrevingAvklaringsbehovKoder.valueOf(avklaringsbehovKode)
+        val kode = TilbakeKrevingAvklaringsbehovKoder.fraKode(avklaringsbehovKode)
         return when (kode) {
             TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING -> Rolle.BESLUTTER
             TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING -> Rolle.SAKSBEHANDLER_NASJONAL

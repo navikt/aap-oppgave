@@ -9,4 +9,10 @@ enum class TilbakeKrevingAvklaringsbehovKoder(val kode: String) {
     fun tilAvklaringsbehovKode(): AvklaringsbehovKode {
         return AvklaringsbehovKode(kode)
     }
+    
+    companion object {
+        fun fraKode(kode: String): TilbakeKrevingAvklaringsbehovKoder {
+            return entries.first { it.kode == kode }
+        }
+    }
 }
