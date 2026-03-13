@@ -13,7 +13,6 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
-import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
@@ -74,7 +73,6 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
     route("/{referanse}/tildelt-status").authorizedGet<BehandlingReferanse, TildeltStatusDto> (
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ){ request ->
-        prometheus.httpCallCounter("/hent-oppgave").increment()
         val oppgave = dataSource.transaction(readOnly = true) { connection ->
             OppgavelisteService(
                 OppgaveRepository(connection),
