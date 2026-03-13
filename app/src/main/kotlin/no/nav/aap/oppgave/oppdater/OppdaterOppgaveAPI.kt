@@ -21,6 +21,7 @@ import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
 import no.nav.aap.oppgave.oppdater.hendelse.Endring
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
+import no.nav.aap.oppgave.oppdater.hendelse.TILBAKEKREVING
 import no.nav.aap.oppgave.oppdater.hendelse.tilAvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
@@ -31,6 +32,7 @@ import no.nav.aap.tilgang.AuthorizationBodyPathConfig
 import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
@@ -141,11 +143,6 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
         TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> listOf(
             AvklaringsbehovHendelse(
                 AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
-            ),
-            AvklaringsbehovHendelse(
-                AvklaringsbehovKode(
                     TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
                 ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
             )
@@ -160,12 +157,6 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
         )
 
         TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> listOf(
-
-            AvklaringsbehovHendelse(
-                AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.AVSLUTTET, emptyList()
-            ),
             AvklaringsbehovHendelse(
                 AvklaringsbehovKode(
                     TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
@@ -174,11 +165,6 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
         )
 
         TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> listOf(
-            AvklaringsbehovHendelse(
-                AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.AVSLUTTET, emptyList()
-            ),
             AvklaringsbehovHendelse(
                 AvklaringsbehovKode(
                     TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode

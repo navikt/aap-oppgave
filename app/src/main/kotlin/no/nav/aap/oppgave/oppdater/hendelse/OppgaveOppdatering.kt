@@ -9,6 +9,7 @@ import java.util.*
 
 
 const val KELVIN = "Kelvin"
+const val TILBAKEKREVING = "Tilbakekreving"
 
 /**
  * @param reserverTil Hvis ikke-null, reserver til denne personen.

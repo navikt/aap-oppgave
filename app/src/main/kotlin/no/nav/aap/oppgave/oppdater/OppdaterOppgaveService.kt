@@ -28,6 +28,7 @@ import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
 import no.nav.aap.oppgave.oppdater.hendelse.Endring
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
+import no.nav.aap.oppgave.oppdater.hendelse.TILBAKEKREVING
 import no.nav.aap.oppgave.oppdater.hendelse.VenteInformasjon
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
@@ -487,7 +488,8 @@ class OppdaterOppgaveService(
         oppgaver
             .filter { it.status != Status.AVSLUTTET }
             .forEach {
-                oppgaveRepository.avsluttOppgave(it.oppgaveId(), KELVIN)
+                val ident = if(it.behandlingstype == Behandlingstype.TILBAKEKREVING) TILBAKEKREVING else KELVIN
+                oppgaveRepository.avsluttOppgave(it.oppgaveId(), ident)
                 log.info("Avsluttet oppgave med ID ${it.oppgaveId()}. Avklaringsbehov: ${it.avklaringsbehovKode}")
                 sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, flytJobbRepository)
             }
@@ -507,8 +509,8 @@ class OppdaterOppgaveService(
             return null
         }
 
-        if (sisteAvsluttetAvklaringsbehov.sistEndretAv() == KELVIN) {
-            log.info("Siste avsluttede avklaringsbehov ble løst av systembruker $KELVIN, oppgave vil ikke bli reservert.")
+        if (sisteAvsluttetAvklaringsbehov.sistEndretAv() == KELVIN || sisteAvsluttetAvklaringsbehov.sistEndretAv() == TILBAKEKREVING) {
+            log.info("Siste avsluttede avklaringsbehov ble løst av systembruker ${sisteAvsluttetAvklaringsbehov.sistEndretAv()}, oppgave vil ikke bli reservert.")
         }
 
         return Pair(sisteAvsluttetAvklaringsbehov.avklaringsbehovKode, sisteAvsluttetAvklaringsbehov.sistEndretAv())
