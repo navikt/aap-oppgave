@@ -91,13 +91,13 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
         val oppgaverForIdQuery = """
             SELECT 
-                ${alleOppgaveFelt("o")}
+                $alleOppgaveFelt
             FROM 
-                OPPGAVE o
+                OPPGAVE 
             WHERE 
-                o.BEHANDLING_REF = ?
-            AND o.STATUS = 'OPPRETTET'
-            ORDER BY o.OPPRETTET_TIDSPUNKT DESC
+                BEHANDLING_REF = ?
+            AND STATUS = 'OPPRETTET'
+            ORDER BY OPPRETTET_TIDSPUNKT DESC
         """.trimIndent()
 
         return connection.queryFirstOrNull(oppgaverForIdQuery) {
@@ -114,12 +114,12 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentOppgaverForIdent(ident: String): List<OppgaveDto> {
         val oppgaverForIdQuery = """
             SELECT 
-                ${alleOppgaveFelt("o")}
+                $alleOppgaveFelt
             FROM 
-                OPPGAVE o
+                OPPGAVE 
             WHERE 
-                o.PERSON_IDENT = ?
-            ORDER BY o.OPPRETTET_TIDSPUNKT DESC
+                PERSON_IDENT = ?
+            ORDER BY OPPRETTET_TIDSPUNKT DESC
         """.trimIndent()
 
         return connection.queryList(oppgaverForIdQuery) {
@@ -136,11 +136,11 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentOppgave(oppgaveId: Long): OppgaveDto {
         val oppgaverForIdQuery = """
             SELECT 
-                ${alleOppgaveFelt("o")}
+                $alleOppgaveFelt
             FROM 
-                OPPGAVE o
+                OPPGAVE 
             WHERE 
-                o.ID = ?
+                ID = ?
         """.trimIndent()
 
         return connection.queryFirst(oppgaverForIdQuery) {
@@ -157,11 +157,11 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentOppgaver(referanse: UUID): List<OppgaveDto> {
         val oppgaverForReferanseQuery = """
         SELECT 
-            ${alleOppgaveFelt("o")}
+            $alleOppgaveFelt
         FROM 
-            OPPGAVE o
+            OPPGAVE 
         WHERE 
-            o.BEHANDLING_REF = ?
+            BEHANDLING_REF = ?
     """.trimIndent()
 
         return connection.queryList(oppgaverForReferanseQuery) {
@@ -519,12 +519,12 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun finnOppgaverGittSaksnummer(saksnummer: String): List<OppgaveDto> {
         val hentOppgaverGittSaksnummerQuery = """
             SELECT 
-                   ${alleOppgaveFelt("o")}
+                   $alleOppgaveFelt
             FROM 
-                OPPGAVE o
+                OPPGAVE 
             WHERE 
-                UPPER(o.SAKSNUMMER) = ? AND o.STATUS != 'AVSLUTTET'
-            ORDER BY o.BEHANDLING_OPPRETTET
+                UPPER(SAKSNUMMER) = ? AND STATUS != 'AVSLUTTET'
+            ORDER BY BEHANDLING_OPPRETTET
         """.trimIndent()
 
         return connection.queryList(hentOppgaverGittSaksnummerQuery) {
@@ -541,12 +541,12 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun finnÅpneOppgaverGittPersonident(personIdent: String): List<OppgaveDto> {
         val hentOppgaverGittPersonidentQuery = """
             SELECT 
-                   ${alleOppgaveFelt("o")}
+                   $alleOppgaveFelt
             FROM 
-                OPPGAVE o
+                OPPGAVE 
             WHERE 
-                o.PERSON_IDENT = ? AND o.STATUS != 'AVSLUTTET'
-            ORDER BY o.BEHANDLING_OPPRETTET, o.opprettet_tidspunkt
+                PERSON_IDENT = ? AND STATUS != 'AVSLUTTET'
+            ORDER BY BEHANDLING_OPPRETTET, opprettet_tidspunkt
         """.trimIndent()
 
         return connection.queryList(hentOppgaverGittPersonidentQuery) {
@@ -614,10 +614,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringRekkefølge = oppgaveRekkefølge(sortOrder ?: OppgaveSorteringRekkefølge.ASC)
 
         val query = """
-            SELECT ${alleOppgaveFelt("o")}
-            FROM OPPGAVE o
-            WHERE o.RESERVERT_AV = ?
-              AND o.STATUS != 'AVSLUTTET' $kunPåVentQuery
+            SELECT $alleOppgaveFelt
+            FROM OPPGAVE
+            WHERE RESERVERT_AV = ?
+              AND STATUS != 'AVSLUTTET' $kunPåVentQuery
             ORDER BY $sortering $sorteringRekkefølge
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
@@ -637,11 +637,11 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
         val query = """
             SELECT 
-                ${alleOppgaveFelt("o")}
+                $alleOppgaveFelt
             FROM
-                OPPGAVE o    
+                OPPGAVE    
             WHERE
-                o.STATUS != 'AVSLUTTET'
+                STATUS != 'AVSLUTTET'
         """.trimIndent()
 
         return connection.queryList(query) {
@@ -798,6 +798,8 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     private companion object {
+        val alleOppgaveFelt = alleOppgaveFelt("OPPGAVE")
+
         fun alleOppgaveFelt(oppgaveAlias: String) = """
             $oppgaveAlias.ID,
             $oppgaveAlias.PERSON_IDENT,
