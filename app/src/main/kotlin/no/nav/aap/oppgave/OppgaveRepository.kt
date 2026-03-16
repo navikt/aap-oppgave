@@ -91,13 +91,13 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
         val oppgaverForIdQuery = """
             SELECT 
-                $alleOppgaveFelt
+                ${alleOppgaveFelt("o")}
             FROM 
-                OPPGAVE 
+                OPPGAVE o
             WHERE 
-                BEHANDLING_REF = ?
-            AND STATUS = 'OPPRETTET'
-            ORDER BY OPPRETTET_TIDSPUNKT DESC
+                o.BEHANDLING_REF = ?
+            AND o.STATUS = 'OPPRETTET'
+            ORDER BY o.OPPRETTET_TIDSPUNKT DESC
         """.trimIndent()
 
         return connection.queryFirstOrNull(oppgaverForIdQuery) {
@@ -114,12 +114,12 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentOppgaverForIdent(ident: String): List<OppgaveDto> {
         val oppgaverForIdQuery = """
             SELECT 
-                $alleOppgaveFelt
+                ${alleOppgaveFelt("o")}
             FROM 
-                OPPGAVE 
+                OPPGAVE o
             WHERE 
-                PERSON_IDENT = ?
-            ORDER BY OPPRETTET_TIDSPUNKT DESC
+                o.PERSON_IDENT = ?
+            ORDER BY o.OPPRETTET_TIDSPUNKT DESC
         """.trimIndent()
 
         return connection.queryList(oppgaverForIdQuery) {
@@ -136,11 +136,11 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentOppgave(oppgaveId: Long): OppgaveDto {
         val oppgaverForIdQuery = """
             SELECT 
-                $alleOppgaveFelt
+                ${alleOppgaveFelt("o")}
             FROM 
-                OPPGAVE 
+                OPPGAVE o
             WHERE 
-                ID = ?
+                o.ID = ?
         """.trimIndent()
 
         return connection.queryFirst(oppgaverForIdQuery) {
@@ -157,11 +157,11 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentOppgaver(referanse: UUID): List<OppgaveDto> {
         val oppgaverForReferanseQuery = """
         SELECT 
-            $alleOppgaveFelt
+            ${alleOppgaveFelt("o")}
         FROM 
-            OPPGAVE 
+            OPPGAVE o
         WHERE 
-            BEHANDLING_REF = ?
+            o.BEHANDLING_REF = ?
     """.trimIndent()
 
         return connection.queryList(oppgaverForReferanseQuery) {
@@ -434,7 +434,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
         val hentNesteOppgaveQuery = """
-            SELECT o.*, m.markering_type
+            SELECT ${alleOppgaveFelt("o")}, m.markering_type
             FROM 
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
@@ -519,12 +519,12 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun finnOppgaverGittSaksnummer(saksnummer: String): List<OppgaveDto> {
         val hentOppgaverGittSaksnummerQuery = """
             SELECT 
-                   $alleOppgaveFelt
+                   ${alleOppgaveFelt("o")}
             FROM 
-                OPPGAVE 
+                OPPGAVE o
             WHERE 
-                UPPER(SAKSNUMMER) = ? AND STATUS != 'AVSLUTTET'
-            ORDER BY BEHANDLING_OPPRETTET
+                UPPER(o.SAKSNUMMER) = ? AND o.STATUS != 'AVSLUTTET'
+            ORDER BY o.BEHANDLING_OPPRETTET
         """.trimIndent()
 
         return connection.queryList(hentOppgaverGittSaksnummerQuery) {
@@ -541,12 +541,12 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun finnÅpneOppgaverGittPersonident(personIdent: String): List<OppgaveDto> {
         val hentOppgaverGittPersonidentQuery = """
             SELECT 
-                   $alleOppgaveFelt
+                   ${alleOppgaveFelt("o")}
             FROM 
-                OPPGAVE 
+                OPPGAVE o
             WHERE 
-                PERSON_IDENT = ? AND STATUS != 'AVSLUTTET'
-            ORDER BY BEHANDLING_OPPRETTET, opprettet_tidspunkt
+                o.PERSON_IDENT = ? AND o.STATUS != 'AVSLUTTET'
+            ORDER BY o.BEHANDLING_OPPRETTET, o.opprettet_tidspunkt
         """.trimIndent()
 
         return connection.queryList(hentOppgaverGittPersonidentQuery) {
@@ -614,10 +614,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringRekkefølge = oppgaveRekkefølge(sortOrder ?: OppgaveSorteringRekkefølge.ASC)
 
         val query = """
-            SELECT $alleOppgaveFelt
-            FROM OPPGAVE
-            WHERE RESERVERT_AV = ?
-              AND STATUS != 'AVSLUTTET' $kunPåVentQuery
+            SELECT ${alleOppgaveFelt("o")}
+            FROM OPPGAVE o
+            WHERE o.RESERVERT_AV = ?
+              AND o.STATUS != 'AVSLUTTET' $kunPåVentQuery
             ORDER BY $sortering $sorteringRekkefølge
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
@@ -637,11 +637,11 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
         val query = """
             SELECT 
-                $alleOppgaveFelt
+                ${alleOppgaveFelt("o")}
             FROM
-                OPPGAVE    
+                OPPGAVE o    
             WHERE
-                STATUS != 'AVSLUTTET'
+                o.STATUS != 'AVSLUTTET'
         """.trimIndent()
 
         return connection.queryList(query) {
@@ -728,6 +728,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             påVentTil = row.getLocalDateOrNull("PAA_VENT_TIL"),
             påVentÅrsak = row.getStringOrNull("PAA_VENT_AARSAK"),
             venteBegrunnelse = row.getStringOrNull("VENTE_BEGRUNNELSE"),
+            forrigePåVentÅrsak = row.getStringOrNull("FORRIGE_PAA_VENT_AARSAK"),
+            forrigeVenteBegrunnelse = row.getStringOrNull("FORRIGE_VENTE_BEGRUNNELSE"),
             årsakerTilBehandling = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             vurderingsbehov = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
@@ -796,41 +798,79 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     private companion object {
-        val alleOppgaveFelt = """
-            ID,
-            PERSON_IDENT,
-            SAKSNUMMER,
-            BEHANDLING_REF,
-            JOURNALPOST_ID,
-            ENHET,
-            OPPFOLGINGSENHET,
-            VEILEDER_ARBEID,
-            VEILEDER_SYKDOM,
-            BEHANDLING_OPPRETTET,
-            AVKLARINGSBEHOV_TYPE,
-            STATUS,
-            BEHANDLINGSTYPE,
-            PAA_VENT_TIL,
-            PAA_VENT_AARSAK,
-            VENTE_BEGRUNNELSE,
-            RESERVERT_AV,
-            RESERVERT_AV_NAVN,
-            RESERVERT_TIDSPUNKT,
-            OPPRETTET_AV,
-            OPPRETTET_TIDSPUNKT,
-            ENDRET_AV,
-            ENDRET_TIDSPUNKT,
-            VERSJON,
-            AARSAKER_TIL_BEHANDLING,
-            FORTROLIG_ADRESSE,
-            ER_SKJERMET,
-            ULESTE_DOKUMENTER,
-            RETUR_AARSAK,
-            RETUR_BEGRUNNELSE,
-            retur_aarsaker,
-            retur_returnert_av,
-            AARSAK_TIL_OPPRETTELSE,
-            UTLOEPT_VENTEFRIST
+        fun alleOppgaveFelt(oppgaveAlias: String) = """
+            $oppgaveAlias.ID,
+            $oppgaveAlias.PERSON_IDENT,
+            $oppgaveAlias.SAKSNUMMER,
+            $oppgaveAlias.BEHANDLING_REF,
+            $oppgaveAlias.JOURNALPOST_ID,
+            $oppgaveAlias.ENHET,
+            $oppgaveAlias.OPPFOLGINGSENHET,
+            $oppgaveAlias.VEILEDER_ARBEID,
+            $oppgaveAlias.VEILEDER_SYKDOM,
+            $oppgaveAlias.BEHANDLING_OPPRETTET,
+            $oppgaveAlias.AVKLARINGSBEHOV_TYPE,
+            $oppgaveAlias.STATUS,
+            $oppgaveAlias.BEHANDLINGSTYPE,
+            $oppgaveAlias.PAA_VENT_TIL,
+            $oppgaveAlias.PAA_VENT_AARSAK,
+            $oppgaveAlias.VENTE_BEGRUNNELSE,
+            (
+                SELECT historikk.PAA_VENT_AARSAK
+                FROM OPPGAVE_HISTORIKK historikk
+                WHERE historikk.OPPGAVE_ID = $oppgaveAlias.ID
+                  AND (
+                    historikk.PAA_VENT_TIL IS NOT NULL
+                    OR historikk.PAA_VENT_AARSAK IS NOT NULL
+                    OR historikk.VENTE_BEGRUNNELSE IS NOT NULL
+                  )
+                ORDER BY historikk.ENDRET_TIDSPUNKT DESC NULLS LAST, historikk.ID DESC
+                OFFSET CASE
+                    WHEN $oppgaveAlias.PAA_VENT_TIL IS NOT NULL
+                      OR $oppgaveAlias.PAA_VENT_AARSAK IS NOT NULL
+                      OR $oppgaveAlias.VENTE_BEGRUNNELSE IS NOT NULL
+                    THEN 1
+                    ELSE 0
+                END
+                LIMIT 1
+            ) AS FORRIGE_PAA_VENT_AARSAK,
+            (
+                SELECT historikk.VENTE_BEGRUNNELSE
+                FROM OPPGAVE_HISTORIKK historikk
+                WHERE historikk.OPPGAVE_ID = $oppgaveAlias.ID
+                  AND (
+                    historikk.PAA_VENT_TIL IS NOT NULL
+                    OR historikk.PAA_VENT_AARSAK IS NOT NULL
+                    OR historikk.VENTE_BEGRUNNELSE IS NOT NULL
+                  )
+                ORDER BY historikk.ENDRET_TIDSPUNKT DESC NULLS LAST, historikk.ID DESC
+                OFFSET CASE
+                    WHEN $oppgaveAlias.PAA_VENT_TIL IS NOT NULL
+                      OR $oppgaveAlias.PAA_VENT_AARSAK IS NOT NULL
+                      OR $oppgaveAlias.VENTE_BEGRUNNELSE IS NOT NULL
+                    THEN 1
+                    ELSE 0
+                END
+                LIMIT 1
+            ) AS FORRIGE_VENTE_BEGRUNNELSE,
+            $oppgaveAlias.RESERVERT_AV,
+            $oppgaveAlias.RESERVERT_AV_NAVN,
+            $oppgaveAlias.RESERVERT_TIDSPUNKT,
+            $oppgaveAlias.OPPRETTET_AV,
+            $oppgaveAlias.OPPRETTET_TIDSPUNKT,
+            $oppgaveAlias.ENDRET_AV,
+            $oppgaveAlias.ENDRET_TIDSPUNKT,
+            $oppgaveAlias.VERSJON,
+            $oppgaveAlias.AARSAKER_TIL_BEHANDLING,
+            $oppgaveAlias.FORTROLIG_ADRESSE,
+            $oppgaveAlias.ER_SKJERMET,
+            $oppgaveAlias.ULESTE_DOKUMENTER,
+            $oppgaveAlias.RETUR_AARSAK,
+            $oppgaveAlias.RETUR_BEGRUNNELSE,
+            $oppgaveAlias.retur_aarsaker,
+            $oppgaveAlias.retur_returnert_av,
+            $oppgaveAlias.AARSAK_TIL_OPPRETTELSE,
+            $oppgaveAlias.UTLOEPT_VENTEFRIST
         """.trimIndent()
     }
 

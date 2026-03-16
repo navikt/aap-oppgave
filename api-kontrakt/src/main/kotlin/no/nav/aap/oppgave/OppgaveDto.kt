@@ -60,6 +60,8 @@ data class OppgaveDto(
     val påVentÅrsak: String? = null,
     val utløptVentefrist: LocalDate? = null,
     val venteBegrunnelse: String? = null,
+    val forrigePåVentÅrsak: String? = null,
+    val forrigeVenteBegrunnelse: String? = null,
     @Deprecated("Bruk returInformasjon")
     val returStatus: ReturStatus? = null,
     val returInformasjon: ReturInformasjon? = null,
