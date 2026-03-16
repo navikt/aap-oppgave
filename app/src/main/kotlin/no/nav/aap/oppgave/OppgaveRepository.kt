@@ -434,7 +434,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
         val hentNesteOppgaveQuery = """
-            SELECT ${alleOppgaveFelt("o")}, m.markering_type
+            SELECT ${alleOppgaveFeltMedHistorikk("o")}, m.markering_type
             FROM 
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
@@ -798,9 +798,82 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     private companion object {
-        val alleOppgaveFelt = alleOppgaveFelt("OPPGAVE")
+        val alleOppgaveFelt = """
+            ID,
+            PERSON_IDENT,
+            SAKSNUMMER,
+            BEHANDLING_REF,
+            JOURNALPOST_ID,
+            ENHET,
+            OPPFOLGINGSENHET,
+            VEILEDER_ARBEID,
+            VEILEDER_SYKDOM,
+            BEHANDLING_OPPRETTET,
+            AVKLARINGSBEHOV_TYPE,
+            STATUS,
+            BEHANDLINGSTYPE,
+            PAA_VENT_TIL,
+            PAA_VENT_AARSAK,
+            VENTE_BEGRUNNELSE,
+            (
+                SELECT historikk.PAA_VENT_AARSAK
+                FROM OPPGAVE_HISTORIKK historikk
+                WHERE historikk.OPPGAVE_ID = OPPGAVE.ID
+                  AND (
+                    historikk.PAA_VENT_TIL IS NOT NULL
+                    OR historikk.PAA_VENT_AARSAK IS NOT NULL
+                    OR historikk.VENTE_BEGRUNNELSE IS NOT NULL
+                  )
+                ORDER BY historikk.ENDRET_TIDSPUNKT DESC NULLS LAST, historikk.ID DESC
+                OFFSET CASE
+                    WHEN OPPGAVE.PAA_VENT_TIL IS NOT NULL
+                      OR OPPGAVE.PAA_VENT_AARSAK IS NOT NULL
+                      OR OPPGAVE.VENTE_BEGRUNNELSE IS NOT NULL
+                    THEN 1
+                    ELSE 0
+                END
+                LIMIT 1
+            ) AS FORRIGE_PAA_VENT_AARSAK,
+            (
+                SELECT historikk.VENTE_BEGRUNNELSE
+                FROM OPPGAVE_HISTORIKK historikk
+                WHERE historikk.OPPGAVE_ID = OPPGAVE.ID
+                  AND (
+                    historikk.PAA_VENT_TIL IS NOT NULL
+                    OR historikk.PAA_VENT_AARSAK IS NOT NULL
+                    OR historikk.VENTE_BEGRUNNELSE IS NOT NULL
+                  )
+                ORDER BY historikk.ENDRET_TIDSPUNKT DESC NULLS LAST, historikk.ID DESC
+                OFFSET CASE
+                    WHEN OPPGAVE.PAA_VENT_TIL IS NOT NULL
+                      OR OPPGAVE.PAA_VENT_AARSAK IS NOT NULL
+                      OR OPPGAVE.VENTE_BEGRUNNELSE IS NOT NULL
+                    THEN 1
+                    ELSE 0
+                END
+                LIMIT 1
+            ) AS FORRIGE_VENTE_BEGRUNNELSE,
+            RESERVERT_AV,
+            RESERVERT_AV_NAVN,
+            RESERVERT_TIDSPUNKT,
+            OPPRETTET_AV,
+            OPPRETTET_TIDSPUNKT,
+            ENDRET_AV,
+            ENDRET_TIDSPUNKT,
+            VERSJON,
+            AARSAKER_TIL_BEHANDLING,
+            FORTROLIG_ADRESSE,
+            ER_SKJERMET,
+            ULESTE_DOKUMENTER,
+            RETUR_AARSAK,
+            RETUR_BEGRUNNELSE,
+            retur_aarsaker,
+            retur_returnert_av,
+            AARSAK_TIL_OPPRETTELSE,
+            UTLOEPT_VENTEFRIST
+        """.trimIndent()
 
-        fun alleOppgaveFelt(oppgaveAlias: String) = """
+        fun alleOppgaveFeltMedHistorikk(oppgaveAlias: String) = """
             $oppgaveAlias.ID,
             $oppgaveAlias.PERSON_IDENT,
             $oppgaveAlias.SAKSNUMMER,
