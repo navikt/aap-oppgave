@@ -63,8 +63,13 @@ class PlukkOppgaveService(
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
         val behandlingRef = oppgave.behandlingRef
         // Utleder enhet, fortrolig adresse og skjerming på nytt
-        val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
-        val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, relaterteIdenter)
+        val relevanteIdenter = if (oppgave.behandlingstype.fraBehandlingsflyt) {
+            BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
+        } else {
+            // skal ikke prøve å hente identer fra behandlingsflyt for postmottak-behandling
+            emptyList()
+        }
+        val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, relevanteIdenter)
         val erSkjermet = enhetService.erSkjermet(ident)
         val erOverstyrtTilLokalkontor = oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
         val erFørstegangsbehandling = oppgave.behandlingstype == Behandlingstype.FØRSTEGANGSBEHANDLING
@@ -73,7 +78,7 @@ class PlukkOppgaveService(
             enhetService.utledEnhetForOppgave(
                 AvklaringsbehovKode(oppgave.avklaringsbehovKode),
                 oppgave.personIdent,
-                relaterteIdenter,
+                relevanteIdenter,
                 oppgave.saksnummer,
                 erOverstyrtTilLokalkontor,
                 erFørstegangsbehandling

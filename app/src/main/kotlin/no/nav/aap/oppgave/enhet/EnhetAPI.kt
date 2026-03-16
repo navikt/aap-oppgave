@@ -219,8 +219,12 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
 
             val behandlingRef = oppgave.behandlingRef
-            val relaterteIdenter = BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
-
+            val relaterteIdenter = if (oppgave.behandlingstype.fraBehandlingsflyt) {
+                BehandlingsflytGateway.hentRelevanteIdenterPåBehandling(behandlingRef)
+            } else {
+                // skal ikke prøve å hente identer fra behandlingsflyt for postmottak-behandling
+                emptyList()
+            }
             relaterteIdenter.forEach { VeilarbarenaGateway.invalidateCache(it) }
 
             // må sjekke om oppgaven tidligere er overstyrt til lokalkontor. Da skal den bli det igjen.
