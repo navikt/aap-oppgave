@@ -8,7 +8,6 @@ import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.komponenter.server.auth.bruker
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
@@ -85,7 +84,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
                 TildeltStatusDto(
                     tildeltSaksbehandlerIdent = oppgave.reservertAv,
                     tildeltSaksbehandlerNavn = oppgave.reservertAvNavn,
-                    erTildeltInnloggetBruker = oppgave.reservertAv == bruker().ident
+                    erTildeltInnloggetBruker = oppgave.reservertAv == ident()
                 )
             )
         } else {
