@@ -439,6 +439,62 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
+            WHERE 
+                ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
+            ORDER BY ${sortering} ${sorteringsRekkefølge} 
+            OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
+        """.trimIndent()
+
+        val oppgaver = connection.queryList(hentNesteOppgaveQuery) {
+            setRowMapper { row ->
+                val tilbakekreving = getTilbakekreving(row, connection)
+                oppgaveMapper(row, tilbakekreving)
+            }
+        }
+
+        val countQuery = """
+            SELECT COUNT(*) count FROM OPPGAVE o
+            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
+            WHERE ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
+        """.trimIndent()
+
+        val alleOppgaverCount = connection.queryFirstOrNull(countQuery) {
+            setRowMapper { it.getInt("count") }
+        } ?: 0
+        val gjenstaaendeOppgaverAntall = maxOf(0, alleOppgaverCount - (offset + oppgaver.size))
+
+        return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall, alleOppgaverCount)
+    }
+
+    fun finnOppgaverNy(
+        filter: Filter,
+        rekkefølge: OppgaveSorteringRekkefølge = OppgaveSorteringRekkefølge.ASC,
+        paging: Paging? = null,
+        kunLedigeOppgaver: Boolean? = true,
+        utvidetFilter: UtvidetOppgavelisteFilter? = null,
+        sortBy: OppgaveSorteringFelt? = null,
+    ): FinnOppgaverDto {
+        val offset = if (paging != null) {
+            (paging.side - 1) * paging.antallPerSide
+        } else {
+            0
+        }
+        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
+        val kunLedigeQuery =
+            if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
+        val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
+        val sortering = oppgaveSorteringQuery(
+            sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+        )
+        val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
+
+        val hentNesteOppgaveQuery = """
+            SELECT o.*, m.markering_type
+            FROM 
+                OPPGAVE o
+            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
             LEFT OUTER JOIN SISTE_AVSLUTTEDE_OPPGAVE sao on sao.behandling_ref = o.behandling_ref 
             WHERE 
                 ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
@@ -467,6 +523,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall, alleOppgaverCount)
     }
+
 
     data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long, val versjon: Long)
     data class FinnOppgaverDto(val oppgaver: List<OppgaveDto>, val antallGjenstaaende: Int, val antallTotalt: Int)
