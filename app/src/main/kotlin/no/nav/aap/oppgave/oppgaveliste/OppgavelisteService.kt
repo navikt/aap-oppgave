@@ -92,19 +92,36 @@ class OppgavelisteService(
             )
         }
 
-        val finnOppgaverDto =
-            oppgaveRepository.finnOppgaver(
-                filter =
-                    kombinertFilter.copy(
-                        enheter = enheter,
-                        veileder = veilederIdent
-                    ),
-                rekkefølge = sortOrderMedDefault,
-                paging = paging,
-                kunLedigeOppgaver = kunLedigeOppgaver,
-                utvidetFilter = utvidetFilter,
-                sortBy = sortBy,
-            )
+        var finnOppgaverDto: FinnOppgaverDto
+        if (unleashService.isEnabled(FeatureToggles.EnhetForrigeOppgave) && filter.navn == "Kvalitetssikrer") {
+            finnOppgaverDto =
+                oppgaveRepository.finnOppgaverNy(
+                    filter =
+                        kombinertFilter.copy(
+                            enheter = enheter,
+                            veileder = veilederIdent
+                        ),
+                    rekkefølge = sortOrderMedDefault,
+                    paging = paging,
+                    kunLedigeOppgaver = kunLedigeOppgaver,
+                    utvidetFilter = utvidetFilter,
+                    sortBy = sortBy,
+                )
+        } else {
+            finnOppgaverDto =
+                oppgaveRepository.finnOppgaver(
+                    filter =
+                        kombinertFilter.copy(
+                            enheter = enheter,
+                            veileder = veilederIdent
+                        ),
+                    rekkefølge = sortOrderMedDefault,
+                    paging = paging,
+                    kunLedigeOppgaver = kunLedigeOppgaver,
+                    utvidetFilter = utvidetFilter,
+                    sortBy = sortBy,
+                )
+        }
 
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
