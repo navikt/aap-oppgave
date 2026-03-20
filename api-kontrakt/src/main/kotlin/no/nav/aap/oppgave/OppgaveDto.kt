@@ -49,7 +49,6 @@ data class OppgaveDto(
     val behandlingRef: UUID,
     val journalpostId: Long? = null,
     val enhet: String,
-    val enhetForrigeOppgave: String? = null, // Settes kun ved utplukk av finnOppgaver-kallet
     val oppfølgingsenhet: String?,
     val veilederArbeid: String? = null,
     val veilederSykdom: String? = null,

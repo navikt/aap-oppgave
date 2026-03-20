@@ -495,7 +495,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
-            LEFT OUTER JOIN SISTE_AVSLUTTEDE_OPPGAVE sao on sao.behandling_ref_forrige_oppgave = o.behandling_ref 
             WHERE 
                 ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
             ORDER BY ${sortering} ${sorteringsRekkefølge} 
@@ -523,7 +522,6 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall, alleOppgaverCount)
     }
-
 
     data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long, val versjon: Long)
     data class FinnOppgaverDto(val oppgaver: List<OppgaveDto>, val antallGjenstaaende: Int, val antallTotalt: Int)
@@ -776,7 +774,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             behandlingRef = row.getUUID("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
-            enhetForrigeOppgave = try { row.getStringOrNull("ENHET_FORRIGE_OPPGAVE") } catch (_: Exception) { null },
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
             veilederArbeid = row.getStringOrNull("VEILEDER_ARBEID"),
             veilederSykdom = row.getStringOrNull("VEILEDER_SYKDOM"),
