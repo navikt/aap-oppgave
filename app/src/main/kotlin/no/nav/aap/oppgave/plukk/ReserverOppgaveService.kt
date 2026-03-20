@@ -53,13 +53,12 @@ class ReserverOppgaveService(
     ): List<Long> {
         // Tildeler uten tilgangskontroll inntil videre
         val oppgaverSomSkalReserveres = oppgaver.map { oppgaveRepository.hentOppgave(it) }
-        var c = 0
         oppgaverSomSkalReserveres.forEach {
             oppgaveRepository.reserverOppgave(oppgaveId = OppgaveId(it.id!!, it.versjon), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent, reservertAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(tildelTilIdent))
             sendOppgaveStatusOppdatering(OppgaveId(it.id!!, it.versjon), HendelseType.RESERVERT, flytJobbRepository)
-            c++
         }
-        log.info("Tildelte $c oppgaver til $tildelTilIdent. Saksnumre: ${oppgaverSomSkalReserveres.joinToString(", ") { it.saksnummer.toString() }}")
+
+        log.info("Tildelte ${oppgaverSomSkalReserveres.size} oppgaver til $tildelTilIdent. Saksnumre: ${oppgaverSomSkalReserveres.joinToString(", ") { it.saksnummer.toString() }}")
         return oppgaverSomSkalReserveres.mapNotNull { it.id }
     }
 }
