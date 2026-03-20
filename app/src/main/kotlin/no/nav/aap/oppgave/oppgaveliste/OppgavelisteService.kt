@@ -18,13 +18,17 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
-import java.util.UUID
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
+import java.util.*
 
 const val maksOppgaver = 50
 
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
-    private val markeringRepository: MarkeringRepository
+    private val markeringRepository: MarkeringRepository,
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {
@@ -88,19 +92,36 @@ class OppgavelisteService(
             )
         }
 
-        val finnOppgaverDto =
-            oppgaveRepository.finnOppgaver(
-                filter =
-                    kombinertFilter.copy(
-                        enheter = enheter,
-                        veileder = veilederIdent
-                    ),
-                rekkefølge = sortOrderMedDefault,
-                paging = paging,
-                kunLedigeOppgaver = kunLedigeOppgaver,
-                utvidetFilter = utvidetFilter,
-                sortBy = sortBy,
-            )
+        var finnOppgaverDto: FinnOppgaverDto
+        if (unleashService.isEnabled(FeatureToggles.EnhetForrigeOppgave) && filter.navn == "Kvalitetssikrer") {
+            finnOppgaverDto =
+                oppgaveRepository.finnOppgaverNy(
+                    filter =
+                        kombinertFilter.copy(
+                            enheter = enheter,
+                            veileder = veilederIdent
+                        ),
+                    rekkefølge = sortOrderMedDefault,
+                    paging = paging,
+                    kunLedigeOppgaver = kunLedigeOppgaver,
+                    utvidetFilter = utvidetFilter,
+                    sortBy = sortBy,
+                )
+        } else {
+            finnOppgaverDto =
+                oppgaveRepository.finnOppgaver(
+                    filter =
+                        kombinertFilter.copy(
+                            enheter = enheter,
+                            veileder = veilederIdent
+                        ),
+                    rekkefølge = sortOrderMedDefault,
+                    paging = paging,
+                    kunLedigeOppgaver = kunLedigeOppgaver,
+                    utvidetFilter = utvidetFilter,
+                    sortBy = sortBy,
+                )
+        }
 
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
