@@ -353,7 +353,21 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgave = initDatasource(dbConfig(), prometheus).transaction {
+        oppdaterTilbakekrevingOppgaver(
+            TilbakekrevingsbehandlingOppdatertHendelse(
+                personIdent = "12345678910",
+                saksnummer = saksnummer,
+                behandlingref = referanse,
+                behandlingStatus = TilbakekrevingBehandlingsstatus.TIL_GODKJENNING,
+                sakOpprettet = LocalDateTime.now(),
+                totaltFeilutbetaltBeløp = 21321321.toBigDecimal(),
+                saksbehandlingURL = "testUrl",
+            )
+        )
+
+
+
+        initDatasource(dbConfig(), prometheus).transaction {
             val oppgaver = OppgaveRepository(it).hentAlleÅpneOppgaver()
             assertThat(oppgaver).hasSize(1)
             assertThat(oppgaver.first().saksnummer).isEqualTo(saksnummer.toString())
@@ -363,6 +377,24 @@ class OppgaveApiTest {
             assertThat(oppgaver.first().id).isEqualTo(oppgaver.first().id)
             assertThat(oppgaver.first().behandlingstype).isEqualTo(oppgaver.first().behandlingstype)
             assertThat(oppgaver.first().enhet).isEqualTo("4491")
+        }
+
+
+        oppdaterTilbakekrevingOppgaver(
+            TilbakekrevingsbehandlingOppdatertHendelse(
+                personIdent = "12345678910",
+                saksnummer = saksnummer,
+                behandlingref = referanse,
+                behandlingStatus = TilbakekrevingBehandlingsstatus.AVSLUTTET,
+                sakOpprettet = LocalDateTime.now(),
+                totaltFeilutbetaltBeløp = 21321321.toBigDecimal(),
+                saksbehandlingURL = "testUrl",
+            )
+        )
+
+        initDatasource(dbConfig(), prometheus).transaction {
+            val oppgaver = OppgaveRepository(it).hentAlleÅpneOppgaver()
+            assertThat(oppgaver).hasSize(0)
         }
 
 
