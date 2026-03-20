@@ -434,7 +434,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
         val hentNesteOppgaveQuery = """
-            SELECT o.*, m.markering_type
+            SELECT o.*, m.markering_type, null as ENHET_FORRIGE_OPPGAVE
             FROM 
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
@@ -490,12 +490,12 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
         val hentNesteOppgaveQuery = """
-            SELECT o.*, m.markering_type
+            SELECT o.*, m.markering_type, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE
             FROM 
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
-            LEFT OUTER JOIN SISTE_AVSLUTTEDE_OPPGAVE sao on sao.behandling_ref = o.behandling_ref 
+            LEFT OUTER JOIN SISTE_AVSLUTTEDE_OPPGAVE sao on sao.behandling_ref_forrige_oppgave = o.behandling_ref 
             WHERE 
                 ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
             ORDER BY ${sortering} ${sorteringsRekkefølge} 
@@ -776,7 +776,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             behandlingRef = row.getUUID("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
-            enhetForrigeOppgave = row.getStringOrNull("ENHET_FORRIGE_OPPGAVE"),
+            enhetForrigeOppgave = try { row.getStringOrNull("ENHET_FORRIGE_OPPGAVE") } catch (_: Exception) { null },
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
             veilederArbeid = row.getStringOrNull("VEILEDER_ARBEID"),
             veilederSykdom = row.getStringOrNull("VEILEDER_SYKDOM"),
