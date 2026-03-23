@@ -85,7 +85,16 @@ class OppgavelisteService(
                 else -> OppgaveSorteringRekkefølge.ASC
             }
 
-        val kombinertFilter = settFilter(filter, utvidetFilter)
+        val kombinertFilter = if (unleashService.isEnabled(FeatureToggles.FiltreringPaaAvklaringsbehovFiks)) {
+            // Hvis filteret er null er det avklaringsbehovkoder som ikke lar seg kombinere i de to filterene. Returnerer tidlig
+            validerOgKombinerFiltre(filter, utvidetFilter) ?: return FinnOppgaverDto(
+                oppgaver = emptyList(),
+                antallGjenstaaende = 0,
+                antallTotalt = 0
+            )
+        } else {
+            settFilter(filter, utvidetFilter)
+        }
 
         if (enheter.isEmpty()) {
             return FinnOppgaverDto(
@@ -166,6 +175,25 @@ class OppgavelisteService(
         return oppgaveRepository.hentOppgaver(referanse)
     }
 
+    private fun validerOgKombinerFiltre(
+        filter: FilterDto,
+        utvidetFilter: UtvidetOppgavelisteFilter?
+    ): FilterDto? {
+        if (utvidetFilter == null) return filter
+        val avklaringsbehovKoder =
+            utledAvklaringsbehovKoderForUtvidetFilter(filter.avklaringsbehovKoder, utvidetFilter.avklaringsbehovKoder)
+
+        if (avklaringsbehovKoder.isEmpty() && utvidetFilter.avklaringsbehovKoder.isNotEmpty() && filter.avklaringsbehovKoder.isNotEmpty()) {
+            // det finnes ingen avklaringsbehovkoder som matcher begge filtre. Returnerer null
+            return null
+        }
+
+        return filter.copy(
+            behandlingstyper = utvidetFilter.behandlingstyper,
+            avklaringsbehovKoder = avklaringsbehovKoder
+        )
+    }
+
     private fun settFilter(
         filter: FilterDto,
         utvidetFilter: UtvidetOppgavelisteFilter?
@@ -206,4 +234,17 @@ class OppgavelisteService(
         } else {
             oppgaver
         }
+}
+
+fun utledAvklaringsbehovKoderForUtvidetFilter(
+    filterAvklaringsbehovKoder: Set<String>,
+    utvidetFilterAvklaringsbehovKoder: Set<String>
+): Set<String> {
+    return if (utvidetFilterAvklaringsbehovKoder.isEmpty()) {
+        filterAvklaringsbehovKoder
+    } else if (filterAvklaringsbehovKoder.isEmpty()) {
+        utvidetFilterAvklaringsbehovKoder
+    } else {
+        utvidetFilterAvklaringsbehovKoder.intersect(filterAvklaringsbehovKoder)
+    }
 }

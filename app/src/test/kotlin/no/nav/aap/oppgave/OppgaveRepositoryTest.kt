@@ -1,10 +1,10 @@
 package no.nav.aap.oppgave
 
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.enhet.Enhet
-import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.TransientFilterDto
@@ -14,6 +14,7 @@ import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.BehandlingMarkering
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.oppgaveliste.utledAvklaringsbehovKoderForUtvidetFilter
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -663,6 +664,109 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Kan bruke utvidet filter i kombinasjon med kø-filter`() {
+        val oppgaveLovvalg = opprettOppgave(
+            enhet = "4491",
+            behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name)
+        )
+        val oppgaveBeregningstidspunkt = opprettOppgave(
+            enhet = "4491",
+            behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
+        )
+
+        val oppgaveBeslutter = opprettOppgave(
+            enhet = "4491",
+            behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+        )
+
+        val oppgaveSkrivBrevBeslutter = opprettOppgave(
+            enhet = "4491",
+            behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.SKRIV_VEDTAKSBREV.kode.name)
+        )
+
+        // Lovvalg-medlemskap-kø skal bare inneholde lovvalgsoppgaven
+        val oppgavelisteLovvalg = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = setOf(Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name)),
+            paging = null,
+            utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
+                årsaker = setOf(),
+                behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+                fom = LocalDate.of(2020, 1, 1),
+                tom = LocalDate.now().plusDays(1),
+                avklaringsbehovKoder = emptySet(),
+            ),
+        )
+
+        assertThat(oppgavelisteLovvalg.oppgaver).hasSize(1)
+        assertThat(oppgavelisteLovvalg.oppgaver.first().id).isEqualTo(oppgaveLovvalg.id)
+
+        val oppgavelisteHeleNAY = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = emptySet()),
+            paging = null,
+            utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
+                årsaker = setOf(),
+                behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+                fom = LocalDate.of(2020, 1, 1),
+                tom = LocalDate.now().plusDays(1),
+                avklaringsbehovKoder = emptySet(),
+            ),
+        )
+
+        assertThat(oppgavelisteHeleNAY.oppgaver).hasSize(4)
+
+        val oppgavelisteBeslutter = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = setOf(Definisjon.FATTE_VEDTAK.kode.name,
+                Definisjon.SKRIV_VEDTAKSBREV.kode.name)),
+            paging = null,
+            utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
+                årsaker = setOf(),
+                behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+                fom = LocalDate.of(2020, 1, 1),
+                tom = LocalDate.now().plusDays(1),
+                avklaringsbehovKoder = emptySet(),
+            ),
+        )
+
+        assertThat(oppgavelisteBeslutter.oppgaver).hasSize(2)
+
+        // Skal kunne filtrere beslutter-køen på spesifikk beslutter-oppgave
+        val oppgavelisteBeslutterBareVedtaksbrev = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = setOf(Definisjon.FATTE_VEDTAK.kode.name,
+                Definisjon.SKRIV_VEDTAKSBREV.kode.name)),
+            paging = null,
+            utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
+                årsaker = setOf(),
+                behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+                fom = LocalDate.of(2020, 1, 1),
+                tom = LocalDate.now().plusDays(1),
+                avklaringsbehovKoder = setOf(Definisjon.SKRIV_VEDTAKSBREV.kode.name),
+            ),
+        )
+        assertThat(oppgavelisteBeslutterBareVedtaksbrev.oppgaver).hasSize(1)
+        assertThat(oppgavelisteBeslutterBareVedtaksbrev.oppgaver.first().id).isEqualTo(oppgaveSkrivBrevBeslutter.id)
+
+        // Om man prøver å filtrere på en avklaringsbehovkode som ikke er i køen, returneres ingen oppgaver
+        val oppgavelisteRequestInkonsistenteverdier = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = setOf(Definisjon.FATTE_VEDTAK.kode.name,
+                Definisjon.SKRIV_VEDTAKSBREV.kode.name)),
+            paging = null,
+            utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
+                årsaker = setOf(),
+                behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
+                fom = LocalDate.of(2020, 1, 1),
+                tom = LocalDate.now().plusDays(1),
+                avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
+            ),
+        )
+
+        assertThat(oppgavelisteRequestInkonsistenteverdier.oppgaver).isEmpty()
+    }
+
+    @Test
     fun `Skal finne oppgaver knyttet til oppfølgingsenhet dersom den er satt`() {
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
         val oppgaveId2 = opprettOppgave(enhet = ENHET_NAV_LØRENSKOG, oppfølgingsenhet = ENHET_NAV_LILLESTRØM)
@@ -788,9 +892,18 @@ class OppgaveRepositoryTest {
         paging: Paging? = null,
         utvidetOppgavelisteFilter: UtvidetOppgavelisteFilter
     ): OppgaveRepository.FinnOppgaverDto {
+        // Kombinerer filtre på samme måte som i OppgavelisteService
+        val avklaringsbehovKoder = utledAvklaringsbehovKoderForUtvidetFilter(filter.avklaringsbehovKoder, utvidetOppgavelisteFilter.avklaringsbehovKoder)
+        if (avklaringsbehovKoder.isEmpty() && utvidetOppgavelisteFilter.avklaringsbehovKoder.isNotEmpty() && filter.avklaringsbehovKoder.isNotEmpty()) {
+            return OppgaveRepository.FinnOppgaverDto(
+                oppgaver = emptyList(),
+                antallGjenstaaende = 0,
+                antallTotalt = 0
+            )
+        }
         val kombinertFilter = (filter as TransientFilterDto).copy(
             behandlingstyper = utvidetOppgavelisteFilter.behandlingstyper,
-            avklaringsbehovKoder = utvidetOppgavelisteFilter.avklaringsbehovKoder,
+            avklaringsbehovKoder = avklaringsbehovKoder,
         )
         return dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaver(
