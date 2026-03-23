@@ -3,6 +3,7 @@ package no.nav.aap.oppgave
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
+import no.nav.aap.oppgave.enhet.EnhetDto
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -474,6 +475,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         kunLedigeOppgaver: Boolean? = true,
         utvidetFilter: UtvidetOppgavelisteFilter? = null,
         sortBy: OppgaveSorteringFelt? = null,
+        enheterMedNavn: Map<String, String> = emptyMap()
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
@@ -505,7 +507,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         val oppgaver = connection.queryList(hentNesteOppgaveQuery) {
             setRowMapper { row ->
                 val tilbakekreving = getTilbakekreving(row, connection)
-                oppgaveMapper(row, tilbakekreving)
+                val enhetNrForrigeOppgave = try { row.getStringOrNull("ENHET_FORRIGE_OPPGAVE") } catch (_: Exception) { null }
+                oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn)
             }
         }
 
@@ -768,7 +771,15 @@ class OppgaveRepository(private val connection: DBConnection) {
         return sb.toString()
     }
 
-    private fun oppgaveMapper(row: Row, tilbakekrevingVars: TilbakekrevingsVarsDto?): OppgaveDto {
+    private fun oppgaveMapper(
+        row: Row,
+        tilbakekrevingVars: TilbakekrevingsVarsDto?,
+        enhetNrForrigeOppgave: String? = null,
+        enheterMedNavn: Map<String, String> = emptyMap()
+    ): OppgaveDto {
+        val enhetForrigeOppgave = enhetNrForrigeOppgave?.let { enhetNr ->
+            listOf(EnhetDto(enhetNr = enhetNr, navn = enheterMedNavn[enhetNr] ?: enhetNr))
+        }
         return OppgaveDto(
             id = row.getLong("ID"),
             personIdent = row.getStringOrNull("PERSON_IDENT"),
@@ -776,7 +787,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             behandlingRef = row.getUUID("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),
             enhet = row.getString("ENHET"),
-            enhetForrigeOppgave = try { row.getStringOrNull("ENHET_FORRIGE_OPPGAVE") } catch (_: Exception) { null },
+            enhetForrigeOppgave = enhetForrigeOppgave,
             oppfølgingsenhet = row.getStringOrNull("OPPFOLGINGSENHET"),
             veilederArbeid = row.getStringOrNull("VEILEDER_ARBEID"),
             veilederSykdom = row.getStringOrNull("VEILEDER_SYKDOM"),
