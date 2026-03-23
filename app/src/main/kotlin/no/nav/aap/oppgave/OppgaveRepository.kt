@@ -778,7 +778,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         enheterMedNavn: Map<String, String> = emptyMap()
     ): OppgaveDto {
         val enhetForrigeOppgave = enhetNrForrigeOppgave?.let { enhetNr ->
-            listOf(EnhetDto(enhetNr = enhetNr, navn = enheterMedNavn[enhetNr] ?: enhetNr))
+            EnhetDto(enhetNr = enhetNr, navn = enheterMedNavn[enhetNr] ?: enhetNr)
         }
         return OppgaveDto(
             id = row.getLong("ID"),

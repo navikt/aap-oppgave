@@ -50,7 +50,7 @@ data class OppgaveDto(
     val behandlingRef: UUID,
     val journalpostId: Long? = null,
     val enhet: String,
-    val enhetForrigeOppgave: List<EnhetDto>? = null,
+    val enhetForrigeOppgave: EnhetDto? = null,
     val oppfølgingsenhet: String?,
     val veilederArbeid: String? = null,
     val veilederSykdom: String? = null,
