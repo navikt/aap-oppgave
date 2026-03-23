@@ -10,6 +10,8 @@ import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
+import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -28,7 +30,8 @@ const val maksOppgaver = 50
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
-    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
+    private val norgGateway: INorgGateway = NorgGateway()
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {
@@ -92,8 +95,9 @@ class OppgavelisteService(
             )
         }
 
-        var finnOppgaverDto: FinnOppgaverDto
+        val finnOppgaverDto: FinnOppgaverDto
         if (unleashService.isEnabled(FeatureToggles.EnhetForrigeOppgave) && filter.navn == "Kvalitetssikrer") {
+            val enheterMedNavn = norgGateway.hentEnheter()
             finnOppgaverDto =
                 oppgaveRepository.finnOppgaverNy(
                     filter =
@@ -106,6 +110,8 @@ class OppgavelisteService(
                     kunLedigeOppgaver = kunLedigeOppgaver,
                     utvidetFilter = utvidetFilter,
                     sortBy = sortBy,
+                    // TODO: Kun når filter.navn er "Kvalitetssikrer"
+                    enheterMedNavn = enheterMedNavn
                 )
         } else {
             finnOppgaverDto =
