@@ -85,16 +85,11 @@ class OppgavelisteService(
                 else -> OppgaveSorteringRekkefølge.ASC
             }
 
-        val kombinertFilter = if (unleashService.isEnabled(FeatureToggles.FiltreringPaaAvklaringsbehovFiks)) {
-            // Hvis filteret er null er det avklaringsbehovkoder som ikke lar seg kombinere i de to filterene. Returnerer tidlig
-            validerOgKombinerFiltre(filter, utvidetFilter) ?: return FinnOppgaverDto(
+        val kombinertFilter = validerOgKombinerFiltre(filter, utvidetFilter) ?: return FinnOppgaverDto(
                 oppgaver = emptyList(),
                 antallGjenstaaende = 0,
                 antallTotalt = 0
             )
-        } else {
-            settFilter(filter, utvidetFilter)
-        }
 
         if (enheter.isEmpty()) {
             return FinnOppgaverDto(
@@ -191,18 +186,6 @@ class OppgavelisteService(
         return filter.copy(
             behandlingstyper = utvidetFilter.behandlingstyper,
             avklaringsbehovKoder = avklaringsbehovKoder
-        )
-    }
-
-    private fun settFilter(
-        filter: FilterDto,
-        utvidetFilter: UtvidetOppgavelisteFilter?
-    ): FilterDto {
-        if (utvidetFilter == null) return filter
-
-        return filter.copy(
-            behandlingstyper = utvidetFilter.behandlingstyper,
-            avklaringsbehovKoder = utvidetFilter.avklaringsbehovKoder
         )
     }
 
