@@ -206,6 +206,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PAA_VENT_TIL = ?,
                 PAA_VENT_AARSAK= ?,
                 VENTE_BEGRUNNELSE = ?,
+                SISTE_PAA_VENT_AARSAK   = COALESCE(?, SISTE_PAA_VENT_AARSAK),
+                SISTE_PAA_VENT_TIL      = COALESCE(?, SISTE_PAA_VENT_TIL),
+                SISTE_VENTE_BEGRUNNELSE = COALESCE(?, SISTE_VENTE_BEGRUNNELSE),
                 PERSON_IDENT = ?,
                 VEILEDER_ARBEID = ?,
                 VEILEDER_SYKDOM = ?,
@@ -232,20 +235,23 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDate(4, påVentTil)
                 setString(5, påVentÅrsak)
                 setString(6, påVentBegrunnelse)
-                setString(7, personIdent)
-                setString(8, veilederArbeid)
-                setString(9, veilederSykdom)
-                setArray(10, vurderingsbehov)
-                setBoolean(11, harFortroligAdresse)
-                setBoolean(12, harUlesteDokumenter)
-                setEnumName(13, returInformasjon?.status)
-                setString(14, returInformasjon?.endretAv)
-                setArray(15, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(16, returInformasjon?.begrunnelse)
-                setBoolean(17, erSkjermet)
-                setLocalDate(18, utløptVentefrist)
-                setLong(19, oppgaveId.id)
-                setLong(20, oppgaveId.versjon)
+                setString(7, påVentÅrsak)
+                setLocalDate(8, påVentTil)
+                setString(9, påVentBegrunnelse)
+                setString(10, personIdent)
+                setString(11, veilederArbeid)
+                setString(12, veilederSykdom)
+                setArray(13, vurderingsbehov)
+                setBoolean(14, harFortroligAdresse)
+                setBoolean(15, harUlesteDokumenter)
+                setEnumName(16, returInformasjon?.status)
+                setString(17, returInformasjon?.endretAv)
+                setArray(18, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(19, returInformasjon?.begrunnelse)
+                setBoolean(20, erSkjermet)
+                setLocalDate(21, utløptVentefrist)
+                setLong(22, oppgaveId.id)
+                setLong(23, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -885,44 +891,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             PAA_VENT_TIL,
             PAA_VENT_AARSAK,
             VENTE_BEGRUNNELSE,
-            (
-                SELECT historikk.PAA_VENT_AARSAK
-                FROM OPPGAVE_HISTORIKK historikk
-                WHERE historikk.OPPGAVE_ID = OPPGAVE.ID
-                  AND (
-                    historikk.PAA_VENT_TIL IS NOT NULL
-                    OR historikk.PAA_VENT_AARSAK IS NOT NULL
-                    OR historikk.VENTE_BEGRUNNELSE IS NOT NULL
-                  )
-                ORDER BY historikk.ENDRET_TIDSPUNKT DESC NULLS LAST, historikk.ID DESC
-                OFFSET CASE
-                    WHEN OPPGAVE.PAA_VENT_TIL IS NOT NULL
-                      OR OPPGAVE.PAA_VENT_AARSAK IS NOT NULL
-                      OR OPPGAVE.VENTE_BEGRUNNELSE IS NOT NULL
-                    THEN 1
-                    ELSE 0
-                END
-                LIMIT 1
-            ) AS FORRIGE_PAA_VENT_AARSAK,
-            (
-                SELECT historikk.VENTE_BEGRUNNELSE
-                FROM OPPGAVE_HISTORIKK historikk
-                WHERE historikk.OPPGAVE_ID = OPPGAVE.ID
-                  AND (
-                    historikk.PAA_VENT_TIL IS NOT NULL
-                    OR historikk.PAA_VENT_AARSAK IS NOT NULL
-                    OR historikk.VENTE_BEGRUNNELSE IS NOT NULL
-                  )
-                ORDER BY historikk.ENDRET_TIDSPUNKT DESC NULLS LAST, historikk.ID DESC
-                OFFSET CASE
-                    WHEN OPPGAVE.PAA_VENT_TIL IS NOT NULL
-                      OR OPPGAVE.PAA_VENT_AARSAK IS NOT NULL
-                      OR OPPGAVE.VENTE_BEGRUNNELSE IS NOT NULL
-                    THEN 1
-                    ELSE 0
-                END
-                LIMIT 1
-            ) AS FORRIGE_VENTE_BEGRUNNELSE,
+            SISTE_PAA_VENT_AARSAK    AS FORRIGE_PAA_VENT_AARSAK,
+            SISTE_VENTE_BEGRUNNELSE  AS FORRIGE_VENTE_BEGRUNNELSE,
             RESERVERT_AV,
             RESERVERT_AV_NAVN,
             RESERVERT_TIDSPUNKT,
@@ -960,44 +930,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             $oppgaveAlias.PAA_VENT_TIL,
             $oppgaveAlias.PAA_VENT_AARSAK,
             $oppgaveAlias.VENTE_BEGRUNNELSE,
-            (
-                SELECT historikk.PAA_VENT_AARSAK
-                FROM OPPGAVE_HISTORIKK historikk
-                WHERE historikk.OPPGAVE_ID = $oppgaveAlias.ID
-                  AND (
-                    historikk.PAA_VENT_TIL IS NOT NULL
-                    OR historikk.PAA_VENT_AARSAK IS NOT NULL
-                    OR historikk.VENTE_BEGRUNNELSE IS NOT NULL
-                  )
-                ORDER BY historikk.ENDRET_TIDSPUNKT DESC NULLS LAST, historikk.ID DESC
-                OFFSET CASE
-                    WHEN $oppgaveAlias.PAA_VENT_TIL IS NOT NULL
-                      OR $oppgaveAlias.PAA_VENT_AARSAK IS NOT NULL
-                      OR $oppgaveAlias.VENTE_BEGRUNNELSE IS NOT NULL
-                    THEN 1
-                    ELSE 0
-                END
-                LIMIT 1
-            ) AS FORRIGE_PAA_VENT_AARSAK,
-            (
-                SELECT historikk.VENTE_BEGRUNNELSE
-                FROM OPPGAVE_HISTORIKK historikk
-                WHERE historikk.OPPGAVE_ID = $oppgaveAlias.ID
-                  AND (
-                    historikk.PAA_VENT_TIL IS NOT NULL
-                    OR historikk.PAA_VENT_AARSAK IS NOT NULL
-                    OR historikk.VENTE_BEGRUNNELSE IS NOT NULL
-                  )
-                ORDER BY historikk.ENDRET_TIDSPUNKT DESC NULLS LAST, historikk.ID DESC
-                OFFSET CASE
-                    WHEN $oppgaveAlias.PAA_VENT_TIL IS NOT NULL
-                      OR $oppgaveAlias.PAA_VENT_AARSAK IS NOT NULL
-                      OR $oppgaveAlias.VENTE_BEGRUNNELSE IS NOT NULL
-                    THEN 1
-                    ELSE 0
-                END
-                LIMIT 1
-            ) AS FORRIGE_VENTE_BEGRUNNELSE,
+            $oppgaveAlias.SISTE_PAA_VENT_AARSAK    AS FORRIGE_PAA_VENT_AARSAK,
+            $oppgaveAlias.SISTE_VENTE_BEGRUNNELSE  AS FORRIGE_VENTE_BEGRUNNELSE,
             $oppgaveAlias.RESERVERT_AV,
             $oppgaveAlias.RESERVERT_AV_NAVN,
             $oppgaveAlias.RESERVERT_TIDSPUNKT,
