@@ -10,6 +10,11 @@ interface Filter {
     val veileder: String?
 }
 
+enum class FilterType {
+    ALLE_OPPGAVER,
+    KVALITETSSIKRING,
+}
+
 data class FilterDto(
     val id: Long? = null,
     val navn: String,
@@ -21,7 +26,8 @@ data class FilterDto(
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,
-    val endretTidspunkt: LocalDateTime? = null
+    val endretTidspunkt: LocalDateTime? = null,
+    val type: FilterType? = null,
 ): Filter
 
 data class TransientFilterDto(

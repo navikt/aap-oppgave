@@ -162,7 +162,7 @@ class FilterRepository(private val connection: DBConnection) {
 
         val query = """
             SELECT 
-                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT
+                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE
             FROM 
                 FILTER 
             WHERE SLETTET = FALSE 
@@ -186,6 +186,7 @@ class FilterRepository(private val connection: DBConnection) {
                     opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
                     endretAv = row.getStringOrNull("ENDRET_AV"),
                     endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
+                    type = row.getStringOrNull("TYPE")?.let { FilterType.valueOf(it) },
                 )
             }
         }
