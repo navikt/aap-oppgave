@@ -43,6 +43,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VEILEDER_SYKDOM,
                 AARSAKER_TIL_BEHANDLING,
                 VENTE_BEGRUNNELSE,
+                SISTE_PAA_VENT_AARSAK,
+                SISTE_VENTE_BEGRUNNELSE,
                 FORTROLIG_ADRESSE,
                 ULESTE_DOKUMENTER,
                 RETUR_AARSAK,
@@ -52,7 +54,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 aarsak_til_opprettelse,
                 er_skjermet
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -76,14 +78,16 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(16, oppgaveDto.veilederSykdom)
                 setArray(17, oppgaveDto.vurderingsbehov)
                 setString(18, oppgaveDto.venteBegrunnelse)
-                setBoolean(19, oppgaveDto.harFortroligAdresse)
-                setBoolean(20, oppgaveDto.harUlesteDokumenter)
-                setEnumName(21, oppgaveDto.returInformasjon?.status)
-                setString(22, oppgaveDto.returInformasjon?.begrunnelse)
-                setArray(23, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(24, oppgaveDto.returInformasjon?.endretAv)
-                setString(25, oppgaveDto.årsakTilOpprettelse)
-                setBoolean(26, oppgaveDto.erSkjermet)
+                setString(19, oppgaveDto.påVentÅrsak)
+                setString(20, oppgaveDto.venteBegrunnelse)
+                setBoolean(21, oppgaveDto.harFortroligAdresse)
+                setBoolean(22, oppgaveDto.harUlesteDokumenter)
+                setEnumName(23, oppgaveDto.returInformasjon?.status)
+                setString(24, oppgaveDto.returInformasjon?.begrunnelse)
+                setArray(25, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(26, oppgaveDto.returInformasjon?.endretAv)
+                setString(27, oppgaveDto.årsakTilOpprettelse)
+                setBoolean(28, oppgaveDto.erSkjermet)
             }
         }
         return OppgaveId(id, 0L)
@@ -206,6 +210,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PAA_VENT_TIL = ?,
                 PAA_VENT_AARSAK= ?,
                 VENTE_BEGRUNNELSE = ?,
+                SISTE_PAA_VENT_AARSAK   = COALESCE(?, SISTE_PAA_VENT_AARSAK),
+                SISTE_VENTE_BEGRUNNELSE = COALESCE(?, SISTE_VENTE_BEGRUNNELSE),
                 PERSON_IDENT = ?,
                 VEILEDER_ARBEID = ?,
                 VEILEDER_SYKDOM = ?,
@@ -232,20 +238,22 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDate(4, påVentTil)
                 setString(5, påVentÅrsak)
                 setString(6, påVentBegrunnelse)
-                setString(7, personIdent)
-                setString(8, veilederArbeid)
-                setString(9, veilederSykdom)
-                setArray(10, vurderingsbehov)
-                setBoolean(11, harFortroligAdresse)
-                setBoolean(12, harUlesteDokumenter)
-                setEnumName(13, returInformasjon?.status)
-                setString(14, returInformasjon?.endretAv)
-                setArray(15, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(16, returInformasjon?.begrunnelse)
-                setBoolean(17, erSkjermet)
-                setLocalDate(18, utløptVentefrist)
-                setLong(19, oppgaveId.id)
-                setLong(20, oppgaveId.versjon)
+                setString(7, påVentÅrsak)
+                setString(8, påVentBegrunnelse)
+                setString(9, personIdent)
+                setString(10, veilederArbeid)
+                setString(11, veilederSykdom)
+                setArray(12, vurderingsbehov)
+                setBoolean(13, harFortroligAdresse)
+                setBoolean(14, harUlesteDokumenter)
+                setEnumName(15, returInformasjon?.status)
+                setString(16, returInformasjon?.endretAv)
+                setArray(17, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(18, returInformasjon?.begrunnelse)
+                setBoolean(19, erSkjermet)
+                setLocalDate(20, utløptVentefrist)
+                setLong(21, oppgaveId.id)
+                setLong(22, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -435,7 +443,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
         val hentNesteOppgaveQuery = """
-            SELECT o.*, m.markering_type, null as ENHET_FORRIGE_OPPGAVE
+            SELECT ${alleOppgaveFeltMedHistorikk("o")}, m.markering_type, null as ENHET_FORRIGE_OPPGAVE
             FROM 
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
@@ -798,6 +806,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             påVentTil = row.getLocalDateOrNull("PAA_VENT_TIL"),
             påVentÅrsak = row.getStringOrNull("PAA_VENT_AARSAK"),
             venteBegrunnelse = row.getStringOrNull("VENTE_BEGRUNNELSE"),
+            forrigePåVentÅrsak = row.getStringOrNull("SISTE_PAA_VENT_AARSAK"),
+            forrigeVenteBegrunnelse = row.getStringOrNull("SISTE_VENTE_BEGRUNNELSE"),
             årsakerTilBehandling = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             vurderingsbehov = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
@@ -883,6 +893,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             PAA_VENT_TIL,
             PAA_VENT_AARSAK,
             VENTE_BEGRUNNELSE,
+            SISTE_PAA_VENT_AARSAK,
+            SISTE_VENTE_BEGRUNNELSE,
             RESERVERT_AV,
             RESERVERT_AV_NAVN,
             RESERVERT_TIDSPUNKT,
@@ -901,6 +913,45 @@ class OppgaveRepository(private val connection: DBConnection) {
             retur_returnert_av,
             AARSAK_TIL_OPPRETTELSE,
             UTLOEPT_VENTEFRIST
+        """.trimIndent()
+
+        fun alleOppgaveFeltMedHistorikk(oppgaveAlias: String) = """
+            $oppgaveAlias.ID,
+            $oppgaveAlias.PERSON_IDENT,
+            $oppgaveAlias.SAKSNUMMER,
+            $oppgaveAlias.BEHANDLING_REF,
+            $oppgaveAlias.JOURNALPOST_ID,
+            $oppgaveAlias.ENHET,
+            $oppgaveAlias.OPPFOLGINGSENHET,
+            $oppgaveAlias.VEILEDER_ARBEID,
+            $oppgaveAlias.VEILEDER_SYKDOM,
+            $oppgaveAlias.BEHANDLING_OPPRETTET,
+            $oppgaveAlias.AVKLARINGSBEHOV_TYPE,
+            $oppgaveAlias.STATUS,
+            $oppgaveAlias.BEHANDLINGSTYPE,
+            $oppgaveAlias.PAA_VENT_TIL,
+            $oppgaveAlias.PAA_VENT_AARSAK,
+            $oppgaveAlias.VENTE_BEGRUNNELSE,
+            $oppgaveAlias.SISTE_PAA_VENT_AARSAK,
+            $oppgaveAlias.SISTE_VENTE_BEGRUNNELSE,
+            $oppgaveAlias.RESERVERT_AV,
+            $oppgaveAlias.RESERVERT_AV_NAVN,
+            $oppgaveAlias.RESERVERT_TIDSPUNKT,
+            $oppgaveAlias.OPPRETTET_AV,
+            $oppgaveAlias.OPPRETTET_TIDSPUNKT,
+            $oppgaveAlias.ENDRET_AV,
+            $oppgaveAlias.ENDRET_TIDSPUNKT,
+            $oppgaveAlias.VERSJON,
+            $oppgaveAlias.AARSAKER_TIL_BEHANDLING,
+            $oppgaveAlias.FORTROLIG_ADRESSE,
+            $oppgaveAlias.ER_SKJERMET,
+            $oppgaveAlias.ULESTE_DOKUMENTER,
+            $oppgaveAlias.RETUR_AARSAK,
+            $oppgaveAlias.RETUR_BEGRUNNELSE,
+            $oppgaveAlias.retur_aarsaker,
+            $oppgaveAlias.retur_returnert_av,
+            $oppgaveAlias.AARSAK_TIL_OPPRETTELSE,
+            $oppgaveAlias.UTLOEPT_VENTEFRIST
         """.trimIndent()
     }
 
