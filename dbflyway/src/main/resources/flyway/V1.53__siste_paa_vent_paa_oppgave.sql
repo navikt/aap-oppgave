@@ -3,14 +3,7 @@ ALTER TABLE OPPGAVE
     ADD COLUMN SISTE_PAA_VENT_TIL       DATE,
     ADD COLUMN SISTE_VENTE_BEGRUNNELSE  TEXT;
 
--- Backfill fra gjeldende på-vent-info der oppgaven fortsatt er på vent
-UPDATE OPPGAVE
-SET SISTE_PAA_VENT_AARSAK   = PAA_VENT_AARSAK,
-    SISTE_PAA_VENT_TIL       = PAA_VENT_TIL,
-    SISTE_VENTE_BEGRUNNELSE  = VENTE_BEGRUNNELSE
-WHERE PAA_VENT_AARSAK IS NOT NULL;
-
--- Backfill fra historikk for oppgaver som har vært på vent, men ikke er det nå
+-- Backfill fra historikk for oppgaver som har vært på vent
 UPDATE OPPGAVE o
 SET SISTE_PAA_VENT_AARSAK   = h.PAA_VENT_AARSAK,
     SISTE_PAA_VENT_TIL       = h.PAA_VENT_TIL,
@@ -25,5 +18,13 @@ FROM (
     WHERE PAA_VENT_AARSAK IS NOT NULL
     ORDER BY OPPGAVE_ID, ENDRET_TIDSPUNKT DESC NULLS LAST, ID DESC
 ) h
-WHERE o.ID = h.OPPGAVE_ID
-  AND o.SISTE_PAA_VENT_AARSAK IS NULL;
+WHERE o.ID = h.OPPGAVE_ID;
+
+-- For oppgaver som er på vent nå men uten historikk (opprettet direkte på vent):
+-- bruk gjeldende verdier
+UPDATE OPPGAVE
+SET SISTE_PAA_VENT_AARSAK   = PAA_VENT_AARSAK,
+    SISTE_PAA_VENT_TIL       = PAA_VENT_TIL,
+    SISTE_VENTE_BEGRUNNELSE  = VENTE_BEGRUNNELSE
+WHERE PAA_VENT_AARSAK IS NOT NULL
+  AND SISTE_PAA_VENT_AARSAK IS NULL;

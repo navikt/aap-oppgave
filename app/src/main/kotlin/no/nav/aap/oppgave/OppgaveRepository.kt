@@ -43,6 +43,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VEILEDER_SYKDOM,
                 AARSAKER_TIL_BEHANDLING,
                 VENTE_BEGRUNNELSE,
+                SISTE_PAA_VENT_AARSAK,
+                SISTE_PAA_VENT_TIL,
+                SISTE_VENTE_BEGRUNNELSE,
                 FORTROLIG_ADRESSE,
                 ULESTE_DOKUMENTER,
                 RETUR_AARSAK,
@@ -52,7 +55,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 aarsak_til_opprettelse,
                 er_skjermet
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -76,14 +79,17 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(16, oppgaveDto.veilederSykdom)
                 setArray(17, oppgaveDto.vurderingsbehov)
                 setString(18, oppgaveDto.venteBegrunnelse)
-                setBoolean(19, oppgaveDto.harFortroligAdresse)
-                setBoolean(20, oppgaveDto.harUlesteDokumenter)
-                setEnumName(21, oppgaveDto.returInformasjon?.status)
-                setString(22, oppgaveDto.returInformasjon?.begrunnelse)
-                setArray(23, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(24, oppgaveDto.returInformasjon?.endretAv)
-                setString(25, oppgaveDto.årsakTilOpprettelse)
-                setBoolean(26, oppgaveDto.erSkjermet)
+                setString(19, oppgaveDto.påVentÅrsak)
+                setLocalDate(20, oppgaveDto.påVentTil)
+                setString(21, oppgaveDto.venteBegrunnelse)
+                setBoolean(22, oppgaveDto.harFortroligAdresse)
+                setBoolean(23, oppgaveDto.harUlesteDokumenter)
+                setEnumName(24, oppgaveDto.returInformasjon?.status)
+                setString(25, oppgaveDto.returInformasjon?.begrunnelse)
+                setArray(26, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(27, oppgaveDto.returInformasjon?.endretAv)
+                setString(28, oppgaveDto.årsakTilOpprettelse)
+                setBoolean(29, oppgaveDto.erSkjermet)
             }
         }
         return OppgaveId(id, 0L)

@@ -511,7 +511,7 @@ class OppgaveRepositoryTest {
     }
 
     @Test
-    fun `skal hente forrige på vent begrunnelse og årsak fra historikk`() {
+    fun `skal hente siste på vent begrunnelse og årsak`() {
         val oppgaveId = opprettOppgave(
             enhet = ENHET_NAV_ENEBAKK,
             påVentTil = LocalDate.now().plusDays(3),
@@ -520,8 +520,8 @@ class OppgaveRepositoryTest {
         )
 
         val oppgavePåVent = hentOppgave(oppgaveId)
-        assertThat(oppgavePåVent.forrigePåVentÅrsak).isNull()
-        assertThat(oppgavePåVent.forrigeVenteBegrunnelse).isNull()
+        assertThat(oppgavePåVent.forrigePåVentÅrsak).isEqualTo("VENTER_PAA_BRUKER")
+        assertThat(oppgavePåVent.forrigeVenteBegrunnelse).isEqualTo("Venter på dokumentasjon")
 
         dataSource.transaction { connection ->
             OppgaveRepository(connection).oppdatereOppgave(
@@ -572,8 +572,8 @@ class OppgaveRepositoryTest {
         val oppgavePåVentIgjen = hentOppgave(oppgaveId)
         assertThat(oppgavePåVentIgjen.påVentÅrsak).isEqualTo("VENTER_PAA_NAV")
         assertThat(oppgavePåVentIgjen.venteBegrunnelse).isEqualTo("Venter på intern avklaring")
-        assertThat(oppgavePåVentIgjen.forrigePåVentÅrsak).isEqualTo("VENTER_PAA_BRUKER")
-        assertThat(oppgavePåVentIgjen.forrigeVenteBegrunnelse).isEqualTo("Venter på dokumentasjon")
+        assertThat(oppgavePåVentIgjen.forrigePåVentÅrsak).isEqualTo("VENTER_PAA_NAV")
+        assertThat(oppgavePåVentIgjen.forrigeVenteBegrunnelse).isEqualTo("Venter på intern avklaring")
     }
 
     fun opprettTilbakekrevingVars(oppgaveId: Long, beløp: BigDecimal, url: String) {
