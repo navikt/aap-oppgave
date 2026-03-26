@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave
 
+import no.nav.aap.oppgave.enhet.EnhetDto
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
@@ -49,6 +50,7 @@ data class OppgaveDto(
     val behandlingRef: UUID,
     val journalpostId: Long? = null,
     val enhet: String,
+    val enhetForrigeOppgave: EnhetDto? = null,
     val oppfølgingsenhet: String?,
     val veilederArbeid: String? = null,
     val veilederSykdom: String? = null,

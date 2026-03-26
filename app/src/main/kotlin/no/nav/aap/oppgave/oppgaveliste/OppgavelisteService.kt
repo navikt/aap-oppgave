@@ -10,6 +10,8 @@ import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
+import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -18,13 +20,18 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import java.util.UUID
 
 const val maksOppgaver = 50
 
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
-    private val markeringRepository: MarkeringRepository
+    private val markeringRepository: MarkeringRepository,
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
+    private val norgGateway: INorgGateway = NorgGateway()
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {
@@ -78,7 +85,11 @@ class OppgavelisteService(
                 else -> OppgaveSorteringRekkefølge.ASC
             }
 
-        val kombinertFilter = settFilter(filter, utvidetFilter)
+        val kombinertFilter = validerOgKombinerFiltre(filter, utvidetFilter) ?: return FinnOppgaverDto(
+                oppgaver = emptyList(),
+                antallGjenstaaende = 0,
+                antallTotalt = 0
+            )
 
         if (enheter.isEmpty()) {
             return FinnOppgaverDto(
@@ -88,19 +99,39 @@ class OppgavelisteService(
             )
         }
 
-        val finnOppgaverDto =
-            oppgaveRepository.finnOppgaver(
-                filter =
-                    kombinertFilter.copy(
-                        enheter = enheter,
-                        veileder = veilederIdent
-                    ),
-                rekkefølge = sortOrderMedDefault,
-                paging = paging,
-                kunLedigeOppgaver = kunLedigeOppgaver,
-                utvidetFilter = utvidetFilter,
-                sortBy = sortBy,
-            )
+        val finnOppgaverDto: FinnOppgaverDto
+        if (unleashService.isEnabled(FeatureToggles.EnhetForrigeOppgave) && filter.navn == "Kvalitetssikrer") {
+            val enheterMedNavn = norgGateway.hentEnheter()
+            finnOppgaverDto =
+                oppgaveRepository.finnOppgaverNy(
+                    filter =
+                        kombinertFilter.copy(
+                            enheter = enheter,
+                            veileder = veilederIdent
+                        ),
+                    rekkefølge = sortOrderMedDefault,
+                    paging = paging,
+                    kunLedigeOppgaver = kunLedigeOppgaver,
+                    utvidetFilter = utvidetFilter,
+                    sortBy = sortBy,
+                    // TODO: Kun når filter.navn er "Kvalitetssikrer"
+                    enheterMedNavn = enheterMedNavn
+                )
+        } else {
+            finnOppgaverDto =
+                oppgaveRepository.finnOppgaver(
+                    filter =
+                        kombinertFilter.copy(
+                            enheter = enheter,
+                            veileder = veilederIdent
+                        ),
+                    rekkefølge = sortOrderMedDefault,
+                    paging = paging,
+                    kunLedigeOppgaver = kunLedigeOppgaver,
+                    utvidetFilter = utvidetFilter,
+                    sortBy = sortBy,
+                )
+        }
 
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
@@ -139,15 +170,22 @@ class OppgavelisteService(
         return oppgaveRepository.hentOppgaver(referanse)
     }
 
-    private fun settFilter(
+    private fun validerOgKombinerFiltre(
         filter: FilterDto,
         utvidetFilter: UtvidetOppgavelisteFilter?
-    ): FilterDto {
+    ): FilterDto? {
         if (utvidetFilter == null) return filter
+        val avklaringsbehovKoder =
+            utledAvklaringsbehovKoderForUtvidetFilter(filter.avklaringsbehovKoder, utvidetFilter.avklaringsbehovKoder)
+
+        if (avklaringsbehovKoder.isEmpty() && utvidetFilter.avklaringsbehovKoder.isNotEmpty() && filter.avklaringsbehovKoder.isNotEmpty()) {
+            // det finnes ingen avklaringsbehovkoder som matcher begge filtre. Returnerer null
+            return null
+        }
 
         return filter.copy(
             behandlingstyper = utvidetFilter.behandlingstyper,
-            avklaringsbehovKoder = utvidetFilter.avklaringsbehovKoder
+            avklaringsbehovKoder = avklaringsbehovKoder
         )
     }
 
@@ -179,4 +217,17 @@ class OppgavelisteService(
         } else {
             oppgaver
         }
+}
+
+fun utledAvklaringsbehovKoderForUtvidetFilter(
+    filterAvklaringsbehovKoder: Set<String>,
+    utvidetFilterAvklaringsbehovKoder: Set<String>
+): Set<String> {
+    return if (utvidetFilterAvklaringsbehovKoder.isEmpty()) {
+        filterAvklaringsbehovKoder
+    } else if (filterAvklaringsbehovKoder.isEmpty()) {
+        utvidetFilterAvklaringsbehovKoder
+    } else {
+        utvidetFilterAvklaringsbehovKoder.intersect(filterAvklaringsbehovKoder)
+    }
 }
