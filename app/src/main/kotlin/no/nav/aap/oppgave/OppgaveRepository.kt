@@ -44,7 +44,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 AARSAKER_TIL_BEHANDLING,
                 VENTE_BEGRUNNELSE,
                 SISTE_PAA_VENT_AARSAK,
-                SISTE_PAA_VENT_TIL,
                 SISTE_VENTE_BEGRUNNELSE,
                 FORTROLIG_ADRESSE,
                 ULESTE_DOKUMENTER,
@@ -55,7 +54,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 aarsak_til_opprettelse,
                 er_skjermet
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -80,16 +79,15 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setArray(17, oppgaveDto.vurderingsbehov)
                 setString(18, oppgaveDto.venteBegrunnelse)
                 setString(19, oppgaveDto.påVentÅrsak)
-                setLocalDate(20, oppgaveDto.påVentTil)
-                setString(21, oppgaveDto.venteBegrunnelse)
-                setBoolean(22, oppgaveDto.harFortroligAdresse)
-                setBoolean(23, oppgaveDto.harUlesteDokumenter)
-                setEnumName(24, oppgaveDto.returInformasjon?.status)
-                setString(25, oppgaveDto.returInformasjon?.begrunnelse)
-                setArray(26, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(27, oppgaveDto.returInformasjon?.endretAv)
-                setString(28, oppgaveDto.årsakTilOpprettelse)
-                setBoolean(29, oppgaveDto.erSkjermet)
+                setString(20, oppgaveDto.venteBegrunnelse)
+                setBoolean(21, oppgaveDto.harFortroligAdresse)
+                setBoolean(22, oppgaveDto.harUlesteDokumenter)
+                setEnumName(23, oppgaveDto.returInformasjon?.status)
+                setString(24, oppgaveDto.returInformasjon?.begrunnelse)
+                setArray(25, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(26, oppgaveDto.returInformasjon?.endretAv)
+                setString(27, oppgaveDto.årsakTilOpprettelse)
+                setBoolean(28, oppgaveDto.erSkjermet)
             }
         }
         return OppgaveId(id, 0L)
@@ -213,7 +211,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 PAA_VENT_AARSAK= ?,
                 VENTE_BEGRUNNELSE = ?,
                 SISTE_PAA_VENT_AARSAK   = COALESCE(?, SISTE_PAA_VENT_AARSAK),
-                SISTE_PAA_VENT_TIL      = COALESCE(?, SISTE_PAA_VENT_TIL),
                 SISTE_VENTE_BEGRUNNELSE = COALESCE(?, SISTE_VENTE_BEGRUNNELSE),
                 PERSON_IDENT = ?,
                 VEILEDER_ARBEID = ?,
@@ -242,22 +239,21 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(5, påVentÅrsak)
                 setString(6, påVentBegrunnelse)
                 setString(7, påVentÅrsak)
-                setLocalDate(8, påVentTil)
-                setString(9, påVentBegrunnelse)
-                setString(10, personIdent)
-                setString(11, veilederArbeid)
-                setString(12, veilederSykdom)
-                setArray(13, vurderingsbehov)
-                setBoolean(14, harFortroligAdresse)
-                setBoolean(15, harUlesteDokumenter)
-                setEnumName(16, returInformasjon?.status)
-                setString(17, returInformasjon?.endretAv)
-                setArray(18, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(19, returInformasjon?.begrunnelse)
-                setBoolean(20, erSkjermet)
-                setLocalDate(21, utløptVentefrist)
-                setLong(22, oppgaveId.id)
-                setLong(23, oppgaveId.versjon)
+                setString(8, påVentBegrunnelse)
+                setString(9, personIdent)
+                setString(10, veilederArbeid)
+                setString(11, veilederSykdom)
+                setArray(12, vurderingsbehov)
+                setBoolean(13, harFortroligAdresse)
+                setBoolean(14, harUlesteDokumenter)
+                setEnumName(15, returInformasjon?.status)
+                setString(16, returInformasjon?.endretAv)
+                setArray(17, returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(18, returInformasjon?.begrunnelse)
+                setBoolean(19, erSkjermet)
+                setLocalDate(20, utløptVentefrist)
+                setLong(21, oppgaveId.id)
+                setLong(22, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
