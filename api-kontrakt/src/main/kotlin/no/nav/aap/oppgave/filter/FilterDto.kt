@@ -28,7 +28,7 @@ data class FilterDto(
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
-    val type: FilterType? = null,
+    val type: FilterType = FilterType.GENERELL,
 ): Filter
 
 data class TransientFilterDto(
