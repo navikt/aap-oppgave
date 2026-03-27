@@ -186,7 +186,7 @@ class FilterRepository(private val connection: DBConnection) {
                     opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
                     endretAv = row.getStringOrNull("ENDRET_AV"),
                     endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
-                    type = row.getStringOrNull("TYPE")?.let { FilterType.valueOf(it) },
+                    type = FilterType.valueOf(row.getString("TYPE"))
                 )
             }
         }
