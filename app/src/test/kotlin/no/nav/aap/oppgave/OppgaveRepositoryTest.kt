@@ -7,6 +7,7 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.filter.FilterType
 import no.nav.aap.oppgave.filter.TransientFilterDto
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -97,7 +98,8 @@ class OppgaveRepositoryTest {
                     beskrivelse = "NAY oppfølgingsoppgave",
                     opprettetAv = "naboens katt",
                     opprettetTidspunkt = LocalDateTime.now().minusDays(10),
-                    enheter = setOf(Enhet.NAY.kode)
+                    enheter = setOf(Enhet.NAY.kode),
+                    type = FilterType.GENERELL,
                 )
             )
         }
@@ -109,7 +111,8 @@ class OppgaveRepositoryTest {
                     beskrivelse = "Oppfølgingsoppgave kontor",
                     opprettetAv = "en geit",
                     opprettetTidspunkt = LocalDateTime.now().minusDays(10),
-                    enheter = setOf(Enhet.NAV_UTLAND.kode)
+                    enheter = setOf(Enhet.NAV_UTLAND.kode),
+                    type = FilterType.GENERELL,
                 )
             )
         }
@@ -140,7 +143,8 @@ class OppgaveRepositoryTest {
                     beskrivelse = "alle oppgaver",
                     opprettetAv = "saksbehandler",
                     opprettetTidspunkt = LocalDateTime.now().minusDays(10),
-                    enheter = setOf(ENHET_NAV_LØRENSKOG, ENHET_NAV_ENEBAKK)
+                    enheter = setOf(ENHET_NAV_LØRENSKOG, ENHET_NAV_ENEBAKK),
+                    type = FilterType.GENERELL,
                 ),
                 paging = Paging(
                     side = 1,
@@ -159,7 +163,8 @@ class OppgaveRepositoryTest {
                     beskrivelse = "alle oppgaver",
                     opprettetAv = "saksbehandler",
                     opprettetTidspunkt = LocalDateTime.now().minusDays(10),
-                    enheter = setOf(ENHET_NAV_LØRENSKOG)
+                    enheter = setOf(ENHET_NAV_LØRENSKOG),
+                    type = FilterType.GENERELL,
                 ),
                 paging = Paging(
                     side = 1,
@@ -887,7 +892,8 @@ class OppgaveRepositoryTest {
             "Filter for test",
             avklaringsbehovKoder = avklaringsbehovKoder.toSet(),
             opprettetAv = "test",
-            opprettetTidspunkt = LocalDateTime.now()
+            opprettetTidspunkt = LocalDateTime.now(),
+            type = FilterType.GENERELL,
         )
 
     private fun behandlingstypeFilter(vararg behandlingstyper: Behandlingstype) =
@@ -897,7 +903,8 @@ class OppgaveRepositoryTest {
             "Filter for test",
             behandlingstyper = behandlingstyper.toSet(),
             opprettetAv = "test",
-            opprettetTidspunkt = LocalDateTime.now()
+            opprettetTidspunkt = LocalDateTime.now(),
+            type = FilterType.GENERELL,
         )
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {

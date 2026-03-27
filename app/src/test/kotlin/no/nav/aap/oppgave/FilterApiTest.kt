@@ -14,6 +14,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBeha
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterId
+import no.nav.aap.oppgave.filter.FilterType
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
@@ -113,6 +114,7 @@ class FilterApiTest {
                 avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
+                type = FilterType.GENERELL,
             )
         )
 
@@ -151,6 +153,7 @@ class FilterApiTest {
                 beskrivelse = "Simpelt filter",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
+                type = FilterType.GENERELL,
             )
         )
 
@@ -172,6 +175,7 @@ class FilterApiTest {
                 beskrivelse = "Et enkelt filter for alle oppgave",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
+                type = FilterType.GENERELL,
             )
         )
 
@@ -188,6 +192,7 @@ class FilterApiTest {
             enheter = setOf("1234"),
             opprettetAv = "test",
             opprettetTidspunkt = LocalDateTime.now(),
+            type = FilterType.GENERELL,
         )
         val id1 = opprettEllerOppdaterFilter(
             filter1
@@ -200,6 +205,7 @@ class FilterApiTest {
                 enheter = setOf("6789"),
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
+                type = FilterType.GENERELL,
             )
         )!!.id
 

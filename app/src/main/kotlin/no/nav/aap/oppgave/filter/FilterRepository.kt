@@ -12,6 +12,7 @@ data class OpprettFilter(
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
     val enhetFilter: List<EnhetFilter>? = null,
+    val type: FilterType = FilterType.GENERELL,
 )
 
 data class EnhetFilter(
@@ -90,7 +91,7 @@ class FilterRepository(private val connection: DBConnection) {
 
     private fun opprettFilter(filter: OpprettFilter): Long {
         val insertFilterSql = """
-            INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES (?, ?, ?, ?)
+            INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, TYPE) VALUES (?, ?, ?, ?, ?)
         """.trimIndent()
 
         return connection.executeReturnKey(insertFilterSql) {
@@ -99,6 +100,7 @@ class FilterRepository(private val connection: DBConnection) {
                 setString(2, filter.beskrivelse)
                 setString(3, filter.opprettetAv)
                 setLocalDateTime(4, filter.opprettetTidspunkt)
+                setString(5, filter.type.name)
             }
         }
     }
@@ -207,7 +209,7 @@ class FilterRepository(private val connection: DBConnection) {
         val filterIdClause = if (filterId != null) " AND ID = ?" else ""
         val query = """
             SELECT 
-                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT
+                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE
             FROM 
                 FILTER 
             WHERE 
@@ -229,6 +231,7 @@ class FilterRepository(private val connection: DBConnection) {
                     opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
                     endretAv = row.getStringOrNull("ENDRET_AV"),
                     endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
+                    type = FilterType.valueOf(row.getString("TYPE")),
                 )
             }
         }
