@@ -11,6 +11,7 @@ interface Filter {
 }
 
 enum class FilterType {
+    GENERELL,
     ALLE_OPPGAVER,
     KVALITETSSIKRING,
 }
