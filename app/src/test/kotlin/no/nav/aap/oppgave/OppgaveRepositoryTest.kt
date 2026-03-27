@@ -510,6 +510,72 @@ class OppgaveRepositoryTest {
         assertThat(ledigOppgaveId.id in alleOppgaver.oppgaver.map { it.id })
     }
 
+    @Test
+    fun `skal hente siste på vent begrunnelse og årsak`() {
+        val oppgaveId = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            påVentTil = LocalDate.now().plusDays(3),
+            påVentÅrsak = "VENTER_PAA_BRUKER",
+            venteBegrunnelse = "Venter på dokumentasjon"
+        )
+
+        val oppgavePåVent = hentOppgave(oppgaveId)
+        assertThat(oppgavePåVent.forrigePåVentÅrsak).isEqualTo("VENTER_PAA_BRUKER")
+        assertThat(oppgavePåVent.forrigeVenteBegrunnelse).isEqualTo("Venter på dokumentasjon")
+
+        dataSource.transaction { connection ->
+            OppgaveRepository(connection).oppdatereOppgave(
+                oppgaveId = OppgaveId(oppgavePåVent.id!!, oppgavePåVent.versjon),
+                endretAvIdent = "z123",
+                personIdent = oppgavePåVent.personIdent,
+                enhet = oppgavePåVent.enhet,
+                oppfølgingsenhet = oppgavePåVent.oppfølgingsenhet,
+                påVentTil = null,
+                påVentÅrsak = null,
+                påVentBegrunnelse = null,
+                veilederArbeid = oppgavePåVent.veilederArbeid,
+                veilederSykdom = oppgavePåVent.veilederSykdom,
+                vurderingsbehov = oppgavePåVent.vurderingsbehov,
+                harFortroligAdresse = oppgavePåVent.harFortroligAdresse,
+                erSkjermet = oppgavePåVent.erSkjermet == true,
+                harUlesteDokumenter = oppgavePåVent.harUlesteDokumenter,
+                returInformasjon = oppgavePåVent.returInformasjon
+            )
+        }
+
+        val oppgaveEtterAvVent = hentOppgave(oppgaveId)
+        assertThat(oppgaveEtterAvVent.påVentÅrsak).isNull()
+        assertThat(oppgaveEtterAvVent.venteBegrunnelse).isNull()
+        assertThat(oppgaveEtterAvVent.forrigePåVentÅrsak).isEqualTo("VENTER_PAA_BRUKER")
+        assertThat(oppgaveEtterAvVent.forrigeVenteBegrunnelse).isEqualTo("Venter på dokumentasjon")
+
+        dataSource.transaction { connection ->
+            OppgaveRepository(connection).oppdatereOppgave(
+                oppgaveId = OppgaveId(oppgaveEtterAvVent.id!!, oppgaveEtterAvVent.versjon),
+                endretAvIdent = "z123",
+                personIdent = oppgaveEtterAvVent.personIdent,
+                enhet = oppgaveEtterAvVent.enhet,
+                oppfølgingsenhet = oppgaveEtterAvVent.oppfølgingsenhet,
+                påVentTil = LocalDate.now().plusDays(7),
+                påVentÅrsak = "VENTER_PAA_NAV",
+                påVentBegrunnelse = "Venter på intern avklaring",
+                veilederArbeid = oppgaveEtterAvVent.veilederArbeid,
+                veilederSykdom = oppgaveEtterAvVent.veilederSykdom,
+                vurderingsbehov = oppgaveEtterAvVent.vurderingsbehov,
+                harFortroligAdresse = oppgaveEtterAvVent.harFortroligAdresse,
+                erSkjermet = oppgaveEtterAvVent.erSkjermet == true,
+                harUlesteDokumenter = oppgaveEtterAvVent.harUlesteDokumenter,
+                returInformasjon = oppgaveEtterAvVent.returInformasjon
+            )
+        }
+
+        val oppgavePåVentIgjen = hentOppgave(oppgaveId)
+        assertThat(oppgavePåVentIgjen.påVentÅrsak).isEqualTo("VENTER_PAA_NAV")
+        assertThat(oppgavePåVentIgjen.venteBegrunnelse).isEqualTo("Venter på intern avklaring")
+        assertThat(oppgavePåVentIgjen.forrigePåVentÅrsak).isEqualTo("VENTER_PAA_NAV")
+        assertThat(oppgavePåVentIgjen.forrigeVenteBegrunnelse).isEqualTo("Venter på intern avklaring")
+    }
+
     fun opprettTilbakekrevingVars(oppgaveId: Long, beløp: BigDecimal, url: String) {
         dataSource.transaction { connection ->
             TilbakekrevingRepository(connection).lagre(
