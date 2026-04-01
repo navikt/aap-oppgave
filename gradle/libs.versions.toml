@@ -1,8 +1,8 @@
 [versions]
 ktor = "3.4.1"
 jackson = "2.21.2"
-komponenter = "2.0.24"
-tilgang = "1.0.183"
+komponenter = "2.0.25"
+tilgang = "1.0.184"
 behandlingsflytVersjon = "0.0.579"
 postmottakVersjon = "6.0.4"
 junit = "6.0.3"
