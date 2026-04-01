@@ -1,5 +1,5 @@
 [versions]
-ktor = "3.4.1"
+ktor = "3.4.2"
 jackson = "2.21.2"
 komponenter = "2.0.24"
 tilgang = "1.0.183"
@@ -46,7 +46,7 @@ logbackClassic = { module = "ch.qos.logback:logback-classic", version = "1.5.32"
 logstashLogbackEncoder = { module = "net.logstash.logback:logstash-logback-encoder", version = "9.0" }
 hikariCp = { module = "com.zaxxer:HikariCP", version = "7.0.2" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.3" }
-flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "12.1.1" }
+flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "12.2.0" }
 unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "12.2.0" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
 nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.8" }
