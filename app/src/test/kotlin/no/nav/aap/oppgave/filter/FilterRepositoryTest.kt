@@ -8,7 +8,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
@@ -188,6 +187,44 @@ internal class FilterRepositoryTest {
             assertThat(hentetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_BARNETILLEGG.kode.name)).isTrue()
         }
     }
+
+    @Test
+    fun `Opprett filter har type GENERELL som standard`() {
+        dataSource.transaction { connection ->
+            val filterRepo = FilterRepository(connection)
+            val nyttFilter = OpprettFilter(
+                navn = "Generelt filter",
+                beskrivelse = "Generelt filter",
+                opprettetAv = "test",
+                opprettetTidspunkt = LocalDateTime.now()
+            )
+            val filterId = filterRepo.opprett(nyttFilter)
+
+            val filter = filterRepo.hent(filterId)
+            assertThat(filter).isNotNull()
+            assertThat(filter!!.type).isEqualTo(FilterType.GENERELL)
+        }
+    }
+
+    @Test
+    fun `Opprett filter med type KVALITETSSIKRING og hent det ut igjen`() {
+        dataSource.transaction { connection ->
+            val filterRepo = FilterRepository(connection)
+            val nyttFilter = OpprettFilter(
+                navn = "Kvalitetssikringsfilter",
+                beskrivelse = "Kvalitetssikringsfilter",
+                opprettetAv = "test",
+                opprettetTidspunkt = LocalDateTime.now(),
+                type = FilterType.KVALITETSSIKRING
+            )
+            val filterId = filterRepo.opprett(nyttFilter)
+
+            val filter = filterRepo.hent(filterId)
+            assertThat(filter).isNotNull()
+            assertThat(filter!!.type).isEqualTo(FilterType.KVALITETSSIKRING)
+        }
+    }
+
 
     @Test
     fun `Logisk sletting av filter`() {
