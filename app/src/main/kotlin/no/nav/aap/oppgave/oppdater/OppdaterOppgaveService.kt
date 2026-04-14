@@ -35,6 +35,7 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
+import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -126,7 +127,9 @@ class OppdaterOppgaveService(
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
             tilbakekrevingRepository.lagre(
                 TilbakekrevingVars(
-                    eksisterendeOppgave.oppgaveId().id, oppgaveOppdatering.totaltFeilutbetaltBeløp, oppgaveOppdatering.tilbakekrevingsUrl
+                    eksisterendeOppgave.oppgaveId().id,
+                    oppgaveOppdatering.totaltFeilutbetaltBeløp,
+                    oppgaveOppdatering.tilbakekrevingsUrl
                 )
             )
         }
@@ -185,21 +188,19 @@ class OppdaterOppgaveService(
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
             tilbakekrevingRepository.lagre(
                 TilbakekrevingVars(
-                    eksisterendeOppgave.oppgaveId().id, oppgaveOppdatering.totaltFeilutbetaltBeløp, oppgaveOppdatering.tilbakekrevingsUrl
+                    eksisterendeOppgave.oppgaveId().id,
+                    oppgaveOppdatering.totaltFeilutbetaltBeløp,
+                    oppgaveOppdatering.tilbakekrevingsUrl
                 )
             )
         }
 
-        // Automatisk reservasjon enten ved retur eller override fra behandlingsflyt
+        // Automatisk reservasjon enten ved retur, override fra behandlingsflyt, eller til saksbehandler som løste forrige behov
         if (harBlittSendtTilbakeFraToTrinn(avklaringsbehov) && eksisterendeOppgave.status == Status.AVSLUTTET) {
             utledReservasjonEtterReturFraTotrinn(avklaringsbehov, eksisterendeOppgave)
         } else {
-            // reservasjon fra behandlingsflyt skal kun overstyre når oppgave opprettes eller gjenåpnes, ikke når oppgave oppdateres
             if (eksisterendeOppgave.status == Status.AVSLUTTET) {
-                håndterReservasjonFraBehandlingsflyt(
-                    oppgaveOppdatering,
-                    eksisterendeOppgave.oppgaveId()
-                )
+                utledReservasjonForGjenåpnetOppgave(oppgaveOppdatering, eksisterendeOppgave, avklaringsbehov)
             }
         }
     }
@@ -339,6 +340,27 @@ class OppdaterOppgaveService(
         }
     }
 
+    private fun utledReservasjonForGjenåpnetOppgave(
+        oppgaveOppdatering: OppgaveOppdatering,
+        eksisterendeOppgave: OppgaveDto,
+        avklaringsbehov: AvklaringsbehovHendelse,
+    ) {
+        // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt
+        if (unleashService.isEnabled(FeatureToggles.ReserverTilForrigeSaksbehandlerVedGjenaapning)) {
+            prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
+                oppgaveOppdatering,
+                eksisterendeOppgave.oppgaveId(),
+                avklaringsbehov,
+                gjenåpnerOppgave = true
+            )
+        }
+        håndterReservasjonFraBehandlingsflyt(
+            oppgaveOppdatering,
+            eksisterendeOppgave.oppgaveId()
+        )
+
+    }
+
     private fun utledReturFraToTrinn(avklaringsbehov: AvklaringsbehovHendelse): ReturInformasjon? {
         val status = when (avklaringsbehov.status) {
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER -> ReturStatus.RETUR_FRA_BESLUTTER
@@ -433,22 +455,7 @@ class OppdaterOppgaveService(
         }
         log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
-
-        val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
-        if (hvemLøsteForrigeAvklaringsbehov != null) {
-            val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
-            if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
-                log.info("Prøver å tilordne ny oppgave(id=${oppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}")
-                reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
-                    oppgaveOppdatering.referanse,
-                    hvemLøsteForrigeIdent
-                )
-
-
-            } else {
-                log.info("Ingen automatisk tilordning: Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
-            }
-        }
+        prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(oppgaveOppdatering, oppgaveId, avklaringsbehovHendelse)
         håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, oppgaveId)
     }
 
@@ -488,7 +495,7 @@ class OppdaterOppgaveService(
         oppgaver
             .filter { it.status != Status.AVSLUTTET }
             .forEach {
-                val ident = if(it.behandlingstype == Behandlingstype.TILBAKEKREVING) TILBAKEKREVING else KELVIN
+                val ident = if (it.behandlingstype == Behandlingstype.TILBAKEKREVING) TILBAKEKREVING else KELVIN
                 oppgaveRepository.avsluttOppgave(it.oppgaveId(), ident)
                 log.info("Avsluttet oppgave med ID ${it.oppgaveId()}. Avklaringsbehov: ${it.avklaringsbehovKode}")
                 sendOppgaveStatusOppdatering(it.oppgaveId(), HendelseType.LUKKET, flytJobbRepository)
@@ -599,6 +606,27 @@ class OppdaterOppgaveService(
                         "Oppgaver: ${åpneOppgaver.map { it.id }.joinToString()} " +
                         "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}"
             )
+        }
+    }
+
+    private fun prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
+        oppgaveOppdatering: OppgaveOppdatering,
+        eksisterendeOppgaveId: OppgaveId,
+        avklaringsbehovHendelse: AvklaringsbehovHendelse,
+        gjenåpnerOppgave: Boolean = false
+    ) {
+        val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
+        if (hvemLøsteForrigeAvklaringsbehov != null) {
+            val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
+            if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
+                log.info("Prøver å tilordne gjenåpnet oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}. Gjenåpnet: $gjenåpnerOppgave")
+                reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
+                    oppgaveOppdatering.referanse,
+                    hvemLøsteForrigeIdent
+                )
+            } else {
+                log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
+            }
         }
     }
 

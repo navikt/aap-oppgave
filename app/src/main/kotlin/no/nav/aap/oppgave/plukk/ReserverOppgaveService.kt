@@ -22,6 +22,7 @@ class ReserverOppgaveService(
         oppgaveId: OppgaveId,
         ident: String,
     ) {
+        log.info("Avreserverer oppgave $oppgaveId fra $ident")
         oppgaveRepository.avreserverOppgave(oppgaveId, ident)
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, flytJobbRepository)
     }
@@ -43,7 +44,7 @@ class ReserverOppgaveService(
             oppgaveRepository.reserverOppgave(oppgaveSomSkalReserveres, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
             sendOppgaveStatusOppdatering(oppgaveSomSkalReserveres, HendelseType.RESERVERT, flytJobbRepository)
         }
-        log.info("Reserverte oppgave ${oppgaveSomSkalReserveres.id} uten tilgangskontroll for $ident.")
+        log.info("Reserverte oppgave $oppgaveSomSkalReserveres uten tilgangskontroll for $ident.")
     }
 
     fun tildelOppgaver(
