@@ -619,7 +619,7 @@ class OppdaterOppgaveService(
         if (hvemLøsteForrigeAvklaringsbehov != null) {
             val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
             if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
-                log.info("Prøver å tilordne gjenåpnet oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}. Gjenåpnet: $gjenåpnerOppgave")
+                log.info("Prøver å tilordne oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}. Gjenåpnet: $gjenåpnerOppgave")
                 reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                     oppgaveOppdatering.referanse,
                     hvemLøsteForrigeIdent
