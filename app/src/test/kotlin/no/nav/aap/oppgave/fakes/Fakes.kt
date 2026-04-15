@@ -16,8 +16,7 @@ data class FakesConfig(
     var relaterteIdenterPåBehandling: List<String> = emptyList(),
 )
 
-class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, ParameterResolver,
-    BeforeAllCallback {
+class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, ParameterResolver, BeforeAllCallback {
 
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val azure = FakeServer(module = { azureFake() })
@@ -81,18 +80,21 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
             })
         )
 
+        // Bruke azure fake i behandlingsflyt hvis verdi er satt
+        val azurePort = System.getenv("LOKAL_BEHANDLINGSFLYT_AZURE_PORT") ?: azure.port()
+
         // Azure
-        System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azure.port()}/token")
+        System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azurePort}/token")
         System.setProperty("azure.app.client.id", "behandlingsflyt")
         System.setProperty("azure.app.client.secret", "")
-        System.setProperty("azure.openid.config.jwks.uri", "http://localhost:${azure.port()}/jwks")
+        System.setProperty("azure.openid.config.jwks.uri", "http://localhost:${azurePort}/jwks")
         System.setProperty("azure.openid.config.issuer", "behandlingsflyt")
         // Tilgang
         System.setProperty("integrasjon.tilgang.url", "http://localhost:${tilgang.port()}")
         System.setProperty("integrasjon.tilgang.scope", "scope")
         System.setProperty("integrasjon.tilgang.azp", "azp")
         // Nais
-        System.setProperty("nais.token.exchange.endpoint", "http://localhost:${azure.port()}/token")
+        System.setProperty("nais.token.exchange.endpoint", "http://localhost:${azurePort}/token")
         // PDL
         System.setProperty("integrasjon.pdl.url", "http://localhost:${pdl.port()}")
         System.setProperty("integrasjon.pdl.scope", "scope")
@@ -117,7 +119,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         System.setProperty("integrasjon.syfo.url", "http://localhost:${sykefravavaroppfolging.port()}")
         System.setProperty("integrasjon.syfo.scope", "scope")
         // Behandlingsflyt
-        if (System.getProperty("INTEGRASJON_BEHANDLINGSFLYT_URL").isNullOrEmpty()) {
+        if (System.getenv("INTEGRASJON_BEHANDLINGSFLYT_URL").isNullOrEmpty()) {
             System.setProperty("integrasjon.behandlingsflyt.url", "http://localhost:${behandlingsflyt.port()}")
         }
         System.setProperty("integrasjon.behandlingsflyt.scope", "scope")

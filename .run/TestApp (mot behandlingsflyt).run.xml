@@ -1,5 +1,13 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TestApp (med testcontainers)" type="KtorApplicationConfigurationType" factoryName="Ktor">
+  <configuration default="false" name="TestApp (mot behandlingsflyt)" type="KtorApplicationConfigurationType" factoryName="Ktor">
+    <envs>
+      <env name="NAIS_CLUSTER_NAME" value="LOCAL" />
+      <env name="NAIS_DATABASE_OPPGAVE_OPPGAVE_JDBC_URL" value="jdbc:postgresql://localhost:5439/postgres" />
+      <env name="NAIS_DATABASE_OPPGAVE_OPPGAVE_USERNAME" value="postgres" />
+      <env name="NAIS_DATABASE_OPPGAVE_OPPGAVE_PASSWORD" value="" />
+      <env name="INTEGRASJON_BEHANDLINGSFLYT_URL" value="http://localhost:8080" />
+      <env name="LOKAL_BEHANDLINGSFLYT_AZURE_PORT" value="8081" />
+    </envs>
     <option name="MAIN_CLASS_NAME" value="no.nav.aap.oppgave.server.TestAppKt" />
     <module name="oppgave.app.test" />
     <extension name="coverage">
