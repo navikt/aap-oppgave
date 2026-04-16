@@ -1,9 +1,18 @@
 package no.nav.aap.oppgave
 
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
+import io.ktor.server.engine.EmbeddedServer
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import java.net.URI
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import java.util.UUID
+import kotlin.test.AfterTest
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
@@ -27,8 +36,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
@@ -39,14 +48,8 @@ import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
-import no.nav.aap.oppgave.filter.EnhetFilter
-import no.nav.aap.oppgave.filter.FilterId
-import no.nav.aap.oppgave.filter.FilterRepository
-import no.nav.aap.oppgave.filter.Filtermodus
-import no.nav.aap.oppgave.filter.OpprettFilter
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
-import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
@@ -54,7 +57,6 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
-import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkRequest
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkResponse
@@ -78,13 +80,6 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import java.net.URI
-import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
-import java.util.*
-import kotlin.test.AfterTest
 
 private const val TEST_IDENT = "01010012345"
 
@@ -1470,7 +1465,7 @@ class OppgaveApiTest {
 
         private val oboClient = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = OnBehalfOfTokenProvider
+            tokenProvider = AzureOBOTokenProvider()
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
