@@ -1,7 +1,13 @@
 package no.nav.aap.oppgave
 
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
+import io.ktor.server.engine.EmbeddedServer
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
+import java.net.URI
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
@@ -10,7 +16,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterId
@@ -30,10 +36,6 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import java.net.URI
-import java.time.Duration
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 
 @ExtendWith(Fakes::class)
 @Testcontainers
@@ -42,7 +44,7 @@ class FilterApiTest {
         private val oboClient = {
             RestClient.withDefaultResponseHandler(
                 config = ClientConfig(scope = "oppgave"),
-                tokenProvider = OnBehalfOfTokenProvider
+                tokenProvider = AzureOBOTokenProvider()
             )
         }
 

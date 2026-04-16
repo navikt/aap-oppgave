@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import java.net.URI
+import java.time.Duration
+import java.util.UUID
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -11,15 +14,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
-import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
-import java.net.URI
-import java.time.Duration
-import java.util.*
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.tokenx.OnBehalfOfTokenProvider as TexasOnBehalfOfTokenProvider
 
 interface IMsGraphGateway {
     fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf
@@ -36,10 +34,7 @@ class MsGraphGateway(
     )
     private val httpClient = RestClient.withDefaultResponseHandler(
         config = clientConfig,
-        tokenProvider = if (Miljø.erProd())
-            OnBehalfOfTokenProvider
-        else
-            TexasOnBehalfOfTokenProvider(identityProvider = "azuread"),
+        tokenProvider = AzureOBOTokenProvider(),
         prometheus = prometheus,
     )
 
