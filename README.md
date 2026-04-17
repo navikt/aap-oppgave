@@ -40,6 +40,18 @@ For macOS og Linux anbefaler vi Colima. Det kan være nødvendig med et par tilp
 * `export DOCKER_HOST=unix://$TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`
 * `export TESTCONTAINERS_RYUK_DISABLED=true`
 
+### Kjøre lokalt
+
+#### TestApp
+
+##### IDE
+
+Velg konfigurasjonen `TestApp` i Run/Debug-menyen.
+
+##### CLI
+
+```./gradlew runTestApp```
+
 ### Kjøre lokalt mot dev-gcp
 
 Prosjektet inneholder en run config som kan kjøres av IntelliJ. Burde være synlig under "Run configurations" med navnet

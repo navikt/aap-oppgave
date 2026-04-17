@@ -14,6 +14,20 @@ tasks.register<JavaExec>("genererOpenApiJson") {
     mainClass.set("no.nav.aap.oppgave.server.GenererOpenApiJsonKt")
 }
 
+tasks.register<JavaExec>("runTestApp") {
+    description = "Kjør TestApp mot lokal behandlingsflyt"
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("no.nav.aap.oppgave.server.TestAppKt")
+    environment(
+        "NAIS_CLUSTER_NAME" to "LOCAL",
+        "NAIS_DATABASE_OPPGAVE_OPPGAVE_JDBC_URL" to "jdbc:postgresql://localhost:5439/postgres",
+        "NAIS_DATABASE_OPPGAVE_OPPGAVE_USERNAME" to "postgres",
+        "NAIS_DATABASE_OPPGAVE_OPPGAVE_PASSWORD" to "",
+        "INTEGRASJON_BEHANDLINGSFLYT_URL" to "http://localhost:8080",
+        "LOKAL_BEHANDLINGSFLYT_AZURE_PORT" to "8081",
+    )
+}
+
 dependencies {
     implementation(project(":dbflyway"))
     implementation(project(":api-kontrakt"))
