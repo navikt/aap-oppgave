@@ -3,37 +3,24 @@ package no.nav.aap.oppgave.oppdater
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
-import io.ktor.http.*
+import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import javax.sql.DataSource
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.dokumenter.TilbakekrevingBehandlingsstatus
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepositoryImpl
-import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
-import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
-import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovStatus
-import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
-import no.nav.aap.oppgave.oppdater.hendelse.Endring
-import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
-import no.nav.aap.oppgave.oppdater.hendelse.TILBAKEKREVING
-import no.nav.aap.oppgave.oppdater.hendelse.tilAvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
-import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
-import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
 import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
-import java.time.LocalDateTime
-import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     dataSource: DataSource,
@@ -110,91 +97,3 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     }
     respondWithStatus(HttpStatusCode.OK)
 }
-
-private fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering() =
-    OppgaveOppdatering(
-        personIdent = this.personIdent,
-        saksnummer = this.saksnummer.toString(),
-        referanse = this.behandlingref.referanse,
-        journalpostId = null,
-        behandlingStatus = this.behandlingStatus.tilBehandlingsstatus(),
-        behandlingstype = Behandlingstype.TILBAKEKREVING,
-        opprettetTidspunkt = this.sakOpprettet,
-        avklaringsbehov = this.behandlingStatus.tilAvklaringsBehov(),
-        vurderingsbehov = emptyList(),
-        mottattDokumenter = emptyList(),
-        årsakTilOpprettelse = null,
-        venteInformasjon = null,
-        totaltFeilutbetaltBeløp = this.totaltFeilutbetaltBeløp,
-        tilbakekrevingsUrl = this.saksbehandlingURL
-    )
-
-fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHendelse> {
-    return when (this) {
-        TilbakekrevingBehandlingsstatus.AVSLUTTET -> emptyList()
-        TilbakekrevingBehandlingsstatus.OPPRETTET -> listOf(
-            AvklaringsbehovHendelse(
-                AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
-            )
-        )
-
-        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> listOf(
-            AvklaringsbehovHendelse(
-                AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, emptyList()
-            )
-        )
-
-        TilbakekrevingBehandlingsstatus.TIL_BEHANDLING -> listOf(
-            AvklaringsbehovHendelse(
-                AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
-            )
-        )
-
-        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> listOf(
-            AvklaringsbehovHendelse(
-                AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
-            )
-        )
-
-        TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> listOf(
-            AvklaringsbehovHendelse(
-                AvklaringsbehovKode(
-                    TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING.kode
-                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
-            )
-        )
-    }
-}
-
-
-private fun List<EndringDTO>.tilEndring() =
-    map {
-        Endring(
-            status = it.status.tilAvklaringsbehovStatus(),
-            tidsstempel = it.tidsstempel,
-            endretAv = it.endretAv,
-            påVentTil = it.frist,
-            påVentÅrsak = it.årsakTilSattPåVent?.name,
-            begrunnelse = it.begrunnelse,
-            årsakTilRetur = it.årsakTilRetur.map { årsakTilRetur -> årsakTilRetur.årsak }
-        )
-    }
-
-private fun TilbakekrevingBehandlingsstatus.tilBehandlingsstatus() =
-    when (this) {
-        TilbakekrevingBehandlingsstatus.OPPRETTET -> BehandlingStatus.ÅPEN
-        TilbakekrevingBehandlingsstatus.TIL_BEHANDLING -> BehandlingStatus.ÅPEN
-        TilbakekrevingBehandlingsstatus.AVSLUTTET -> BehandlingStatus.LUKKET
-        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> BehandlingStatus.ÅPEN
-        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> BehandlingStatus.ÅPEN
-        TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> BehandlingStatus.ÅPEN
-    }
-
