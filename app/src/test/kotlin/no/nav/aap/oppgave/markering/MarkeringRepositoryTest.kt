@@ -7,7 +7,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.*
+import java.time.LocalDate
+import java.util.UUID
 
 class MarkeringRepositoryTest {
     private lateinit var dataSource: TestDataSource
@@ -25,13 +26,13 @@ class MarkeringRepositoryTest {
         val behandlingId = UUID.randomUUID()
         val spesialkompetanseMarkering = BehandlingMarkering(
             markeringType = MarkeringForBehandling.KREVER_SPESIALKOMPETANSE,
-            begrunnelse = "begrunnelse",
+            begrunnelse = "begrunnelseSpesialkompetanse",
             opprettetAv = "saksbehandler"
         )
 
         val hasterMarkering = BehandlingMarkering(
             markeringType = MarkeringForBehandling.HASTER,
-            begrunnelse = "begrunnelse",
+            begrunnelse = "begrunnelseHaster",
             opprettetAv = "saksbehandler"
         )
 
@@ -40,12 +41,23 @@ class MarkeringRepositoryTest {
             // lagre spesialkompetansemarkering
             markeringRepository.oppdaterMarkering(behandlingId, spesialkompetanseMarkering)
             val hentetMarkering = markeringRepository.hentMarkeringerForBehandling(behandlingId)
-            assertThat(hentetMarkering).hasSize(1).first().isEqualTo(spesialkompetanseMarkering)
+            assertThat(hentetMarkering).hasSize(1)
+            assertThat(hentetMarkering.first().markeringType).isEqualTo(MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+            assertThat(hentetMarkering.first().begrunnelse).isEqualTo(spesialkompetanseMarkering.begrunnelse)
 
             // lagre hastemarkering
             markeringRepository.oppdaterMarkering(behandlingId, hasterMarkering)
             val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingId)
-            assertThat(markeringer).hasSize(2).containsExactlyInAnyOrder(hasterMarkering, spesialkompetanseMarkering)
+            assertThat(markeringer).hasSize(2)
+            assertThat(markeringer.map { it.markeringType }).containsExactlyInAnyOrder(
+                MarkeringForBehandling.KREVER_SPESIALKOMPETANSE,
+                MarkeringForBehandling.HASTER
+            )
+            assertThat(markeringer.map { it.begrunnelse }).containsExactlyInAnyOrder(
+                "begrunnelseSpesialkompetanse",
+                "begrunnelseHaster"
+            )
+
 
             val nyMarkering = BehandlingMarkering(
                 markeringType = MarkeringForBehandling.HASTER,
@@ -54,7 +66,17 @@ class MarkeringRepositoryTest {
             // ny hastemarkering, den gamle skal skrives over
             markeringRepository.oppdaterMarkering(behandlingId, nyMarkering)
             assertThat(markeringRepository.hentMarkeringerForBehandling(behandlingId)).hasSize(2)
-                .containsExactlyInAnyOrder(nyMarkering, spesialkompetanseMarkering)
+            assertThat(
+                markeringRepository.hentMarkeringerForBehandling(behandlingId)
+                    .first { it.markeringType == MarkeringForBehandling.HASTER }.opprettetAv
+            ).isEqualTo("saksbehandler2")
+            assertThat(
+                markeringRepository.hentMarkeringerForBehandling(behandlingId)
+                    .first { it.markeringType == MarkeringForBehandling.HASTER }.begrunnelse
+            ).isNull()
+            assertThat(
+                markeringRepository.hentMarkeringerForBehandling(behandlingId).first().opprettetTidspunkt?.toLocalDate()
+            ).isEqualTo(LocalDate.now())
         }
     }
 }

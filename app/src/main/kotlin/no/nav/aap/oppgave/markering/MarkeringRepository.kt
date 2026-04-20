@@ -23,12 +23,10 @@ class MarkeringRepository(
         referanse: UUID,
         markering: BehandlingMarkering
     ) {
-
-
         val query =
             """
-            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn)
+            VALUES (?, ?, ?, ?, ?)
             """.trimIndent()
 
         connection.execute(query) {
@@ -37,6 +35,7 @@ class MarkeringRepository(
                 setEnumName(2, markering.markeringType)
                 setString(3, markering.begrunnelse)
                 setString(4, markering.opprettetAv)
+                setString(5, markering.opprettetAvNavn)
             }
         }
     }
@@ -80,6 +79,8 @@ class MarkeringRepository(
         BehandlingMarkering(
             markeringType = row.getEnum("markering_type"),
             begrunnelse = row.getStringOrNull("begrunnelse"),
-            opprettetAv = row.getString("opprettet_av")
+            opprettetAv = row.getString("opprettet_av"),
+            opprettetAvNavn = row.getStringOrNull("opprettet_av_navn"),
+            opprettetTidspunkt = row.getLocalDateTimeOrNull("opprettet_tid")
         )
 }
