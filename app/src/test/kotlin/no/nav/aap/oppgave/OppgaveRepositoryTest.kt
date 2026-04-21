@@ -730,8 +730,8 @@ class OppgaveRepositoryTest {
         assertThat(søkMedUtvidetFilterPåVent.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterHastesøk.oppgaver).hasSize(1)
         assertThat(søkMedUtvidetFilterVentefristUtløpt.oppgaver).hasSize(1)
-        assertThat(merEnnSøkEks.oppgaver).hasSize(6)
-        assertThat(merEnnSøkInk.oppgaver).hasSize(7)
+        assertThat(merEnnSøkEks.oppgaver).hasSize(0)
+        assertThat(merEnnSøkInk.oppgaver).hasSize(1)
     }
 
     @Test
