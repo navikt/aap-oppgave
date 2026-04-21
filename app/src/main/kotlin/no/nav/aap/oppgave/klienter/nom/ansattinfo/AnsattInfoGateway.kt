@@ -2,17 +2,17 @@ package no.nav.aap.oppgave.klienter.nom.ansattinfo
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
+import java.io.InputStream
+import java.net.URI
+import java.time.Duration
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
-import java.io.InputStream
-import java.net.URI
-import java.time.Duration
 
 interface AnsattInfoGateway {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
@@ -43,7 +43,7 @@ class NomApiGateway(
             NomApiGateway(
                 RestClient(
                     config = getClientConfig(),
-                    tokenProvider = ClientCredentialsTokenProvider,
+                    tokenProvider = AzureM2MTokenProvider(),
                     responseHandler = NomApiResponseHandler(),
                     prometheus = prometheus
                 )
