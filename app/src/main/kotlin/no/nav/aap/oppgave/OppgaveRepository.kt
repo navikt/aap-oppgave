@@ -377,11 +377,11 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         if(utvidetFilter.beløpMindreEnn!= null){
-            sb.append(" AND t.belop < ${utvidetFilter.beløpMindreEnn} OR t.belop IS NULL")
+            sb.append(" AND (t.belop < ${utvidetFilter.beløpMindreEnn})")
         }
 
         if (utvidetFilter.beløpMerEnn != null){
-            sb.append(" AND t.belop > ${utvidetFilter.beløpMerEnn} OR t.belop IS NULL")
+            sb.append(" AND (t.belop > ${utvidetFilter.beløpMerEnn})")
         }
 
         val returStatuserNotEmpty = utvidetFilter.returStatuser.isNotEmpty()
