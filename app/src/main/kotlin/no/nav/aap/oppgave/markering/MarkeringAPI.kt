@@ -14,6 +14,7 @@ import no.nav.aap.komponenter.server.auth.bruker
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -27,16 +28,16 @@ fun NormalOpenAPIRoute.markeringApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry,
 ) {
+    val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     route("/{referanse}/ny-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
-        prometheus.httpCallCounter("/ny-markering").increment()
-
         dataSource.transaction { connection ->
             MarkeringRepository(connection).oppdaterMarkering(
                 referanse = request.referanse,
                 BehandlingMarkering(
                     dto.markeringType,
                     dto.begrunnelse,
-                    bruker().ident
+                    bruker().ident,
+                    ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident)
                 )
             )
             val oppgavePåBehandling =
@@ -98,7 +99,9 @@ fun List<BehandlingMarkering>.tilDto(): List<MarkeringDto> {
         MarkeringDto(
             markeringType = it.markeringType,
             begrunnelse = it.begrunnelse,
-            opprettetAv = it.opprettetAv
+            opprettetAv = it.opprettetAv,
+            opprettetAvNavn = it.opprettetAvNavn,
+            opprettetTidspunkt = it.opprettetTidspunkt
         )
     }
 }
