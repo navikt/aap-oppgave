@@ -124,15 +124,6 @@ class OppdaterOppgaveService(
             HendelseType.OPPDATERT,
             flytJobbRepository
         )
-        if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
-            tilbakekrevingRepository.lagre(
-                TilbakekrevingVars(
-                    eksisterendeOppgave.oppgaveId().id,
-                    oppgaveOppdatering.totaltFeilutbetaltBeløp,
-                    oppgaveOppdatering.tilbakekrevingsUrl
-                )
-            )
-        }
 
         // Hvis oppgaven ble satt på vent, reserver til saksbehandler som satte på vent
         if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.påVentTil == null && eksisterendeOppgave.reservertAv == null) {
