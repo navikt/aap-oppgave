@@ -20,17 +20,13 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
-import no.nav.aap.oppgave.unleash.FeatureToggles
-import no.nav.aap.oppgave.unleash.IUnleashService
-import no.nav.aap.oppgave.unleash.UnleashServiceProvider
-import java.util.UUID
+import java.util.*
 
 const val maksOppgaver = 50
 
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
-    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val norgGateway: INorgGateway = NorgGateway()
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
@@ -86,10 +82,10 @@ class OppgavelisteService(
             }
 
         val kombinertFilter = validerOgKombinerFiltre(filter, utvidetFilter) ?: return FinnOppgaverDto(
-                oppgaver = emptyList(),
-                antallGjenstaaende = 0,
-                antallTotalt = 0
-            )
+            oppgaver = emptyList(),
+            antallGjenstaaende = 0,
+            antallTotalt = 0
+        )
 
         if (enheter.isEmpty()) {
             return FinnOppgaverDto(
@@ -99,39 +95,18 @@ class OppgavelisteService(
             )
         }
 
-        val finnOppgaverDto: FinnOppgaverDto
-        if (unleashService.isEnabled(FeatureToggles.EnhetForrigeOppgave) && filter.navn == "Kvalitetssikrer") {
-            val enheterMedNavn = norgGateway.hentEnheter()
-            finnOppgaverDto =
-                oppgaveRepository.finnOppgaverNy(
-                    filter =
-                        kombinertFilter.copy(
-                            enheter = enheter,
-                            veileder = veilederIdent
-                        ),
-                    rekkefølge = sortOrderMedDefault,
-                    paging = paging,
-                    kunLedigeOppgaver = kunLedigeOppgaver,
-                    utvidetFilter = utvidetFilter,
-                    sortBy = sortBy,
-                    // TODO: Kun når filter.navn er "Kvalitetssikrer"
-                    enheterMedNavn = enheterMedNavn
-                )
-        } else {
-            finnOppgaverDto =
-                oppgaveRepository.finnOppgaver(
-                    filter =
-                        kombinertFilter.copy(
-                            enheter = enheter,
-                            veileder = veilederIdent
-                        ),
-                    rekkefølge = sortOrderMedDefault,
-                    paging = paging,
-                    kunLedigeOppgaver = kunLedigeOppgaver,
-                    utvidetFilter = utvidetFilter,
-                    sortBy = sortBy,
-                )
-        }
+        val finnOppgaverDto = oppgaveRepository.finnOppgaver(
+            filter = kombinertFilter.copy(
+                enheter = enheter,
+                veileder = veilederIdent
+            ),
+            rekkefølge = sortOrderMedDefault,
+            paging = paging,
+            kunLedigeOppgaver = kunLedigeOppgaver,
+            utvidetFilter = utvidetFilter,
+            sortBy = sortBy,
+            enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty()
+        )
 
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
