@@ -449,7 +449,14 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE o
             LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
-            LEFT OUTER JOIN SISTE_AVSLUTTEDE_OPPGAVE sao on sao.behandling_ref_forrige_oppgave = o.behandling_ref 
+            LEFT JOIN LATERAL (
+                SELECT enhet as enhet_forrige_oppgave
+                FROM OPPGAVE sao_inner
+                WHERE sao_inner.behandling_ref = o.behandling_ref
+                  AND sao_inner.status = 'AVSLUTTET'
+                ORDER BY sao_inner.endret_tidspunkt DESC
+                LIMIT 1
+            ) sao ON true
             WHERE 
                 ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
             ORDER BY ${sortering} ${sorteringsRekkefølge} 
