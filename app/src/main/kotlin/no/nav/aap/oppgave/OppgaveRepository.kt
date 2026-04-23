@@ -443,8 +443,9 @@ class OppgaveRepository(private val connection: DBConnection) {
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
+        // COUNT(*) OVER() beregnes som et vindusfunksjonskall før OFFSET/FETCH, så vi slipper en ekstra spørring
         val hentNesteOppgaveQuery = """
-            SELECT o.*, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE
+            SELECT o.*, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE, COUNT(*) OVER() AS total_count
             FROM 
                 OPPGAVE o
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
@@ -462,23 +463,16 @@ class OppgaveRepository(private val connection: DBConnection) {
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
-        val oppgaver = connection.queryList(hentNesteOppgaveQuery) {
+        val resultat = connection.queryList(hentNesteOppgaveQuery) {
             setRowMapper { row ->
                 val tilbakekreving = getTilbakekreving(row, connection)
                 val enhetNrForrigeOppgave = try { row.getStringOrNull("ENHET_FORRIGE_OPPGAVE") } catch (_: Exception) { null }
-                oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn)
+                Pair(oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn), row.getInt("total_count"))
             }
         }
 
-        val countQuery = """
-            SELECT COUNT(*) count FROM OPPGAVE o
-            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
-            WHERE ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
-        """.trimIndent()
-
-        val alleOppgaverCount = connection.queryFirstOrNull(countQuery) {
-            setRowMapper { it.getInt("count") }
-        } ?: 0
+        val oppgaver = resultat.map { it.first }
+        val alleOppgaverCount = resultat.firstOrNull()?.second ?: 0
         val gjenstaaendeOppgaverAntall = maxOf(0, alleOppgaverCount - (offset + oppgaver.size))
 
         return FinnOppgaverDto(oppgaver, gjenstaaendeOppgaverAntall, alleOppgaverCount)

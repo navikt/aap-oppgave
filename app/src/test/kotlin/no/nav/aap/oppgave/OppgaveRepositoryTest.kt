@@ -346,6 +346,19 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `antallTotalt reflekterer alle treff, ikke bare gjeldende side`() {
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+
+        // Hent side 2 med 2 oppgaver per side — kun 2 oppgaver returneres, men totalen skal være 4
+        val side2 = finnLedigeOppgaver(TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)), paging = Paging(2, 2))
+        assertThat(side2.oppgaver).hasSize(2)
+        assertThat(side2.antallTotalt).isEqualTo(4)
+    }
+
+    @Test
     fun `Kan sortere og endre rekkefølge på oppgaver fra finnOppgaver`() {
 
         val sorterteDatoer = listOf(
