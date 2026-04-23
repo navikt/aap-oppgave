@@ -24,7 +24,6 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
 import no.nav.aap.komponenter.server.AZURE
-import no.nav.aap.komponenter.server.auth.IdentityProvider
 import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.komponenter.server.plugins.NavIdentInterceptor
 import no.nav.aap.motor.Motor
@@ -83,15 +82,13 @@ fun main() {
 internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterRegistry) {
 
     commonKtorModule(
-        prometheus = prometheus,
-        infoModel = InfoModel(
+        prometheus, AzureConfig(), InfoModel(
             title = "AAP - Oppgave",
             description = """
                 For å teste API i dev, besøk
                 <a href="https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:aap:oppgave">Token Generator</a> for å få token.
                 """.trimIndent(),
-        ),
-        identityProvider = IdentityProvider.ENTRA_ID
+        )
     )
 
     install(StatusPages, StatusPagesConfigHelper.setup())
@@ -104,7 +101,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     motor(dataSource, prometheus)
 
     routing {
-        authenticate(IdentityProvider.ENTRA_ID.value) {
+        authenticate(AZURE) {
             install(NavIdentInterceptor)
 
             apiRouting {
