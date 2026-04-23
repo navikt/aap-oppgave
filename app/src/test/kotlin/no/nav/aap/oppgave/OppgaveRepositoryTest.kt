@@ -735,6 +735,116 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `beløpMerEnn filter er inklusiv - inkluderer tilbakekrevingsoppgaver med eksakt beløp`() {
+        val tilbakekrevingOppgave = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingstype = Behandlingstype.TILBAKEKREVING
+        )
+        opprettTilbakekrevingVars(
+            tilbakekrevingOppgave.id,
+            BigDecimal("1000.00"),
+            "http://tilbakekreving.nav.no/oppgave/12345"
+        )
+
+        val filterEksaktBeløp = UtvidetOppgavelisteFilter(beløpMerEnn = BigDecimal("1000.00"))
+        val filterOverBeløp = UtvidetOppgavelisteFilter(beløpMerEnn = BigDecimal("1000.01"))
+        val filterUnderBeløp = UtvidetOppgavelisteFilter(beløpMerEnn = BigDecimal("999.99"))
+
+        val resultatEksakt = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterEksaktBeløp,
+        )
+        val resultatOver = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterOverBeløp,
+        )
+        val resultatUnder = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterUnderBeløp,
+        )
+
+        assertThat(resultatEksakt.oppgaver).hasSize(1)
+        assertThat(resultatOver.oppgaver).hasSize(0)
+        assertThat(resultatUnder.oppgaver).hasSize(1)
+    }
+
+    @Test
+    fun `beløpMindreEnn filter er inklusiv - inkluderer tilbakekrevingsoppgaver med eksakt beløp`() {
+        val tilbakekrevingOppgave = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingstype = Behandlingstype.TILBAKEKREVING)
+        opprettTilbakekrevingVars(
+            tilbakekrevingOppgave.id,
+            BigDecimal("1000.00"),
+            "http://tilbakekreving.nav.no/oppgave/12345"
+        )
+
+        val filterEksaktBeløp = UtvidetOppgavelisteFilter(beløpMindreEnn = BigDecimal("1000.00"))
+        val filterOverBeløp = UtvidetOppgavelisteFilter(beløpMindreEnn = BigDecimal("1000.01"))
+        val filterUnderBeløp = UtvidetOppgavelisteFilter(beløpMindreEnn = BigDecimal("999.99"))
+
+        val resultatEksakt = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterEksaktBeløp,
+        )
+        val resultatOver = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterOverBeløp,
+        )
+        val resultatUnder = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterUnderBeløp,
+        )
+
+        assertThat(resultatEksakt.oppgaver).hasSize(1)
+        assertThat(resultatOver.oppgaver).hasSize(1)
+        assertThat(resultatUnder.oppgaver).hasSize(0)
+    }
+
+    @Test
+    fun `beløpMerEnn og beløpMindreEnn kan kombineres som range-filter for tilbakekrevingsoppgaver`() {
+        val tilbakekrevingOppgave = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingstype = Behandlingstype.TILBAKEKREVING
+        )
+        opprettTilbakekrevingVars(
+            tilbakekrevingOppgave.id,
+            BigDecimal("1000.00"),
+            "http://tilbakekreving.nav.no/oppgave/12345"
+        )
+
+        val filterInkludert = UtvidetOppgavelisteFilter(
+            beløpMerEnn = BigDecimal("500.00"),
+            beløpMindreEnn = BigDecimal("1500.00"),
+        )
+        val filterEksluderPgaMerEnn = UtvidetOppgavelisteFilter(
+            beløpMerEnn = BigDecimal("1500.00"),
+            beløpMindreEnn = BigDecimal("2000.00"),
+        )
+        val filterEksluderPgaMindreEnn = UtvidetOppgavelisteFilter(
+            beløpMerEnn = BigDecimal("100.00"),
+            beløpMindreEnn = BigDecimal("500.00"),
+        )
+
+        val resultatInkludert = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterInkludert,
+        )
+        val resultatEksluderPgaMerEnn = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterEksluderPgaMerEnn,
+        )
+        val resultatEksluderPgaMindreEnn = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = filterEksluderPgaMindreEnn,
+        )
+
+        assertThat(resultatInkludert.oppgaver).hasSize(1)
+        assertThat(resultatEksluderPgaMerEnn.oppgaver).hasSize(0)
+        assertThat(resultatEksluderPgaMindreEnn.oppgaver).hasSize(0)
+    }
+
+    @Test
     fun `Kan bruke utvidet filter i kombinasjon med kø-filter`() {
         val oppgaveLovvalg = opprettOppgave(
             enhet = "4491",

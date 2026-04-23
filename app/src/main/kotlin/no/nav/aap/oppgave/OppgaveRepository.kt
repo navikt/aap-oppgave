@@ -376,12 +376,12 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND RESERVERT_AV IN $stringListeSaksbehandlere")
         }
 
-        if(utvidetFilter.beløpMindreEnn!= null){
-            sb.append(" AND (t.belop < ${utvidetFilter.beløpMindreEnn})")
+        if (utvidetFilter.beløpMindreEnn != null) {
+            sb.append(" AND (t.belop <= ${utvidetFilter.beløpMindreEnn})")
         }
 
-        if (utvidetFilter.beløpMerEnn != null){
-            sb.append(" AND (t.belop > ${utvidetFilter.beløpMerEnn})")
+        if (utvidetFilter.beløpMerEnn != null) {
+            sb.append(" AND (t.belop >= ${utvidetFilter.beløpMerEnn})")
         }
 
         val returStatuserNotEmpty = utvidetFilter.returStatuser.isNotEmpty()
