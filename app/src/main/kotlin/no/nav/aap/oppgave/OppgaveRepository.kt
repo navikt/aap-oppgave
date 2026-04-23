@@ -414,7 +414,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         if (utvidetFilter.markertHaster == true) {
-            sb.append(" AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}'")
+            sb.append(" AND EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}')")
         }
 
         return sb.toString()
@@ -444,10 +444,9 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
         val hentNesteOppgaveQuery = """
-            SELECT o.*, m.markering_type, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE
+            SELECT o.*, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE
             FROM 
                 OPPGAVE o
-            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
             LEFT OUTER JOIN SISTE_AVSLUTTEDE_OPPGAVE sao on sao.behandling_ref_forrige_oppgave = o.behandling_ref 
             WHERE 
@@ -466,7 +465,6 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val countQuery = """
             SELECT COUNT(*) count FROM OPPGAVE o
-            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
             WHERE ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
         """.trimIndent()
@@ -859,44 +857,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             UTLOEPT_VENTEFRIST
         """.trimIndent()
 
-        fun alleOppgaveFeltMedHistorikk(oppgaveAlias: String) = """
-            $oppgaveAlias.ID,
-            $oppgaveAlias.PERSON_IDENT,
-            $oppgaveAlias.SAKSNUMMER,
-            $oppgaveAlias.BEHANDLING_REF,
-            $oppgaveAlias.JOURNALPOST_ID,
-            $oppgaveAlias.ENHET,
-            $oppgaveAlias.OPPFOLGINGSENHET,
-            $oppgaveAlias.VEILEDER_ARBEID,
-            $oppgaveAlias.VEILEDER_SYKDOM,
-            $oppgaveAlias.BEHANDLING_OPPRETTET,
-            $oppgaveAlias.AVKLARINGSBEHOV_TYPE,
-            $oppgaveAlias.STATUS,
-            $oppgaveAlias.BEHANDLINGSTYPE,
-            $oppgaveAlias.PAA_VENT_TIL,
-            $oppgaveAlias.PAA_VENT_AARSAK,
-            $oppgaveAlias.VENTE_BEGRUNNELSE,
-            $oppgaveAlias.SISTE_PAA_VENT_AARSAK,
-            $oppgaveAlias.SISTE_VENTE_BEGRUNNELSE,
-            $oppgaveAlias.RESERVERT_AV,
-            $oppgaveAlias.RESERVERT_AV_NAVN,
-            $oppgaveAlias.RESERVERT_TIDSPUNKT,
-            $oppgaveAlias.OPPRETTET_AV,
-            $oppgaveAlias.OPPRETTET_TIDSPUNKT,
-            $oppgaveAlias.ENDRET_AV,
-            $oppgaveAlias.ENDRET_TIDSPUNKT,
-            $oppgaveAlias.VERSJON,
-            $oppgaveAlias.AARSAKER_TIL_BEHANDLING,
-            $oppgaveAlias.FORTROLIG_ADRESSE,
-            $oppgaveAlias.ER_SKJERMET,
-            $oppgaveAlias.ULESTE_DOKUMENTER,
-            $oppgaveAlias.RETUR_AARSAK,
-            $oppgaveAlias.RETUR_BEGRUNNELSE,
-            $oppgaveAlias.retur_aarsaker,
-            $oppgaveAlias.retur_returnert_av,
-            $oppgaveAlias.AARSAK_TIL_OPPRETTELSE,
-            $oppgaveAlias.UTLOEPT_VENTEFRIST
-        """.trimIndent()
     }
 
 }
