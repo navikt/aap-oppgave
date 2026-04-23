@@ -414,7 +414,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         if (utvidetFilter.markertHaster == true) {
-            sb.append(" AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}'")
+            sb.append(" AND EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}')")
         }
 
         return sb.toString()
@@ -444,10 +444,9 @@ class OppgaveRepository(private val connection: DBConnection) {
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
 
         val hentNesteOppgaveQuery = """
-            SELECT o.*, m.markering_type, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE
+            SELECT o.*, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE
             FROM 
                 OPPGAVE o
-            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
             LEFT OUTER JOIN SISTE_AVSLUTTEDE_OPPGAVE sao on sao.behandling_ref_forrige_oppgave = o.behandling_ref 
             WHERE 
@@ -466,7 +465,6 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val countQuery = """
             SELECT COUNT(*) count FROM OPPGAVE o
-            LEFT JOIN MARKERING as m on o.behandling_ref = m.behandling_ref
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
             WHERE ${filter.whereClause()} STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
         """.trimIndent()
