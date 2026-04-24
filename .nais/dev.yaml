@@ -5,58 +5,58 @@ veilarb_arena_url: veilarbarena.dev-fss-pub.nais.io
 unleash_secret: kelvin-unleash-api-token
 
 groups:
-    - name: AAP_SAKSBEHANDLER_NASJONAL
-      group: 3377dc51-ca61-4e36-b812-21b5fc34474f
-    - name: AAP_SAKSBEHANDLER_OPPFOLGING
-      group: 33e00155-169b-41e5-8a3f-5582ed975a15
-    - name: AAP_KVALITETSSIKRER
-      group: c3e18aef-a7ac-49df-806e-4fe58b81460d
-    - name: AAP_BESLUTTER
-      group: f0f6cad5-e3c0-4308-99a2-3630ac60174a
-    - name: AAP_PRODUKSJONSSTYRING
-      group: c75883f9-4cb2-42c7-b75c-3f0f29ee3ead
+  - name: AAP_SAKSBEHANDLER_NASJONAL
+    group: 3377dc51-ca61-4e36-b812-21b5fc34474f
+  - name: AAP_SAKSBEHANDLER_OPPFOLGING
+    group: 33e00155-169b-41e5-8a3f-5582ed975a15
+  - name: AAP_KVALITETSSIKRER
+    group: c3e18aef-a7ac-49df-806e-4fe58b81460d
+  - name: AAP_BESLUTTER
+    group: f0f6cad5-e3c0-4308-99a2-3630ac60174a
+  - name: AAP_PRODUKSJONSSTYRING
+    group: c75883f9-4cb2-42c7-b75c-3f0f29ee3ead
 env:
-    - name: INTEGRASJON_TILGANG_URL
-      value: http://tilgang
-    - name: INTEGRASJON_TILGANG_SCOPE
-      value: api://dev-gcp.aap.tilgang/.default
-    - name: INTEGRASJON_STATISTIKK_URL
-      value: http://statistikk
-    - name: INTEGRASJON_STATISTIKK_SCOPE
-      value: api://dev-gcp.aap.statistikk/.default
-    - name: INTEGRASJON_PDL_URL
-      value: https://pdl-api.dev-fss-pub.nais.io
-    - name: INTEGRASJON_PDL_SCOPE
-      value: api://dev-fss.pdl.pdl-api/.default
-    - name: INTEGRASJON_NORG_URL
-      value: https://norg2.dev-fss-pub.nais.io
-    - name: INTEGRASJON_NOM_URL
-      value: http://skjermede-personer-pip.nom
-    - name: INTEGRASJON_NOM_SCOPE
-      value: api://dev-gcp.nom.skjermede-personer-pip/.default
-    - name: INTEGRASJON_NOM_API_URL
-      value: http://nom-api.nom/graphql
-    - name: INTEGRASJON_NOM_API_SCOPE
-      value: api://dev-gcp.nom.nom-api/.default
-    - name: MS_GRAPH_BASE_URL
-      value: https://graph.microsoft.com/v1.0/
-    - name: MS_GRAPH_SCOPE
-      value: https://graph.microsoft.com/.default
-    - name: INTEGRASJON_VEILARBARENA_URL
-      value: https://veilarbarena.dev-fss-pub.nais.io
-    - name: INTEGRASJON_VEILARBARENA_SCOPE
-      value: api://dev-fss.pto.veilarbarena/.default
-    - name: INTEGRASJON_VEILARBOPPFOLGING_URL
-      value: http://veilarboppfolging.poao
-    - name: INTEGRASJON_VEILARBOPPFOLGING_SCOPE
-      value: api://dev-gcp.poao.veilarboppfolging/.default
-    - name: INTEGRASJON_SYFO_URL
-      value: http://syfooversiktsrv.teamsykefravr
-    - name: INTEGRASJON_SYFO_SCOPE
-      value: api://dev-gcp.teamsykefravr.syfooversiktsrv/.default
-    - name: INTEGRASJON_BEHANDLINGSFLYT_URL
-      value: http://behandlingsflyt
-    - name: INTEGRASJON_BEHANDLINGSFLYT_SCOPE
-      value: api://dev-gcp.aap.behandlingsflyt/.default
-    - name: AZP_API_INTERN
-      value: a809fc0a-eabb-4107-8231-61210adc2b70
+  - name: INTEGRASJON_TILGANG_URL
+    value: http://tilgang
+  - name: INTEGRASJON_TILGANG_SCOPE
+    value: api://dev-gcp.aap.tilgang/.default
+  - name: INTEGRASJON_STATISTIKK_URL
+    value: http://statistikk
+  - name: INTEGRASJON_STATISTIKK_SCOPE
+    value: api://dev-gcp.aap.statistikk/.default
+  - name: INTEGRASJON_PDL_URL
+    value: https://pdl-api.dev-fss-pub.nais.io
+  - name: INTEGRASJON_PDL_SCOPE
+    value: api://dev-fss.pdl.pdl-api/.default
+  - name: INTEGRASJON_NORG_URL
+    value: https://norg2.dev-fss-pub.nais.io
+  - name: INTEGRASJON_NOM_URL
+    value: http://skjermede-personer-pip.nom
+  - name: INTEGRASJON_NOM_SCOPE
+    value: api://dev-gcp.nom.skjermede-personer-pip/.default
+  - name: INTEGRASJON_NOM_API_URL
+    value: http://nom-api.nom/graphql
+  - name: INTEGRASJON_NOM_API_SCOPE
+    value: api://dev-gcp.nom.nom-api/.default
+  - name: MS_GRAPH_BASE_URL
+    value: https://graph.microsoft.com/v1.0/
+  - name: MS_GRAPH_SCOPE
+    value: https://graph.microsoft.com/.default
+  - name: INTEGRASJON_VEILARBARENA_URL
+    value: https://veilarbarena.dev-fss-pub.nais.io
+  - name: INTEGRASJON_VEILARBARENA_SCOPE
+    value: api://dev-fss.pto.veilarbarena/.default
+  - name: INTEGRASJON_VEILARBOPPFOLGING_URL
+    value: http://veilarboppfolging.poao
+  - name: INTEGRASJON_VEILARBOPPFOLGING_SCOPE
+    value: api://dev-gcp.poao.veilarboppfolging/.default
+  - name: INTEGRASJON_SYFO_URL
+    value: http://syfooversiktsrv.teamsykefravr
+  - name: INTEGRASJON_SYFO_SCOPE
+    value: api://dev-gcp.teamsykefravr.syfooversiktsrv/.default
+  - name: INTEGRASJON_BEHANDLINGSFLYT_URL
+    value: http://behandlingsflyt
+  - name: INTEGRASJON_BEHANDLINGSFLYT_SCOPE
+    value: api://dev-gcp.aap.behandlingsflyt/.default
+  - name: AZP_API_INTERN
+    value: a809fc0a-eabb-4107-8231-61210adc2b70

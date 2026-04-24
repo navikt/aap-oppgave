@@ -1,35 +1,33 @@
 name: Update Gradle Wrapper
 
 on:
-    workflow_dispatch:
-    schedule:
-        - cron: "0 0 * * *"
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
 
 permissions:
-    contents: write
-    pull-requests: write
-
+  contents: write
+  pull-requests: write
 
 jobs:
-    update-gradle-wrapper:
-        runs-on: ubuntu-latest
+  update-gradle-wrapper:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v6
-              with:
-                  fetch-depth: 1
-                  persist-credentials: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
 
+      - uses: actions/setup-java@v5.2.0
+        with:
+          java-version: 21
+          distribution: "temurin"
 
-            - uses: actions/setup-java@v5.2.0
-              with:
-                  java-version: 21
-                  distribution: "temurin"
-
-            - name: Update Gradle Wrapper
-              uses: gradle-update/update-gradle-wrapper-action@v2
-              env:
-                  GITHUB_PASSWORD: ${{ github.token }}
-              with:
-                  repo-token: ${{ github.token }}
+      - name: Update Gradle Wrapper
+        uses: gradle-update/update-gradle-wrapper-action@v2
+        env:
+          GITHUB_PASSWORD: ${{ github.token }}
+        with:
+          repo-token: ${{ github.token }}

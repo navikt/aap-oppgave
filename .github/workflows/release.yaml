@@ -1,113 +1,109 @@
-name: release
+name: Bygg og deploy
 
 on:
-    workflow_dispatch:
-        inputs:
-            cluster:
-                description: Cluster
-                required: true
-                default: dev-gcp
-                type: choice
-                options:
-                    - dev-gcp
-    push:
-        branches: [ main ]
-        paths-ignore:
-            - '.github/**'
-            - 'README.md'
+  workflow_dispatch:
+    inputs:
+      cluster:
+        description: Cluster
+        required: true
+        default: dev-gcp
+        type: choice
+        options:
+          - dev-gcp
+          - prod-gcp
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '.github/**'
+      - 'README.md'
 
 jobs:
-    gradle:
-        ## push til main eller etter branch (e.g. dependabot) er merget
-        if: github.event.pull_request.merged || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        permissions:
-            contents: write
-            actions: read
-            checks: write
-            id-token: write
-        uses: navikt/aap-workflows/.github/workflows/gradle-build.yml@main
-        secrets: inherit
+  gradle:
+    permissions:
+      contents: write
+      actions: read
+      checks: write
+      id-token: write
+    uses: navikt/aap-workflows/.github/workflows/gradle-build.yml@main
+    secrets: inherit
+    with:
+      publish-typescript: true
+      typescript-enums: true
+      app-navn: oppgave
+      generate-openapi-command: ./gradlew genererOpenApiJson
+
+  publiser-kontrakt:
+    needs: gradle
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
         with:
-            publish-typescript: true
-            typescript-enums: true
-            app-navn: oppgave
-            generate-openapi-command: ./gradlew genererOpenApiJson
-
-    publiser-kontrakt:
-        needs: gradle
-        permissions:
-            contents: write
-            packages: write
-            id-token: write
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
-            - uses: actions/setup-java@v5
-              with:
-                  java-version: 21
-                  distribution: 'temurin'
-            - uses: gradle/actions/setup-gradle@v6
-            - uses: paulhatch/semantic-version@v6.0.2
-              id: tag
-              with:
-                  change_path: "api-kontrakt/"
-                  bump_each_commit: true
-                  tag_prefix: ""
-                  bump_each_commit_patch_pattern: ''
-                  major_pattern: "(MAJOR)" # If major bump, include this in commit message
-            - id: notes
-              if: ${{ steps.tag.outputs.changed == 'true' }}
-              run: |
-                randomDelimiter=${RANDOM}
-                text=$(git --no-pager log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"%h %s" | sed ':a;N;$!ba;s/\n/\n\n/g')
-                echo 'CHANGELOG<<$randomDelimiter' >> $GITHUB_OUTPUT
-                echo -e "$text" >> $GITHUB_OUTPUT
-                echo '$randomDelimiter' >> $GITHUB_OUTPUT
-            - if: ${{ steps.tag.outputs.changed == 'true' }}
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  ./gradlew -Pversion=${{ steps.tag.outputs.version }} publish
-            - uses:  softprops/action-gh-release@v3
-              if: ${{ steps.tag.outputs.changed == 'true' }}
-              id: create_release
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  tag_name: ${{ steps.tag.outputs.version }}
-                  name: ${{ steps.tag.outputs.version }}
-                  body: |
-                      Endringer siden sist:
-                      ${{ steps.notes.outputs.CHANGELOG }}
-
-    dev:
-        ## push til main eller etter branch (e.g. dependabot) er merget
-        if: github.event.pull_request.merged || github.event_name == 'push' || github.event.inputs.cluster == 'dev-gcp'
-        permissions:
-            contents: read
-            id-token: write
-        needs: gradle
-        uses: navikt/aap-workflows/.github/workflows/deploy.yml@main
-        concurrency: deploy-dev-gcp
-        secrets: inherit
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
         with:
-            cluster: dev-gcp
-            manifest: .nais/nais.yaml
-            vars: .nais/dev.yaml
+          java-version: 21
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: paulhatch/semantic-version@v6.0.2
+        id: tag
+        with:
+          change_path: "api-kontrakt/"
+          bump_each_commit: true
+          tag_prefix: ""
+          bump_each_commit_patch_pattern: ''
+          major_pattern: "(MAJOR)" # If major bump, include this in commit message
+      - id: notes
+        if: ${{ steps.tag.outputs.changed == 'true' }}
+        run: |
+          randomDelimiter=${RANDOM}
+          text=$(git --no-pager log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"%h %s" | sed ':a;N;$!ba;s/\n/\n\n/g')
+          echo 'CHANGELOG<<$randomDelimiter' >> $GITHUB_OUTPUT
+          echo -e "$text" >> $GITHUB_OUTPUT
+          echo '$randomDelimiter' >> $GITHUB_OUTPUT
+      - if: ${{ steps.tag.outputs.changed == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./gradlew -Pversion=${{ steps.tag.outputs.version }} publish
+      - uses: softprops/action-gh-release@v3
+        if: ${{ steps.tag.outputs.changed == 'true' }}
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.version }}
+          name: ${{ steps.tag.outputs.version }}
+          body: |
+            Endringer siden sist:
+            ${{ steps.notes.outputs.CHANGELOG }}
 
-    prod:
-      ## push til main eller etter branch (e.g. dependabot) er merget
-      if: github.event.pull_request.merged || github.event_name == 'push' || github.event.inputs.cluster == 'prod-gcp'
-      permissions:
-        contents: read
-        id-token: write
-      needs: [ publiser-kontrakt, dev ]
-      concurrency: deploy-prod-gcp
-      uses: navikt/aap-workflows/.github/workflows/deploy.yml@main
-      secrets: inherit
-      with:
-        cluster: prod-gcp
-        manifest: .nais/nais.yaml
-        vars: .nais/prod.yaml
+  dev:
+    permissions:
+      contents: read
+      id-token: write
+    needs: gradle
+    uses: navikt/aap-workflows/.github/workflows/deploy.yml@main
+    concurrency: deploy-dev-gcp
+    secrets: inherit
+    with:
+      cluster: dev-gcp
+      manifest: .nais/nais.yaml
+      vars: .nais/dev.yaml
+
+  prod:
+    if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.cluster == 'prod-gcp' }}
+    permissions:
+      contents: read
+      id-token: write
+    needs: [ publiser-kontrakt, dev ]
+    concurrency: deploy-prod-gcp
+    uses: navikt/aap-workflows/.github/workflows/deploy.yml@main
+    secrets: inherit
+    with:
+      cluster: prod-gcp
+      manifest: .nais/nais.yaml
+      vars: .nais/prod.yaml
