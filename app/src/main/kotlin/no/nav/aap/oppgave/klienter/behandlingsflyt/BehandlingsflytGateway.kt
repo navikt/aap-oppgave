@@ -1,14 +1,14 @@
 package no.nav.aap.oppgave.klienter.behandlingsflyt
 
+import java.net.URI
+import java.util.UUID
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
-import java.net.URI
-import java.util.UUID
 
 object BehandlingsflytGateway {
     private val baseUrl = URI.create(requiredConfigForKey("integrasjon.behandlingsflyt.url"))
@@ -19,7 +19,7 @@ object BehandlingsflytGateway {
     private val httpClient =
         RestClient.withDefaultResponseHandler(
             config = clientConfig,
-            tokenProvider = ClientCredentialsTokenProvider,
+            tokenProvider = AzureM2MTokenProvider(),
             prometheus = prometheus
         )
 

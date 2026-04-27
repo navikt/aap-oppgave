@@ -24,7 +24,7 @@ internal class AzureTokenGen(private val issuer: String, private val audience: S
         return signedJWT
     }
 
-    private fun claims(isApp: Boolean, roller: List<String>): JWTClaimsSet {
+    private fun claims(isApp: Boolean, roller: List<String>, navIdent: String?): JWTClaimsSet {
         val builder = JWTClaimsSet
             .Builder()
             .subject(UUID.randomUUID().toString())
@@ -46,8 +46,9 @@ internal class AzureTokenGen(private val issuer: String, private val audience: S
 
                 )
         } else {
-            builder.claim("NAVident", "Lokalsaksbehandler")
-            builder.claim("groups", roller)
+            builder
+                .claim("NAVident", navIdent ?: "X123456")
+                .claim("groups", roller)
         }
 
         return builder.build()
@@ -57,10 +58,19 @@ internal class AzureTokenGen(private val issuer: String, private val audience: S
         return Date.from(this.atZone(ZoneId.systemDefault()).toInstant())
     }
 
-    fun generate(isApp: Boolean, roller: List<String> = emptyList()): String {
-        return signed(claims(isApp, roller)).serialize()
+    fun generate(isApp: Boolean, roller: List<String> = emptyList(), navIdent: String? = null): String {
+        return signed(claims(isApp, roller, navIdent)).serialize()
     }
 }
+
+internal data class TestToken(
+    val access_token: String,
+    val refresh_token: String = "very.secure.token",
+    val id_token: String = "very.secure.token",
+    val token_type: String = "token-type",
+    val scope: String? = null,
+    val expires_in: Int = 3599,
+)
 
 @Language("JSON")
 internal const val AZURE_JWKS: String = """{
