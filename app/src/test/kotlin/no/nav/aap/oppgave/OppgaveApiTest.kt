@@ -48,7 +48,6 @@ import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
-import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
@@ -64,7 +63,6 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
 import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
-import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -1312,21 +1310,6 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentOppgaveList(oppgavelisteReq: OppgavelisteRequest): OppgavelisteRespons? {
-        return client.post<OppgavelisteRequest, OppgavelisteRespons>(
-            URI.create("http://localhost:$port/oppgaveliste"),
-            PostRequest(
-                oppgavelisteReq,
-                additionalHeaders = listOf(
-                    Header(
-                        "Authorization",
-                        "Bearer ${getOboToken(listOf(SaksbehandlerNasjonal.id)).token()}"
-                    )
-                )
-            )
-        )
-    }
-
     private fun oppdaterTilbakekrevingOppgaver(tilbakekrevingsbehandlingOppdatertHendelse: TilbakekrevingsbehandlingOppdatertHendelse): Unit? {
         return client.post(
             URI.create("http://localhost:$port/oppdater-tilbakekreving-oppgaver"),
@@ -1464,12 +1447,12 @@ class OppgaveApiTest {
 
         private val client = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = AzureM2MTokenProvider()
+            tokenProvider = AzureM2MTokenProvider
         )
 
         private val oboClient = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = AzureOBOTokenProvider()
+            tokenProvider = AzureOBOTokenProvider
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)

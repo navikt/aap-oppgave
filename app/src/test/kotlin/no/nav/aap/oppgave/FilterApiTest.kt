@@ -44,7 +44,7 @@ class FilterApiTest {
         private val oboClient = {
             RestClient.withDefaultResponseHandler(
                 config = ClientConfig(scope = "oppgave"),
-                tokenProvider = AzureOBOTokenProvider()
+                tokenProvider = AzureOBOTokenProvider
             )
         }
 

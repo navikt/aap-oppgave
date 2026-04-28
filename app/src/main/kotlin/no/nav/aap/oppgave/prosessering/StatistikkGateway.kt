@@ -16,7 +16,7 @@ object StatistikkGateway {
 
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
-        tokenProvider = AzureM2MTokenProvider(),
+        tokenProvider = AzureM2MTokenProvider,
         prometheus = prometheus
     )
 

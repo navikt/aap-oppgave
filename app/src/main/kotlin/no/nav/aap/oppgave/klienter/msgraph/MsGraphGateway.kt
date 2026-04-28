@@ -34,13 +34,13 @@ class MsGraphGateway(
     )
     private val httpClient = RestClient.withDefaultResponseHandler(
         config = clientConfig,
-        tokenProvider = AzureOBOTokenProvider(),
+        tokenProvider = AzureOBOTokenProvider,
         prometheus = prometheus,
     )
 
     private val httpClientM2m = RestClient.withDefaultResponseHandler(
         config = clientConfig,
-        tokenProvider = AzureM2MTokenProvider(),
+        tokenProvider = AzureM2MTokenProvider,
         prometheus = prometheus,
     )
 
