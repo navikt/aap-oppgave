@@ -26,6 +26,7 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.tilgang.AuthorizationMachineToMachineConfig
 import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
@@ -74,6 +75,9 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
             val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
                 { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
 
+            val erHastesak =
+                { oppgave: OppgaveDto -> oppgave.markeringer.any { it.markeringType == MarkeringForBehandling.HASTER } }
+
             val erKvalitetssikring: (oppgave: OppgaveDto) -> Boolean =
                 { oppgave -> oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name }
 
@@ -112,7 +116,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                     oversendtDato = medlemskap.opprettetTidspunkt.toLocalDate(),
                     oppgaveKategori = OppgaveKategori.MEDLEMSKAP,
                     enhet = medlemskap.enhetForKø,
-                    saksnummer = requireNotNull(medlemskap.saksnummer)
+                    saksnummer = requireNotNull(medlemskap.saksnummer),
+                    markertSomHasteSak = erHastesak(medlemskap)
                 )
 
                 lokalkontoroppgaver.isNotEmpty() && lokalkontoroppgaver.any { it.erÅpen } -> {
@@ -121,7 +126,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
                         oppgaveKategori = OppgaveKategori.LOKALKONTOR,
                         enhet = førsteOppgave.enhetForKø,
-                        saksnummer = requireNotNull(førsteOppgave.saksnummer)
+                        saksnummer = requireNotNull(førsteOppgave.saksnummer),
+                        markertSomHasteSak = erHastesak(førsteOppgave)
                     )
                 }
 
@@ -131,7 +137,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
                         oppgaveKategori = OppgaveKategori.KVALITETSSIKRING,
                         enhet = førsteOppgave.enhetForKø,
-                        saksnummer = requireNotNull(førsteOppgave.saksnummer)
+                        saksnummer = requireNotNull(førsteOppgave.saksnummer),
+                        markertSomHasteSak = erHastesak(førsteOppgave)
                     )
                 }
 
@@ -141,7 +148,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
                         oppgaveKategori = OppgaveKategori.NAY,
                         enhet = førsteOppgave.enhetForKø,
-                        saksnummer = requireNotNull(førsteOppgave.saksnummer)
+                        saksnummer = requireNotNull(førsteOppgave.saksnummer),
+                        markertSomHasteSak = erHastesak(førsteOppgave)
                     )
                 }
 
@@ -151,7 +159,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
                         oppgaveKategori = OppgaveKategori.BESLUTTER,
                         enhet = førsteOppgave.enhetForKø,
-                        saksnummer = requireNotNull(førsteOppgave.saksnummer)
+                        saksnummer = requireNotNull(førsteOppgave.saksnummer),
+                        markertSomHasteSak = erHastesak(førsteOppgave)
                     )
                 }
 
@@ -163,23 +172,25 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oversendtDato = sistÅpnedeOppgave.opprettetTidspunkt.toLocalDate(),
                         oppgaveKategori = OppgaveKategori.LOKALKONTOR,
                         enhet = sistÅpnedeOppgave.enhetForKø,
-                        saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer)
+                        saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer),
+                        markertSomHasteSak = erHastesak(sistÅpnedeOppgave)
                     )
                 }
 
                 oppgaver.isNotEmpty() -> {
-                    log.info("Uventet kategori. Velger enhet for siste åpne oppgave.")
+                    log.info("Uventet kategori. Velger enhet for siste åpne oppgave. Saksnummer: ${oppgaver.last().saksnummer}")
                     val sistÅpnedeOppgave = oppgaver.last()
                     NåværendeEnhet(
                         oversendtDato = sistÅpnedeOppgave.opprettetTidspunkt.toLocalDate(),
                         oppgaveKategori = if (erHosNAY(sistÅpnedeOppgave)) OppgaveKategori.NAY else OppgaveKategori.LOKALKONTOR,
                         enhet = sistÅpnedeOppgave.enhetForKø,
-                        saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer)
+                        saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer),
+                        markertSomHasteSak = erHastesak(sistÅpnedeOppgave)
                     )
                 }
 
                 else -> {
-                    log.info("Fant ingen åpne oppgaver. Returnerer null")
+                    log.info("Fant ingen oppgaver. Returnerer null.")
                     null
                 }
             }

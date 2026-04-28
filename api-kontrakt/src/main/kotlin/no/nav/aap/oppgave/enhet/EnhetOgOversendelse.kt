@@ -14,9 +14,9 @@ enum class OppgaveKategori {
 
 data class NåværendeEnhet(
     val oversendtDato: LocalDate,
-    val løstDato: LocalDate? = null, // trengs denne?
     val oppgaveKategori: OppgaveKategori,
     val enhet: String,
+    val markertSomHasteSak: Boolean,
     val saksnummer: String
 )
 
