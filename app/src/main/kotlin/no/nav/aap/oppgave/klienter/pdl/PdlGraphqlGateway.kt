@@ -34,7 +34,7 @@ class PdlGraphqlGateway(
             PdlGraphqlGateway(
                 RestClient(
                     config = getClientConfig(),
-                    tokenProvider = AzureM2MTokenProvider(),
+                    tokenProvider = AzureM2MTokenProvider,
                     responseHandler = PdlResponseHandler(),
                     prometheus = prometheus
                 )

@@ -32,7 +32,7 @@ fun main() {
 
     val client = RestClient.withDefaultResponseHandler(
         config = ClientConfig(scope = "oppgave"),
-        tokenProvider = AzureM2MTokenProvider()
+        tokenProvider = AzureM2MTokenProvider
     )
 
     val port = runBlocking { server.engine.resolvedConnectors().first { it.type == ConnectorType.HTTP }.port }

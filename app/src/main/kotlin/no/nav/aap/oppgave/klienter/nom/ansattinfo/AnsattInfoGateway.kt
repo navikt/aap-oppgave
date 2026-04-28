@@ -43,7 +43,7 @@ class NomApiGateway(
             NomApiGateway(
                 RestClient(
                     config = getClientConfig(),
-                    tokenProvider = AzureM2MTokenProvider(),
+                    tokenProvider = AzureM2MTokenProvider,
                     responseHandler = NomApiResponseHandler(),
                     prometheus = prometheus
                 )
