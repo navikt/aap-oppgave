@@ -22,6 +22,7 @@ import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
+import no.nav.aap.oppgave.oppdater.hendelse.AVSLUTTEDE_STATUSER
 import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
 import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
@@ -30,6 +31,7 @@ import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.TILBAKEKREVING
 import no.nav.aap.oppgave.oppdater.hendelse.VenteInformasjon
+import no.nav.aap.oppgave.oppdater.hendelse.ÅPNE_STATUSER
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -45,19 +47,6 @@ import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-
-private val ÅPNE_STATUSER = setOf(
-    AvklaringsbehovStatus.OPPRETTET,
-    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
-    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-)
-
-private val AVSLUTTEDE_STATUSER = setOf(
-    AvklaringsbehovStatus.AVSLUTTET,
-    AvklaringsbehovStatus.AVBRUTT,
-    AvklaringsbehovStatus.KVALITETSSIKRET,
-    AvklaringsbehovStatus.TOTRINNS_VURDERT,
-)
 
 class OppdaterOppgaveService(
     msGraphClient: IMsGraphGateway,
@@ -211,9 +200,9 @@ class OppdaterOppgaveService(
 
     private fun loggOppdatering(eksisterendeOppgave: OppgaveDto, årsakTilSattPåVent: String?) {
         if (eksisterendeOppgave.erÅpen) {
-            log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}. Venteinformasjon: $årsakTilSattPåVent")
+            log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Venteinformasjon: $årsakTilSattPåVent")
         } else {
-            log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med tidligere status ${eksisterendeOppgave.status} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Saksnummer: ${eksisterendeOppgave.saksnummer}")
+            log.info("Gjenåpner oppgave ${eksisterendeOppgave.oppgaveId()} med tidligere status ${eksisterendeOppgave.status} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}.")
         }
     }
 
@@ -228,14 +217,16 @@ class OppdaterOppgaveService(
         oppgaveOppdatering: OppgaveOppdatering,
         eksisterendeOppgave: OppgaveDto,
     ): LocalDate? {
-        return if (oppgaveTattAvVentAutomatiskIDenneOppdateringen(oppgaveOppdatering, eksisterendeOppgave)) {
-            // behandling er nettopp tatt av vent, lagre ned nylig utløpt ventefrist
-            eksisterendeOppgave.påVentTil
-        } else if (eksisterendeOppgave.utløptVentefrist != null && oppgaveOppdatering.venteInformasjon?.frist == null) {
-            // oppgaven har allerede en utløptVentefrist og er ikke satt på vent på nytt i denne oppdateringen. Viderefører den forrige.
-            eksisterendeOppgave.utløptVentefrist
-        } else {
-            null
+        return when {
+            oppgaveTattAvVentAutomatiskIDenneOppdateringen(oppgaveOppdatering, eksisterendeOppgave) ->
+                // behandling er nettopp tatt av vent, lagre ned nylig utløpt ventefrist
+                eksisterendeOppgave.påVentTil
+
+            eksisterendeOppgave.utløptVentefrist != null && oppgaveOppdatering.venteInformasjon?.frist == null ->
+                // oppgaven har allerede en utløptVentefrist og er ikke satt på vent på nytt i denne oppdateringen. Viderefører den forrige.
+                eksisterendeOppgave.utløptVentefrist
+
+            else -> null
         }
     }
 
@@ -253,7 +244,7 @@ class OppdaterOppgaveService(
     ): ReturInformasjon? {
         // Setter ReturInformasjon når behandling sendes tilbake til totrinn
         return if (erReturTilToTrinn(avklaringsbehov)) {
-            log.info("Totrinnsoppgave gjenåpnet, setter retur fra veileder/saksbehandler. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+            log.info("Totrinnsoppgave gjenåpnet, setter retur fra veileder/saksbehandler.")
             val forrigeAvklaringsbehovLøstAvVeileder =
                 oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
             ReturInformasjon(
@@ -444,7 +435,7 @@ class OppdaterOppgaveService(
                 )
             )
         }
-        log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}. Saksnummer: ${oppgaveOppdatering.saksnummer}")
+        log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}.")
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
         prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(oppgaveOppdatering, oppgaveId, avklaringsbehovHendelse)
         håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, oppgaveId)
@@ -503,7 +494,7 @@ class OppdaterOppgaveService(
                 val siste = beh.endringer.maxByOrNull { it.tidsstempel }
                 "${beh.avklaringsbehovKode.kode}:${beh.status} (sistEndret=${siste?.tidsstempel}, av=${siste?.endretAv})"
             }
-            log.info("Fant ingen avsluttede avklaringsbehov. Behovene: [$beskrivelse], saksnummer: ${this.saksnummer}")
+            log.info("Fant ingen avsluttede avklaringsbehov. Behovene: [$beskrivelse].")
             return null
         }
 
@@ -610,7 +601,7 @@ class OppdaterOppgaveService(
         if (hvemLøsteForrigeAvklaringsbehov != null) {
             val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
             if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
-                log.info("Prøver å tilordne oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Saksnummer: ${oppgaveOppdatering.saksnummer}. Gjenåpnet: $gjenåpnerOppgave")
+                log.info("Prøver å tilordne oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Gjenåpnet: $gjenåpnerOppgave")
                 reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                     oppgaveOppdatering.referanse,
                     hvemLøsteForrigeIdent
