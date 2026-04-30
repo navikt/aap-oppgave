@@ -82,7 +82,10 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                 { oppgave -> oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name }
 
             val erBeslutterOppgave: (oppgave: OppgaveDto) -> Boolean =
-                { oppgave -> Rolle.BESLUTTER in Definisjon.forKode(oppgave.avklaringsbehovKode).løsesAv }
+                { oppgave ->
+                    Definisjon.entries.filter { it.løsesAv.contains(Rolle.BESLUTTER) }
+                        .any { it.kode.name == oppgave.avklaringsbehovKode }
+                }
 
             val lokalkontoroppgaver =
                 oppgaver.filter { oppgave ->
