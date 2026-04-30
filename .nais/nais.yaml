@@ -53,7 +53,7 @@ spec:
     periodSeconds: 5
     failureThreshold: 5
   envFrom:
-    - secret: {{unleash_secret}}
+    - secret: kelvin-unleash-api-token
   accessPolicy:
     inbound:
       rules:
