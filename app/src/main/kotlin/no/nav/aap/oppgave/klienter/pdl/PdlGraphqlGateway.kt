@@ -1,7 +1,5 @@
 package no.nav.aap.oppgave.klienter.pdl
 
-import java.io.InputStream
-import java.net.URI
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -9,8 +7,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
+import java.io.InputStream
+import java.net.URI
 
 interface IPdlGateway {
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
@@ -34,7 +34,7 @@ class PdlGraphqlGateway(
             PdlGraphqlGateway(
                 RestClient(
                     config = getClientConfig(),
-                    tokenProvider = AzureM2MTokenProvider,
+                    tokenProvider = ClientCredentialsTokenProvider,
                     responseHandler = PdlResponseHandler(),
                     prometheus = prometheus
                 )

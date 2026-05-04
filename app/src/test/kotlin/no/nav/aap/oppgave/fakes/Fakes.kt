@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ParameterResolver
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
+import no.nav.aap.oppgave.server.isTexasEnabled
 
 data class FakesConfig(
     var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf(),
@@ -20,6 +21,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
 
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val texas = FakeServer(module = { texasFake() })
+    private val azure = FakeServer(module = { azureFake() })
     private val tilgang = FakeServer(module = { tilgangFake(fakesConfig) })
     private val behandlingsflyt = FakeServer(module = { behandlingsflytFake(fakesConfig) })
     private val pdl = FakeServer(module = { pdlFake() })
@@ -33,6 +35,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
     private val statistikkFake = FakeServer(module = { statistikkFake() })
     private val fakeServere = listOf(
         texas,
+        azure,
         tilgang,
         behandlingsflyt,
         pdl,
@@ -80,14 +83,26 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
             })
         )
 
+        if (isTexasEnabled) {
+            // Texas
+            System.setProperty("nais.token.endpoint", "http://localhost:${texas.port()}/token")
+            System.setProperty("nais.token.exchange.endpoint", "http://localhost:${texas.port()}/token/exchange")
+            System.setProperty("nais.token.introspection.endpoint", "http://localhost:${texas.port()}/introspect")
+        } else {
+            // Bruke azure fake i behandlingsflyt hvis verdi er satt
+            val azurePort = System.getenv("LOKAL_BEHANDLINGSFLYT_AZURE_PORT") ?: azure.port()
+
+            // Azure
+            System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azurePort}/token")
+            System.setProperty("azure.app.client.id", "behandlingsflyt")
+            System.setProperty("azure.app.client.secret", "")
+            System.setProperty("azure.openid.config.jwks.uri", "http://localhost:${azurePort}/jwks")
+            System.setProperty("azure.openid.config.issuer", "behandlingsflyt")
+        }
         // Tilgang
         System.setProperty("integrasjon.tilgang.url", "http://localhost:${tilgang.port()}")
         System.setProperty("integrasjon.tilgang.scope", "scope")
         System.setProperty("integrasjon.tilgang.azp", "azp")
-        // Texas
-        System.setProperty("nais.token.endpoint", "http://localhost:${texas.port()}/token")
-        System.setProperty("nais.token.exchange.endpoint", "http://localhost:${texas.port()}/token/exchange")
-        System.setProperty("nais.token.introspection.endpoint", "http://localhost:${texas.port()}/introspect")
         // PDL
         System.setProperty("integrasjon.pdl.url", "http://localhost:${pdl.port()}")
         System.setProperty("integrasjon.pdl.scope", "scope")

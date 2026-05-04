@@ -20,6 +20,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.seconds
+import no.nav.aap.komponenter.config.configForKey
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
@@ -64,6 +65,8 @@ import org.slf4j.LoggerFactory
 val secureLogger: Logger = LoggerFactory.getLogger("team-logs")
 private const val ANTALL_WORKERS = 5
 
+val isTexasEnabled = configForKey("ENABLE_TEXAS").toBoolean()
+
 fun main() {
     Thread.currentThread().setUncaughtExceptionHandler { _, e ->
         LoggerFactory.getLogger("App")
@@ -80,18 +83,33 @@ fun main() {
 }
 
 internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterRegistry) {
-
-    commonKtorModule(
-        prometheus = prometheus,
-        infoModel = InfoModel(
-            title = "AAP - Oppgave",
-            description = """
+    /*
+    * Midlertidig løsning for å enkelt skru av og på Texas.
+    * Gjøres for å bekrefte/avkrefte teorien om at Texas er årsaken til den økte feilraten den siste
+    **/
+    if (isTexasEnabled) {
+        commonKtorModule(
+            prometheus = prometheus,
+            infoModel = InfoModel(
+                title = "AAP - Oppgave",
+                description = """
                 For å teste API i dev, besøk
                 <a href="https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:aap:oppgave">Token Generator</a> for å få token.
                 """.trimIndent(),
-        ),
-        identityProvider = IdentityProvider.ENTRA_ID
-    )
+            ),
+            identityProvider = IdentityProvider.ENTRA_ID
+        )
+    } else {
+        commonKtorModule(
+            prometheus, AzureConfig(), InfoModel(
+                title = "AAP - Oppgave",
+                description = """
+                For å teste API i dev, besøk
+                <a href="https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:aap:oppgave">Token Generator</a> for å få token.
+                """.trimIndent(),
+            )
+        )
+    }
 
     install(StatusPages, StatusPagesConfigHelper.setup())
 
@@ -103,7 +121,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     motor(dataSource, prometheus)
 
     routing {
-        authenticate(IdentityProvider.ENTRA_ID.value) {
+        authenticate(if (isTexasEnabled) IdentityProvider.ENTRA_ID.value else AZURE) {
             install(NavIdentInterceptor)
 
             apiRouting {

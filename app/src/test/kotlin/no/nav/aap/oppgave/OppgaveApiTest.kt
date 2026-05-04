@@ -36,8 +36,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
@@ -1447,12 +1447,12 @@ class OppgaveApiTest {
 
         private val client = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = AzureM2MTokenProvider
+            tokenProvider = ClientCredentialsTokenProvider
         )
 
         private val oboClient = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = AzureOBOTokenProvider
+            tokenProvider = OnBehalfOfTokenProvider
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)

@@ -7,7 +7,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.oppgave.AvklaringsbehovReferanseDto
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
@@ -25,7 +25,7 @@ object TilgangGateway {
 
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
-        tokenProvider = AzureOBOTokenProvider,
+        tokenProvider = OnBehalfOfTokenProvider,
         prometheus = prometheus
     )
 
