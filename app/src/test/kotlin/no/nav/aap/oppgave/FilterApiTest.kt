@@ -16,7 +16,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterId
@@ -44,7 +44,7 @@ class FilterApiTest {
         private val oboClient = {
             RestClient.withDefaultResponseHandler(
                 config = ClientConfig(scope = "oppgave"),
-                tokenProvider = AzureOBOTokenProvider
+                tokenProvider = OnBehalfOfTokenProvider
             )
         }
 

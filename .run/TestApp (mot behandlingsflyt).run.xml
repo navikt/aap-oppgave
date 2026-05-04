@@ -7,6 +7,7 @@
       <env name="NAIS_DATABASE_OPPGAVE_OPPGAVE_PASSWORD" value="" />
       <env name="INTEGRASJON_BEHANDLINGSFLYT_URL" value="http://localhost:8080" />
       <env name="LOKAL_BEHANDLINGSFLYT_AZURE_PORT" value="8081" />
+      <env name="ENABLE_TEXAS" value="true" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="no.nav.aap.oppgave.server.TestAppKt" />
     <module name="oppgave.app.test" />
