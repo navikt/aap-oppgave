@@ -21,6 +21,7 @@ import no.nav.aap.tilgang.AuthorizationBodyPathConfig
 import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     dataSource: DataSource,
@@ -34,16 +35,18 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-oppgaver").increment()
-    dataSource.transaction { connection ->
-        OppdaterOppgaveService(
-            msGraphClient,
-            oppgaveRepository = OppgaveRepository(connection),
-            flytJobbRepository = FlytJobbRepositoryImpl(connection),
-            mottattDokumentRepository = MottattDokumentRepository(connection),
-            tilbakekrevingRepository = TilbakekrevingRepository(connection),
-        ).håndterNyOppgaveOppdatering(
-            request.tilOppgaveOppdatering()
-        )
+    MDC.putCloseable("saksnummer", request.saksnummer.toString()).use {
+        dataSource.transaction { connection ->
+            OppdaterOppgaveService(
+                msGraphClient,
+                oppgaveRepository = OppgaveRepository(connection),
+                flytJobbRepository = FlytJobbRepositoryImpl(connection),
+                mottattDokumentRepository = MottattDokumentRepository(connection),
+                tilbakekrevingRepository = TilbakekrevingRepository(connection),
+            ).håndterNyOppgaveOppdatering(
+                request.tilOppgaveOppdatering()
+            )
+        }
     }
     respondWithStatus(HttpStatusCode.OK)
 }
@@ -60,15 +63,18 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-postmottak-oppgaver").increment()
-    dataSource.transaction { connection ->
-        OppdaterOppgaveService(
-            msGraphClient,
-            oppgaveRepository = OppgaveRepository(connection),
-            flytJobbRepository = FlytJobbRepositoryImpl(connection),
-            mottattDokumentRepository = MottattDokumentRepository(connection),
-            tilbakekrevingRepository = TilbakekrevingRepository(connection),
-        ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+    MDC.putCloseable("journalpostId", request.journalpostId.toString()).use {
+        dataSource.transaction { connection ->
+            OppdaterOppgaveService(
+                msGraphClient,
+                oppgaveRepository = OppgaveRepository(connection),
+                flytJobbRepository = FlytJobbRepositoryImpl(connection),
+                mottattDokumentRepository = MottattDokumentRepository(connection),
+                tilbakekrevingRepository = TilbakekrevingRepository(connection),
+            ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+        }
     }
+
     respondWithStatus(HttpStatusCode.OK)
 }
 
@@ -86,14 +92,16 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     prometheus.httpCallCounter("/oppdater-tilbakekreving-oppgaver").increment()
     LoggerFactory.getLogger("tilbakekreving")
         .info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
-    dataSource.transaction { connection ->
-        OppdaterOppgaveService(
-            msGraphClient,
-            oppgaveRepository = OppgaveRepository(connection),
-            flytJobbRepository = FlytJobbRepositoryImpl(connection),
-            mottattDokumentRepository = MottattDokumentRepository(connection),
-            tilbakekrevingRepository = TilbakekrevingRepository(connection),
-        ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+    MDC.putCloseable("saksnummer", request.saksnummer.toString()).use {
+        dataSource.transaction { connection ->
+            OppdaterOppgaveService(
+                msGraphClient,
+                oppgaveRepository = OppgaveRepository(connection),
+                flytJobbRepository = FlytJobbRepositoryImpl(connection),
+                mottattDokumentRepository = MottattDokumentRepository(connection),
+                tilbakekrevingRepository = TilbakekrevingRepository(connection),
+            ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+        }
     }
     respondWithStatus(HttpStatusCode.OK)
 }
