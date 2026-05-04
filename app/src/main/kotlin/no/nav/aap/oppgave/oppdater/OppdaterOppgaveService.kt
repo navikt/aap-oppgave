@@ -35,7 +35,6 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
-import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -337,14 +336,13 @@ class OppdaterOppgaveService(
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
         // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt
-        if (unleashService.isEnabled(FeatureToggles.ReserverTilForrigeSaksbehandlerVedGjenaapning)) {
-            prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
-                oppgaveOppdatering,
-                eksisterendeOppgave.oppgaveId(),
-                avklaringsbehov,
-                gjenåpnerOppgave = true
-            )
-        }
+        prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
+            oppgaveOppdatering,
+            eksisterendeOppgave.oppgaveId(),
+            avklaringsbehov,
+            gjenåpnerOppgave = true
+        )
+
         håndterReservasjonFraBehandlingsflyt(
             oppgaveOppdatering,
             eksisterendeOppgave.oppgaveId()
