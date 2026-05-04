@@ -47,7 +47,7 @@ object TilgangGateway {
                 TilbakekrevingTilgangRequest(
                     behandlingsreferanse = avklaringsbehovReferanse.referanse!!,
                     saksnummer = avklaringsbehovReferanse.saksnummer!!,
-                    påkrevdRolle = utledPåkrevdRolleForTilbakekreving(avklaringsbehovReferanse.avklaringsbehovKode),
+                    påkrevdRoller = utledPåkrevdRolleForTilbakekreving(avklaringsbehovReferanse.avklaringsbehovKode),
                     operasjon = operasjon
                 ), token
             )
@@ -107,11 +107,11 @@ object TilgangGateway {
         return respons.tilgang
     }
 
-    private fun utledPåkrevdRolleForTilbakekreving(avklaringsbehovKode: String): Rolle {
+    private fun utledPåkrevdRolleForTilbakekreving(avklaringsbehovKode: String): List<Rolle> {
         val kode = TilbakeKrevingAvklaringsbehovKoder.fraKode(avklaringsbehovKode)
         return when (kode) {
-            TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING -> Rolle.BESLUTTER
-            TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING -> Rolle.SAKSBEHANDLER_NASJONAL
+            TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING -> listOf(Rolle.BESLUTTER)
+            TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING -> listOf(Rolle.SAKSBEHANDLER_NASJONAL)
         }
     }
 }
