@@ -99,8 +99,8 @@ spec:
           namespace: nais-system
   env:
   {{#each env}}
-     - name: {{this.name}}
-       value: {{this.value}}
+     - name: "{{this.name}}"
+       value: "{{this.value}}"
   {{/each}}
   {{#each groups}}
      - name: {{this.name}}
