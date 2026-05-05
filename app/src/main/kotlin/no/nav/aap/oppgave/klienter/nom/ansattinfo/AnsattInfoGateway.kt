@@ -7,12 +7,12 @@ import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 import java.io.InputStream
 import java.net.URI
 import java.time.Duration
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 
 interface AnsattInfoGateway {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
@@ -43,7 +43,7 @@ class NomApiGateway(
             NomApiGateway(
                 RestClient(
                     config = getClientConfig(),
-                    tokenProvider = ClientCredentialsTokenProvider,
+                    tokenProvider = AzureM2MTokenProvider,
                     responseHandler = NomApiResponseHandler(),
                     prometheus = prometheus
                 )

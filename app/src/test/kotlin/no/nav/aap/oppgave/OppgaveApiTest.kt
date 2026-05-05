@@ -36,8 +36,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
@@ -65,6 +65,7 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
+import no.nav.aap.tilgang.TilgangGateway
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
@@ -395,6 +396,32 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `Skal få plukket oppgave dersom tilgang`(fakesConfig: FakesConfig) {
+        val saksnummer = "100001"
+        val referanse = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val oppgave = hentOppgave(referanse)
+
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
+        val nesteOppgave = plukkOppgave(oppgave!!.tilOppgaveId())
+        assertThat(nesteOppgave).isNotNull()
+    }
+
+    @Test
     fun `Skal ikke få plukket oppgave dersom tilgang nektes`(fakesConfig: FakesConfig) {
         val saksnummer = "100001"
         val referanse = UUID.randomUUID()
@@ -417,11 +444,8 @@ class OppgaveApiTest {
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         assertThrows<ManglerTilgangException> { plukkOppgave(oppgave!!.tilOppgaveId()) }
-
-        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
-        val nesteOppgave = plukkOppgave(oppgave!!.tilOppgaveId())
-        assertThat(nesteOppgave).isNotNull()
     }
+
 
     @Test
     fun `Oppgave skal avreserveres dersom tilgang nektes`(fakesConfig: FakesConfig) {
@@ -1452,12 +1476,12 @@ class OppgaveApiTest {
 
         private val client = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = ClientCredentialsTokenProvider
+            tokenProvider = AzureM2MTokenProvider
         )
 
         private val oboClient = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = OnBehalfOfTokenProvider
+            tokenProvider = AzureOBOTokenProvider
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -1576,6 +1600,7 @@ class OppgaveApiTest {
             }.start()
 
             port = server.port()
+            TilgangGateway.disableCaching()
         }
 
         @JvmStatic

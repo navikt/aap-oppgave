@@ -6,8 +6,9 @@ import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
-import io.ktor.http.*
+import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import javax.sql.DataSource
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
@@ -16,15 +17,14 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SøkDto
 import no.nav.aap.oppgave.SøkResponse
 import no.nav.aap.oppgave.enhet.Enhet
+import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
-import no.nav.aap.oppgave.plukk.TilgangGateway
+import no.nav.aap.oppgave.plukk.TilgangService
 import no.nav.aap.tilgang.Operasjon
 import org.slf4j.LoggerFactory
-import javax.sql.DataSource
-import no.nav.aap.oppgave.enhet.EnhetService
-import no.nav.aap.oppgave.klienter.norg.INorgGateway
 
 private val log = LoggerFactory.getLogger("hentOppgaveApi")
 
@@ -79,32 +79,24 @@ fun NormalOpenAPIRoute.søkApi(
 
         if (oppgaver.isEmpty()) {
             log.info("Fant ingen oppgaver basert på søketeksten")
-            respond(
-                SøkResponse(
-                    oppgaver = emptyList(),
-                    harTilgang = true,
-                    harAdressebeskyttelse = false,
-                )
-            )
-        } else {
-            val harAdressebeskyttelse = oppgaver.any { harAdressebeskyttelse(it) }
-            val harTilgang =
-                oppgaver.all {
-                    TilgangGateway.sjekkTilgang(
-                        it.tilAvklaringsbehovReferanseDto(),
-                        token(),
-                        Operasjon.SE
-                    )
-                }
+        }
 
-            respond(
-                SøkResponse(
-                    oppgaver = oppgaver.hentPersonNavn(),
-                    harTilgang = harTilgang,
-                    harAdressebeskyttelse = harAdressebeskyttelse,
-                )
+        val harAdressebeskyttelse = oppgaver.any { harAdressebeskyttelse(it) }
+        val harTilgang = oppgaver.all {
+            TilgangService.sjekkTilgang(
+                it.tilAvklaringsbehovReferanseDto(),
+                token(),
+                Operasjon.SE
             )
         }
+
+        respond(
+            SøkResponse(
+                oppgaver = oppgaver.hentPersonNavn(),
+                harTilgang = harTilgang,
+                harAdressebeskyttelse = harAdressebeskyttelse,
+            )
+        )
     }
 }
 
