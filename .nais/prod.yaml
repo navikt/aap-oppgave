@@ -60,4 +60,4 @@ env:
   - name: AZP_API_INTERN
     value: 3d3bb28c-d020-46b2-a34a-85201e302878
   - name: ENABLE_TEXAS
-    value: "false"
+    value: "true"
