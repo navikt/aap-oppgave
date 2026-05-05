@@ -79,6 +79,11 @@ fun main() {
         }
         shutdownGracePeriod = 25.seconds.inWholeMilliseconds
         shutdownTimeout = 30.seconds.inWholeMilliseconds
+
+        // Vi følger *IKKE* ktor sin metodikk for å regne ut tuning parametre for callGroupSize. Vi
+        // har ikke async IO, hverken for utadgående HTTP-kall eller mot databasen, så vi trenger betydelig flere
+        // tråder enn en async kodebase.
+        callGroupSize = 64
     }) { server(DbConfig(), prometheus) }.start(wait = true)
 }
 
