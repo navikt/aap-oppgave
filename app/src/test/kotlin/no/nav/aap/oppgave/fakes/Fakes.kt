@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ParameterResolver
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
-import no.nav.aap.oppgave.server.isTexasEnabled
 
 data class FakesConfig(
     var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf(),
@@ -83,22 +82,10 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
             })
         )
 
-        if (isTexasEnabled) {
-            // Texas
-            System.setProperty("nais.token.endpoint", "http://localhost:${texas.port()}/token")
-            System.setProperty("nais.token.exchange.endpoint", "http://localhost:${texas.port()}/token/exchange")
-            System.setProperty("nais.token.introspection.endpoint", "http://localhost:${texas.port()}/introspect")
-        } else {
-            // Bruke azure fake i behandlingsflyt hvis verdi er satt
-            val azurePort = System.getenv("LOKAL_BEHANDLINGSFLYT_AZURE_PORT") ?: azure.port()
-
-            // Azure
-            System.setProperty("azure.openid.config.token.endpoint", "http://localhost:${azurePort}/token")
-            System.setProperty("azure.app.client.id", "behandlingsflyt")
-            System.setProperty("azure.app.client.secret", "")
-            System.setProperty("azure.openid.config.jwks.uri", "http://localhost:${azurePort}/jwks")
-            System.setProperty("azure.openid.config.issuer", "behandlingsflyt")
-        }
+        // Texas
+        System.setProperty("nais.token.endpoint", "http://localhost:${texas.port()}/token")
+        System.setProperty("nais.token.exchange.endpoint", "http://localhost:${texas.port()}/token/exchange")
+        System.setProperty("nais.token.introspection.endpoint", "http://localhost:${texas.port()}/introspect")
         // Tilgang
         System.setProperty("integrasjon.tilgang.url", "http://localhost:${tilgang.port()}")
         System.setProperty("integrasjon.tilgang.scope", "scope")
