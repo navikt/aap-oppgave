@@ -24,7 +24,7 @@ class PlukkOppgaveService(
     val flytJobbRepository: FlytJobbRepository,
 ) {
     private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
-    private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
 
     fun plukkOppgave(

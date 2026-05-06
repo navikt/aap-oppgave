@@ -2177,7 +2177,6 @@ class OppdaterOppgaveServiceTest {
     private fun sendBehandlingFlytStoppetHendelse(hendelse: BehandlingFlytStoppetHendelse) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                graphClient,
                 UnleashService(FakeUnleash().apply {
                     enableAll()
                 }),
@@ -2195,7 +2194,6 @@ class OppdaterOppgaveServiceTest {
     private fun sendDokumentFlytStoppetHendelse(hendelse: DokumentflytStoppetHendelse) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                graphClient,
                 UnleashService(FakeUnleash().apply {
                     enableAll()
                 }),

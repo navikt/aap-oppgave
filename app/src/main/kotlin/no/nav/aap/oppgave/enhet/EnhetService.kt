@@ -13,7 +13,6 @@ import no.nav.aap.oppgave.klienter.nom.skjerming.NomSkjermingGateway
 import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingGateway
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
-import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
@@ -58,13 +57,13 @@ interface IEnhetService {
  */
 class EnhetService(
     private val msGraphClient: IMsGraphGateway,
-    private val pdlGraphqlKlient: IPdlGateway = PdlGraphqlGateway.withClientCredentialsRestClient(),
+    private val pdlGraphqlKlient: IPdlGateway,
     private val nomSkjermingGateway: SkjermingGateway = NomSkjermingGateway(),
-    private val norgKlient: INorgGateway = NorgGateway(),
+    private val norgKlient: INorgGateway,
     private val veilarbarenaKlient: IVeilarbarenaGateway = VeilarbarenaGateway(),
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 ) : IEnhetService {
-    private val log = LoggerFactory.getLogger(EnhetService::class.java)
+    private val log = LoggerFactory.getLogger(this::class.java)
 
     override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
         return msGraphClient.hentEnhetsgrupper(ident, currentToken).groups

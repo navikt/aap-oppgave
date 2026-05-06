@@ -16,7 +16,7 @@ class ReserverOppgaveService(
     private val flytJobbRepository: FlytJobbRepository,
 ) {
     private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val log = LoggerFactory.getLogger(this::class.java)
 
     fun avreserverOppgave(
         oppgaveId: OppgaveId,

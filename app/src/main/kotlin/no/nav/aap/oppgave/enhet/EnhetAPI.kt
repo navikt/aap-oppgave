@@ -20,7 +20,6 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
@@ -34,19 +33,26 @@ import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 
-fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.hentEnhetApi(
+    enhetService: EnhetService,
+    norgGateway: NorgGateway,
+    prometheus: PrometheusMeterRegistry
+) {
     route("/enheter").get<Unit, List<EnhetDto>> {
         prometheus.httpCallCounter("/enheter").increment()
-        val enheter = EnhetService(msGraphClient).hentEnheter(ident(), token())
-        val enhetNrTilNavn = NorgGateway().hentEnheter()
+
+        val enheter = enhetService.hentEnheter(ident(), token())
+        val enhetNrTilNavn = norgGateway.hentEnheter()
         val enheterMedNavn = enheter.map { EnhetDto(it, enhetNrTilNavn[it] ?: "") }
+
         respond(enheterMedNavn)
     }
+}
 
-fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.nayEnhetForPerson(enhetService: EnhetService, prometheus: PrometheusMeterRegistry) =
     route("/enhet/nay/person").post<Unit, EnhetNrDto, EnhetForPersonRequest> { _, request ->
         prometheus.httpCallCounter("/enhet/nay/person").increment()
-        val enhet = EnhetService(msGraphClient).finnNayEnhet(request.personIdent, request.relevanteIdenter)
+        val enhet = enhetService.finnNayEnhet(request.personIdent, request.relevanteIdenter)
         respond(EnhetNrDto(enhetNr = enhet.enhet))
     }
 
@@ -217,7 +223,7 @@ data class EnhetSynkroniseringRespons(
 
 fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphGateway,
+    enhetService: EnhetService,
     prometheus: PrometheusMeterRegistry
 ) =
     route("/synkroniser-enhet-paa-oppgave").post<Unit, EnhetSynkroniseringRespons, EnhetSynkroniseringRequest> { _, request ->
@@ -226,7 +232,6 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
 
         log.info("Synkoniserer oppgave for ${request.oppgaveId} ")
         val respons = dataSource.transaction { connection ->
-            val enhetService = EnhetService(msGraphClient)
             val oppgaveRepository = OppgaveRepository(connection)
 
             val oppgave = oppgaveRepository.hentOppgave(request.oppgaveId)

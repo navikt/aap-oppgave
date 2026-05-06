@@ -11,6 +11,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOpp
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
@@ -24,7 +25,7 @@ import org.slf4j.LoggerFactory
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphGateway,
+    enhetService: EnhetService,
     prometheus: PrometheusMeterRegistry
 ) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
@@ -36,7 +37,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     prometheus.httpCallCounter("/oppdater-oppgaver").increment()
     dataSource.transaction { connection ->
         OppdaterOppgaveService(
-            msGraphClient,
+            enhetService = enhetService,
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
@@ -50,7 +51,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
 
 fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphGateway,
+    enhetService: EnhetService,
     prometheus: PrometheusMeterRegistry
 ) = route("/oppdater-postmottak-oppgaver").authorizedPost<Unit, Unit, DokumentflytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
@@ -62,7 +63,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     prometheus.httpCallCounter("/oppdater-postmottak-oppgaver").increment()
     dataSource.transaction { connection ->
         OppdaterOppgaveService(
-            msGraphClient,
+            enhetService = enhetService,
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
@@ -74,7 +75,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
 
 fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphGateway,
+    enhetService: EnhetService,
     prometheus: PrometheusMeterRegistry
 ) = route("/oppdater-tilbakekreving-oppgaver").authorizedPost<Unit, Unit, TilbakekrevingsbehandlingOppdatertHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
@@ -88,7 +89,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
         .info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
     dataSource.transaction { connection ->
         OppdaterOppgaveService(
-            msGraphClient,
+            enhetService = enhetService,
             oppgaveRepository = OppgaveRepository(connection),
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),

@@ -48,6 +48,7 @@ import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
@@ -1021,7 +1022,11 @@ class OppgaveApiTest {
         val oppgave2Før = hentOppgave(oppgaveId2)
 
         initDatasource(dbConfig(), prometheus).transaction {
-            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it)).utfør(
+            OppdaterOppgaveEnhetJobb(
+                OppgaveRepository(it),
+                FlytJobbRepositoryImpl(it),
+                PdlGraphqlGateway.withClientCredentialsRestClient()
+            ).utfør(
                 JobbInput(
                     OppdaterOppgaveEnhetJobb
                 )

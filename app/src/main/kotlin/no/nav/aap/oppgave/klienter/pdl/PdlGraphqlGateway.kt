@@ -18,7 +18,7 @@ interface IPdlGateway {
     fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData
 }
 
-class PdlGraphqlGateway(
+class PdlGraphqlGateway private constructor(
     private val restClient: RestClient<InputStream>
 ) : IPdlGateway {
     private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")

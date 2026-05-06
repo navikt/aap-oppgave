@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.oppgaveliste
 
+import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.miljo.Miljø
@@ -11,7 +12,6 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
-import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -20,14 +20,14 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
-import java.util.*
 
 const val maksOppgaver = 50
 
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
-    private val norgGateway: INorgGateway = NorgGateway()
+    private val enhetService: EnhetService,
+    private val norgGateway: INorgGateway
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {
@@ -63,7 +63,6 @@ class OppgavelisteService(
     }
 
     fun hentOppgaverMedTilgang(
-        enhetService: EnhetService,
         utvidetFilter: UtvidetOppgavelisteFilter?,
         enheter: Set<String>,
         paging: Paging,
@@ -116,7 +115,7 @@ class OppgavelisteService(
             }
 
         return FinnOppgaverDto(
-            oppgaver = oppgaver.filtrerPåTilgang(enhetService, token, ident),
+            oppgaver = oppgaver.filtrerPåTilgang(token, ident),
             antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
             antallTotalt = finnOppgaverDto.antallTotalt,
         )
@@ -168,7 +167,6 @@ class OppgavelisteService(
         this.copy(markeringer = markeringer)
 
     private fun List<OppgaveDto>.filtrerPåTilgang(
-        enhetService: EnhetService,
         token: OidcToken,
         ident: String
     ): List<OppgaveDto> {

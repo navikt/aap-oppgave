@@ -4,18 +4,22 @@ import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import javax.sql.DataSource
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetResponse
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.tilgang.AuthorizationParamPathConfig
 import no.nav.aap.tilgang.authorizedGet
-import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
     dataSource: DataSource,
+    enhetService: EnhetService,
+    norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
 ) = route("/{referanse}/hent-oppgave-enhet").authorizedGet<BehandlingReferanse, OppgaveEnhetResponse>(
     AuthorizationParamPathConfig(
@@ -27,7 +31,9 @@ fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
     val oppgaver = dataSource.transaction(readOnly = true) { connection ->
         OppgavelisteService(
             OppgaveRepository(connection),
-            MarkeringRepository(connection)
+            MarkeringRepository(connection),
+            enhetService,
+            norgGateway,
         ).hentOppgaveEnhetListe(behandlingReferanse)
     }
 
