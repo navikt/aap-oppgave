@@ -3,6 +3,7 @@ package no.nav.aap.oppgave.plukk
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
@@ -14,8 +15,8 @@ import java.util.UUID
 class ReserverOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
+    private val ansattInfoGateway: AnsattInfoGateway = NomApiGateway.withClientCredentialsRestClient(),
 ) {
-    private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun avreserverOppgave(

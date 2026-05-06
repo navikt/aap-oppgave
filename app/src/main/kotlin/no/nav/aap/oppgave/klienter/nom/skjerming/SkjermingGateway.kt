@@ -43,6 +43,8 @@ class NomSkjermingGateway : SkjermingGateway {
         }
 
     companion object {
+        val instance: SkjermingGateway by lazy { NomSkjermingGateway() }
+
         private val skjermingCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofHours(4))

@@ -38,7 +38,7 @@ fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphGateway, prometheus: 
     route("/enheter").get<Unit, List<EnhetDto>> {
         prometheus.httpCallCounter("/enheter").increment()
         val enheter = EnhetService(msGraphClient).hentEnheter(ident(), token())
-        val enhetNrTilNavn = NorgGateway().hentEnheter()
+        val enhetNrTilNavn = NorgGateway.instance.hentEnheter()
         val enheterMedNavn = enheter.map { EnhetDto(it, enhetNrTilNavn[it] ?: "") }
         respond(enheterMedNavn)
     }

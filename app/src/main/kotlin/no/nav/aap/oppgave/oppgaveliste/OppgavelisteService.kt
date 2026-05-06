@@ -27,7 +27,7 @@ const val maksOppgaver = 50
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
-    private val norgGateway: INorgGateway = NorgGateway()
+    private val norgGateway: INorgGateway = NorgGateway.instance
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {

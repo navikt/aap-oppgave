@@ -104,6 +104,8 @@ class NorgGateway: INorgGateway {
     }
 
     companion object {
+        val instance: INorgGateway by lazy { NorgGateway() }
+
         private const val ENHETER_CACHE_KEY = "NORG2_ALLE_ENHETER"
 
         private val enheterCache = Caffeine.newBuilder()

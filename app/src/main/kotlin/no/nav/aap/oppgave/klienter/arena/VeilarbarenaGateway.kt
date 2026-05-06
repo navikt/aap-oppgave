@@ -60,6 +60,8 @@ class VeilarbarenaGateway : IVeilarbarenaGateway {
         }.oppfolgingsenhet
 
     companion object {
+        val instance: IVeilarbarenaGateway by lazy { VeilarbarenaGateway() }
+
         private val oppfølgingsenhetCache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofHours(4))

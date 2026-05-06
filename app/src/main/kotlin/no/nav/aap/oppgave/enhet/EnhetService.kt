@@ -59,9 +59,9 @@ interface IEnhetService {
 class EnhetService(
     private val msGraphClient: IMsGraphGateway,
     private val pdlGraphqlKlient: IPdlGateway = PdlGraphqlGateway.withClientCredentialsRestClient(),
-    private val nomSkjermingGateway: SkjermingGateway = NomSkjermingGateway(),
-    private val norgKlient: INorgGateway = NorgGateway(),
-    private val veilarbarenaKlient: IVeilarbarenaGateway = VeilarbarenaGateway(),
+    private val nomSkjermingGateway: SkjermingGateway = NomSkjermingGateway.instance,
+    private val norgKlient: INorgGateway = NorgGateway.instance,
+    private val veilarbarenaKlient: IVeilarbarenaGateway = VeilarbarenaGateway.instance,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 ) : IEnhetService {
     private val log = LoggerFactory.getLogger(EnhetService::class.java)

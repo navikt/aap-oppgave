@@ -10,6 +10,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
@@ -22,8 +23,8 @@ class PlukkOppgaveService(
     val enhetService: IEnhetService,
     val oppgaveRepository: OppgaveRepository,
     val flytJobbRepository: FlytJobbRepository,
+    private val ansattInfoGateway: AnsattInfoGateway = NomApiGateway.withClientCredentialsRestClient(),
 ) {
-    private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
 
 

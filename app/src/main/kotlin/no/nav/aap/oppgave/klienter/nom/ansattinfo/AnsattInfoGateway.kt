@@ -39,7 +39,7 @@ class NomApiGateway(
             CaffeineCacheMetrics.monitor(prometheus, saksbehandlerNavnCache, "nom_ansatt")
         }
 
-        fun withClientCredentialsRestClient() =
+        private val clientCredentialsGateway: NomApiGateway by lazy {
             NomApiGateway(
                 RestClient(
                     config = getClientConfig(),
@@ -48,6 +48,9 @@ class NomApiGateway(
                     prometheus = prometheus
                 )
             )
+        }
+
+        fun withClientCredentialsRestClient() = clientCredentialsGateway
 
     }
 
