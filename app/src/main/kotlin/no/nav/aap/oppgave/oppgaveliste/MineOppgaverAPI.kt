@@ -6,15 +6,17 @@ import com.papsign.ktor.openapigen.route.path.normal.get
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import javax.sql.DataSource
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
-import javax.sql.DataSource
 
 data class MineOppgaverRequest(
     @param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false,
@@ -27,6 +29,8 @@ data class MineOppgaverRequest(
  */
 fun NormalOpenAPIRoute.mineOppgaverApi(
     dataSource: DataSource,
+    enhetService: EnhetService,
+    norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
 ) = route("/mine-oppgaver").get<MineOppgaverRequest, OppgavelisteRespons> { req ->
     prometheus.httpCallCounter("/mine-oppgaver").increment()
@@ -34,7 +38,9 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
         dataSource.transaction(readOnly = true) { connection ->
             OppgavelisteService(
                 OppgaveRepository(connection),
-                MarkeringRepository(connection)
+                MarkeringRepository(connection),
+                enhetService,
+                norgGateway
             ).hentMineOppgaver(
                 ident = ident(),
                 kunPaaVent = req.kunPaaVent,

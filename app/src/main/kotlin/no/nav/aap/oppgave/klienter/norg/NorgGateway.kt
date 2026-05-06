@@ -37,8 +37,7 @@ interface INorgGateway {
 }
 
 class NorgGateway: INorgGateway {
-
-    private val log = LoggerFactory.getLogger(NorgGateway::class.java)
+    private val log = LoggerFactory.getLogger(this::class.java)
 
     private val url = URI.create(requiredConfigForKey("integrasjon.norg.url"))
     private val config = ClientConfig()

@@ -23,6 +23,8 @@ import no.nav.aap.oppgave.plukk.TilgangGateway
 import no.nav.aap.tilgang.Operasjon
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
+import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
 
 private val log = LoggerFactory.getLogger("hentOppgaveApi")
 
@@ -31,13 +33,17 @@ private val log = LoggerFactory.getLogger("hentOppgaveApi")
  */
 fun NormalOpenAPIRoute.hentOppgaveApi(
     dataSource: DataSource,
+    enhetService: EnhetService,
+    norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
 ) = route("/{referanse}/hent-oppgave").get<BehandlingReferanse, OppgaveDto> { request ->
     prometheus.httpCallCounter("/hent-oppgave").increment()
     val oppgave = dataSource.transaction(readOnly = true) { connection ->
         OppgavelisteService(
             OppgaveRepository(connection),
-            MarkeringRepository(connection)
+            MarkeringRepository(connection),
+            enhetService,
+            norgGateway
         ).hentAktivOppgave(request)
     }
 
@@ -54,6 +60,8 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
  */
 fun NormalOpenAPIRoute.søkApi(
     dataSource: DataSource,
+    enhetService: EnhetService,
+    norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
 ) {
     route("/sok").post<Unit, SøkResponse, SøkDto> { _, søk ->
@@ -63,7 +71,9 @@ fun NormalOpenAPIRoute.søkApi(
                 val søketekst = søk.søketekst.trim()
                 OppgavelisteService(
                     OppgaveRepository(connection),
-                    MarkeringRepository(connection)
+                    MarkeringRepository(connection),
+                    enhetService,
+                    norgGateway
                 ).søkEtterOppgaver(søketekst)
             }
 

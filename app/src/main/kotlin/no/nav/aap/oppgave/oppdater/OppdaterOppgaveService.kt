@@ -59,11 +59,10 @@ private val AVSLUTTEDE_STATUSER = setOf(
 )
 
 class OppdaterOppgaveService(
-    msGraphClient: IMsGraphGateway,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingGateway = VeilarbarboppfolgingGateway,
     private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingGateway = SykefravarsoppfolgingGateway,
-    private val enhetService: IEnhetService = EnhetService(msGraphClient),
+    private val enhetService: IEnhetService,
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
     private val tilbakekrevingRepository: TilbakekrevingRepository,

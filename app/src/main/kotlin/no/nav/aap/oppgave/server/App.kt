@@ -34,6 +34,7 @@ import no.nav.aap.motor.retry.RetryService
 import no.nav.aap.oppgave.actuator.actuatorApi
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.drift.driftApi
+import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.enhetStatus
 import no.nav.aap.oppgave.enhet.hentEnhetApi
 import no.nav.aap.oppgave.enhet.nayEnhetForPerson
@@ -42,6 +43,8 @@ import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
+import no.nav.aap.oppgave.klienter.norg.NorgGateway
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.markering.markeringApi
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
@@ -121,7 +124,13 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     val dataSource = initDatasource(dbConfig, prometheus)
     Migrering.migrate(dataSource)
 
-    val iMsGraphClient = MsGraphGateway(prometheus)
+    val norgGateway = NorgGateway()
+    val pdlGraphqlGateway = PdlGraphqlGateway.withClientCredentialsRestClient()
+    val enhetService = EnhetService(
+        msGraphClient = MsGraphGateway(prometheus),
+        norgKlient = norgGateway,
+        pdlGraphqlKlient = pdlGraphqlGateway
+    )
 
     motor(dataSource, prometheus)
 
@@ -131,20 +140,20 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
             apiRouting {
                 // Oppdater oppgaver fra applikasjonene
-                oppdaterBehandlingOppgaverApi(dataSource, iMsGraphClient, prometheus)
-                oppdaterPostmottakOppgaverApi(dataSource, iMsGraphClient, prometheus)
-                oppdaterTilbakekrevingOppgaverApi(dataSource, iMsGraphClient, prometheus)
+                oppdaterBehandlingOppgaverApi(dataSource, enhetService, prometheus)
+                oppdaterPostmottakOppgaverApi(dataSource, enhetService, prometheus)
+                oppdaterTilbakekrevingOppgaverApi(dataSource, enhetService, prometheus)
                 // Plukk/endre oppgave
-                plukkOppgaveApi(dataSource, prometheus)
+                plukkOppgaveApi(dataSource, prometheus, enhetService)
                 avreserverOppgave(dataSource, prometheus)
                 mottattDokumentApi(dataSource, prometheus)
-                tildelOppgaveApi(dataSource, prometheus)
+                tildelOppgaveApi(dataSource, enhetService, norgGateway, prometheus)
                 // Hent oppgave(r)
-                hentOppgaveApi(dataSource, prometheus)
-                oppgavelisteApi(dataSource, prometheus)
-                hentOppgaveEnhetApi(dataSource, prometheus)
-                mineOppgaverApi(dataSource, prometheus)
-                søkApi(dataSource, prometheus)
+                hentOppgaveApi(dataSource, enhetService, norgGateway, prometheus)
+                oppgavelisteApi(dataSource, enhetService, norgGateway, prometheus)
+                hentOppgaveEnhetApi(dataSource, enhetService, norgGateway, prometheus)
+                mineOppgaverApi(dataSource, enhetService, norgGateway, prometheus)
+                søkApi(dataSource, enhetService, norgGateway, prometheus)
                 markeringApi(dataSource, prometheus)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
@@ -154,13 +163,13 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 hentAntallOppgaver(dataSource, prometheus)
                 // Enheter
                 enhetStatus(dataSource)
-                hentEnhetApi(iMsGraphClient, prometheus)
-                nayEnhetForPerson(iMsGraphClient, prometheus)
-                synkroniserEnhetPåOppgaveApi(dataSource, iMsGraphClient, prometheus)
+                hentEnhetApi(enhetService, norgGateway, prometheus)
+                nayEnhetForPerson(enhetService, prometheus)
+                synkroniserEnhetPåOppgaveApi(dataSource, enhetService, prometheus)
                 // Motor-API
                 motorApi(dataSource)
                 // Drifts-API
-                driftApi(dataSource)
+                driftApi(dataSource, enhetService, norgGateway)
             }
         }
         actuatorApi(prometheus)
