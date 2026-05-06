@@ -72,7 +72,8 @@ class OppgavelisteService(
         token: OidcToken,
         ident: String,
         sortBy: OppgaveSorteringFelt?,
-        sortOrder: OppgaveSorteringRekkefølge?
+        sortOrder: OppgaveSorteringRekkefølge?,
+        hastemarkeringerFørst: Boolean
     ): FinnOppgaverDto {
         val sortOrderMedDefault = sortOrder
             ?: when (Miljø.er()) {
@@ -114,8 +115,15 @@ class OppgavelisteService(
                 oppgave.leggPåMarkeringer(markeringer.tilDto())
             }
 
+        val sorterteOppgaver = if (hastemarkeringerFørst) {
+            val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
+            medMarkering + utenMarkering
+        } else {
+            oppgaver
+        }
+
         return FinnOppgaverDto(
-            oppgaver = oppgaver.filtrerPåTilgang(token, ident),
+            oppgaver = sorterteOppgaver.filtrerPåTilgang(token, ident),
             antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
             antallTotalt = finnOppgaverDto.antallTotalt,
         )
@@ -125,9 +133,11 @@ class OppgavelisteService(
         ident: String,
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
-        sortOrder: OppgaveSorteringRekkefølge?
-    ): List<OppgaveDto> =
-        oppgaveRepository.hentMineOppgaver(
+        sortOrder: OppgaveSorteringRekkefølge?,
+        hastemarkeringerFørst: Boolean
+    ): List<OppgaveDto> {
+
+        val oppgaver = oppgaveRepository.hentMineOppgaver(
             ident = ident,
             kunPåVent = kunPaaVent == true,
             sortBy = sortBy,
@@ -139,6 +149,14 @@ class OppgavelisteService(
                 }).tilDto()
             )
         }.hentPersonNavn()
+
+        return if (hastemarkeringerFørst) {
+            val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
+            medMarkering + utenMarkering
+        } else {
+            oppgaver
+        }
+    }
 
     fun hentOppgaverForBehandling(referanse: UUID): List<OppgaveDto> {
         return oppgaveRepository.hentOppgaver(referanse)
