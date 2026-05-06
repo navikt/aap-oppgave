@@ -1,5 +1,7 @@
 package no.nav.aap.oppgave.plukk
 
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon as PostmottakDefinisjon
 import java.net.URI
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
@@ -38,7 +40,7 @@ object TilgangGateway {
             harTilgangTilJournalpost(
                 JournalpostTilgangRequest(
                     journalpostId = avklaringsbehovReferanse.journalpostId!!,
-                    avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
+                    påkrevdRolle = avklaringsbehovReferanse.utledPåkrevdRolle(),
                     operasjon = operasjon
                 ), token
             )
@@ -55,7 +57,7 @@ object TilgangGateway {
             harTilgangTilBehandling(
                 BehandlingTilgangRequest(
                     behandlingsreferanse = avklaringsbehovReferanse.referanse!!,
-                    avklaringsbehovKode = avklaringsbehovReferanse.avklaringsbehovKode,
+                    påkrevdRolle = avklaringsbehovReferanse.utledPåkrevdRolle(),
                     operasjon = operasjon
                 ), token
             )
@@ -113,5 +115,13 @@ object TilgangGateway {
             TilbakeKrevingAvklaringsbehovKoder.BESLUTTER_VEDTAK_TILBAKEKREVING -> listOf(Rolle.BESLUTTER)
             TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING -> listOf(Rolle.SAKSBEHANDLER_NASJONAL)
         }
+    }
+}
+
+private fun AvklaringsbehovReferanseDto.utledPåkrevdRolle(): List<Rolle> {
+    return if (behandlingstype.fraBehandlingsflyt) {
+        Definisjon.forKode(avklaringsbehovKode).løsesAv
+    } else {
+        PostmottakDefinisjon.forKode(avklaringsbehovKode).løsesAv
     }
 }
