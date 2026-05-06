@@ -4,6 +4,7 @@ data class OppgavelisteRequest(
     val filterId: Long,
     val enheter: Set<String> = emptySet(),
     val veileder: Boolean = false,
+    val hastemarkeringerFørst: Boolean? = false,
     val paging: Paging,
     val kunLedigeOppgaver: Boolean? = true,
     val utvidetFilter: UtvidetOppgavelisteFilter? = null,
