@@ -1,7 +1,7 @@
 package no.nav.aap.oppgave.tildel
 
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 
 class TildelOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
-    private val msGraphClient: MsGraphGateway,
+    private val msGraphClient: IMsGraphGateway,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 ){
     private val log = LoggerFactory.getLogger(TildelOppgaveService::class.java)

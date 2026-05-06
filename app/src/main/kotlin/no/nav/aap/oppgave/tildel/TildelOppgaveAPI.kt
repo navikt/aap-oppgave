@@ -10,7 +10,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
@@ -24,14 +24,14 @@ import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
 import javax.sql.DataSource
 
-fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
+fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) {
     route("/saksbehandler-sok").authorizedPost<Unit, SaksbehandlerSøkResponse, SaksbehandlerSøkRequest>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         val saksbehandlereMedTilgang = dataSource.transaction { connection ->
             TildelOppgaveService(
                 oppgaveRepository = OppgaveRepository(connection),
-                msGraphClient = MsGraphGateway(prometheus),
+                msGraphClient = msGraphClient,
             ).søkEtterSaksbehandlere(
                 søketekst = request.søketekst,
                 oppgaver = request.oppgaver,

@@ -135,10 +135,10 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 oppdaterPostmottakOppgaverApi(dataSource, iMsGraphClient, prometheus)
                 oppdaterTilbakekrevingOppgaverApi(dataSource, iMsGraphClient, prometheus)
                 // Plukk/endre oppgave
-                plukkOppgaveApi(dataSource, prometheus)
+                plukkOppgaveApi(dataSource, iMsGraphClient, prometheus)
                 avreserverOppgave(dataSource, prometheus)
                 mottattDokumentApi(dataSource, prometheus)
-                tildelOppgaveApi(dataSource, prometheus)
+                tildelOppgaveApi(dataSource, iMsGraphClient, prometheus)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
                 oppgavelisteApi(dataSource, prometheus)

@@ -30,7 +30,7 @@ class PdlGraphqlGateway(
 
         private const val BEHANDLINGSNUMMER_AAP_SAKSBEHANDLING = "B287"
 
-        fun withClientCredentialsRestClient() =
+        private val clientCredentialsGateway: PdlGraphqlGateway by lazy {
             PdlGraphqlGateway(
                 RestClient(
                     config = getClientConfig(),
@@ -39,6 +39,9 @@ class PdlGraphqlGateway(
                     prometheus = prometheus
                 )
             )
+        }
+
+        fun withClientCredentialsRestClient() = clientCredentialsGateway
 
     }
 

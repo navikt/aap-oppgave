@@ -13,7 +13,7 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
-import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
+import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.tilgang.Beslutter
@@ -27,12 +27,12 @@ import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("plukkApi")
 
-fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.plukkOppgaveApi(dataSource: DataSource, msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
     route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
-        val enhetService = EnhetService(msGraphClient = MsGraphGateway(prometheus))
+        val enhetService = EnhetService(msGraphClient = msGraphClient)
         val oppgave = dataSource.transaction { connection ->
             PlukkOppgaveService(
                 enhetService,
