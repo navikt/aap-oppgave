@@ -187,7 +187,10 @@ class OppgavelisteService(
         token: OidcToken,
         oppgaver: List<OppgaveDto>
     ): List<OppgaveDto> =
-        if (!enhetService.kanSaksbehandleFortroligAdresse(ident, token)) {
+        if (oppgaver.any { it.harFortroligAdresse == true } && !enhetService.kanSaksbehandleFortroligAdresse(
+                ident,
+                token
+            )) {
             oppgaver.filterNot { it.harFortroligAdresse == true }
         } else {
             oppgaver
