@@ -434,7 +434,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         } else {
             0
         }
-        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
+        val limit = paging?.antallPerSide ?: 50
         val kunLedigeQuery =
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
@@ -617,7 +617,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         } else {
             0
         }
-        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
+        val limit = paging?.antallPerSide ?: 50
 
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
         val sortering = oppgaveSorteringQuery(
