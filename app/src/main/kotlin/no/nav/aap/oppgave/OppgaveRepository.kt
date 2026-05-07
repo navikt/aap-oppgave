@@ -9,14 +9,14 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
@@ -427,7 +427,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         kunLedigeOppgaver: Boolean? = true,
         utvidetFilter: UtvidetOppgavelisteFilter? = null,
         sortBy: OppgaveSorteringFelt? = null,
-        enheterMedNavn: Map<String, String> = emptyMap()
+        enheterMedNavn: Map<String, String> = emptyMap(),
+        hastemarkeringerFørst: Boolean
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
@@ -442,6 +443,11 @@ class OppgaveRepository(private val connection: DBConnection) {
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
+        val orderBy = if (hastemarkeringerFørst) {
+            "ORDER BY CASE WHEN EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref) THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
+        } else {
+            "ORDER BY $sortering $sorteringsRekkefølge"
+        }
 
         // COUNT(*) OVER() beregnes som et vindusfunksjonskall før OFFSET/FETCH, så vi slipper en ekstra spørring
         val hentNesteOppgaveQuery = """
@@ -459,15 +465,23 @@ class OppgaveRepository(private val connection: DBConnection) {
             ) sao ON true
             WHERE 
                 ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
-            ORDER BY ${sortering} ${sorteringsRekkefølge} 
+            
+            $orderBy
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
         val resultat = connection.queryList(hentNesteOppgaveQuery) {
             setRowMapper { row ->
                 val tilbakekreving = getTilbakekreving(row, connection)
-                val enhetNrForrigeOppgave = try { row.getStringOrNull("ENHET_FORRIGE_OPPGAVE") } catch (_: Exception) { null }
-                Pair(oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn), row.getInt("total_count"))
+                val enhetNrForrigeOppgave = try {
+                    row.getStringOrNull("ENHET_FORRIGE_OPPGAVE")
+                } catch (_: Exception) {
+                    null
+                }
+                Pair(
+                    oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn),
+                    row.getInt("total_count")
+                )
             }
         }
 
