@@ -621,18 +621,10 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun hentMineOppgaver(
         ident: String,
-        paging: Paging? = null,
         kunPåVent: Boolean = false,
         sortBy: OppgaveSorteringFelt? = null,
         sortOrder: OppgaveSorteringRekkefølge? = null
     ): List<OppgaveDto> {
-        val offset = if (paging != null) {
-            (paging.side - 1) * paging.antallPerSide
-        } else {
-            0
-        }
-        val limit = paging?.antallPerSide ?: 50
-
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
         val sortering = oppgaveSorteringQuery(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
@@ -645,7 +637,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             WHERE RESERVERT_AV = ?
               AND STATUS != 'AVSLUTTET' $kunPåVentQuery
             ORDER BY $sortering $sorteringRekkefølge
-            OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
         return connection.queryList(query) {

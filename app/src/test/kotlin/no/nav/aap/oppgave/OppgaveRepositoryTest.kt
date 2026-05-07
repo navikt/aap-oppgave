@@ -341,12 +341,6 @@ class OppgaveRepositoryTest {
         reserverOppgave(oppgave2, bruker)
         reserverOppgave(oppgave3, bruker)
         reserverOppgave(oppgave4, bruker)
-
-        val mineOppgaver = mineOppgaver(bruker)
-        assertThat(mineOppgaver).hasSize(4)
-
-        val mineOppgaverPaged = mineOppgaver(bruker, Paging(1, 2))
-        assertThat(mineOppgaverPaged).hasSize(2)
     }
 
     @Test
@@ -1117,9 +1111,9 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun mineOppgaver(ident: String, paging: Paging? = null): List<OppgaveDto> {
+    private fun mineOppgaver(ident: String): List<OppgaveDto> {
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).hentMineOppgaver(ident, paging)
+            OppgaveRepository(connection).hentMineOppgaver(ident)
         }
     }
 
