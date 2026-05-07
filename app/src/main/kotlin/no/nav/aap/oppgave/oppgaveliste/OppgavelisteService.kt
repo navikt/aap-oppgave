@@ -108,7 +108,8 @@ class OppgavelisteService(
             kunLedigeOppgaver = kunLedigeOppgaver,
             utvidetFilter = utvidetFilter,
             sortBy = sortBy,
-            enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty()
+            enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty(),
+            hastemarkeringerFørst = unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst)
         )
 
         val oppgaver =
@@ -118,15 +119,8 @@ class OppgavelisteService(
                 oppgave.leggPåMarkeringer(markeringer.tilDto())
             }
 
-        val sorterteOppgaver = if (unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst)) {
-            val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
-            medMarkering + utenMarkering
-        } else {
-            oppgaver
-        }
-
         return FinnOppgaverDto(
-            oppgaver = sorterteOppgaver.filtrerPåTilgang(token, ident),
+            oppgaver = oppgaver.filtrerPåTilgang(token, ident),
             antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
             antallTotalt = finnOppgaverDto.antallTotalt,
         )
