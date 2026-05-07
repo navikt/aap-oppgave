@@ -104,6 +104,11 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                             && oppgave.avklaringsbehovKode == Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name
                 }
 
+            val student = oppgaver.firstOrNull { oppgave ->
+                erHosNAY(oppgave)
+                        && oppgave.avklaringsbehovKode == Definisjon.AVKLAR_STUDENT.kode.name
+            }
+
             val kvalitetssikrer =
                 oppgaver.filter { oppgave -> erKvalitetssikring(oppgave) }
 
@@ -127,6 +132,14 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                     enhet = medlemskap.enhetForKø,
                     saksnummer = requireNotNull(medlemskap.saksnummer),
                     markertSomHasteSak = erHastesak(medlemskap)
+                )
+
+                student != null && student.erÅpen -> NåværendeEnhet(
+                    oversendtDato = student.opprettetTidspunkt.toLocalDate(),
+                    oppgaveKategori = OppgaveKategori.STUDENT,
+                    enhet = student.enhetForKø,
+                    saksnummer = requireNotNull(student.saksnummer),
+                    markertSomHasteSak = erHastesak(student)
                 )
 
                 lokalkontoroppgaver.isNotEmpty() && lokalkontoroppgaver.any { it.erÅpen } -> {
@@ -163,7 +176,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                 }
 
                 beslutter.isNotEmpty() && beslutter.any { it.erÅpen } -> {
-                    val førsteOppgave = beslutter.first()
+                    val førsteOppgave =
+                        oversendtTilNay.first() // oversendtDato skal fortsatt være dato behandling gikk til NAY
                     NåværendeEnhet(
                         oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
                         oppgaveKategori = OppgaveKategori.BESLUTTER,
