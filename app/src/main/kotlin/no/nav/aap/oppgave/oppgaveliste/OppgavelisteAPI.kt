@@ -61,7 +61,6 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     ident(),
                     request.sortering?.sortBy,
                     request.sortering?.sortOrder,
-                    hastemarkeringerFørst = request.hastemarkeringerFørst == true
                 ), filter.behandlingstyper)
             }
 

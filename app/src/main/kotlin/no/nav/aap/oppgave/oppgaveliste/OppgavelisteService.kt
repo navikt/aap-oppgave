@@ -20,6 +20,9 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 
 const val maksOppgaver = 50
 
@@ -27,7 +30,8 @@ class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
     private val enhetService: EnhetService,
-    private val norgGateway: INorgGateway
+    private val norgGateway: INorgGateway,
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {
@@ -72,8 +76,7 @@ class OppgavelisteService(
         token: OidcToken,
         ident: String,
         sortBy: OppgaveSorteringFelt?,
-        sortOrder: OppgaveSorteringRekkefølge?,
-        hastemarkeringerFørst: Boolean
+        sortOrder: OppgaveSorteringRekkefølge?
     ): FinnOppgaverDto {
         val sortOrderMedDefault = sortOrder
             ?: when (Miljø.er()) {
@@ -115,7 +118,7 @@ class OppgavelisteService(
                 oppgave.leggPåMarkeringer(markeringer.tilDto())
             }
 
-        val sorterteOppgaver = if (hastemarkeringerFørst) {
+        val sorterteOppgaver = if (unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst)) {
             val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
             medMarkering + utenMarkering
         } else {
@@ -133,8 +136,7 @@ class OppgavelisteService(
         ident: String,
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
-        sortOrder: OppgaveSorteringRekkefølge?,
-        hastemarkeringerFørst: Boolean
+        sortOrder: OppgaveSorteringRekkefølge?
     ): List<OppgaveDto> {
 
         val oppgaver = oppgaveRepository.hentMineOppgaver(
@@ -150,7 +152,7 @@ class OppgavelisteService(
             )
         }.hentPersonNavn()
 
-        return if (hastemarkeringerFørst) {
+        return if (unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst)) {
             val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
             medMarkering + utenMarkering
         } else {
