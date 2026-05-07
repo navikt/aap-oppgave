@@ -21,7 +21,7 @@ import no.nav.aap.oppgave.server.authenticate.ident
 data class MineOppgaverRequest(
     @param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false,
     @param:QueryParam("Sorter oppgaveliste") val sortby: OppgaveSorteringFelt? = null,
-    @param:QueryParam("Sorteringsrekkefølge") val sortorder: OppgaveSorteringRekkefølge? = null,
+    @param:QueryParam("Sorteringsrekkefølge") val sortorder: OppgaveSorteringRekkefølge? = null
 )
 
 /**
@@ -45,7 +45,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
                 ident = ident(),
                 kunPaaVent = req.kunPaaVent,
                 sortBy = req.sortby,
-                sortOrder = req.sortorder,
+                sortOrder = req.sortorder
             )
         }
     respond(

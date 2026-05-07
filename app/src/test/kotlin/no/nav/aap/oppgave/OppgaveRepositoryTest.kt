@@ -29,7 +29,7 @@ import java.math.BigDecimal
 import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 import kotlin.test.fail
 
 class OppgaveRepositoryTest {
