@@ -76,7 +76,8 @@ class OppgavelisteService(
         token: OidcToken,
         ident: String,
         sortBy: OppgaveSorteringFelt?,
-        sortOrder: OppgaveSorteringRekkefølge?
+        sortOrder: OppgaveSorteringRekkefølge?,
+        hastemarkeringerFørst: Boolean
     ): FinnOppgaverDto {
         val sortOrderMedDefault = sortOrder
             ?: when (Miljø.er()) {
@@ -109,7 +110,7 @@ class OppgavelisteService(
             utvidetFilter = utvidetFilter,
             sortBy = sortBy,
             enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty(),
-            hastemarkeringerFørst = unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst)
+            hastemarkeringerFørst = unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst) && hastemarkeringerFørst
         )
 
         val oppgaver =
@@ -130,7 +131,8 @@ class OppgavelisteService(
         ident: String,
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
-        sortOrder: OppgaveSorteringRekkefølge?
+        sortOrder: OppgaveSorteringRekkefølge?,
+        hastemarkeringerFørst: Boolean
     ): List<OppgaveDto> {
 
         val oppgaver = oppgaveRepository.hentMineOppgaver(
@@ -146,7 +148,7 @@ class OppgavelisteService(
             )
         }.hentPersonNavn()
 
-        return if (unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst)) {
+        return if (unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst) && hastemarkeringerFørst) {
             val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
             medMarkering + utenMarkering
         } else {
