@@ -26,7 +26,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         årsakTilOpprettelse = this.årsakTilOpprettelse.name,
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(this.saksnummer),
+        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(this.saksnummer, this.behandlingType.tilBehandlingstype()),
         reserverTil = this.reserverTil,
         relevanteIdenter = this.relevanteIdenterPåBehandling ?: emptyList(),
         venteInformasjon = if (this.erPåVent) {
@@ -82,11 +82,11 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.Aktivitetsplikt11_9 -> Behandlingstype.AKTIVITETSPLIKT_11_9
     }
 
-private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(saksnummer: Saksnummer): List<AvklaringsbehovHendelse> {
+private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(saksnummer: Saksnummer, behandlingType: Behandlingstype): List<AvklaringsbehovHendelse> {
     val avklaringsbehovUtenVentebehov = this
         .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
         .tilAvklaringsbehovHendelseForBehandlingsflyt()
-    if (avklaringsbehovUtenVentebehov.isEmpty() && this.isNotEmpty() && !this.erOppfølgingsbehandlingPåVent()) {
+    if (avklaringsbehovUtenVentebehov.isEmpty() && this.isNotEmpty() && !this.erOppfølgingsbehandlingPåVent(behandlingType)) {
         // når det bare er ventebehov opprettes ikke oppgave, og behandlingen blir borte fra oppgavelista
         // unntaket er å vente på frist på oppfølgingsbehandling, den skal ikke opprette oppgave.
         logger.error("Mottok hendelse fra behandlingsflyt med bare ventebehov: ${this.map { it.avklaringsbehovDefinisjon.name }} på sak $saksnummer")
@@ -94,8 +94,8 @@ private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehand
     return avklaringsbehovUtenVentebehov
 }
 
-private fun List<AvklaringsbehovHendelseDto>.erOppfølgingsbehandlingPåVent(): Boolean {
-    return this.map { it.avklaringsbehovDefinisjon } == listOf(Definisjon.VENT_PÅ_OPPFØLGING)
+private fun List<AvklaringsbehovHendelseDto>.erOppfølgingsbehandlingPåVent(behandlingType: Behandlingstype): Boolean {
+    return behandlingType == Behandlingstype.OPPFØLGINGSBEHANDLING && this.map { it.avklaringsbehovDefinisjon }.contains(Definisjon.VENT_PÅ_OPPFØLGING)
 }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
