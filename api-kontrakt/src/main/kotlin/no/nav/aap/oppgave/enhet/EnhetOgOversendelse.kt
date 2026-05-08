@@ -6,6 +6,7 @@ data class PersonRequest(val ident: String)
 
 enum class OppgaveKategori {
     MEDLEMSKAP,
+    STUDENT,
     LOKALKONTOR,
     KVALITETSSIKRING,
     NAY,
