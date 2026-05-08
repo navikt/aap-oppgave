@@ -1,8 +1,13 @@
 package no.nav.aap.oppgave.oppdater
 
 import io.getunleash.FakeUnleash
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.ÅrsakTilOpprettelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
@@ -30,10 +35,6 @@ import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
-import no.nav.aap.oppgave.klienter.msgraph.Group
-import no.nav.aap.oppgave.klienter.msgraph.GroupMembers
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
-import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
@@ -51,12 +52,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.*
-import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
-import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
-
 
 @ExtendWith(Fakes::class)
 class OppdaterOppgaveServiceTest {
@@ -2177,9 +2172,6 @@ class OppdaterOppgaveServiceTest {
     private fun sendBehandlingFlytStoppetHendelse(hendelse: BehandlingFlytStoppetHendelse) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                UnleashService(FakeUnleash().apply {
-                    enableAll()
-                }),
                 veilarbarboppfolgingGateway,
                 sykefravarsoppfolgingGateway,
                 enhetService,
@@ -2194,9 +2186,6 @@ class OppdaterOppgaveServiceTest {
     private fun sendDokumentFlytStoppetHendelse(hendelse: DokumentflytStoppetHendelse) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                UnleashService(FakeUnleash().apply {
-                    enableAll()
-                }),
                 veilarbarboppfolgingGateway,
                 sykefravarsoppfolgingGateway,
                 enhetService,
@@ -2247,24 +2236,6 @@ class OppdaterOppgaveServiceTest {
     private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentOppgave(oppgaveId.id)
-        }
-    }
-
-    val graphClient = object : IMsGraphGateway {
-        override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf {
-            return MemberOf(
-                groups = listOf(
-                    Group(name = "0000-GA-ENHET_$ENHET_NAV_LØRENSKOG", id = UUID.randomUUID()),
-                )
-            )
-        }
-
-        override fun hentFortroligAdresseGruppe(ident: String, currentToken: OidcToken): MemberOf {
-            return MemberOf()
-        }
-
-        override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers {
-            return GroupMembers()
         }
     }
 

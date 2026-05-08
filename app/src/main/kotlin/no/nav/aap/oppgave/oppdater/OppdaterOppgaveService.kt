@@ -59,7 +59,6 @@ private val AVSLUTTEDE_STATUSER = setOf(
 )
 
 class OppdaterOppgaveService(
-    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingGateway = VeilarbarboppfolgingGateway,
     private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingGateway = SykefravarsoppfolgingGateway,
     private val enhetService: IEnhetService,
