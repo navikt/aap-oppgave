@@ -60,7 +60,8 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     token(),
                     ident(),
                     request.sortering?.sortBy,
-                    request.sortering?.sortOrder
+                    request.sortering?.sortOrder,
+                    request.hastemarkeringerFørst == true
                 ), filter.behandlingstyper)
             }
 

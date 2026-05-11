@@ -15,6 +15,7 @@ class TildelOppgaveService(
     private val log = LoggerFactory.getLogger(TildelOppgaveService::class.java)
 
     fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>, enheter: List<String>?): List<SaksbehandlerDto> {
+        log.info("Enheter som er med i requesten: $enheter.")
         if(unleashService.isEnabled(FeatureToggles.AnsattSok) && !enheter.isNullOrEmpty()) {
             return hentSaksbehandlereMedEnhetstilgang(enheter).filtrerSøkPåNavn(søketekst)
         } else {
