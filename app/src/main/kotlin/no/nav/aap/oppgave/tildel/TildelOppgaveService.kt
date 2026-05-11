@@ -31,6 +31,7 @@ class TildelOppgaveService(
     }
 
     private fun hentSaksbehandlereMedEnhetstilgang(enheter: List<String>): List<SaksbehandlerDto> {
+        log.info("Søker etter saksbhenadlere innenfor enheter: $enheter.")
         val saksbehandlere = enheter.flatMap { msGraphClient.hentMedlemmerIGruppe(it).members }.distinct()
         if (saksbehandlere.isEmpty()) {
             log.warn("Fant ingen saksbehandlere med tilgang til enhet $enheter.")
