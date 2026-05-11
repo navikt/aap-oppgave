@@ -6,8 +6,6 @@ import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import java.util.UUID
-import javax.sql.DataSource
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.dbconnect.transaction
@@ -32,6 +30,8 @@ import no.nav.aap.tilgang.AuthorizationMachineToMachineConfig
 import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
+import java.util.*
+import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentEnhetApi(
     enhetService: EnhetService,
@@ -178,7 +178,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
 
                 beslutter.isNotEmpty() && beslutter.any { it.erÅpen } -> {
                     val førsteOppgave =
-                        oversendtTilNay.first() // oversendtDato skal fortsatt være dato behandling gikk til NAY
+                        oversendtTilNay.firstOrNull()
+                            ?: beslutter.first()  // oversendtDato skal fortsatt være dato behandling gikk til NAY
                     NåværendeEnhet(
                         oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
                         oppgaveKategori = OppgaveKategori.BESLUTTER,
