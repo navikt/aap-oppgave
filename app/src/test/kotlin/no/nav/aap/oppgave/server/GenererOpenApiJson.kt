@@ -8,12 +8,12 @@ import kotlinx.coroutines.runBlocking
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.fakes.Fakes
 import java.io.BufferedWriter
 import java.io.FileWriter
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 
 
 fun main() {
@@ -32,7 +32,7 @@ fun main() {
 
     val client = RestClient.withDefaultResponseHandler(
         config = ClientConfig(scope = "oppgave"),
-        tokenProvider = ClientCredentialsTokenProvider
+        tokenProvider = AzureM2MTokenProvider,
     )
 
     val port = runBlocking { server.engine.resolvedConnectors().first { it.type == ConnectorType.HTTP }.port }
