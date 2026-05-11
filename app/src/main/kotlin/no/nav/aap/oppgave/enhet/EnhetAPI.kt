@@ -30,7 +30,7 @@ import no.nav.aap.tilgang.AuthorizationMachineToMachineConfig
 import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.UUID
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentEnhetApi(
