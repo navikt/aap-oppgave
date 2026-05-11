@@ -2,9 +2,6 @@ package no.nav.aap.oppgave.tildel
 
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
-import no.nav.aap.oppgave.unleash.FeatureToggles
-import no.nav.aap.oppgave.unleash.IUnleashService
-import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import org.slf4j.LoggerFactory
 
 class TildelOppgaveService(
@@ -14,7 +11,6 @@ class TildelOppgaveService(
     private val log = LoggerFactory.getLogger(TildelOppgaveService::class.java)
 
     fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>, enheter: List<String>?): List<SaksbehandlerDto> {
-        log.info("Enheter som er med i requesten: $enheter.")
         if(!enheter.isNullOrEmpty()) {
             return hentSaksbehandlereMedEnhetstilgang(enheter).filtrerSøkPåNavn(søketekst)
         } else {
