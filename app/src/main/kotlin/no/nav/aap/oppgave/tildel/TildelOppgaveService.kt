@@ -10,13 +10,12 @@ import org.slf4j.LoggerFactory
 class TildelOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
     private val msGraphClient: MsGraphGateway,
-    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
 ){
     private val log = LoggerFactory.getLogger(TildelOppgaveService::class.java)
 
     fun søkEtterSaksbehandlere(søketekst: String, oppgaver: List<Long>, enheter: List<String>?): List<SaksbehandlerDto> {
         log.info("Enheter som er med i requesten: $enheter.")
-        if(unleashService.isEnabled(FeatureToggles.AnsattSok) && !enheter.isNullOrEmpty()) {
+        if(!enheter.isNullOrEmpty()) {
             return hentSaksbehandlereMedEnhetstilgang(enheter).filtrerSøkPåNavn(søketekst)
         } else {
             val oppgaverTilTildeling = oppgaver.map { oppgave -> oppgaveRepository.hentOppgave(oppgave) }
