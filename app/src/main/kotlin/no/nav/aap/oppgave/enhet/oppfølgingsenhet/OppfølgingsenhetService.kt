@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.enhet.oppfølgingsenhet
 
 import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.arena.ArenaNedeFake
 import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaGateway
@@ -17,7 +18,7 @@ class OppfølgingsenhetService(
 ) {
     private val log = LoggerFactory.getLogger(OppfølgingsenhetService::class.java)
 
-    private val gateway = if (unleashService.isEnabled(FeatureToggles.BrukArenaFake)) {
+    private val gateway = if (unleashService.isEnabled(FeatureToggles.BrukArenaFake) && !Miljø.erProd()) {
         log.info("Feature toggle for å bruke ArenaFake er skrudd på, bruker fake for å hente oppfølgingsenhet.")
         ArenaNedeFake()
     } else {
