@@ -95,6 +95,7 @@ class OppgaveApiTest {
     @BeforeEach
     fun setup() {
         leggInnFilterForTest()
+        TilgangGateway.disableCaching()
     }
 
     @Test
@@ -1600,7 +1601,6 @@ class OppgaveApiTest {
             }.start()
 
             port = server.port()
-            TilgangGateway.disableCaching()
         }
 
         @JvmStatic
