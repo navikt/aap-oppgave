@@ -697,6 +697,28 @@ class OppgaveRepository(private val connection: DBConnection) {
         return oppgaver.firstOrNull()
     }
 
+    fun hentSisteOppfølgingsenhetForPersonIdent(
+        ident: String,
+    ): String? {
+        val query = """
+            SELECT OPPFOLGINGSENHET
+            FROM OPPGAVE
+            WHERE PERSON_IDENT = ?
+              AND OPPFOLGINGSENHET IS NOT NULL
+            ORDER BY BEHANDLING_OPPRETTET DESC, OPPRETTET_TIDSPUNKT DESC
+            LIMIT 1
+        """.trimIndent()
+
+        return connection.queryFirstOrNull(query) {
+            setParams {
+                setString(1, ident)
+            }
+            setRowMapper { row ->
+                row.getString("OPPFOLGINGSENHET")
+            }
+        }
+    }
+
     private fun Filter.whereClause(): String {
         val sb = StringBuilder()
 

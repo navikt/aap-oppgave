@@ -35,10 +35,12 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.enhetStatus
 import no.nav.aap.oppgave.enhet.hentEnhetApi
 import no.nav.aap.oppgave.enhet.nayEnhetForPerson
+import no.nav.aap.oppgave.enhet.oppfølgingsenhet.OppfølgingsenhetService
 import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
 import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
+import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
@@ -109,10 +111,13 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
     val norgGateway = NorgGateway()
     val pdlGraphqlGateway = PdlGraphqlGateway.withClientCredentialsRestClient()
+    val oppfølgingsenhetService = OppfølgingsenhetService(dataSource, VeilarbarenaGateway())
+
     val enhetService = EnhetService(
         msGraphClient = MsGraphGateway(prometheus),
         norgKlient = norgGateway,
-        pdlGraphqlKlient = pdlGraphqlGateway
+        pdlGraphqlKlient = pdlGraphqlGateway,
+        oppfølgingsenhetService = oppfølgingsenhetService
     )
 
     motor(dataSource, prometheus)
