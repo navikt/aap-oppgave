@@ -118,7 +118,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
     motor(dataSource, prometheus)
 
-    TilgangGateway.initialiserPrometheus(prometheus)
+//    TilgangGateway.initialiserPrometheus(prometheus)
 
     routing {
         authenticate(IdentityProvider.ENTRA_ID.value) {
