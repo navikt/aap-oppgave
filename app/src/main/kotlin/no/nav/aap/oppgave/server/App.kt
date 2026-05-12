@@ -59,6 +59,7 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
+import no.nav.aap.tilgang.TilgangGateway
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -116,6 +117,8 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     )
 
     motor(dataSource, prometheus)
+
+    TilgangGateway.initialiserPrometheus(prometheus)
 
     routing {
         authenticate(IdentityProvider.ENTRA_ID.value) {
