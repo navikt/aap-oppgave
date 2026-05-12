@@ -20,7 +20,6 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
 
     private val log: Logger = LoggerFactory.getLogger(Fakes::class.java)
     private val texas = FakeServer(module = { texasFake() })
-    private val azure = FakeServer(module = { azureFake() })
     private val tilgang = FakeServer(module = { tilgangFake(fakesConfig) })
     private val behandlingsflyt = FakeServer(module = { behandlingsflytFake(fakesConfig) })
     private val pdl = FakeServer(module = { pdlFake() })
@@ -34,7 +33,6 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
     private val statistikkFake = FakeServer(module = { statistikkFake() })
     private val fakeServere = listOf(
         texas,
-        azure,
         tilgang,
         behandlingsflyt,
         pdl,
