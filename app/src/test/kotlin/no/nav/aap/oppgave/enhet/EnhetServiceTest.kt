@@ -51,6 +51,7 @@ class EnhetServiceTest {
     @BeforeEach
     fun setup() {
         dataSource = TestDataSource()
+        System.setProperty("NAIS_CLUSTER_NAME", "LOCAL")
     }
 
     @AfterEach
