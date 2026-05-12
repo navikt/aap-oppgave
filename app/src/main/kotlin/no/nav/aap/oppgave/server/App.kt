@@ -22,6 +22,7 @@ import javax.sql.DataSource
 import kotlin.time.Duration.Companion.seconds
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
+import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.server.auth.IdentityProvider
 import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.komponenter.server.plugins.NavIdentInterceptor
@@ -118,8 +119,6 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
     motor(dataSource, prometheus)
 
-//    TilgangGateway.initialiserPrometheus(prometheus)
-
     routing {
         authenticate(IdentityProvider.ENTRA_ID.value) {
             install(NavIdentInterceptor)
@@ -159,6 +158,9 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
             }
         }
         actuatorApi(prometheus)
+    }
+    if (Miljø.erProd()) {
+        TilgangGateway.initialiserPrometheus(prometheus)
     }
 }
 

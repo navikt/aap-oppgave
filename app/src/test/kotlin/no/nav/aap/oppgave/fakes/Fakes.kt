@@ -79,6 +79,8 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
                 enableAll()
             })
         )
+        // Ikke prod-miljø-variabler
+        System.setProperty("NAIS_CLUSTER_NAME", "LOCAL")
 
         // Texas
         System.setProperty("nais.token.endpoint", "http://localhost:${texas.port()}/token")
