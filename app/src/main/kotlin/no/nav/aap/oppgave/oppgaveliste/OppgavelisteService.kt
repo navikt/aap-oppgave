@@ -132,7 +132,6 @@ class OppgavelisteService(
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
         sortOrder: OppgaveSorteringRekkefølge?,
-        hastemarkeringerFørst: Boolean
     ): List<OppgaveDto> {
 
         val oppgaver = oppgaveRepository.hentMineOppgaver(
@@ -148,7 +147,7 @@ class OppgavelisteService(
             )
         }.hentPersonNavn()
 
-        return if (unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst) && hastemarkeringerFørst) {
+        return if (unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst)) {
             val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
             medMarkering + utenMarkering
         } else {

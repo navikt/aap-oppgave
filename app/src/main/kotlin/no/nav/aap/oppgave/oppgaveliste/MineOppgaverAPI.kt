@@ -22,7 +22,6 @@ data class MineOppgaverRequest(
     @param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false,
     @param:QueryParam("Sorter oppgaveliste") val sortby: OppgaveSorteringFelt? = null,
     @param:QueryParam("Sorteringsrekkefølge") val sortorder: OppgaveSorteringRekkefølge? = null,
-    @param:QueryParam("Vis alltid oppgaver med hastemarkering øverst.") val hastemarkeringFørst: Boolean? = null
 )
 
 /**
@@ -47,7 +46,6 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
                 kunPaaVent = req.kunPaaVent,
                 sortBy = req.sortby,
                 sortOrder = req.sortorder,
-                hastemarkeringerFørst =  req.hastemarkeringFørst == true
             )
         }
     respond(
