@@ -1,10 +1,10 @@
 package no.nav.aap.oppgave.enhet
 
-import io.getunleash.FakeUnleash
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.VURDER_KLAGE_KONTOR_KODE
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
+import no.nav.aap.komponenter.httpklient.httpclient.error.InternalServerErrorHttpResponsException
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
@@ -31,8 +31,6 @@ import no.nav.aap.oppgave.klienter.pdl.HentPersonResult
 import no.nav.aap.oppgave.klienter.pdl.IPdlGateway
 import no.nav.aap.oppgave.klienter.pdl.PdlData
 import no.nav.aap.oppgave.klienter.pdl.PdlPerson
-import no.nav.aap.oppgave.unleash.IUnleashService
-import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
@@ -41,7 +39,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 private val IDENT_MED_SKJERMING = "12312312312"
 
@@ -62,18 +60,13 @@ class EnhetServiceTest {
     private val KVALITETSSIKRER_AVKLARINGSBEHOVKODE = AvklaringsbehovKode("5097")
     private val ENHET_NAV_LØRENSKOG = "0230"
 
-    private val fakeUnleashAllEnabledUnntattArenaFake: IUnleashService = UnleashService(FakeUnleash().apply {
-        enableAllExcept(
-            "BrukArenaFake"
-        )
-    })
 
     @Test
     fun `lister kun opp enhets-roller`() {
         val service = EnhetService(
             graphGateway, PdlGatewayMock(), nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), NorgGatewayMock()
         )
 
@@ -95,7 +88,7 @@ class EnhetServiceTest {
             graphGateway,
             pdlGateway,
             nomGateway,
-            OppfølgingsenhetService(dataSource, VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake),
+            OppfølgingsenhetService(dataSource, VeilarbarenaGatewayMock()),
             norgGateway
         )
 
@@ -134,7 +127,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
 
@@ -157,7 +150,7 @@ class EnhetServiceTest {
         val veilarbarenaGateway = VeilarbarenaGatewayMock.medRespons("4154")
         val oppfølgingsenhetServiceMedMock = OppfølgingsenhetService(
             dataSource,
-            veilarbarenaGateway, fakeUnleashAllEnabledUnntattArenaFake
+            veilarbarenaGateway
         )
 
         val service = EnhetService(graphGateway, pdlGateway, nomGateway, oppfølgingsenhetServiceMedMock, norgGateway)
@@ -180,7 +173,7 @@ class EnhetServiceTest {
             graphGateway,
             pdlGateway,
             nomGateway,
-            OppfølgingsenhetService(dataSource, VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake),
+            OppfølgingsenhetService(dataSource, VeilarbarenaGatewayMock()),
             norgGateway
         )
         val utledetEnhet = service.utledEnhetForOppgave(
@@ -215,7 +208,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                veilarbarenaGateway, fakeUnleashAllEnabledUnntattArenaFake
+                veilarbarenaGateway
             ), norgGateway
         )
         val utledetEnhet = service.utledEnhetForOppgave(
@@ -236,7 +229,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
 
@@ -258,7 +251,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
 
@@ -280,7 +273,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
 
@@ -309,7 +302,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), NorgGatewayMock()
         )
         val res =
@@ -332,7 +325,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -359,7 +352,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                veilarbarenaGateway, fakeUnleashAllEnabledUnntattArenaFake
+                veilarbarenaGateway
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -393,7 +386,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), NorgGatewayMock()
         )
         val res =
@@ -418,7 +411,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -448,7 +441,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -477,7 +470,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -520,7 +513,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res =
@@ -541,7 +534,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                veilarbarenaGateway, fakeUnleashAllEnabledUnntattArenaFake
+                veilarbarenaGateway
             ), norgGateway
         )
         val res =
@@ -561,7 +554,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                veilarbarenaGateway, fakeUnleashAllEnabledUnntattArenaFake
+                veilarbarenaGateway
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -585,7 +578,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -609,7 +602,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -634,7 +627,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -680,7 +673,7 @@ class EnhetServiceTest {
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGateway
         )
         val res = service.utledEnhetForOppgave(
@@ -701,7 +694,7 @@ class EnhetServiceTest {
         val serviceVestViken = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGatewayVestViken
         )
 
@@ -729,7 +722,7 @@ class EnhetServiceTest {
         val serviceInnlandet = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashAllEnabledUnntattArenaFake
+                VeilarbarenaGatewayMock()
             ), norgGatewayInnlandet
         )
 
@@ -753,11 +746,10 @@ class EnhetServiceTest {
             oppfølgingsenhet = "0220"
         )
 
-        val fakeUnleashMedArenaFake = UnleashService(FakeUnleash().apply { enableAll() })
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
                 dataSource,
-                VeilarbarenaGatewayMock(), fakeUnleashMedArenaFake
+                VeilarbarenaGatewayMock(arenaErNede = true)
             ), NorgGatewayMock.medRespons("0230")
         )
 
@@ -933,7 +925,8 @@ class EnhetServiceTest {
         }
 
         class VeilarbarenaGatewayMock(
-            val oppfølgingsenhet: String? = null
+            val oppfølgingsenhet: String? = null,
+            val arenaErNede: Boolean? = false
         ) : IVeilarbarenaGateway {
             companion object {
                 fun medRespons(oppfølgingsenhet: String? = null): VeilarbarenaGatewayMock {
@@ -942,6 +935,9 @@ class EnhetServiceTest {
             }
 
             override fun hentOppfølgingsenhet(personIdent: String): String? {
+                if (arenaErNede == true) {
+                    throw InternalServerErrorHttpResponsException("Arena er nede!")
+                }
                 return oppfølgingsenhet
             }
         }
