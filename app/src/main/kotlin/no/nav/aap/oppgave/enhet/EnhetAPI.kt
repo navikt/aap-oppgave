@@ -132,7 +132,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                     oppgaveKategori = OppgaveKategori.MEDLEMSKAP,
                     enhet = medlemskap.enhetForKø,
                     saksnummer = requireNotNull(medlemskap.saksnummer),
-                    markertSomHasteSak = erHastesak(medlemskap)
+                    markertSomHasteSak = erHastesak(medlemskap),
+                    venteÅrsak = medlemskap.påVentÅrsak
                 )
 
                 student != null && student.erÅpen -> NåværendeEnhet(
@@ -140,7 +141,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                     oppgaveKategori = OppgaveKategori.STUDENT,
                     enhet = student.enhetForKø,
                     saksnummer = requireNotNull(student.saksnummer),
-                    markertSomHasteSak = erHastesak(student)
+                    markertSomHasteSak = erHastesak(student),
+                    venteÅrsak = student.påVentÅrsak
                 )
 
                 lokalkontoroppgaver.isNotEmpty() && lokalkontoroppgaver.any { it.erÅpen } -> {
@@ -150,7 +152,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oppgaveKategori = OppgaveKategori.LOKALKONTOR,
                         enhet = førsteOppgave.enhetForKø,
                         saksnummer = requireNotNull(førsteOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(førsteOppgave)
+                        markertSomHasteSak = erHastesak(førsteOppgave),
+                        venteÅrsak = førsteOppgave.påVentÅrsak
                     )
                 }
 
@@ -161,7 +164,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oppgaveKategori = OppgaveKategori.KVALITETSSIKRING,
                         enhet = førsteOppgave.enhetForKø,
                         saksnummer = requireNotNull(førsteOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(førsteOppgave)
+                        markertSomHasteSak = erHastesak(førsteOppgave),
+                        venteÅrsak = førsteOppgave.påVentÅrsak
                     )
                 }
 
@@ -172,7 +176,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oppgaveKategori = OppgaveKategori.NAY,
                         enhet = førsteOppgave.enhetForKø,
                         saksnummer = requireNotNull(førsteOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(førsteOppgave)
+                        markertSomHasteSak = erHastesak(førsteOppgave),
+                        venteÅrsak = førsteOppgave.påVentÅrsak
                     )
                 }
 
@@ -185,7 +190,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oppgaveKategori = OppgaveKategori.BESLUTTER,
                         enhet = førsteOppgave.enhetForKø,
                         saksnummer = requireNotNull(førsteOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(førsteOppgave)
+                        markertSomHasteSak = erHastesak(førsteOppgave),
+                        venteÅrsak = førsteOppgave.påVentÅrsak
                     )
                 }
 
@@ -198,7 +204,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oppgaveKategori = OppgaveKategori.LOKALKONTOR,
                         enhet = sistÅpnedeOppgave.enhetForKø,
                         saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(sistÅpnedeOppgave)
+                        markertSomHasteSak = erHastesak(sistÅpnedeOppgave),
+                        venteÅrsak = sistÅpnedeOppgave.påVentÅrsak
                     )
                 }
 
@@ -210,7 +217,8 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
                         oppgaveKategori = if (erHosNAY(sistÅpnedeOppgave)) OppgaveKategori.NAY else OppgaveKategori.LOKALKONTOR,
                         enhet = sistÅpnedeOppgave.enhetForKø,
                         saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(sistÅpnedeOppgave)
+                        markertSomHasteSak = erHastesak(sistÅpnedeOppgave),
+                        venteÅrsak = sistÅpnedeOppgave.påVentÅrsak
                     )
                 }
 
