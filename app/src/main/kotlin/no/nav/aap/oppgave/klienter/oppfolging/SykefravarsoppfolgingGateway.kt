@@ -28,10 +28,10 @@ object SykefravarsoppfolgingGateway : ISykefravarsoppfolgingGateway {
         .recordStats()
         .build<String, HentVeilederSykefravarsoppfolgingResponse>()
 
-    private val url = URI.create(requiredConfigForKey("integrasjon.syfo.url"))
+    private val url = URI.create(requiredConfigForKey("INTEGRASJON_SYFO_URL"))
 
     private val config = ClientConfig(
-        scope = requiredConfigForKey("integrasjon.syfo.scope"),
+        scope = requiredConfigForKey("INTEGRASJON_SYFO_SCOPE"),
     )
 
     private val client = RestClient.withDefaultResponseHandler(

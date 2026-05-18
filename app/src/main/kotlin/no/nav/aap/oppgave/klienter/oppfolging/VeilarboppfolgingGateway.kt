@@ -33,10 +33,10 @@ object VeilarbarboppfolgingGateway : IVeilarbarboppfolgingGateway {
         .recordStats()
         .build<String, HentVeilederResponse>()
 
-    private val url = URI.create(requiredConfigForKey("integrasjon.veilarboppfolging.url"))
+    private val url = URI.create(requiredConfigForKey("INTEGRASJON_VEILARBOPPFOLGING_URL"))
 
     private val config = ClientConfig(
-        scope = requiredConfigForKey("integrasjon.veilarboppfolging.scope"),
+        scope = requiredConfigForKey("INTEGRASJON_VEILARBOPPFOLGING_SCOPE"),
     )
 
     private val client = RestClient.withDefaultResponseHandler(

@@ -11,8 +11,8 @@ import no.nav.aap.oppgave.statistikk.OppgaveHendelse
 import java.net.URI
 
 object StatistikkGateway {
-    private val baseUrl = URI.create(requiredConfigForKey("integrasjon.statistikk.url"))
-    private val config = ClientConfig(scope = requiredConfigForKey("integrasjon.statistikk.scope"))
+    private val baseUrl = URI.create(requiredConfigForKey("INTEGRASJON_STATISTIKK_URL"))
+    private val config = ClientConfig(scope = requiredConfigForKey("INTEGRASJON_STATISTIKK_SCOPE"))
 
     private val client = RestClient.withDefaultResponseHandler(
         config = config,

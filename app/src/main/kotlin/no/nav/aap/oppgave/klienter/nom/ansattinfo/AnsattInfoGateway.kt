@@ -22,7 +22,7 @@ class NomApiGateway(
     private val restClient: RestClient<InputStream>,
 ): AnsattInfoGateway {
     private val log = LoggerFactory.getLogger(NomApiGateway::class.java)
-    private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.nom.api.url"))
+    private val graphqlUrl = URI.create(requiredConfigForKey("INTEGRASJON_NOM_API_URL"))
 
     companion object {
         private val saksbehandlerNavnCache = Caffeine.newBuilder()
@@ -32,7 +32,7 @@ class NomApiGateway(
             .build<String, String>()
 
         private fun getClientConfig() = ClientConfig(
-            scope = requiredConfigForKey("integrasjon.nom.api.scope"),
+            scope = requiredConfigForKey("INTEGRASJON_NOM_API_SCOPE"),
         )
 
         init {

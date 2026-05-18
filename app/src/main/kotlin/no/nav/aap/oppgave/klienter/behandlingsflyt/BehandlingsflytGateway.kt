@@ -11,10 +11,10 @@ import java.net.URI
 import java.util.UUID
 
 object BehandlingsflytGateway {
-    private val baseUrl = URI.create(requiredConfigForKey("integrasjon.behandlingsflyt.url"))
+    private val baseUrl = URI.create(requiredConfigForKey("INTEGRASJON_BEHANDLINGSFLYT_URL"))
     private val clientConfig =
         ClientConfig(
-            scope = requiredConfigForKey("integrasjon.behandlingsflyt.scope")
+            scope = requiredConfigForKey("INTEGRASJON_BEHANDLINGSFLYT_SCOPE")
         )
     private val httpClient =
         RestClient.withDefaultResponseHandler(

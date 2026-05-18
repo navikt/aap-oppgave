@@ -39,7 +39,7 @@ interface INorgGateway {
 class NorgGateway: INorgGateway {
     private val log = LoggerFactory.getLogger(this::class.java)
 
-    private val url = URI.create(requiredConfigForKey("integrasjon.norg.url"))
+    private val url = URI.create(requiredConfigForKey("INTEGRASJON_NORG_URL"))
     private val config = ClientConfig()
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
