@@ -11,10 +11,17 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.filter.FilterRepository
+import no.nav.aap.oppgave.filter.FilterType
+import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import no.nav.aap.tilgang.Drift
+import no.nav.aap.tilgang.RollerConfig
+import no.nav.aap.tilgang.authorizedGet
 
 fun NormalOpenAPIRoute.driftApi(
     dataSource: DataSource,
@@ -52,7 +59,39 @@ fun NormalOpenAPIRoute.driftApi(
 
                 respond(oppgaver)
             }
+        }
 
+        route("/filter") {
+            authorizedGet<Unit, List<FilterDriftsinfoDTO>>(
+                RollerConfig(listOf(Drift))
+            ) { _ ->
+                val filtre = dataSource.transaction(readOnly = true) { connection ->
+                    val filterRepo = FilterRepository(connection)
+                    val alleFilter = filterRepo.hentAlle()
+                    val enhetPerFilter = filterRepo.hentAlleFilterEnheter()
+                    alleFilter.map { filter ->
+                        FilterDriftsinfoDTO(
+                            id = filter.id!!,
+                            navn = filter.navn,
+                            beskrivelse = filter.beskrivelse,
+                            type = filter.type,
+                            avklaringsbehovKoder = filter.avklaringsbehovKoder,
+                            behandlingstyper = filter.behandlingstyper,
+                            inkluderteEnheter = (enhetPerFilter[filter.id] ?: emptyList())
+                                .filter { it.filtermodus == Filtermodus.INKLUDER }
+                                .map { it.enhetNr },
+                            ekskluderteEnheter = (enhetPerFilter[filter.id] ?: emptyList())
+                                .filter { it.filtermodus == Filtermodus.EKSKLUDER }
+                                .map { it.enhetNr },
+                            opprettetAv = filter.opprettetAv,
+                            opprettetTidspunkt = filter.opprettetTidspunkt,
+                            endretAv = filter.endretAv,
+                            endretTidspunkt = filter.endretTidspunkt,
+                        )
+                    }
+                }
+                respond(filtre)
+            }
         }
     }
 }
@@ -70,3 +109,19 @@ private data class OppgaveDriftsinfoDTO(
     val endretTidspunkt: LocalDateTime?,
     val avklaringsbehovKode: String
 )
+
+private data class FilterDriftsinfoDTO(
+    val id: Long,
+    val navn: String,
+    val beskrivelse: String,
+    val type: FilterType,
+    val avklaringsbehovKoder: Set<String>,
+    val behandlingstyper: Set<Behandlingstype>,
+    val inkluderteEnheter: List<String>,
+    val ekskluderteEnheter: List<String>,
+    val opprettetAv: String,
+    val opprettetTidspunkt: LocalDateTime,
+    val endretAv: String?,
+    val endretTidspunkt: LocalDateTime?,
+)
+

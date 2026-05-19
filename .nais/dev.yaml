@@ -14,6 +14,8 @@ groups:
     group: f0f6cad5-e3c0-4308-99a2-3630ac60174a
   - name: AAP_PRODUKSJONSSTYRING
     group: c75883f9-4cb2-42c7-b75c-3f0f29ee3ead
+  - name: AAP_DRIFT
+    group: bc89623f-4624-4978-ac54-acd048c0f2a5
 env:
   - name: INTEGRASJON_TILGANG_URL
     value: http://tilgang

@@ -12,6 +12,7 @@
       <env name="AAP_KVALITETSSIKRER" value="c3e18aef-a7ac-49df-806e-4fe58b81460d" />
       <env name="AAP_BESLUTTER" value="f0f6cad5-e3c0-4308-99a2-3630ac60174a" />
       <env name="AAP_PRODUKSJONSSTYRING" value="c75883f9-4cb2-42c7-b75c-3f0f29ee3ead" />
+      <env name="AAP_DRIFT" value="bc89623f-4624-4978-ac54-acd048c0f2a5" />
       <env name="INTEGRASJON_TILGANG_URL" value="https://aap-tilgang.intern.dev.nav.no" />
       <env name="INTEGRASJON_TILGANG_SCOPE" value="api://dev-gcp.aap.tilgang/.default" />
       <env name="INTEGRASJON_TILGANG_AZP" value="0612f13d-08fb-44ff-a5ac-1233e2fec0fc" />
