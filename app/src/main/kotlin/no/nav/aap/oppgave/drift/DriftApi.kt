@@ -6,6 +6,7 @@ import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.sql.DataSource
@@ -65,24 +66,22 @@ fun NormalOpenAPIRoute.driftApi(
         }
 
         route("/filter") {
-            authorizedGet<Unit, List<FilterDriftsinfoDTO>>(
+            authorizedGet<Unit, DriftFilterResponsDTO>(
                 RollerConfig(listOf(Drift))
             ) { _ ->
-                val filtre = dataSource.transaction(readOnly = true) { connection ->
+                val respons = dataSource.transaction(readOnly = true) { connection ->
                     val filterRepo = FilterRepository(connection)
                     val alleFilter = filterRepo.hentAlle()
                     val enhetPerFilter = filterRepo.hentAlleFilterEnheter()
-                    alleFilter.map { filter ->
+
+                    val filtre = alleFilter.map { filter ->
                         FilterDriftsinfoDTO(
                             id = filter.id!!,
                             navn = filter.navn,
                             beskrivelse = filter.beskrivelse,
                             type = filter.type,
                             avklaringsbehov = filter.avklaringsbehovKoder.map {
-                                AvklaringsbehovDto(
-                                    it,
-                                    utledAvklaringsbehovnavn(it)
-                                )
+                                AvklaringsbehovDto(it, utledAvklaringsbehovnavn(it))
                             }.toSet(),
                             behandlingstyper = filter.behandlingstyper,
                             inkluderteEnheter = (enhetPerFilter[filter.id] ?: emptyList())
@@ -97,8 +96,17 @@ fun NormalOpenAPIRoute.driftApi(
                             endretTidspunkt = filter.endretTidspunkt,
                         )
                     }
+
+                    val koderIFiltre = alleFilter.flatMap { it.avklaringsbehovKoder }.toSet()
+                    val udekkede = (hentAlleManuelleAvklaringsbehovKoder() - koderIFiltre)
+                        .map { AvklaringsbehovDto(it, utledAvklaringsbehovnavn(it)) }
+
+                    DriftFilterResponsDTO(
+                        filtre = filtre,
+                        avklaringsbehovUtenFilter = udekkede,
+                    )
                 }
-                respond(filtre)
+                respond(respons)
             }
         }
     }
@@ -118,6 +126,11 @@ private data class OppgaveDriftsinfoDTO(
     val avklaringsbehovKode: String
 )
 
+private data class DriftFilterResponsDTO(
+    val filtre: List<FilterDriftsinfoDTO>,
+    val avklaringsbehovUtenFilter: List<AvklaringsbehovDto>,
+)
+
 private data class FilterDriftsinfoDTO(
     val id: Long,
     val navn: String,
@@ -135,9 +148,31 @@ private data class FilterDriftsinfoDTO(
 
 private data class AvklaringsbehovDto(val kode: String, val navn: String)
 
+private fun hentAlleManuelleAvklaringsbehovKoder(): Set<String> {
+    val manuelleBehovTyper = setOf(BehovType.MANUELT_PÅKREVD, BehovType.MANUELT_FRIVILLIG, BehovType.OVERSTYR)
+    val behandlingsflytKoder = Definisjon.entries
+        .filter { it.type in manuelleBehovTyper }
+        .map { it.kode.name }
+        .toSet()
+
+    val postmottakManuelleTyper = setOf(
+        PostmottakDefinisjon.BehovType.MANUELT_PÅKREVD,
+        PostmottakDefinisjon.BehovType.MANUELT_FRIVILLIG,
+    )
+    val postmottakKoder = PostmottakDefinisjon.entries
+        .filter { it.type in postmottakManuelleTyper }
+        .map { it.kode.name }
+        .toSet()
+
+    val tilbakekrevingKoder = TilbakeKrevingAvklaringsbehovKoder.entries
+        .map { it.kode }
+        .toSet()
+
+    return behandlingsflytKoder + postmottakKoder + tilbakekrevingKoder
+}
+
 private fun utledAvklaringsbehovnavn(kode: String): String =
     runCatching { Definisjon.forKode(kode).name }
         .recoverCatching { PostmottakDefinisjon.forKode(kode).name }
         .recoverCatching { TilbakeKrevingAvklaringsbehovKoder.valueOf(kode).name }
         .getOrDefault(kode)
-
