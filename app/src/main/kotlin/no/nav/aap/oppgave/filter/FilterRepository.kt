@@ -60,6 +60,36 @@ class FilterRepository(private val connection: DBConnection) {
         return filter.id
     }
 
+    fun hentAlleFilterEnheter(): Map<Long, List<EnhetFilter>> {
+        val query = """
+            SELECT
+                FE.FILTER_ID,
+                FE.ENHET,
+                FE.FILTER_MODUS
+            FROM
+                FILTER_ENHET FE
+                INNER JOIN FILTER F ON F.ID = FE.FILTER_ID
+            WHERE
+                F.SLETTET = FALSE
+        """.trimIndent()
+
+        val rows = connection.queryList(query) {
+            setRowMapper { row ->
+                Triple(
+                    row.getLong("FILTER_ID"),
+                    row.getString("ENHET"),
+                    Filtermodus.valueOf(row.getString("FILTER_MODUS"))
+                )
+            }
+        }
+
+        return rows
+            .groupBy { it.first }
+            .mapValues { entry ->
+                entry.value.map { EnhetFilter(it.second, it.third) }
+            }
+    }
+
     fun slettFilter(id: Long) {
         connection.execute("UPDATE FILTER SET SLETTET = TRUE WHERE ID = ?") {
             setParams {
