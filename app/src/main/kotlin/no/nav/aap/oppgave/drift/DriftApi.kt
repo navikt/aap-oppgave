@@ -1,9 +1,11 @@
 package no.nav.aap.oppgave.drift
 
+import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.sql.DataSource
@@ -19,6 +21,7 @@ import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon as PostmottakDefinisjon
 import no.nav.aap.tilgang.Drift
 import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.authorizedGet
@@ -75,7 +78,12 @@ fun NormalOpenAPIRoute.driftApi(
                             navn = filter.navn,
                             beskrivelse = filter.beskrivelse,
                             type = filter.type,
-                            avklaringsbehovKoder = filter.avklaringsbehovKoder,
+                            avklaringsbehov = filter.avklaringsbehovKoder.map {
+                                AvklaringsbehovDto(
+                                    it,
+                                    utledAvklaringsbehovnavn(it)
+                                )
+                            }.toSet(),
                             behandlingstyper = filter.behandlingstyper,
                             inkluderteEnheter = (enhetPerFilter[filter.id] ?: emptyList())
                                 .filter { it.filtermodus == Filtermodus.INKLUDER }
@@ -115,7 +123,7 @@ private data class FilterDriftsinfoDTO(
     val navn: String,
     val beskrivelse: String,
     val type: FilterType,
-    val avklaringsbehovKoder: Set<String>,
+    val avklaringsbehov: Set<AvklaringsbehovDto>,
     val behandlingstyper: Set<Behandlingstype>,
     val inkluderteEnheter: List<String>,
     val ekskluderteEnheter: List<String>,
@@ -124,4 +132,12 @@ private data class FilterDriftsinfoDTO(
     val endretAv: String?,
     val endretTidspunkt: LocalDateTime?,
 )
+
+private data class AvklaringsbehovDto(val kode: String, val navn: String)
+
+private fun utledAvklaringsbehovnavn(kode: String): String =
+    runCatching { Definisjon.forKode(kode).name }
+        .recoverCatching { PostmottakDefinisjon.forKode(kode).name }
+        .recoverCatching { TilbakeKrevingAvklaringsbehovKoder.valueOf(kode).name }
+        .getOrDefault(kode)
 
