@@ -174,5 +174,5 @@ private fun hentAlleManuelleAvklaringsbehovKoder(): Set<String> {
 private fun utledAvklaringsbehovnavn(kode: String): String =
     runCatching { Definisjon.forKode(kode).name }
         .recoverCatching { PostmottakDefinisjon.forKode(kode).name }
-        .recoverCatching { TilbakeKrevingAvklaringsbehovKoder.valueOf(kode).name }
+        .recoverCatching { TilbakeKrevingAvklaringsbehovKoder.fraKode(kode).name }
         .getOrDefault(kode)
