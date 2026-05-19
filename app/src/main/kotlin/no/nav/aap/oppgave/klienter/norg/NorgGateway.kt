@@ -63,6 +63,12 @@ class NorgGateway: INorgGateway {
             "Feil i response fra norg for geo = $geografiskTilknyttning, erNavansatt = $erNavansatt, diskresjonskode = $diskresjonskode"
         }
         if (enheter.isEmpty()) {
+            if (geografiskTilknyttning == "2100" && !erNavansatt && diskresjonskode == Diskresjonskode.ANY) {
+                // Geokode 2100 er Svalbard. Norg2 har noe mangelfull håndtering av denne koden for tema AAP.
+                // Siden Nav Tromsø (1902) alltid håndterer disse sakene, sender vi det dit automatisk.
+                log.warn("Fant ingen enhet for geografiskTilknyttning=$geografiskTilknyttning, erNavansatt=$erNavansatt, diskresjonskode=$diskresjonskode. Returnerer 1902 (Tromsø)")
+                return "1902"
+            }
             log.warn("Fant ingen enhet for geografiskTilknyttning=$geografiskTilknyttning, erNavansatt=$erNavansatt, diskresjonskode=$diskresjonskode. Returnerer UDEFINERT")
             return "UDEFINERT"
         }
