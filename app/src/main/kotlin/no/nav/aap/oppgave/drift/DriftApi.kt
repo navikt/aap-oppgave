@@ -161,7 +161,6 @@ private data class DriftFilterResponsDTO(
     val avklaringsbehovUtenFilter: List<AvklaringsbehovDto>,
 )
 
-/** Response-DTO for et filter i drift-API-et */
 private data class FilterDriftResponse(
     val id: Long,
     val navn: String,
