@@ -406,11 +406,11 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         if (utvidetFilter.fom != null) {
-            sb.append(" AND OPPRETTET_TIDSPUNKT >= '${utvidetFilter.fom}'")
+            sb.append(" AND BEHANDLING_OPPRETTET >= '${utvidetFilter.fom}'")
         }
 
         if (utvidetFilter.tom != null) {
-            sb.append(" AND OPPRETTET_TIDSPUNKT <= '${utvidetFilter.tom}'")
+            sb.append(" AND BEHANDLING_OPPRETTET <= '${utvidetFilter.tom}'")
         }
 
         if (utvidetFilter.markertHaster == true) {
