@@ -18,6 +18,20 @@ enum class AvklaringsbehovStatus {
     }
 }
 
+val ÅPNE_STATUSER = setOf(
+    AvklaringsbehovStatus.OPPRETTET,
+    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
+)
+
+val AVSLUTTEDE_STATUSER = setOf(
+    AvklaringsbehovStatus.AVSLUTTET,
+    AvklaringsbehovStatus.AVBRUTT,
+    AvklaringsbehovStatus.KVALITETSSIKRET,
+    AvklaringsbehovStatus.TOTRINNS_VURDERT,
+)
+
+
 enum class BehandlingStatus {
     ÅPEN,
     LUKKET
