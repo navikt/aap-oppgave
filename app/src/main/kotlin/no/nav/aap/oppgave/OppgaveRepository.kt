@@ -9,14 +9,14 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
@@ -427,14 +427,15 @@ class OppgaveRepository(private val connection: DBConnection) {
         kunLedigeOppgaver: Boolean? = true,
         utvidetFilter: UtvidetOppgavelisteFilter? = null,
         sortBy: OppgaveSorteringFelt? = null,
-        enheterMedNavn: Map<String, String> = emptyMap()
+        enheterMedNavn: Map<String, String> = emptyMap(),
+        hastemarkeringerFørst: Boolean
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
         } else {
             0
         }
-        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
+        val limit = paging?.antallPerSide ?: 50
         val kunLedigeQuery =
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
@@ -442,6 +443,11 @@ class OppgaveRepository(private val connection: DBConnection) {
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
+        val orderBy = if (hastemarkeringerFørst) {
+            "ORDER BY CASE WHEN EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref) THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
+        } else {
+            "ORDER BY $sortering $sorteringsRekkefølge"
+        }
 
         // COUNT(*) OVER() beregnes som et vindusfunksjonskall før OFFSET/FETCH, så vi slipper en ekstra spørring
         val hentNesteOppgaveQuery = """
@@ -459,15 +465,23 @@ class OppgaveRepository(private val connection: DBConnection) {
             ) sao ON true
             WHERE 
                 ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
-            ORDER BY ${sortering} ${sorteringsRekkefølge} 
+            
+            $orderBy
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
         val resultat = connection.queryList(hentNesteOppgaveQuery) {
             setRowMapper { row ->
                 val tilbakekreving = getTilbakekreving(row, connection)
-                val enhetNrForrigeOppgave = try { row.getStringOrNull("ENHET_FORRIGE_OPPGAVE") } catch (_: Exception) { null }
-                Pair(oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn), row.getInt("total_count"))
+                val enhetNrForrigeOppgave = try {
+                    row.getStringOrNull("ENHET_FORRIGE_OPPGAVE")
+                } catch (_: Exception) {
+                    null
+                }
+                Pair(
+                    oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn),
+                    row.getInt("total_count")
+                )
             }
         }
 
@@ -607,18 +621,10 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun hentMineOppgaver(
         ident: String,
-        paging: Paging? = null,
         kunPåVent: Boolean = false,
         sortBy: OppgaveSorteringFelt? = null,
         sortOrder: OppgaveSorteringRekkefølge? = null
     ): List<OppgaveDto> {
-        val offset = if (paging != null) {
-            (paging.side - 1) * paging.antallPerSide
-        } else {
-            0
-        }
-        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
-
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
         val sortering = oppgaveSorteringQuery(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
@@ -631,7 +637,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             WHERE RESERVERT_AV = ?
               AND STATUS != 'AVSLUTTET' $kunPåVentQuery
             ORDER BY $sortering $sorteringRekkefølge
-            OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
         return connection.queryList(query) {
@@ -690,6 +695,28 @@ class OppgaveRepository(private val connection: DBConnection) {
             log.error("Hent oppgave skal alltid returnere 1 oppgave. Kall med behandlingsreferanse $behandlingsReferanse fant ${oppgaver.size} oppgaver.")
         }
         return oppgaver.firstOrNull()
+    }
+
+    fun hentSisteOppfølgingsenhetForPersonIdent(
+        ident: String,
+    ): String? {
+        val query = """
+            SELECT OPPFOLGINGSENHET
+            FROM OPPGAVE
+            WHERE PERSON_IDENT = ?
+              AND OPPFOLGINGSENHET IS NOT NULL
+            ORDER BY BEHANDLING_OPPRETTET DESC, OPPRETTET_TIDSPUNKT DESC
+            LIMIT 1
+        """.trimIndent()
+
+        return connection.queryFirstOrNull(query) {
+            setParams {
+                setString(1, ident)
+            }
+            setRowMapper { row ->
+                row.getString("OPPFOLGINGSENHET")
+            }
+        }
     }
 
     private fun Filter.whereClause(): String {

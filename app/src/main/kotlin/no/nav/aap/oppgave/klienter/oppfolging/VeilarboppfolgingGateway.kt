@@ -2,8 +2,6 @@ package no.nav.aap.oppgave.klienter.oppfolging
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
-import java.net.URI
-import java.time.Duration
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -12,6 +10,9 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
+import java.net.URI
+import java.time.Duration
+import kotlin.text.isBlank
 
 private data class HentVeilederRequest(
     val fnr: String
@@ -32,10 +33,10 @@ object VeilarbarboppfolgingGateway : IVeilarbarboppfolgingGateway {
         .recordStats()
         .build<String, HentVeilederResponse>()
 
-    private val url = URI.create(requiredConfigForKey("integrasjon.veilarboppfolging.url"))
+    private val url = URI.create(requiredConfigForKey("INTEGRASJON_VEILARBOPPFOLGING_URL"))
 
     private val config = ClientConfig(
-        scope = requiredConfigForKey("integrasjon.veilarboppfolging.scope"),
+        scope = requiredConfigForKey("INTEGRASJON_VEILARBOPPFOLGING_SCOPE"),
     )
 
     private val client = RestClient.withDefaultResponseHandler(

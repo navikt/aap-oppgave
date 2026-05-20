@@ -48,6 +48,7 @@ import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
@@ -64,6 +65,7 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
+import no.nav.aap.tilgang.TilgangGateway
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
@@ -394,6 +396,32 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `Skal få plukket oppgave dersom tilgang`(fakesConfig: FakesConfig) {
+        val saksnummer = "100001"
+        val referanse = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val oppgave = hentOppgave(referanse)
+
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
+        val nesteOppgave = plukkOppgave(oppgave!!.tilOppgaveId())
+        assertThat(nesteOppgave).isNotNull()
+    }
+
+    @Test
     fun `Skal ikke få plukket oppgave dersom tilgang nektes`(fakesConfig: FakesConfig) {
         val saksnummer = "100001"
         val referanse = UUID.randomUUID()
@@ -416,11 +444,8 @@ class OppgaveApiTest {
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         assertThrows<ManglerTilgangException> { plukkOppgave(oppgave!!.tilOppgaveId()) }
-
-        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
-        val nesteOppgave = plukkOppgave(oppgave!!.tilOppgaveId())
-        assertThat(nesteOppgave).isNotNull()
     }
+
 
     @Test
     fun `Oppgave skal avreserveres dersom tilgang nektes`(fakesConfig: FakesConfig) {
@@ -1021,7 +1046,11 @@ class OppgaveApiTest {
         val oppgave2Før = hentOppgave(oppgaveId2)
 
         initDatasource(dbConfig(), prometheus).transaction {
-            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it)).utfør(
+            OppdaterOppgaveEnhetJobb(
+                OppgaveRepository(it),
+                FlytJobbRepositoryImpl(it),
+                PdlGraphqlGateway.withClientCredentialsRestClient()
+            ).utfør(
                 JobbInput(
                     OppdaterOppgaveEnhetJobb
                 )
@@ -1571,6 +1600,7 @@ class OppgaveApiTest {
             }.start()
 
             port = server.port()
+            TilgangGateway.disableCaching()
         }
 
         @JvmStatic

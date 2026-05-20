@@ -23,8 +23,15 @@ import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
 import javax.sql.DataSource
+import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.klienter.norg.INorgGateway
 
-fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
+fun NormalOpenAPIRoute.tildelOppgaveApi(
+    dataSource: DataSource,
+    enhetService: EnhetService,
+    norgGateway: INorgGateway,
+    prometheus: PrometheusMeterRegistry
+) {
     route("/saksbehandler-sok").authorizedPost<Unit, SaksbehandlerSøkResponse, SaksbehandlerSøkRequest>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
@@ -69,13 +76,15 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(dataSource: DataSource, prometheus: Prom
 
     }
 
-    route("/{referanse}/tildelt-status").authorizedGet<BehandlingReferanse, TildeltStatusDto> (
+    route("/{referanse}/tildelt-status").authorizedGet<BehandlingReferanse, TildeltStatusDto>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
-    ){ request ->
+    ) { request ->
         val oppgave = dataSource.transaction(readOnly = true) { connection ->
             OppgavelisteService(
                 OppgaveRepository(connection),
-                MarkeringRepository(connection)
+                MarkeringRepository(connection),
+                enhetService,
+                norgGateway
             ).hentAktivOppgave(request)
         }
 

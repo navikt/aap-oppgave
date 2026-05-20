@@ -18,7 +18,6 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
@@ -31,22 +30,29 @@ import no.nav.aap.tilgang.AuthorizationMachineToMachineConfig
 import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.UUID
 import javax.sql.DataSource
 
-fun NormalOpenAPIRoute.hentEnhetApi(msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.hentEnhetApi(
+    enhetService: EnhetService,
+    norgGateway: NorgGateway,
+    prometheus: PrometheusMeterRegistry
+) {
     route("/enheter").get<Unit, List<EnhetDto>> {
         prometheus.httpCallCounter("/enheter").increment()
-        val enheter = EnhetService(msGraphClient).hentEnheter(ident(), token())
-        val enhetNrTilNavn = NorgGateway().hentEnheter()
+
+        val enheter = enhetService.hentEnheter(ident(), token())
+        val enhetNrTilNavn = norgGateway.hentEnheter()
         val enheterMedNavn = enheter.map { EnhetDto(it, enhetNrTilNavn[it] ?: "") }
+
         respond(enheterMedNavn)
     }
+}
 
-fun NormalOpenAPIRoute.nayEnhetForPerson(msGraphClient: IMsGraphGateway, prometheus: PrometheusMeterRegistry) =
+fun NormalOpenAPIRoute.nayEnhetForPerson(enhetService: EnhetService, prometheus: PrometheusMeterRegistry) =
     route("/enhet/nay/person").post<Unit, EnhetNrDto, EnhetForPersonRequest> { _, request ->
         prometheus.httpCallCounter("/enhet/nay/person").increment()
-        val enhet = EnhetService(msGraphClient).finnNayEnhet(request.personIdent, request.relevanteIdenter)
+        val enhet = enhetService.finnNayEnhet(request.personIdent, request.relevanteIdenter)
         respond(EnhetNrDto(enhetNr = enhet.enhet))
     }
 
@@ -63,143 +69,183 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
             authorizedAzps = listOf(UUID.fromString(requiredConfigForKey("AZP_API_INTERN")))
         )
     ) { _, request ->
-        val log = LoggerFactory.getLogger("enhet-status")
-
         val respons = dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection)
                 .hentOppgaverForIdent(request.ident)
-                // Filtrer kun oppgaver med behandlingsreferanse
-                .filter { it.behandlingstype.fraBehandlingsflyt }
-                .sortedBy { it.opprettetTidspunkt }
 
-            val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
-                { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
-
-            val erHastesak =
-                { oppgave: OppgaveDto -> oppgave.markeringer.any { it.markeringType == MarkeringForBehandling.HASTER } }
-
-            val erKvalitetssikring: (oppgave: OppgaveDto) -> Boolean =
-                { oppgave -> oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name }
-
-            val erBeslutterOppgave: (oppgave: OppgaveDto) -> Boolean =
-                { oppgave -> Rolle.BESLUTTER in Definisjon.forKode(oppgave.avklaringsbehovKode).løsesAv }
-
-            val lokalkontoroppgaver =
-                oppgaver.filter { oppgave ->
-                    !erHosNAY(oppgave) && !erKvalitetssikring(oppgave)
-                }
-
-            val medlemskap =
-                oppgaver.firstOrNull { oppgave ->
-                    erHosNAY(oppgave)
-                            && oppgave.avklaringsbehovKode == Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name
-                }
-
-            val kvalitetssikrer =
-                oppgaver.filter { oppgave -> erKvalitetssikring(oppgave) }
-
-            val oversendtTilNay =
-                oppgaver.filter { oppgave ->
-                    erHosNAY(oppgave)
-                            && !erBeslutterOppgave(oppgave)
-                            && oppgave.avklaringsbehovKode != Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name
-                }
-
-            val beslutter = oppgaver.filter { oppgave ->
-                erHosNAY(oppgave)
-                        && erBeslutterOppgave(oppgave)
-            }
-
-            return@transaction when {
-                // Eneste avklaringsbehov hos NAY som er før lokalkontor
-                medlemskap != null && medlemskap.erÅpen -> NåværendeEnhet(
-                    oversendtDato = medlemskap.opprettetTidspunkt.toLocalDate(),
-                    oppgaveKategori = OppgaveKategori.MEDLEMSKAP,
-                    enhet = medlemskap.enhetForKø,
-                    saksnummer = requireNotNull(medlemskap.saksnummer),
-                    markertSomHasteSak = erHastesak(medlemskap)
-                )
-
-                lokalkontoroppgaver.isNotEmpty() && lokalkontoroppgaver.any { it.erÅpen } -> {
-                    val førsteOppgave = lokalkontoroppgaver.first()
-                    NåværendeEnhet(
-                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
-                        oppgaveKategori = OppgaveKategori.LOKALKONTOR,
-                        enhet = førsteOppgave.enhetForKø,
-                        saksnummer = requireNotNull(førsteOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(førsteOppgave)
-                    )
-                }
-
-                kvalitetssikrer.isNotEmpty() && kvalitetssikrer.any { it.erÅpen } -> {
-                    val førsteOppgave = kvalitetssikrer.first()
-                    NåværendeEnhet(
-                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
-                        oppgaveKategori = OppgaveKategori.KVALITETSSIKRING,
-                        enhet = førsteOppgave.enhetForKø,
-                        saksnummer = requireNotNull(førsteOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(førsteOppgave)
-                    )
-                }
-
-                oversendtTilNay.isNotEmpty() && oversendtTilNay.any { it.erÅpen } -> {
-                    val førsteOppgave = oversendtTilNay.first()
-                    NåværendeEnhet(
-                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
-                        oppgaveKategori = OppgaveKategori.NAY,
-                        enhet = førsteOppgave.enhetForKø,
-                        saksnummer = requireNotNull(førsteOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(førsteOppgave)
-                    )
-                }
-
-                beslutter.isNotEmpty() && beslutter.any { it.erÅpen } -> {
-                    val førsteOppgave = beslutter.first()
-                    NåværendeEnhet(
-                        oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
-                        oppgaveKategori = OppgaveKategori.BESLUTTER,
-                        enhet = førsteOppgave.enhetForKø,
-                        saksnummer = requireNotNull(førsteOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(førsteOppgave)
-                    )
-                }
-
-                oppgaver.isNotEmpty() && oppgaver.none { it.erÅpen } && lokalkontoroppgaver.isNotEmpty() -> {
-                    log.info("Ingen åpne oppgaver. Velger enhet for siste åpne lokalkontoroppgave.")
-                    val sistÅpnedeOppgave = lokalkontoroppgaver.last()
-
-                    NåværendeEnhet(
-                        oversendtDato = sistÅpnedeOppgave.opprettetTidspunkt.toLocalDate(),
-                        oppgaveKategori = OppgaveKategori.LOKALKONTOR,
-                        enhet = sistÅpnedeOppgave.enhetForKø,
-                        saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(sistÅpnedeOppgave)
-                    )
-                }
-
-                oppgaver.isNotEmpty() -> {
-                    log.info("Uventet kategori. Velger enhet for siste åpne oppgave. Saksnummer: ${oppgaver.last().saksnummer}")
-                    val sistÅpnedeOppgave = oppgaver.last()
-                    NåværendeEnhet(
-                        oversendtDato = sistÅpnedeOppgave.opprettetTidspunkt.toLocalDate(),
-                        oppgaveKategori = if (erHosNAY(sistÅpnedeOppgave)) OppgaveKategori.NAY else OppgaveKategori.LOKALKONTOR,
-                        enhet = sistÅpnedeOppgave.enhetForKø,
-                        saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer),
-                        markertSomHasteSak = erHastesak(sistÅpnedeOppgave)
-                    )
-                }
-
-                else -> {
-                    log.info("Fant ingen oppgaver. Returnerer null.")
-                    null
-                }
-            }
+            enhetOgOversendelse(oppgaver)
         }
 
         respond(EnhetOgOversendelse(respons))
     }
 
-/*
+internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>): NåværendeEnhet? {
+    val log = LoggerFactory.getLogger("enhet-status")
+
+    val alleOppgaver = alleOppgaver
+        // Filtrer kun oppgaver med behandlingsreferanse
+        .filter { it.behandlingstype.fraBehandlingsflyt }
+        .sortedBy { it.opprettetTidspunkt }
+
+    if (alleOppgaver.isEmpty()) return null
+
+    val behandlingReferanse = alleOppgaver.lastOrNull()?.behandlingRef
+
+    val oppgaver = alleOppgaver.filter { it.behandlingRef == behandlingReferanse }
+
+    val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
+        { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
+
+    val erHastesak =
+        { oppgave: OppgaveDto -> oppgave.markeringer.any { it.markeringType == MarkeringForBehandling.HASTER } }
+
+    val erKvalitetssikring: (oppgave: OppgaveDto) -> Boolean =
+        { oppgave -> oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name }
+
+    val erBeslutterOppgave: (oppgave: OppgaveDto) -> Boolean =
+        { oppgave ->
+            Definisjon.entries.filter { it.løsesAv.contains(Rolle.BESLUTTER) }
+                .any { it.kode.name == oppgave.avklaringsbehovKode }
+        }
+
+    val lokalkontoroppgaver =
+        oppgaver.filter { oppgave ->
+            !erHosNAY(oppgave) && !erKvalitetssikring(oppgave)
+        }
+
+    val medlemskap =
+        oppgaver.lastOrNull { oppgave ->
+            erHosNAY(oppgave)
+                    && oppgave.avklaringsbehovKode == Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name
+        }
+
+    val student = oppgaver.lastOrNull { oppgave ->
+        erHosNAY(oppgave)
+                && oppgave.avklaringsbehovKode == Definisjon.AVKLAR_STUDENT.kode.name
+    }
+
+    val kvalitetssikrer =
+        oppgaver.filter { oppgave -> erKvalitetssikring(oppgave) }
+
+    val oversendtTilNay =
+        oppgaver.filter { oppgave ->
+            erHosNAY(oppgave)
+                    && !erBeslutterOppgave(oppgave)
+                    && oppgave.avklaringsbehovKode != Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name
+                    && oppgave.avklaringsbehovKode != Definisjon.AVKLAR_STUDENT.kode.name
+        }
+
+    val beslutter = oppgaver.filter { oppgave ->
+        erHosNAY(oppgave)
+                && erBeslutterOppgave(oppgave)
+    }
+
+    return when {
+        // Eneste avklaringsbehov hos NAY som er før lokalkontor
+        medlemskap != null && medlemskap.erÅpen -> NåværendeEnhet(
+            oversendtDato = medlemskap.opprettetTidspunkt.toLocalDate(),
+            oppgaveKategori = OppgaveKategori.MEDLEMSKAP,
+            enhet = medlemskap.enhetForKø,
+            saksnummer = requireNotNull(medlemskap.saksnummer),
+            markertSomHasteSak = erHastesak(medlemskap),
+            venteÅrsak = medlemskap.påVentÅrsak
+        )
+
+        student != null && student.erÅpen -> NåværendeEnhet(
+            oversendtDato = student.opprettetTidspunkt.toLocalDate(),
+            oppgaveKategori = OppgaveKategori.STUDENT,
+            enhet = student.enhetForKø,
+            saksnummer = requireNotNull(student.saksnummer),
+            markertSomHasteSak = erHastesak(student),
+            venteÅrsak = student.påVentÅrsak
+        )
+
+        lokalkontoroppgaver.isNotEmpty() && lokalkontoroppgaver.any { it.erÅpen } -> {
+            val førsteOppgave = lokalkontoroppgaver.first()
+            val sisteÅpne = lokalkontoroppgaver.last { it.erÅpen }
+            NåværendeEnhet(
+                oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                oppgaveKategori = OppgaveKategori.LOKALKONTOR,
+                enhet = førsteOppgave.enhetForKø,
+                saksnummer = requireNotNull(førsteOppgave.saksnummer),
+                markertSomHasteSak = erHastesak(førsteOppgave),
+                venteÅrsak = sisteÅpne.påVentÅrsak
+            )
+        }
+
+        kvalitetssikrer.isNotEmpty() && kvalitetssikrer.any { it.erÅpen } -> {
+            val førsteOppgave = kvalitetssikrer.first()
+            NåværendeEnhet(
+                oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                oppgaveKategori = OppgaveKategori.KVALITETSSIKRING,
+                enhet = førsteOppgave.enhetForKø,
+                saksnummer = requireNotNull(førsteOppgave.saksnummer),
+                markertSomHasteSak = erHastesak(førsteOppgave),
+                venteÅrsak = førsteOppgave.påVentÅrsak
+            )
+        }
+
+        oversendtTilNay.isNotEmpty() && oversendtTilNay.any { it.erÅpen } -> {
+            val førsteOppgave = oversendtTilNay.first()
+            NåværendeEnhet(
+                oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                oppgaveKategori = OppgaveKategori.NAY,
+                enhet = førsteOppgave.enhetForKø,
+                saksnummer = requireNotNull(førsteOppgave.saksnummer),
+                markertSomHasteSak = erHastesak(førsteOppgave),
+                venteÅrsak = førsteOppgave.påVentÅrsak
+            )
+        }
+
+        beslutter.isNotEmpty() && beslutter.any { it.erÅpen } -> {
+            val førsteOppgave =
+                oversendtTilNay.firstOrNull()
+                    ?: beslutter.first()  // oversendtDato skal fortsatt være dato behandling gikk til NAY
+            NåværendeEnhet(
+                oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
+                oppgaveKategori = OppgaveKategori.BESLUTTER,
+                enhet = førsteOppgave.enhetForKø,
+                saksnummer = requireNotNull(førsteOppgave.saksnummer),
+                markertSomHasteSak = erHastesak(førsteOppgave),
+                venteÅrsak = førsteOppgave.påVentÅrsak
+            )
+        }
+
+        oppgaver.isNotEmpty() && oppgaver.none { it.erÅpen } && lokalkontoroppgaver.isNotEmpty() -> {
+            log.info("Ingen åpne oppgaver. Velger enhet for siste åpne lokalkontoroppgave.")
+            val sistÅpnedeOppgave = lokalkontoroppgaver.last()
+
+            NåværendeEnhet(
+                oversendtDato = sistÅpnedeOppgave.opprettetTidspunkt.toLocalDate(),
+                oppgaveKategori = OppgaveKategori.LOKALKONTOR,
+                enhet = sistÅpnedeOppgave.enhetForKø,
+                saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer),
+                markertSomHasteSak = erHastesak(sistÅpnedeOppgave),
+                venteÅrsak = sistÅpnedeOppgave.påVentÅrsak
+            )
+        }
+
+        oppgaver.isNotEmpty() -> {
+            log.info("Uventet kategori. Velger enhet for siste åpne oppgave. Saksnummer: ${oppgaver.last().saksnummer}")
+            val sistÅpnedeOppgave = oppgaver.last()
+            NåværendeEnhet(
+                oversendtDato = sistÅpnedeOppgave.opprettetTidspunkt.toLocalDate(),
+                oppgaveKategori = if (erHosNAY(sistÅpnedeOppgave)) OppgaveKategori.NAY else OppgaveKategori.LOKALKONTOR,
+                enhet = sistÅpnedeOppgave.enhetForKø,
+                saksnummer = requireNotNull(sistÅpnedeOppgave.saksnummer),
+                markertSomHasteSak = erHastesak(sistÅpnedeOppgave),
+                venteÅrsak = sistÅpnedeOppgave.påVentÅrsak
+            )
+        }
+
+        else -> {
+            log.info("Fant ingen oppgaver. Returnerer null.")
+            null
+        }
+    }
+}
+
+/**
  * Synkroniserer enhet på oppgaven etter at oppfølgingsenhet er endret i Arena,
  * midlertidig løsning inntil permanenent løsning for oppfølgingskontor post Arena er på plass
  */
@@ -214,7 +260,7 @@ data class EnhetSynkroniseringRespons(
 
 fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphGateway,
+    enhetService: EnhetService,
     prometheus: PrometheusMeterRegistry
 ) =
     route("/synkroniser-enhet-paa-oppgave").post<Unit, EnhetSynkroniseringRespons, EnhetSynkroniseringRequest> { _, request ->
@@ -223,7 +269,6 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
 
         log.info("Synkoniserer oppgave for ${request.oppgaveId} ")
         val respons = dataSource.transaction { connection ->
-            val enhetService = EnhetService(msGraphClient)
             val oppgaveRepository = OppgaveRepository(connection)
 
             val oppgave = oppgaveRepository.hentOppgave(request.oppgaveId)

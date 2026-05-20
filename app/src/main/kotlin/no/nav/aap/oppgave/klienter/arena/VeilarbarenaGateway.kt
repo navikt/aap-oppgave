@@ -2,8 +2,6 @@ package no.nav.aap.oppgave.klienter.arena
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
-import java.net.URI
-import java.time.Duration
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -13,6 +11,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
+import java.net.URI
+import java.time.Duration
 
 private data class HentOppfølgingsenhetRequest(
     val fnr: String
@@ -28,10 +28,10 @@ interface IVeilarbarenaGateway {
 
 class VeilarbarenaGateway : IVeilarbarenaGateway {
 
-    private val url = URI.create(requiredConfigForKey("integrasjon.veilarbarena.url"))
+    private val url = URI.create(requiredConfigForKey("INTEGRASJON_VEILARBARENA_URL"))
 
     private val config = ClientConfig(
-        scope = requiredConfigForKey("integrasjon.veilarbarena.scope"),
+        scope = requiredConfigForKey("INTEGRASJON_VEILARBARENA_SCOPE"),
     )
 
     private val client = RestClient.withDefaultResponseHandler(

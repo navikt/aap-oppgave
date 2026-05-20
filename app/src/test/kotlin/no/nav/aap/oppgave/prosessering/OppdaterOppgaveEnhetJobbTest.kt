@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Disabled
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.Test
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 
 // Denne testen kjører i OppgaveApiTest inntil videre
 @Disabled("Må skrive om fakes til å bruke singleton - får problemer med parallelle kjøringer")
@@ -70,6 +71,7 @@ class OppdaterOppgaveEnhetJobbTest {
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+        private val graphqlGateway = PdlGraphqlGateway.withClientCredentialsRestClient()
 
         // Starter server
         private val server = embeddedServer(Netty, port = 0) {
@@ -87,7 +89,7 @@ class OppdaterOppgaveEnhetJobbTest {
 
 
         dataSource.transaction {
-            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it)).utfør(
+            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it), graphqlGateway).utfør(
                 JobbInput(
                     OppdaterOppgaveEnhetJobb
                 )
@@ -113,7 +115,7 @@ class OppdaterOppgaveEnhetJobbTest {
         pdlBatchSizes.clear()
 
         dataSource.transaction {
-            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it)).utfør(
+            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it), graphqlGateway).utfør(
                 JobbInput(
                     OppdaterOppgaveEnhetJobb
                 )

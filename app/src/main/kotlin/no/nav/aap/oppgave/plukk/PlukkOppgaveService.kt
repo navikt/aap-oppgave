@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.plukk
 
+import kotlinx.coroutines.runBlocking
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
@@ -24,7 +25,7 @@ class PlukkOppgaveService(
     val flytJobbRepository: FlytJobbRepository,
 ) {
     private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
-    private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
 
     fun plukkOppgave(
@@ -34,7 +35,8 @@ class PlukkOppgaveService(
     ): OppgaveDto? {
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
 
-        val harTilgang = TilgangGateway.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
+        // TODO: Bli kvitt runBlocking
+        val harTilgang = runBlocking { TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token) }
         if (harTilgang) {
             if (oppgave.reservertAv == ident) {
                 // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.

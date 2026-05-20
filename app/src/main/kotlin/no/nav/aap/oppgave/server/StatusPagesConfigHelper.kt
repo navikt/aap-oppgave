@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.server
 
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.log
@@ -19,6 +20,7 @@ object StatusPagesConfigHelper {
             val logger = LoggerFactory.getLogger(javaClass)
 
             when (cause) {
+                is HttpRequestTimeoutException,
                 is HttpTimeoutException -> {
                     logger.warn("Timeout mot $uri: ", cause)
                     call.respondWithError(

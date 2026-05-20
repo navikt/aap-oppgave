@@ -28,9 +28,9 @@ interface IMsGraphGateway {
 class MsGraphGateway(
     prometheus: PrometheusMeterRegistry
 ) : IMsGraphGateway {
-    private val baseUrl = URI.create(requiredConfigForKey("ms.graph.base.url"))
+    private val baseUrl = URI.create(requiredConfigForKey("MS_GRAPH_BASE_URL"))
     private val clientConfig = ClientConfig(
-        scope = requiredConfigForKey("ms.graph.scope")
+        scope = requiredConfigForKey("MS_GRAPH_SCOPE")
     )
     private val httpClient = RestClient.withDefaultResponseHandler(
         config = clientConfig,

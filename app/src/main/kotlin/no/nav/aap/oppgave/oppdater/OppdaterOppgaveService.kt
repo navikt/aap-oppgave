@@ -37,7 +37,6 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
-import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -49,11 +48,10 @@ import java.time.LocalDateTime
 import java.util.*
 
 class OppdaterOppgaveService(
-    msGraphClient: IMsGraphGateway,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingGateway = VeilarbarboppfolgingGateway,
     private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingGateway = SykefravarsoppfolgingGateway,
-    private val enhetService: IEnhetService = EnhetService(msGraphClient),
+    private val enhetService: IEnhetService,
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
     private val tilbakekrevingRepository: TilbakekrevingRepository,
@@ -328,14 +326,13 @@ class OppdaterOppgaveService(
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
         // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt
-        if (unleashService.isEnabled(FeatureToggles.ReserverTilForrigeSaksbehandlerVedGjenaapning)) {
-            prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
-                oppgaveOppdatering,
-                eksisterendeOppgave.oppgaveId(),
-                avklaringsbehov,
-                gjenåpnerOppgave = true
-            )
-        }
+        prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
+            oppgaveOppdatering,
+            eksisterendeOppgave.oppgaveId(),
+            avklaringsbehov,
+            gjenåpnerOppgave = true
+        )
+
         håndterReservasjonFraBehandlingsflyt(
             oppgaveOppdatering,
             eksisterendeOppgave.oppgaveId()

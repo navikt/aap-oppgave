@@ -1,7 +1,5 @@
 package no.nav.aap.oppgave.klienter.pdl
 
-import java.io.InputStream
-import java.net.URI
 import no.nav.aap.komponenter.config.requiredConfigForKey
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.Header
@@ -11,6 +9,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
+import java.io.InputStream
+import java.net.URI
 
 interface IPdlGateway {
     fun hentAdressebeskyttelseOgGeolokasjon(personident: String, currentToken: OidcToken? = null): PdlData
@@ -18,14 +18,14 @@ interface IPdlGateway {
     fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData
 }
 
-class PdlGraphqlGateway(
+class PdlGraphqlGateway private constructor(
     private val restClient: RestClient<InputStream>
 ) : IPdlGateway {
-    private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
+    private val graphqlUrl = URI.create(requiredConfigForKey("INTEGRASJON_PDL_URL")).resolve("/graphql")
 
     companion object {
         private fun getClientConfig() = ClientConfig(
-            scope = requiredConfigForKey("integrasjon.pdl.scope"),
+            scope = requiredConfigForKey("INTEGRASJON_PDL_SCOPE"),
         )
 
         private const val BEHANDLINGSNUMMER_AAP_SAKSBEHANDLING = "B287"

@@ -12,6 +12,8 @@ import kotlin.time.measureTimedValue
 object OppgavelisteUtils {
     private val logger = LogFactory.getLog(OppgavelisteUtils::class.java)
 
+    private val pdlGraphqlGateway = PdlGraphqlGateway.withClientCredentialsRestClient()
+
     private val personinfoCache = Caffeine.newBuilder()
         .maximumSize(5_000)
         .expireAfterWrite(Duration.ofHours(12))
@@ -58,8 +60,7 @@ object OppgavelisteUtils {
     }
 
     private fun hentNavnForBolk(identer: List<String>): List<Pair<String, String>> {
-        return PdlGraphqlGateway
-            .withClientCredentialsRestClient()
+        return pdlGraphqlGateway
             .hentPersoninfoForIdenter(identer)
             .hentPersonBolk
             ?.map {

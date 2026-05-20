@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.oppgaveliste
 
+import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.miljo.Miljø
@@ -11,7 +12,6 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
-import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -20,14 +20,18 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
-import java.util.*
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 
 const val maksOppgaver = 50
 
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
-    private val norgGateway: INorgGateway = NorgGateway()
+    private val enhetService: EnhetService,
+    private val norgGateway: INorgGateway,
+    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
     fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
         val oppgaver = if (søketekst.length >= 11) {
@@ -63,7 +67,6 @@ class OppgavelisteService(
     }
 
     fun hentOppgaverMedTilgang(
-        enhetService: EnhetService,
         utvidetFilter: UtvidetOppgavelisteFilter?,
         enheter: Set<String>,
         paging: Paging,
@@ -73,7 +76,8 @@ class OppgavelisteService(
         token: OidcToken,
         ident: String,
         sortBy: OppgaveSorteringFelt?,
-        sortOrder: OppgaveSorteringRekkefølge?
+        sortOrder: OppgaveSorteringRekkefølge?,
+        hastemarkeringerFørst: Boolean
     ): FinnOppgaverDto {
         val sortOrderMedDefault = sortOrder
             ?: when (Miljø.er()) {
@@ -105,7 +109,8 @@ class OppgavelisteService(
             kunLedigeOppgaver = kunLedigeOppgaver,
             utvidetFilter = utvidetFilter,
             sortBy = sortBy,
-            enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty()
+            enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty(),
+            hastemarkeringerFørst = unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst) && hastemarkeringerFørst
         )
 
         val oppgaver =
@@ -116,7 +121,7 @@ class OppgavelisteService(
             }
 
         return FinnOppgaverDto(
-            oppgaver = oppgaver.filtrerPåTilgang(enhetService, token, ident),
+            oppgaver = oppgaver.filtrerPåTilgang(token, ident),
             antallGjenstaaende = finnOppgaverDto.antallGjenstaaende,
             antallTotalt = finnOppgaverDto.antallTotalt,
         )
@@ -126,9 +131,10 @@ class OppgavelisteService(
         ident: String,
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
-        sortOrder: OppgaveSorteringRekkefølge?
-    ): List<OppgaveDto> =
-        oppgaveRepository.hentMineOppgaver(
+        sortOrder: OppgaveSorteringRekkefølge?,
+    ): List<OppgaveDto> {
+
+        val oppgaver = oppgaveRepository.hentMineOppgaver(
             ident = ident,
             kunPåVent = kunPaaVent == true,
             sortBy = sortBy,
@@ -140,6 +146,14 @@ class OppgavelisteService(
                 }).tilDto()
             )
         }.hentPersonNavn()
+
+        return if (unleashService.isEnabled(FeatureToggles.HastemarkeringerFoerst)) {
+            val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
+            medMarkering + utenMarkering
+        } else {
+            oppgaver
+        }
+    }
 
     fun hentOppgaverForBehandling(referanse: UUID): List<OppgaveDto> {
         return oppgaveRepository.hentOppgaver(referanse)
@@ -168,7 +182,6 @@ class OppgavelisteService(
         this.copy(markeringer = markeringer)
 
     private fun List<OppgaveDto>.filtrerPåTilgang(
-        enhetService: EnhetService,
         token: OidcToken,
         ident: String
     ): List<OppgaveDto> {
@@ -187,7 +200,10 @@ class OppgavelisteService(
         token: OidcToken,
         oppgaver: List<OppgaveDto>
     ): List<OppgaveDto> =
-        if (!enhetService.kanSaksbehandleFortroligAdresse(ident, token)) {
+        if (oppgaver.any { it.harFortroligAdresse == true } && !enhetService.kanSaksbehandleFortroligAdresse(
+                ident,
+                token
+            )) {
             oppgaver.filterNot { it.harFortroligAdresse == true }
         } else {
             oppgaver
