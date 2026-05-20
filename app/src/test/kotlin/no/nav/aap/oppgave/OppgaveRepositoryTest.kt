@@ -747,6 +747,32 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `fom og tom i utvidet filter filtrerer på behandling opprettet`() {
+        val innenforRange = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2024, 1, 15, 12, 0)
+        )
+        opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2024, 1, 9, 12, 0)
+        )
+        opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2024, 1, 21, 12, 0)
+        )
+
+        val resultat = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
+                fom = LocalDate.of(2024, 1, 10),
+                tom = LocalDate.of(2024, 1, 20)
+            ),
+        )
+
+        assertThat(resultat.oppgaver.map { it.id }).containsExactly(innenforRange.id)
+    }
+
+    @Test
     fun `beløpMerEnn filter er inklusiv - inkluderer tilbakekrevingsoppgaver med eksakt beløp`() {
         val tilbakekrevingOppgave = opprettOppgave(
             enhet = ENHET_NAV_ENEBAKK,
