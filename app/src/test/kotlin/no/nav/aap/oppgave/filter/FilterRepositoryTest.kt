@@ -142,7 +142,7 @@ internal class FilterRepositoryTest {
     }
 
     @Test
-    fun `Oppdater filter med både behandlingstype og avklaringsbehov`() {
+    fun `Oppdater filter med behandlingstype, avklaringsbehov og enhet`() {
         dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             val nyttFilter = OpprettFilter(
@@ -151,7 +151,8 @@ internal class FilterRepositoryTest {
                 opprettetAv = "test1",
                 opprettetTidspunkt = LocalDateTime.now(),
                 behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
-                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode.name)
+                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
+                enhetFilter = listOf(EnhetFilter("4491", Filtermodus.INKLUDER))
             )
 
             val antallFilterFørTest = filterRepo.hentAlle().size
@@ -159,12 +160,17 @@ internal class FilterRepositoryTest {
 
             var alleFilter = filterRepo.hentAlle()
             assertThat(alleFilter).hasSize(antallFilterFørTest + 1)
-            var hentetFilter = alleFilter.first()
+            var hentetFilter = alleFilter.first{it.id == filterId}
             assertThat(hentetFilter.navn).isEqualTo("Filter for avklar sykdom oppgave og førstegangsbehandling")
             assertThat(hentetFilter.behandlingstyper).hasSize(1)
             assertThat(hentetFilter.behandlingstyper.contains(Behandlingstype.FØRSTEGANGSBEHANDLING)).isTrue()
             assertThat(hentetFilter.avklaringsbehovKoder).hasSize(1)
             assertThat(hentetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_SYKDOM.kode.name)).isTrue()
+
+            var alleEnheter = filterRepo.hentAlleFilterEnheter()
+            assertThat(alleEnheter[filterId]).hasSize(1)
+            assertThat(alleEnheter[filterId]!!.first().enhetNr).isEqualTo("4491")
+            assertThat(alleEnheter[filterId]!!.first().filtermodus).isEqualTo(Filtermodus.INKLUDER)
 
             val oppdaterFilter = OppdaterFilter(
                 id = filterId,
@@ -172,19 +178,28 @@ internal class FilterRepositoryTest {
                 beskrivelse = "Filter for avklar barnetillegg og revurdering",
                 behandlingstyper = setOf(Behandlingstype.REVURDERING),
                 avklaringsbehovtyper = setOf(Definisjon.AVKLAR_BARNETILLEGG.kode.name),
+                enhetFilter = listOf(
+                    EnhetFilter("ALLE", Filtermodus.INKLUDER),
+                    EnhetFilter("4402", Filtermodus.EKSKLUDER),
+                ),
                 endretAv = "test2",
                 endretTidspunkt = LocalDateTime.now()
             )
             filterRepo.oppdater(oppdaterFilter)
 
-            alleFilter = filterRepo.hentAlle()
-            assertThat(alleFilter).hasSize(1)
-            hentetFilter = alleFilter.first()
+            assertThat(filterRepo.hentAlle()).hasSize(antallFilterFørTest + 1)
+            hentetFilter = requireNotNull(filterRepo.hent(filterId))
             assertThat(hentetFilter.navn).isEqualTo("Filter for avklar barnetillegg og revurdering")
             assertThat(hentetFilter.behandlingstyper).hasSize(1)
             assertThat(hentetFilter.behandlingstyper.contains(Behandlingstype.REVURDERING)).isTrue()
             assertThat(hentetFilter.avklaringsbehovKoder).hasSize(1)
             assertThat(hentetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_BARNETILLEGG.kode.name)).isTrue()
+
+            alleEnheter = filterRepo.hentAlleFilterEnheter()
+            assertThat(alleEnheter[filterId]).hasSize(2)
+            assertThat(alleEnheter[filterId]!!.any { it.enhetNr == "ALLE" && it.filtermodus == Filtermodus.INKLUDER }).isTrue()
+            assertThat(alleEnheter[filterId]!!.any { it.enhetNr == "4402" && it.filtermodus == Filtermodus.EKSKLUDER }).isTrue()
+            assertThat(alleEnheter[filterId]!!.none { it.enhetNr == "4491" }).isTrue()
         }
     }
 

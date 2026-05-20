@@ -26,6 +26,7 @@ data class OppdaterFilter(
     val beskrivelse: String,
     val avklaringsbehovtyper: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
+    val enhetFilter: List<EnhetFilter>? = null,
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
 )
@@ -55,8 +56,10 @@ class FilterRepository(private val connection: DBConnection) {
     fun oppdater(filter: OppdaterFilter): Long {
         oppdaterFilter(filter)
         slettFilterParametre(filter.id)
+        slettFilterEnheter(filter.id)
         opprettFilterAvklaringsbehovtyper(filter.id, filter.avklaringsbehovtyper)
         opprettFilterBehandlingstyper(filter.id, filter.behandlingstyper)
+        opprettFilterEnheter(filter.id, filter.enhetFilter)
         return filter.id
     }
 
@@ -115,6 +118,12 @@ class FilterRepository(private val connection: DBConnection) {
             setParams { setLong(1, filterId) }
         }
         connection.execute("DELETE FROM FILTER_BEHANDLINGSTYPE WHERE FILTER_ID = ?") {
+            setParams { setLong(1, filterId) }
+        }
+    }
+
+    private fun slettFilterEnheter(filterId: Long) {
+        connection.execute("DELETE FROM FILTER_ENHET WHERE FILTER_ID = ?") {
             setParams { setLong(1, filterId) }
         }
     }
