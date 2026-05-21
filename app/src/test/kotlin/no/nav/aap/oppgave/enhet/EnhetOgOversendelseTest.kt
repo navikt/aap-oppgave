@@ -33,19 +33,37 @@ class EnhetOgOversendelseTest {
     }
 
     @Test
-    fun `om behandlingen går til NAY flere ganger, skal oversendelse være første tidspunkt i første bolk`() {
+    fun `om behandlingen går til NAY flere ganger, skal oversendelse være første tidspunkt i siste bolk`() {
         val oppgaver =
             listOf(
                 oppgave(Definisjon.AVKLAR_SYKDOM, "1234"),
                 oppgave(Definisjon.KVALITETSSIKRING, "1200"),
                 oppgave(Definisjon.SAMORDNING_ARBEIDSGIVER, "4491"),
                 oppgave(Definisjon.AVKLAR_SYKDOM, "1234"),
-                oppgave(Definisjon.SAMORDNING_ARBEIDSGIVER, "4491").åpen()
+                oppgave(Definisjon.SAMORDNING_ARBEIDSGIVER, "4491"),
+                oppgave(Definisjon.SAMORDNING_ARBEIDSGIVER, "4491").åpen(),
             )
 
         val res = enhetOgOversendelse(oppgaver)!!
 
-        assertThat(res.oversendtDato).isEqualTo(LocalDate.of(2022, 1, 1).plusDays(2))
+        assertThat(res.oversendtDato).isEqualTo(LocalDate.of(2022, 1, 1).plusDays(4))
+    }
+
+    @Test
+    fun `for beslutter-oppgaver, vis når saken først gikk til NAY`() {
+        val oppgaver =
+            listOf(
+                oppgave(Definisjon.AVKLAR_SYKDOM, "1234"),
+                oppgave(Definisjon.KVALITETSSIKRING, "1200"),
+                oppgave(Definisjon.SAMORDNING_ARBEIDSGIVER, "4491"),
+                oppgave(Definisjon.AVKLAR_SYKDOM, "1234"),
+                oppgave(Definisjon.SAMORDNING_ARBEIDSGIVER, "4491"),
+                oppgave(Definisjon.FATTE_VEDTAK, "4491").åpen(),
+            )
+
+        val res = enhetOgOversendelse(oppgaver)!!
+
+        assertThat(res.oversendtDato).isEqualTo(LocalDate.of(2022, 1, 1).plusDays(4))
     }
 
     private val behandlingRef = UUID.randomUUID()
