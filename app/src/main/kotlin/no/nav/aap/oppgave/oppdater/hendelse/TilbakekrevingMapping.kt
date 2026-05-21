@@ -67,6 +67,14 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
                 ), AvklaringsbehovStatus.OPPRETTET, emptyList()
             )
         )
+
+        TilbakekrevingBehandlingsstatus.TIL_FORHÅNDSVARSEL -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+            )
+        )
     }
 }
 
@@ -78,4 +86,5 @@ fun TilbakekrevingBehandlingsstatus.tilBehandlingsstatus() =
         TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> BehandlingStatus.ÅPEN
         TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> BehandlingStatus.ÅPEN
         TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> BehandlingStatus.ÅPEN
+        TilbakekrevingBehandlingsstatus.TIL_FORHÅNDSVARSEL -> BehandlingStatus.ÅPEN
     }
