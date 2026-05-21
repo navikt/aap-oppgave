@@ -95,19 +95,21 @@ class OppgavelisteService(
             )
         }
 
-        val finnOppgaverDto = oppgaveRepository.finnOppgaver(
-            filter = kombinertFilter.copy(
-                enheter = enheter,
-                veileder = veilederIdent
-            ),
-            rekkefølge = sortOrderMedDefault,
-            paging = paging,
-            kunLedigeOppgaver = kunLedigeOppgaver,
-            utvidetFilter = utvidetFilter,
-            sortBy = sortBy,
-            enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty(),
-            hastemarkeringerFørst = hastemarkeringerFørst
-        )
+        val finnOppgaverDto =
+            oppgaveRepository.finnOppgaver(
+                filter =
+                    kombinertFilter.copy(
+                        enheter = enheter,
+                        veileder = veilederIdent
+                    ),
+                rekkefølge = sortOrderMedDefault,
+                paging = paging,
+                kunLedigeOppgaver = kunLedigeOppgaver,
+                utvidetFilter = utvidetFilter,
+                sortBy = sortBy,
+                hastemarkeringerFørst = hastemarkeringerFørst,
+                enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty()
+            )
 
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
