@@ -4,11 +4,12 @@ import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
+import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
+import io.ktor.http.HttpStatusCode
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
 import java.time.LocalDateTime
-import java.util.UUID
 import javax.sql.DataSource
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
@@ -17,7 +18,6 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.EnhetFilter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterRepository
-import no.nav.aap.oppgave.filter.FilterType
 import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.filter.OpprettFilter
 import no.nav.aap.oppgave.filter.OppdaterFilter
@@ -25,8 +25,6 @@ import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.server.authenticate.ident
-import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon as PostmottakDefinisjon
 import no.nav.aap.tilgang.Drift
 import no.nav.aap.tilgang.RollerConfig
@@ -132,66 +130,41 @@ fun NormalOpenAPIRoute.driftApi(
 
                 val lagretFilter = dataSource.transaction(readOnly = true) { connection ->
                     val filterRepo = FilterRepository(connection)
-                    val filter = requireNotNull(filterRepo.hent(filterId)) { "Filter $filterId ikke funnet etter lagring" }
+                    val filter =
+                        requireNotNull(filterRepo.hent(filterId)) { "Filter $filterId ikke funnet etter lagring" }
                     val enheter = filterRepo.hentAlleFilterEnheter()
                     filter.tilDriftResponse(enheter)
                 }
                 respond(lagretFilter)
             }
         }
+
+        route("/filter/slett") {
+            authorizedPost<Unit, Unit, SlettFilterRequest>(
+                RollerConfig(listOf(Drift))
+            ) { _, request ->
+                val filter = dataSource.transaction(readOnly = true) { connection ->
+                    FilterRepository(connection).hent(request.id)
+                }
+
+                if (filter == null) {
+                    respondWithStatus(HttpStatusCode.NotFound)
+                    return@authorizedPost
+                }
+
+                if (filter.opprettetAv != ident()) {
+                    respondWithStatus(HttpStatusCode.Forbidden)
+                    return@authorizedPost
+                }
+
+                dataSource.transaction { connection ->
+                    FilterRepository(connection).slettFilter(request.id)
+                }
+                respondWithStatus(HttpStatusCode.NoContent)
+            }
+        }
     }
 }
-
-private data class OppgaveDriftsinfoDTO(
-    val oppgaveId: Long,
-    val behandlingRef: UUID,
-    val status: Status,
-    val enhet: String,
-    val oppfølgingsenhet: String?,
-    val reservertAv: String?,
-    val veilederArbeid: String?,
-    val veilederSykdom: String?,
-    val opprettetTidspunkt: LocalDateTime,
-    val endretTidspunkt: LocalDateTime?,
-    val avklaringsbehovKode: String
-)
-
-private data class DriftFilterResponsDTO(
-    val filtre: List<FilterDriftResponse>,
-    val avklaringsbehovUtenFilter: List<AvklaringsbehovDto>,
-)
-
-private data class FilterDriftResponse(
-    val id: Long,
-    val navn: String,
-    val beskrivelse: String,
-    val type: FilterType,
-    val avklaringsbehov: Set<AvklaringsbehovDto>,
-    val behandlingstyper: Set<Behandlingstype>,
-    val inkluderteEnheter: List<String>,
-    val ekskluderteEnheter: List<String>,
-    val opprettetAv: String,
-    val opprettetTidspunkt: LocalDateTime,
-    val endretAv: String?,
-    val endretTidspunkt: LocalDateTime?,
-)
-
-data class FilterDriftRequest(
-    val id: Long? = null,
-    val navn: String,
-    val beskrivelse: String,
-    val type: FilterType = FilterType.GENERELL,
-    val avklaringsbehovKoder: Set<String> = emptySet(),
-    val behandlingstyper: Set<Behandlingstype> = emptySet(),
-    val enheter: List<EnhetDriftRequest> = emptyList(),
-)
-
-data class EnhetDriftRequest(
-    val enhet: String,
-    val filtermodus: Filtermodus,
-)
-
-private data class AvklaringsbehovDto(val kode: String, val navn: String)
 
 private fun FilterDto.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilter>>) = FilterDriftResponse(
     id = id!!,

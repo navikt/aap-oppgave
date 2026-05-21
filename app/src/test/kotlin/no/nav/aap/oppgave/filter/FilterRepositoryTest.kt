@@ -187,6 +187,9 @@ internal class FilterRepositoryTest {
             )
             filterRepo.oppdater(oppdaterFilter)
 
+            alleFilter = filterRepo.hentAlle()
+            assertThat(alleFilter).hasSize(1)
+            hentetFilter = alleFilter.first()
             assertThat(filterRepo.hentAlle()).hasSize(antallFilterFørTest + 1)
             hentetFilter = requireNotNull(filterRepo.hent(filterId))
             assertThat(hentetFilter.navn).isEqualTo("Filter for avklar barnetillegg og revurdering")
@@ -194,7 +197,6 @@ internal class FilterRepositoryTest {
             assertThat(hentetFilter.behandlingstyper.contains(Behandlingstype.REVURDERING)).isTrue()
             assertThat(hentetFilter.avklaringsbehovKoder).hasSize(1)
             assertThat(hentetFilter.avklaringsbehovKoder.contains(Definisjon.AVKLAR_BARNETILLEGG.kode.name)).isTrue()
-
             alleEnheter = filterRepo.hentAlleFilterEnheter()
             assertThat(alleEnheter[filterId]).hasSize(2)
             assertThat(alleEnheter[filterId]!!.any { it.enhetNr == "ALLE" && it.filtermodus == Filtermodus.INKLUDER }).isTrue()
