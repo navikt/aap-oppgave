@@ -30,7 +30,7 @@ import no.nav.aap.tilgang.AuthorizationMachineToMachineConfig
 import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
-import java.util.UUID
+import java.util.*
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentEnhetApi(
@@ -78,6 +78,21 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
 
         respond(EnhetOgOversendelse(respons))
     }
+
+/**
+ * Returnerer første oppgave i den siste sammenhengende bolken av oppgaver fra kandidatlisten
+ * */
+private fun førsteISisteSammenhengendeBlokk(
+    alleOppgaver: List<OppgaveDto>,
+    kandidater: List<OppgaveDto>
+): OppgaveDto {
+    val kandidatSet = kandidater.toSet()
+    return alleOppgaver
+        .reversed()
+        .dropWhile { it !in kandidatSet }
+        .takeWhile { it in kandidatSet }
+        .lastOrNull() ?: kandidater.first()
+}
 
 internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>): NåværendeEnhet? {
     val log = LoggerFactory.getLogger("enhet-status")
@@ -186,7 +201,7 @@ internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>): NåværendeEnh
         }
 
         oversendtTilNay.isNotEmpty() && oversendtTilNay.any { it.erÅpen } -> {
-            val førsteOppgave = oversendtTilNay.first()
+            val førsteOppgave = førsteISisteSammenhengendeBlokk(oppgaver, oversendtTilNay)
             NåværendeEnhet(
                 oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
                 oppgaveKategori = OppgaveKategori.NAY,
@@ -198,9 +213,7 @@ internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>): NåværendeEnh
         }
 
         beslutter.isNotEmpty() && beslutter.any { it.erÅpen } -> {
-            val førsteOppgave =
-                oversendtTilNay.firstOrNull()
-                    ?: beslutter.first()  // oversendtDato skal fortsatt være dato behandling gikk til NAY
+            val førsteOppgave = førsteISisteSammenhengendeBlokk(oppgaver, oversendtTilNay + beslutter)
             NåværendeEnhet(
                 oversendtDato = førsteOppgave.opprettetTidspunkt.toLocalDate(),
                 oppgaveKategori = OppgaveKategori.BESLUTTER,
