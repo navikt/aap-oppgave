@@ -10,7 +10,6 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
-import no.nav.aap.oppgave.exception.UtdatertOppgaveException
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
@@ -35,9 +34,8 @@ class PlukkOppgaveService(
         token: OidcToken
     ): OppgaveDto? {
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
-        if (oppgave.status == Status.AVSLUTTET) {
-            log.warn("Prøver å plukke oppgave med status avsluttet: ${OppgaveId(oppgave.id!!, oppgave.versjon)}")
-            throw UtdatertOppgaveException("Oppgaven har blitt oppdatert i bakgrunnen. Last inn siden på nytt og prøv igjen.")
+        require(oppgave.status != Status.AVSLUTTET) {
+            "Kan ikke plukke oppgave med status avsluttet. OppgaveId: ${OppgaveId(oppgave.id!!, oppgave.versjon)}"
         }
 
         // TODO: Bli kvitt runBlocking
@@ -53,18 +51,13 @@ class PlukkOppgaveService(
             return oppgave
         }
         val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
-        try {
-            oppgaveRepository.reserverOppgave(
-                oppgaveIdMedVersjon,
-                ident,
-                ident,
-                ansattInfoGateway.hentAnsattNavnHvisFinnes(ident)
-            )
-            sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
-        } catch (e: IllegalArgumentException) {
-            log.warn(e.message)
-            throw UtdatertOppgaveException("Oppgaven har blitt oppdatert i bakgrunnen. Last inn siden på nytt og prøv igjen.")
-        }
+        oppgaveRepository.reserverOppgave(
+            oppgaveIdMedVersjon,
+            ident,
+            ident,
+            ansattInfoGateway.hentAnsattNavnHvisFinnes(ident)
+        )
+        sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
         return oppgave
     }
 
@@ -83,7 +76,8 @@ class PlukkOppgaveService(
         }
         val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, relevanteIdenter)
         val erSkjermet = enhetService.erSkjermet(ident)
-        val erOverstyrtTilLokalkontor = oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
+        val erOverstyrtTilLokalkontor =
+            oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
         val erFørstegangsbehandling = oppgave.behandlingstype == Behandlingstype.FØRSTEGANGSBEHANDLING
 
         val nyEnhet =
