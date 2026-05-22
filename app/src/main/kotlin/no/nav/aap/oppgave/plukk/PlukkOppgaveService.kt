@@ -10,12 +10,14 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
+import no.nav.aap.oppgave.exception.UtdatertOppgaveException
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -27,22 +29,31 @@ class PlukkOppgaveService(
     private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
-
     fun plukkOppgave(
         oppgaveId: OppgaveId,
         ident: String,
         token: OidcToken
     ): OppgaveDto? {
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
+        if (oppgave.status == Status.AVSLUTTET) {
+            log.warn("Prøver å plukke oppgave med status avsluttet: ${OppgaveId(oppgave.id!!, oppgave.versjon)}")
+            throw UtdatertOppgaveException("Oppgaven har blitt oppdatert i bakgrunnen. Last inn siden på nytt og prøv igjen.")
+        }
 
         // TODO: Bli kvitt runBlocking
-        val harTilgang =  TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
-        if (harTilgang) {
-            if (oppgave.reservertAv == ident) {
-                // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.
-                return oppgave
-            }
-            val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
+        val harTilgang = runBlocking { TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token) }
+        if (!harTilgang) {
+            log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
+            oppdaterOppgaveVedTilgangAvslått(oppgaveId = oppgaveId, ident = ident)
+            return null
+        }
+
+        if (oppgave.reservertAv == ident) {
+            // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.
+            return oppgave
+        }
+        val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
+        try {
             oppgaveRepository.reserverOppgave(
                 oppgaveIdMedVersjon,
                 ident,
@@ -50,12 +61,11 @@ class PlukkOppgaveService(
                 ansattInfoGateway.hentAnsattNavnHvisFinnes(ident)
             )
             sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
-            return oppgave
-        } else {
-            log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
-            oppdaterOppgaveVedTilgangAvslått(oppgaveId = oppgaveId, ident = ident)
+        } catch (e: IllegalArgumentException) {
+            log.warn(e.message)
+            throw UtdatertOppgaveException("Oppgaven har blitt oppdatert i bakgrunnen. Last inn siden på nytt og prøv igjen.")
         }
-        return null
+        return oppgave
     }
 
     private fun oppdaterOppgaveVedTilgangAvslått(oppgaveId: OppgaveId, ident: String) {
