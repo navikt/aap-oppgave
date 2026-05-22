@@ -36,7 +36,7 @@ class PlukkOppgaveService(
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
 
         // TODO: Bli kvitt runBlocking
-        val harTilgang = runBlocking { TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token) }
+        val harTilgang =  TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
         if (harTilgang) {
             if (oppgave.reservertAv == ident) {
                 // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.

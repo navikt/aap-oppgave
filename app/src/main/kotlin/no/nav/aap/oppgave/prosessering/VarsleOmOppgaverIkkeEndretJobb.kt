@@ -30,13 +30,18 @@ class VarsleOmOppgaverIkkeEndretJobb(
         log.info("Fant ${oppgaverIkkeEndretPåFemUker.size} oppgaver som ikke er endret på mer enn fem uker, hvorav ${oppgaverIkkeHosNay.size} ikke er hos NAY.")
         if (unleashService.isEnabled(FeatureToggles.VarsleOmOppgaverEldreEnn7Dager)) {
             oppgaverIkkeHosNay.forEach {
-                log.error(
+                log.info(
                     "Oppgave ${
                         OppgaveId(
                             it.id!!,
                             it.versjon
                         )
                     } for avklaringsbehov ${it.avklaringsbehovKode} på enhet ${it.enhetForKø} er ikke endret siden ${(it.endretTidspunkt ?: it.opprettetTidspunkt).toLocalDate()}. Saksnummer: ${it.saksnummer}"
+                )
+            }
+            if (oppgaverIkkeHosNay.isNotEmpty()) {
+                log.error(
+                    "Fant ${oppgaverIkkeHosNay.size} som ikke er endret på lang tid. Sjekk info-logger med denne trace-id for hvilke det gjelder."
                 )
             }
         }
