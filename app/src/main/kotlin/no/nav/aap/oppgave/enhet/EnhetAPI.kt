@@ -14,7 +14,6 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
-import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
@@ -285,7 +284,6 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
             val oppgaveRepository = OppgaveRepository(connection)
 
             val oppgave = oppgaveRepository.hentOppgave(request.oppgaveId)
-            val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
 
             val behandlingRef = oppgave.behandlingRef
             val relaterteIdenter = if (oppgave.behandlingstype.fraBehandlingsflyt) {
@@ -313,13 +311,13 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
 
             val nyEnhetForKø = nyEnhet.oppfølgingsenhet ?: nyEnhet.enhet
             if (nyEnhetForKø == oppgave.enhetForKø) {
-                log.info("Ingen endring på enhet for oppgave ${oppgaveIdMedVersjon.id}, er allerede satt til $nyEnhetForKø")
+                log.info("Ingen endring på enhet for oppgave ${oppgave.id}, er allerede satt til $nyEnhetForKø")
             } else {
-                log.info("Oppdaterer enhet for oppgave ${oppgaveIdMedVersjon.id} fra ${oppgave.enhetForKø} til $nyEnhetForKø")
+                log.info("Oppdaterer enhet for oppgave ${oppgave.id} fra ${oppgave.enhetForKø} til $nyEnhetForKø")
             }
 
             oppgaveRepository.oppdatereOppgave(
-                oppgaveId = oppgaveIdMedVersjon,
+                oppgaveId = oppgave.oppgaveId(),
                 endretAvIdent = KELVIN,
                 personIdent = oppgave.personIdent,
                 enhet = nyEnhet.enhet,
@@ -337,7 +335,7 @@ fun NormalOpenAPIRoute.synkroniserEnhetPåOppgaveApi(
             )
 
             sendOppgaveStatusOppdatering(
-                oppgaveIdMedVersjon, HendelseType.OPPDATERT,
+                oppgave.oppgaveId(), HendelseType.OPPDATERT,
                 FlytJobbRepository(connection),
             )
 

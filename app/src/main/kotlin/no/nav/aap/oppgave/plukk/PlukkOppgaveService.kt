@@ -43,8 +43,7 @@ class PlukkOppgaveService(
                 // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.
                 return oppgave
             }
-            val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
-            reserverOppgaveService.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
+            reserverOppgaveService.reserverOppgave(oppgave.oppgaveId(), ident, ident)
             return oppgave
         } else {
             log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
@@ -82,9 +81,7 @@ class PlukkOppgaveService(
             )
         log.info("Oppdaterer enhet for oppgave ${oppgave.id} til ${nyEnhet.gjeldendeEnhet()} etter tilgang avslått på plukk. Saksnummer: ${oppgave.saksnummer}")
         oppgaveRepository.oppdatereOppgave(
-            oppgaveId = OppgaveId(requireNotNull(oppgave.id) {
-                "OppgaveID kan ikke være null"
-            }, oppgave.versjon),
+            oppgaveId = oppgave.oppgaveId(),
             endretAvIdent = KELVIN,
             personIdent = oppgave.personIdent,
             enhet = nyEnhet.enhet,
