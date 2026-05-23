@@ -11,7 +11,6 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -23,8 +22,8 @@ class PlukkOppgaveService(
     val enhetService: IEnhetService,
     val oppgaveRepository: OppgaveRepository,
     val flytJobbRepository: FlytJobbRepository,
+    val reserverOppgaveService: ReserverOppgaveService,
 ) {
-    private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
 
@@ -45,13 +44,7 @@ class PlukkOppgaveService(
                 return oppgave
             }
             val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
-            oppgaveRepository.reserverOppgave(
-                oppgaveIdMedVersjon,
-                ident,
-                ident,
-                ansattInfoGateway.hentAnsattNavnHvisFinnes(ident)
-            )
-            sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
+            reserverOppgaveService.reserverOppgave(oppgaveIdMedVersjon, ident, ident)
             return oppgave
         } else {
             log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
