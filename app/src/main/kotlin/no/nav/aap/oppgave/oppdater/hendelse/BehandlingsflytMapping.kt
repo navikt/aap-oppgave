@@ -27,7 +27,14 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         behandlingstype = this.behandlingType.tilBehandlingstype(),
         opprettetTidspunkt = this.opprettetTidspunkt,
         avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(this.saksnummer, this.behandlingType.tilBehandlingstype()),
-        reserverTil = this.reserverTil,
+        reserverTil = when (this.reserverTil) {
+            KELVIN -> {
+                logger.warn("behandlingsflyt foreslår at vi reserverer oppgave til KELVIN i behandling ${referanse.referanse}, ignorerer anbefaling")
+                null
+            }
+            else ->
+                this.reserverTil
+        },
         relevanteIdenter = this.relevanteIdenterPåBehandling ?: emptyList(),
         venteInformasjon = if (this.erPåVent) {
             this.utledVenteInformasjon()

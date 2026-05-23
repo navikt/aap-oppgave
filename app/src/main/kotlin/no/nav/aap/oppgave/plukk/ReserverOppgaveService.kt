@@ -56,9 +56,7 @@ class ReserverOppgaveService(
             log.warn("Fant ingen åpne oppgaver å reservere uten tilgangskontroll gitt behandlingsreferanse $behandlingsReferanse")
             return
         }
-        if (ident != KELVIN) {
-            reserverOppgave(oppgaveSomSkalReserveres, ident, ident)
-        }
+        reserverOppgave(oppgaveSomSkalReserveres, ident, ident)
         log.info("Reserverte oppgave $oppgaveSomSkalReserveres uten tilgangskontroll for $ident.")
     }
 

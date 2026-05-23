@@ -14,9 +14,7 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInformasjon
 import no.nav.aap.oppgave.ReturStatus
-import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.IEnhetService
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingGateway
@@ -30,7 +28,6 @@ import no.nav.aap.oppgave.oppdater.hendelse.Endring
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.TILBAKEKREVING
-import no.nav.aap.oppgave.oppdater.hendelse.VenteInformasjon
 import no.nav.aap.oppgave.oppdater.hendelse.ÅPNE_STATUSER
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
@@ -112,10 +109,11 @@ class OppdaterOppgaveService(
             flytJobbRepository
         )
 
-        // Hvis oppgaven ble satt på vent, reserver til saksbehandler som satte på vent
-        if (oppgaveOppdatering.venteInformasjon != null && eksisterendeOppgave.påVentTil == null && eksisterendeOppgave.reservertAv == null) {
+        // Hvis oppgaven ble satt på vent av saksbehandler, reserver til saksbehandler som satte på vent
+        val sattPåVentAv = oppgaveOppdatering.venteInformasjon?.sattPåVentAv?.takeIf { it != KELVIN }
+        if (sattPåVentAv != null && eksisterendeOppgave.påVentTil == null && eksisterendeOppgave.reservertAv == null) {
             log.info("Forsøker å reservere oppgave ${eksisterendeOppgave.oppgaveId()} til saksbehandler som satte den på vent")
-            reserverOppgave(oppgaveOppdatering.referanse, oppgaveOppdatering.venteInformasjon)
+            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(oppgaveOppdatering.referanse, sattPåVentAv)
         }
     }
 
@@ -358,17 +356,6 @@ class OppdaterOppgaveService(
         )
     }
 
-    private fun reserverOppgave(
-        behandlingsReferanse: UUID,
-        venteInformasjon: VenteInformasjon
-    ) {
-        val endretAv = venteInformasjon.sattPåVentAv
-        reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
-            behandlingsReferanse,
-            endretAv
-        )
-    }
-
     private fun skalOverstyresTilLokalKontor(
         oppgaveOppdatering: OppgaveOppdatering,
         avklaringsbehovHendelse: AvklaringsbehovHendelse
@@ -595,17 +582,19 @@ class OppdaterOppgaveService(
         gjenåpnerOppgave: Boolean = false
     ) {
         val hvemLøsteForrigeAvklaringsbehov = oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()
-        if (hvemLøsteForrigeAvklaringsbehov != null) {
-            val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
-            if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
-                log.info("Prøver å tilordne oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Gjenåpnet: $gjenåpnerOppgave")
-                reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
-                    oppgaveOppdatering.referanse,
-                    hvemLøsteForrigeIdent
-                )
-            } else {
-                log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
-            }
+            ?: return
+
+        val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
+        if (hvemLøsteForrigeIdent == KELVIN) {
+            log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): KELVIN løste forrige avklaringsbehov")
+        } else if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
+            log.info("Prøver å tilordne oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Gjenåpnet: $gjenåpnerOppgave")
+            reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
+                oppgaveOppdatering.referanse,
+                hvemLøsteForrigeIdent
+            )
+        } else {
+            log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
         }
     }
 
