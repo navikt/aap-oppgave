@@ -1081,7 +1081,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgavePåVent.påVentTil).isNotNull()
 
         // saksbehandler avreserverer
-        avreserverOppgave(OppgaveId(oppgavePåVent.id!!, oppgavePåVent.versjon), saksbehandler)
+        avreserverOppgave(oppgavePåVent.oppgaveId(), saksbehandler)
 
         // ny hendelse
         val nyttMottattDokument = BehandlingFlytStoppetHendelse(

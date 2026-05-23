@@ -112,4 +112,9 @@ data class OppgaveDto(
             behandlingstype = this.behandlingstype
         )
     }
+
+    fun oppgaveId() = OppgaveId(
+        requireNotNull(id) { "Oppgave har ingen id" },
+        versjon,
+    )
 }

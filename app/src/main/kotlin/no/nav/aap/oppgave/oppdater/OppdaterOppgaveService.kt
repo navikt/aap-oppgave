@@ -592,6 +592,4 @@ class OppdaterOppgaveService(
             log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
         }
     }
-
-    private fun OppgaveDto.oppgaveId() = OppgaveId(requireNotNull(this.id) { "Oppgaven må ha ID" }, this.versjon)
 }

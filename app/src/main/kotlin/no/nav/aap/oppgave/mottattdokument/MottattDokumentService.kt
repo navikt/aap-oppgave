@@ -1,7 +1,5 @@
 package no.nav.aap.oppgave.mottattdokument
 
-import no.nav.aap.oppgave.OppgaveDto
-import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
@@ -33,6 +31,4 @@ class MottattDokumentService(
             harUlesteDokumenter = false
         )
     }
-
-    private fun OppgaveDto.oppgaveId() = OppgaveId(id!!, versjon)
 }

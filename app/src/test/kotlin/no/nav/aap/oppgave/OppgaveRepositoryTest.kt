@@ -201,7 +201,7 @@ class OppgaveRepositoryTest {
         assertThat(mineOppgaverFørAvslutt.first().reservertAvNavn).isEqualTo(saksbehandlerNavn)
 
         val oppgaveSomSkalAvsluttes = mineOppgaverFørAvslutt.first { it.id == oppgaveId4.id }
-        avsluttOppgave(OppgaveId(oppgaveSomSkalAvsluttes.id!!, oppgaveSomSkalAvsluttes.versjon))
+        avsluttOppgave(oppgaveSomSkalAvsluttes.oppgaveId())
 
         dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection).hentMineOppgaver("bruker1")
@@ -217,7 +217,7 @@ class OppgaveRepositoryTest {
         var mineOppgaver = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(1)
 
-        avreserverOppgave(OppgaveId(mineOppgaver.first().id!!, mineOppgaver.first().versjon), "saksbehandler1")
+        avreserverOppgave(mineOppgaver.first().oppgaveId(), "saksbehandler1")
         mineOppgaver = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(0)
 
@@ -541,7 +541,7 @@ class OppgaveRepositoryTest {
 
         dataSource.transaction { connection ->
             OppgaveRepository(connection).oppdatereOppgave(
-                oppgaveId = OppgaveId(oppgavePåVent.id!!, oppgavePåVent.versjon),
+                oppgaveId = oppgavePåVent.oppgaveId(),
                 endretAvIdent = "z123",
                 personIdent = oppgavePåVent.personIdent,
                 enhet = oppgavePåVent.enhet,
@@ -567,7 +567,7 @@ class OppgaveRepositoryTest {
 
         dataSource.transaction { connection ->
             OppgaveRepository(connection).oppdatereOppgave(
-                oppgaveId = OppgaveId(oppgaveEtterAvVent.id!!, oppgaveEtterAvVent.versjon),
+                oppgaveId = oppgaveEtterAvVent.oppgaveId(),
                 endretAvIdent = "z123",
                 personIdent = oppgaveEtterAvVent.personIdent,
                 enhet = oppgaveEtterAvVent.enhet,
@@ -1241,7 +1241,7 @@ class OppgaveRepositoryTest {
     private fun settUtløptVentefrist(oppgave: OppgaveDto, utløptVentefrist: LocalDate?) {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).oppdatereOppgave(
-                oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
+                oppgaveId = oppgave.oppgaveId(),
                 endretAvIdent = "z123",
                 utløptVentefrist = utløptVentefrist,
                 personIdent = oppgave.personIdent,

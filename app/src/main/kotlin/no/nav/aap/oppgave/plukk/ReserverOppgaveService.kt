@@ -4,7 +4,6 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
-import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
@@ -68,7 +67,7 @@ class ReserverOppgaveService(
         // Tildeler uten tilgangskontroll inntil videre
         val oppgaverSomSkalReserveres = oppgaver.map { oppgaveRepository.hentOppgave(it) }
         oppgaverSomSkalReserveres.forEach {
-            reserverOppgave(OppgaveId(it.id!!, it.versjon), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent)
+            reserverOppgave(it.oppgaveId(), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent)
         }
 
         log.info("Tildelte ${oppgaverSomSkalReserveres.size} oppgaver til $tildelTilIdent. Saksnumre: ${oppgaverSomSkalReserveres.joinToString(", ") { it.saksnummer.toString() }}")
