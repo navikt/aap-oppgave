@@ -33,7 +33,11 @@ data class OppgaveOppdatering(
     val relevanteIdenter: List<String> = emptyList(),
     val totaltFeilutbetaltBeløp : BigDecimal? = null,
     val tilbakekrevingsUrl : String? = null,
-)
+) {
+    init {
+        require(reserverTil != KELVIN) { "kan ikke reservere oppgave til KELVIN" }
+    }
+}
 
 data class VenteInformasjon(
     val årsakTilSattPåVent: String?,

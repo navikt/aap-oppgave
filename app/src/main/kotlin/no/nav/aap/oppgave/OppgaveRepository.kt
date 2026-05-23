@@ -597,6 +597,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         reservertAvIdent: String,
         reservertAvNavn: String?
     ) {
+        require(reservertAvIdent != KELVIN) { "kan ikke reservere oppgave til KELVIN" }
         val updaterOppgaveReservasjonQuery = """
             UPDATE 
                 OPPGAVE 
