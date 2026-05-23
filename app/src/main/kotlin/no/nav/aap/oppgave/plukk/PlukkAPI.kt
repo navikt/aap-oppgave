@@ -41,6 +41,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
+                ReserverOppgaveService(connection),
             ).plukkOppgave(
                 OppgaveId(request.oppgaveId, request.versjon),
                 ident(),

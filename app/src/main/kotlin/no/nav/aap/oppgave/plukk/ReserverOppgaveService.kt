@@ -9,14 +9,30 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
 import java.util.UUID
+import no.nav.aap.komponenter.dbconnect.DBConnection
 
 
 class ReserverOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
 ) {
+    constructor(connection: DBConnection): this(
+        oppgaveRepository = OppgaveRepository(connection),
+        flytJobbRepository = FlytJobbRepository(connection),
+    )
+
     private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log = LoggerFactory.getLogger(this::class.java)
+
+    fun reserverOppgave(oppgaveId: OppgaveId, endretAvIdent: String, reservertAvIdent: String) {
+        oppgaveRepository.reserverOppgave(
+            oppgaveId,
+            endretAvIdent = endretAvIdent,
+            reservertAvIdent = reservertAvIdent,
+            reservertAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(reservertAvIdent),
+        )
+        sendOppgaveStatusOppdatering(oppgaveId, HendelseType.RESERVERT, flytJobbRepository)
+    }
 
     fun avreserverOppgave(
         oppgaveId: OppgaveId,
@@ -41,8 +57,7 @@ class ReserverOppgaveService(
             return
         }
         if (ident != KELVIN) {
-            oppgaveRepository.reserverOppgave(oppgaveSomSkalReserveres, ident, ident, ansattInfoGateway.hentAnsattNavnHvisFinnes(ident))
-            sendOppgaveStatusOppdatering(oppgaveSomSkalReserveres, HendelseType.RESERVERT, flytJobbRepository)
+            reserverOppgave(oppgaveSomSkalReserveres, ident, ident)
         }
         log.info("Reserverte oppgave $oppgaveSomSkalReserveres uten tilgangskontroll for $ident.")
     }
@@ -55,8 +70,7 @@ class ReserverOppgaveService(
         // Tildeler uten tilgangskontroll inntil videre
         val oppgaverSomSkalReserveres = oppgaver.map { oppgaveRepository.hentOppgave(it) }
         oppgaverSomSkalReserveres.forEach {
-            oppgaveRepository.reserverOppgave(oppgaveId = OppgaveId(it.id!!, it.versjon), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent, reservertAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(tildelTilIdent))
-            sendOppgaveStatusOppdatering(OppgaveId(it.id!!, it.versjon), HendelseType.RESERVERT, flytJobbRepository)
+            reserverOppgave(OppgaveId(it.id!!, it.versjon), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent)
         }
 
         log.info("Tildelte ${oppgaverSomSkalReserveres.size} oppgaver til $tildelTilIdent. Saksnumre: ${oppgaverSomSkalReserveres.joinToString(", ") { it.saksnummer.toString() }}")
