@@ -20,6 +20,11 @@ import java.util.*
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
+class FeilVersjonException(
+    val oppgaveId: OppgaveId,
+    val faktiskVersjon: Long,
+): RuntimeException("Endring av $oppgaveId feilet fordi faktisk versjon er $faktiskVersjon")
+
 class OppgaveRepository(private val connection: DBConnection) {
 
     fun opprettOppgave(oppgaveDto: OppgaveDto): OppgaveId {
@@ -615,7 +620,20 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(4, oppgaveId.id)
                 setLong(5, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) { "Prøvde å reservere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
+            setResultValidator { endredeRader ->
+                require(endredeRader <= 1) { "Prøvde å reservere én oppgave, men fant $endredeRader oppgaver. Oppgave: $oppgaveId" }
+
+                if (endredeRader == 0) {
+                    val lagretOppgave = hentOppgave(oppgaveId.id)
+                    if (lagretOppgave.reservertAv == reservertAvIdent && lagretOppgave.endretAv == endretAvIdent) {
+                        /* Noop / idempotent oppførsel. Oppgaven er allerede reservert riktig. Kanskje vi fikk samme request to
+                         * ganger på grunn av at bruker klikket to ganger raskt etter hverandre fordi vi har treghet i systemet?
+                         */
+                    } else {
+                        throw FeilVersjonException(oppgaveId, lagretOppgave.versjon)
+                    }
+                }
+            }
         }
     }
 

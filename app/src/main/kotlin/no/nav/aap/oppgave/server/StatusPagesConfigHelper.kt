@@ -11,6 +11,7 @@ import java.sql.SQLException
 import no.nav.aap.komponenter.httpklient.exception.ApiErrorCode
 import no.nav.aap.komponenter.httpklient.exception.ApiException
 import no.nav.aap.komponenter.httpklient.exception.InternfeilException
+import no.nav.aap.oppgave.FeilVersjonException
 import org.slf4j.LoggerFactory
 
 object StatusPagesConfigHelper {
@@ -46,6 +47,16 @@ object StatusPagesConfigHelper {
                     secureLogger.error("SQL-feil: ", cause)
 
                     call.respondWithError(InternfeilException("En feil oppsto. Prøv igjen om litt."))
+                }
+
+                is FeilVersjonException -> {
+                    val msg = "Endring av ${cause.oppgaveId} feilet siden faktisk versjon er ${cause.faktiskVersjon}"
+                    logger.info(msg, cause)
+                    /** Beholder observerbar adferd ved å returnere InternfeilException siden jeg ikke
+                     * har undersøkt feilhåndtering hos klienter. Ser for meg at dette er en type feil som frontend
+                     * kanskje kunne håndtert spesielt.
+                     */
+                    call.respondWithError(InternfeilException(msg))
                 }
 
                 else -> {
