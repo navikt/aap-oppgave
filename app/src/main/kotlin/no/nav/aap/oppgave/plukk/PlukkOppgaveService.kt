@@ -111,8 +111,7 @@ class PlukkOppgaveService(
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
         if (oppgave.reservertAv == ident) {
             log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
-            oppgaveRepository.avreserverOppgave(oppgaveId, ident)
-            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, flytJobbRepository)
+            reserverOppgaveService.avreserverOppgave(oppgaveId, ident)
         }
     }
 }

@@ -307,12 +307,7 @@ class OppdaterOppgaveService(
 
             log.info("Reserverer oppgave ${oppdatertOppgave.oppgaveId()} med status ${avklaringsbehov.status}")
             reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(eksisterendeOppgave.behandlingRef, sistEndretAv)
-            sendOppgaveStatusOppdatering(
-                oppdatertOppgave.oppgaveId(),
-                HendelseType.RESERVERT,
-                flytJobbRepository
-            )
-
+            // sender ikke RESERVERT-hendelse til statistikk fordi reserverOppgaveUtenTilgangskontroll allerede gjør det
         } else {
             log.info("Reserverer ikke oppgave ${eksisterendeOppgave.oppgaveId()} med status ${avklaringsbehov.status} fordi $KELVIN utførte siste endring")
         }
