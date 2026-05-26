@@ -1,8 +1,11 @@
 package no.nav.aap.oppgave.plukk
 
-import kotlinx.coroutines.runBlocking
+import javax.sql.DataSource
+import no.nav.aap.komponenter.dbconnect.DBConnection
+import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
+import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.OppgaveDto
@@ -11,6 +14,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -24,35 +28,17 @@ class PlukkOppgaveService(
     val flytJobbRepository: FlytJobbRepository,
     val reserverOppgaveService: ReserverOppgaveService,
 ) {
+    constructor(enhetService: IEnhetService, ansattInfoGateway: AnsattInfoGateway, connection: DBConnection) : this(
+        enhetService = enhetService,
+        oppgaveRepository = OppgaveRepository(connection),
+        flytJobbRepository = FlytJobbRepositoryImpl(connection),
+        reserverOppgaveService = ReserverOppgaveService(connection, ansattInfoGateway)
+    )
+
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
-
-    fun plukkOppgave(
-        oppgaveId: OppgaveId,
-        ident: String,
-        token: OidcToken
-    ): OppgaveDto? {
-        val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
-
-        // TODO: Bli kvitt runBlocking
-        val harTilgang = runBlocking {
-            TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
-        }
-        if (harTilgang) {
-            if (oppgave.reservertAv == ident) {
-                // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.
-                return oppgave
-            }
-            reserverOppgaveService.reserverOppgave(oppgave.oppgaveId(), ident, ident)
-            return oppgave
-        } else {
-            log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
-            oppdaterOppgaveVedTilgangAvslått(oppgaveId = oppgaveId, ident = ident)
-        }
-        return null
-    }
-
     private fun oppdaterOppgaveVedTilgangAvslått(oppgaveId: OppgaveId, ident: String) {
+        log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
         // avreserverer
         avreserverHvisTilgangAvslått(oppgaveId, ident)
 
@@ -109,6 +95,39 @@ class PlukkOppgaveService(
         if (oppgave.reservertAv == ident) {
             log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
             reserverOppgaveService.avreserverOppgave(oppgaveId, ident)
+        }
+    }
+
+    companion object {
+        suspend fun plukkOppgave(
+            dataSource: DataSource,
+            enhetService: IEnhetService,
+            ansattInfoGateway: AnsattInfoGateway,
+            token: OidcToken,
+            ident: String,
+            oppgaveId: Long,
+        ): OppgaveDto? {
+            val oppgave = dataSource.transaction(readOnly = true) {
+                OppgaveRepository(it).hentOppgave(oppgaveId)
+            }
+
+            val harTilgang = TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
+
+            if (!harTilgang) {
+                dataSource.transaction {
+                    PlukkOppgaveService(enhetService, ansattInfoGateway, it)
+                        .oppdaterOppgaveVedTilgangAvslått(oppgaveId = oppgave.oppgaveId(), ident = ident)
+                }
+                return null
+            }
+
+            if (oppgave.reservertAv != ident) {
+                dataSource.transaction { connection ->
+                    ReserverOppgaveService(connection, ansattInfoGateway).reserverOppgave(oppgave.oppgaveId(), ident, ident)
+                }
+            }
+
+            return oppgave
         }
     }
 }
