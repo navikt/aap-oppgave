@@ -7,12 +7,8 @@ import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import javax.sql.DataSource
-import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
-import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveDto
-import no.nav.aap.oppgave.OppgaveId
-import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
@@ -37,19 +33,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
-
-        val oppgave = dataSource.transaction { connection ->
-            PlukkOppgaveService(
-                enhetService,
-                OppgaveRepository(connection),
-                FlytJobbRepository(connection),
-                ReserverOppgaveService(connection, ansattInfoGateway),
-            ).plukkOppgave(
-                OppgaveId(request.oppgaveId, request.versjon),
-                ident(),
-                token()
-            )
-        }
+        val oppgave = PlukkOppgaveService.plukkOppgave(dataSource, enhetService, ansattInfoGateway, token(), ident(), request.oppgaveId)
         if (oppgave != null) {
             respond(oppgave)
         } else {
