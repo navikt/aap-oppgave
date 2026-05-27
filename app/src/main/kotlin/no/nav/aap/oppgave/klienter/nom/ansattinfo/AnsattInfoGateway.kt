@@ -18,7 +18,8 @@ interface AnsattInfoGateway {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
 }
 
-class NomApiGateway(
+class NomApiGateway
+private constructor(
     private val restClient: RestClient<InputStream>,
 ): AnsattInfoGateway {
     private val log = LoggerFactory.getLogger(NomApiGateway::class.java)

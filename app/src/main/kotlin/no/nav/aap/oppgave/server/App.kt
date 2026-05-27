@@ -43,6 +43,7 @@ import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.markering.markeringApi
@@ -122,6 +123,8 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
         oppfølgingsenhetService = oppfølgingsenhetService
     )
 
+    val nomApiGateway = NomApiGateway.withClientCredentialsRestClient()
+
     motor(dataSource, prometheus)
 
     routing {
@@ -130,21 +133,21 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
             apiRouting {
                 // Oppdater oppgaver fra applikasjonene
-                oppdaterBehandlingOppgaverApi(dataSource, enhetService, prometheus)
-                oppdaterPostmottakOppgaverApi(dataSource, enhetService, prometheus)
-                oppdaterTilbakekrevingOppgaverApi(dataSource, enhetService, prometheus)
+                oppdaterBehandlingOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
+                oppdaterPostmottakOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
+                oppdaterTilbakekrevingOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
                 // Plukk/endre oppgave
-                plukkOppgaveApi(dataSource, prometheus, enhetService)
-                avreserverOppgave(dataSource, prometheus)
+                plukkOppgaveApi(dataSource, prometheus, enhetService, nomApiGateway)
+                avreserverOppgave(dataSource, prometheus, nomApiGateway)
                 mottattDokumentApi(dataSource, prometheus)
-                tildelOppgaveApi(dataSource, enhetService, norgGateway, prometheus)
+                tildelOppgaveApi(dataSource, enhetService, norgGateway, prometheus, nomApiGateway)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, enhetService, norgGateway, prometheus)
                 oppgavelisteApi(dataSource, enhetService, norgGateway, prometheus)
                 hentOppgaveEnhetApi(dataSource, enhetService, norgGateway, prometheus)
                 mineOppgaverApi(dataSource, enhetService, norgGateway, prometheus)
                 søkApi(dataSource, enhetService, norgGateway, prometheus)
-                markeringApi(dataSource, prometheus)
+                markeringApi(dataSource, prometheus, nomApiGateway)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
                 opprettEllerOppdaterFilterApi(dataSource, prometheus)

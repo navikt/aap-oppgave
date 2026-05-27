@@ -54,6 +54,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 
@@ -2187,6 +2188,7 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
+                NomApiGateway.withClientCredentialsRestClient(),
             ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }
@@ -2204,7 +2206,7 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
-
+                NomApiGateway.withClientCredentialsRestClient(),
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }

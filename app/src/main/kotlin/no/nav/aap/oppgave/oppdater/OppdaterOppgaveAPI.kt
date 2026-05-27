@@ -12,7 +12,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
@@ -27,7 +27,8 @@ import org.slf4j.MDC
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     dataSource: DataSource,
     enhetService: EnhetService,
-    prometheus: PrometheusMeterRegistry
+    prometheus: PrometheusMeterRegistry,
+    ansattInfoGateway: AnsattInfoGateway,
 ) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
         operasjon = Operasjon.SAKSBEHANDLE,
@@ -44,6 +45,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
                 flytJobbRepository = FlytJobbRepositoryImpl(connection),
                 mottattDokumentRepository = MottattDokumentRepository(connection),
                 tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                ansattInfoGateway = ansattInfoGateway,
             ).håndterNyOppgaveOppdatering(
                 request.tilOppgaveOppdatering()
             )
@@ -55,7 +57,8 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
 fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     dataSource: DataSource,
     enhetService: EnhetService,
-    prometheus: PrometheusMeterRegistry
+    prometheus: PrometheusMeterRegistry,
+    ansattInfoGateway: AnsattInfoGateway,
 ) = route("/oppdater-postmottak-oppgaver").authorizedPost<Unit, Unit, DokumentflytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
         operasjon = Operasjon.SAKSBEHANDLE,
@@ -72,6 +75,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
                 flytJobbRepository = FlytJobbRepositoryImpl(connection),
                 mottattDokumentRepository = MottattDokumentRepository(connection),
                 tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                ansattInfoGateway = ansattInfoGateway,
             ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
         }
     }
@@ -81,7 +85,8 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
 fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     dataSource: DataSource,
     enhetService: EnhetService,
-    prometheus: PrometheusMeterRegistry
+    prometheus: PrometheusMeterRegistry,
+    ansattInfoGateway: AnsattInfoGateway,
 ) = route("/oppdater-tilbakekreving-oppgaver").authorizedPost<Unit, Unit, TilbakekrevingsbehandlingOppdatertHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
         operasjon = Operasjon.SAKSBEHANDLE,
@@ -100,6 +105,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
                 flytJobbRepository = FlytJobbRepositoryImpl(connection),
                 mottattDokumentRepository = MottattDokumentRepository(connection),
                 tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                ansattInfoGateway = ansattInfoGateway,
             ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
         }
     }
