@@ -6,14 +6,18 @@ import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.verdityper.Status
 import javax.sql.DataSource
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 
-fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
+fun NormalOpenAPIRoute.avreserverOppgave(
+    dataSource: DataSource,
+    prometheus: PrometheusMeterRegistry,
+    ansattInfoGateway: AnsattInfoGateway,
+) {
     route("/avreserver-oppgaver").post<Unit, List<OppgaveId>, AvreserverOppgaveDto> { _, dto ->
         prometheus.httpCallCounter("avreserver-oppgaver").increment()
         val oppgaver = dataSource.transaction { connection ->
@@ -21,10 +25,7 @@ fun NormalOpenAPIRoute.avreserverOppgave(dataSource: DataSource, prometheus: Pro
                     .hentOppgave(oppgaveId) }
                     .filter { it.reservertAv != null && it.status != Status.AVSLUTTET }
                     .map { it.oppgaveId() }
-            val reserverOppgaveService = ReserverOppgaveService(
-                OppgaveRepository(connection),
-                FlytJobbRepository(connection),
-            )
+            val reserverOppgaveService = ReserverOppgaveService(connection, ansattInfoGateway)
             val ident = ident()
             oppgaverSomSkalAvreserveres.forEach {
                 reserverOppgaveService.avreserverOppgave(it, ident)

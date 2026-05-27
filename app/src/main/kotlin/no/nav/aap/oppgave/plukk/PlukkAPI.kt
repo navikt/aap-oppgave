@@ -14,6 +14,7 @@ import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.tilgang.Beslutter
@@ -30,6 +31,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry,
     enhetService: EnhetService,
+    ansattInfoGateway: AnsattInfoGateway,
 ) =
     route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
@@ -41,7 +43,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
                 enhetService,
                 OppgaveRepository(connection),
                 FlytJobbRepository(connection),
-                ReserverOppgaveService(connection),
+                ReserverOppgaveService(connection, ansattInfoGateway),
             ).plukkOppgave(
                 OppgaveId(request.oppgaveId, request.versjon),
                 ident(),

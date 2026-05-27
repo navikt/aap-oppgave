@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 
 class OppdaterOppgaveService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
@@ -53,6 +54,7 @@ class OppdaterOppgaveService(
     private val flytJobbRepository: FlytJobbRepository,
     private val tilbakekrevingRepository: TilbakekrevingRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
+    ansattInfoGateway: AnsattInfoGateway,
 ) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
@@ -60,6 +62,7 @@ class OppdaterOppgaveService(
     private val reserverOppgaveService = ReserverOppgaveService(
         oppgaveRepository,
         flytJobbRepository,
+        ansattInfoGateway,
     )
 
     fun håndterNyOppgaveOppdatering(oppgaveOppdatering: OppgaveOppdatering) {

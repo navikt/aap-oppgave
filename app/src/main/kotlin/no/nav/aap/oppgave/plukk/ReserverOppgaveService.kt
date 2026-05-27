@@ -1,26 +1,27 @@
 package no.nav.aap.oppgave.plukk
 
+import java.util.*
+import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
-import java.util.UUID
-import no.nav.aap.komponenter.dbconnect.DBConnection
 
 
 class ReserverOppgaveService(
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
+    private val ansattInfoGateway: AnsattInfoGateway,
 ) {
-    constructor(connection: DBConnection): this(
+    constructor(connection: DBConnection, ansattInfoGateway: AnsattInfoGateway): this(
         oppgaveRepository = OppgaveRepository(connection),
         flytJobbRepository = FlytJobbRepository(connection),
+        ansattInfoGateway = ansattInfoGateway,
     )
 
-    private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     private val log = LoggerFactory.getLogger(this::class.java)
 
     fun reserverOppgave(oppgaveId: OppgaveId, endretAvIdent: String, reservertAvIdent: String) {
