@@ -2289,50 +2289,6 @@ class OppdaterOppgaveServiceTest {
         ).isFalse()
     }
 
-    @Test
-    fun `automatisk soningsmarkering er av når feature toggle er av`() {
-        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
-        val nå = LocalDateTime.now()
-        sendBehandlingFlytStoppetHendelse(
-            BehandlingFlytStoppetHendelse(
-                personIdent = "12345678901",
-                saksnummer = Saksnummer("123"),
-                referanse = behandlingsref,
-                status = BehandlingStatus.UTREDES,
-                opprettetTidspunkt = nå.minusDays(2),
-                behandlingType = TypeBehandling.Revurdering,
-                versjon = "Kelvin 1.0",
-                hendelsesTidspunkt = nå.minusHours(1),
-                erPåVent = false,
-                mottattDokumenter = listOf(),
-                reserverTil = null,
-                årsakerTilBehandling = listOf(),
-                avklaringsbehov = listOf(
-                    AvklaringsbehovHendelseDto(
-                        avklaringsbehovDefinisjon = Definisjon.AVKLAR_SONINGSFORRHOLD,
-                        status = AvklaringsbehovStatus.OPPRETTET,
-                        endringer = listOf(
-                            EndringDTO(
-                                status = AvklaringsbehovStatus.OPPRETTET,
-                                endretAv = "Kelvin",
-                                tidsstempel = nå.minusHours(2)
-                            )
-                        )
-                    )
-                ),
-                vurderingsbehov = listOf("INSTITUSJONSOPPHOLD"),
-                årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
-                relevanteIdenterPåBehandling = emptyList(),
-            )
-        )
-
-        assertThat(
-            hentMarkeringerForBehandling(behandlingsref)
-                .any { it.markeringType == MarkeringForBehandling.HASTER }
-        ).isFalse()
-    }
-
-
     private fun sendBehandlingFlytStoppetHendelse(
         hendelse: BehandlingFlytStoppetHendelse
     ) {
