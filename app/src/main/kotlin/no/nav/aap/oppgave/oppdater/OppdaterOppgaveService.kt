@@ -49,19 +49,6 @@ import java.time.LocalDateTime
 import java.util.*
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 
-private val ÅPNE_STATUSER = setOf(
-    AvklaringsbehovStatus.OPPRETTET,
-    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
-    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-)
-
-private val AVSLUTTEDE_STATUSER = setOf(
-    AvklaringsbehovStatus.AVSLUTTET,
-    AvklaringsbehovStatus.AVBRUTT,
-    AvklaringsbehovStatus.KVALITETSSIKRET,
-    AvklaringsbehovStatus.TOTRINNS_VURDERT,
-)
-private const val HASTEMARKERING_BEGRUNNELSE_SONING = "Ny soning, mulig stans"
 
 class OppdaterOppgaveService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
@@ -76,6 +63,7 @@ class OppdaterOppgaveService(
     private val markeringRepository: MarkeringRepository,
 ) {
 
+    private val HASTEMARKERING_BEGRUNNELSE_SONING = "Ny soning, mulig stans"
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
     private val reserverOppgaveService = ReserverOppgaveService(

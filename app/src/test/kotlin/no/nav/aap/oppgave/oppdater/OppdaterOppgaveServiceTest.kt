@@ -2323,12 +2323,7 @@ class OppdaterOppgaveServiceTest {
                 vurderingsbehov = listOf("INSTITUSJONSOPPHOLD"),
                 årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
                 relevanteIdenterPåBehandling = emptyList(),
-            ),
-            unleashService = object : IUnleashService {
-                override fun isEnabled(featureToggle: no.nav.aap.oppgave.unleash.FeatureToggle): Boolean {
-                    return featureToggle != no.nav.aap.oppgave.unleash.FeatureToggles.SoningHastemarkering
-                }
-            }
+            )
         )
 
         assertThat(
@@ -2339,8 +2334,7 @@ class OppdaterOppgaveServiceTest {
 
 
     private fun sendBehandlingFlytStoppetHendelse(
-        hendelse: BehandlingFlytStoppetHendelse,
-        unleashService: IUnleashService = enabledUnleashService()
+        hendelse: BehandlingFlytStoppetHendelse
     ) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
