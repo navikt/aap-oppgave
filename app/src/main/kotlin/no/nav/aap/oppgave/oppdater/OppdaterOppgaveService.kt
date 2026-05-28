@@ -49,7 +49,6 @@ import java.time.LocalDateTime
 import java.util.*
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 
-
 class OppdaterOppgaveService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingGateway = VeilarbarboppfolgingGateway,
