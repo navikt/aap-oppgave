@@ -2329,13 +2329,6 @@ class OppdaterOppgaveServiceTest {
         }
     }
 
-    private fun enabledUnleashService(): IUnleashService {
-        return UnleashService(FakeUnleash().apply {
-            enableAll()
-        })
-    }
-
-
     private val ENHET_NAV_LØRENSKOG = "0230"
     private fun opprettOppgave(
         saksnummer: String = "123",
