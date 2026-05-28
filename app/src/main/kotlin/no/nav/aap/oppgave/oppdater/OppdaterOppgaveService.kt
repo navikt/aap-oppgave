@@ -19,6 +19,8 @@ import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingGateway
+import no.nav.aap.oppgave.markering.BehandlingMarkering
+import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.AVSLUTTEDE_STATUSER
 import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
@@ -34,9 +36,11 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
+import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
@@ -55,8 +59,10 @@ class OppdaterOppgaveService(
     private val tilbakekrevingRepository: TilbakekrevingRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
     ansattInfoGateway: AnsattInfoGateway,
+    private val markeringRepository: MarkeringRepository,
 ) {
 
+    private val HASTEMARKERING_BEGRUNNELSE_SONING = "Ny soning, mulig stans"
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
 
     private val reserverOppgaveService = ReserverOppgaveService(
@@ -73,7 +79,65 @@ class OppdaterOppgaveService(
             BehandlingStatus.LUKKET -> avslutteOppgaver(eksisterendeOppgaver)
             else -> oppdaterOppgaver(oppgaveOppdatering, oppgaveMap)
         }
+        oppdaterHastemarkeringForSoning(oppgaveOppdatering)
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
+    }
+
+    private fun oppdaterHastemarkeringForSoning(oppgaveOppdatering: OppgaveOppdatering) {
+        if (!unleashService.isEnabled(FeatureToggles.SoningHastemarkering)) {
+            return
+        }
+
+        val eksisterendeSoningHaster =
+            markeringRepository
+                .hentMarkeringerForBehandling(oppgaveOppdatering.referanse)
+                .firstOrNull { it.begrunnelse == HASTEMARKERING_BEGRUNNELSE_SONING && it.opprettetAv == KELVIN && it.markeringType == MarkeringForBehandling.HASTER }
+
+        val skalHaAutomatiskHasteMarkering =
+            oppgaveOppdatering.behandlingstype == Behandlingstype.REVURDERING &&
+                    oppgaveOppdatering.avklaringsbehov.any {
+                        it.avklaringsbehovKode.kode == Definisjon.AVKLAR_SONINGSFORRHOLD.kode.name &&
+                                it.status in ÅPNE_STATUSER
+                    }
+
+        if (skalHaAutomatiskHasteMarkering) {
+            if (eksisterendeSoningHaster == null) {
+                markeringRepository.oppdaterMarkering(
+                    referanse = oppgaveOppdatering.referanse,
+                    markering = BehandlingMarkering(
+                        markeringType = MarkeringForBehandling.HASTER,
+                        begrunnelse = HASTEMARKERING_BEGRUNNELSE_SONING,
+                        opprettetAv = KELVIN
+                    )
+                )
+                sendOppgaveStatusOppdateringForMarkering(oppgaveOppdatering.referanse)
+            }
+            return
+        }
+
+        if (eksisterendeSoningHaster != null) {
+            markeringRepository.slettMarkering(
+                referanse = oppgaveOppdatering.referanse,
+                markering = BehandlingMarkering(
+                    markeringType = MarkeringForBehandling.HASTER,
+                    opprettetAv = KELVIN
+                )
+            )
+            sendOppgaveStatusOppdateringForMarkering(oppgaveOppdatering.referanse)
+        }
+    }
+
+    private fun sendOppgaveStatusOppdateringForMarkering(behandlingsreferanse: UUID) {
+        val åpenOppgave = oppgaveRepository
+            .hentOppgaver(behandlingsreferanse)
+            .firstOrNull { it.status == Status.OPPRETTET }
+        if (åpenOppgave?.id != null) {
+            sendOppgaveStatusOppdatering(
+                oppgaveId = OppgaveId(åpenOppgave.id!!, åpenOppgave.versjon),
+                hendelseType = HendelseType.OPPDATERT,
+                repository = flytJobbRepository
+            )
+        }
     }
 
     private fun oppdaterOppgaver(

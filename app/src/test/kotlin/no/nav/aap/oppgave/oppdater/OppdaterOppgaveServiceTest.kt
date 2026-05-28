@@ -36,12 +36,16 @@ import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
+import no.nav.aap.oppgave.markering.BehandlingMarkering
+import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
+import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.postmottak.kontrakt.journalpost.JournalpostId
@@ -2174,8 +2178,120 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgavePostmottak.saksnummer).isEqualTo(saksnummer.toString())
     }
 
+    @Test
+    fun `soning i revurdering oppretter og fjerner automatisk hastemarkering`() {
+        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
+        val saksnummer = Saksnummer("123")
+        val nå = LocalDateTime.now()
+        val soningHendelse = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = nå.minusDays(3),
+            behandlingType = TypeBehandling.Revurdering,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå.minusHours(1),
+            erPåVent = false,
+            mottattDokumenter = listOf(),
+            reserverTil = null,
+            årsakerTilBehandling = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SONINGSFORRHOLD,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                )
+            ),
+            vurderingsbehov = listOf("INSTITUSJONSOPPHOLD"),
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(soningHendelse)
 
-    private fun sendBehandlingFlytStoppetHendelse(hendelse: BehandlingFlytStoppetHendelse) {
+        val hasterMarkeringEtterSoning =
+            hentMarkeringerForBehandling(behandlingsref)
+                .single { it.markeringType == MarkeringForBehandling.HASTER }
+        assertThat(hasterMarkeringEtterSoning.begrunnelse).isEqualTo("Ny soning, mulig stans")
+        assertThat(hasterMarkeringEtterSoning.opprettetAv).isEqualTo("Kelvin")
+
+        val utenSoning = soningHendelse.copy(
+            hendelsesTidspunkt = nå,
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(20)
+                        )
+                    ),
+                ),
+            ),
+            vurderingsbehov = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(utenSoning)
+
+        assertThat(
+            hentMarkeringerForBehandling(behandlingsref)
+                .any { it.markeringType == MarkeringForBehandling.HASTER }
+        ).isFalse()
+    }
+
+    @Test
+    fun `soning i førstegangsbehandling oppretter ikke automatisk hastemarkering`() {
+        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
+        val nå = LocalDateTime.now()
+        sendBehandlingFlytStoppetHendelse(
+            BehandlingFlytStoppetHendelse(
+                personIdent = "12345678901",
+                saksnummer = Saksnummer("123"),
+                referanse = behandlingsref,
+                status = BehandlingStatus.UTREDES,
+                opprettetTidspunkt = nå.minusDays(2),
+                behandlingType = TypeBehandling.Førstegangsbehandling,
+                versjon = "Kelvin 1.0",
+                hendelsesTidspunkt = nå.minusHours(1),
+                erPåVent = false,
+                mottattDokumenter = listOf(),
+                reserverTil = null,
+                årsakerTilBehandling = listOf(),
+                avklaringsbehov = listOf(
+                    AvklaringsbehovHendelseDto(
+                        avklaringsbehovDefinisjon = Definisjon.AVKLAR_SONINGSFORRHOLD,
+                        status = AvklaringsbehovStatus.OPPRETTET,
+                        endringer = listOf(
+                            EndringDTO(
+                                status = AvklaringsbehovStatus.OPPRETTET,
+                                endretAv = "Kelvin",
+                                tidsstempel = nå.minusHours(2)
+                            )
+                        )
+                    )
+                ),
+                vurderingsbehov = listOf("INSTITUSJONSOPPHOLD"),
+                årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+                relevanteIdenterPåBehandling = emptyList(),
+            )
+        )
+
+        assertThat(
+            hentMarkeringerForBehandling(behandlingsref)
+                .any { it.markeringType == MarkeringForBehandling.HASTER }
+        ).isFalse()
+    }
+
+    private fun sendBehandlingFlytStoppetHendelse(
+        hendelse: BehandlingFlytStoppetHendelse
+    ) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
                 UnleashService(FakeUnleash().apply {
@@ -2189,6 +2305,7 @@ class OppdaterOppgaveServiceTest {
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
                 NomApiGateway.withClientCredentialsRestClient(),
+                MarkeringRepository(connection),
             ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }
@@ -2207,10 +2324,10 @@ class OppdaterOppgaveServiceTest {
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
                 NomApiGateway.withClientCredentialsRestClient(),
+                MarkeringRepository(connection),
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }
-
 
     private val ENHET_NAV_LØRENSKOG = "0230"
     private fun opprettOppgave(
@@ -2249,6 +2366,12 @@ class OppdaterOppgaveServiceTest {
     private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentOppgave(oppgaveId.id)
+        }
+    }
+
+    private fun hentMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<BehandlingMarkering> {
+        return dataSource.transaction { connection ->
+            MarkeringRepository(connection).hentMarkeringerForBehandling(behandlingsref.referanse)
         }
     }
 
