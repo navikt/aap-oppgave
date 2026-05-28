@@ -33,6 +33,8 @@ jobs:
       generate-openapi-command: ./gradlew genererOpenApiJson
 
   publiser-kontrakt:
+    name: Publiser kontrakt
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: gradle
     permissions:
       contents: write
