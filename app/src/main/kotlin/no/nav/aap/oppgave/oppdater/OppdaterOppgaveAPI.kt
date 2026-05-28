@@ -12,6 +12,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
+import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
@@ -41,6 +42,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
             tilbakekrevingRepository = TilbakekrevingRepository(connection),
+            markeringRepository = MarkeringRepository(connection),
         ).håndterNyOppgaveOppdatering(
             request.tilOppgaveOppdatering()
         )
@@ -67,6 +69,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
             tilbakekrevingRepository = TilbakekrevingRepository(connection),
+            markeringRepository = MarkeringRepository(connection),
         ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
     }
     respondWithStatus(HttpStatusCode.OK)
@@ -93,6 +96,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
             flytJobbRepository = FlytJobbRepositoryImpl(connection),
             mottattDokumentRepository = MottattDokumentRepository(connection),
             tilbakekrevingRepository = TilbakekrevingRepository(connection),
+            markeringRepository = MarkeringRepository(connection),
         ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
     }
     respondWithStatus(HttpStatusCode.OK)
