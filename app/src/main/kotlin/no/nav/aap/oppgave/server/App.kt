@@ -18,9 +18,7 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.routing
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import java.time.Duration
 import javax.sql.DataSource
-import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
@@ -77,15 +75,6 @@ fun main() {
         LoggerFactory.getLogger("App")
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
         secureLogger.error("Uhåndtert feil", e)
-    }
-    thread(isDaemon = true) {
-        val log = LoggerFactory.getLogger("main")
-        while (true) {
-            Thread.sleep(Duration.ofMinutes(10))
-            for ((tråd, stack) in Thread.getAllStackTraces().entries) {
-                log.info("tråd {}\n {}", tråd.name, stack.joinToString("\n") { it.toString() })
-            }
-        }
     }
     embeddedServer(Netty, configure = {
         connector {
