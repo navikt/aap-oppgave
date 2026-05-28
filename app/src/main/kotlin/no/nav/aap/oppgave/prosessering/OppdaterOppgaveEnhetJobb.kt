@@ -17,7 +17,8 @@ import org.slf4j.LoggerFactory
 
 class OppdaterOppgaveEnhetJobb(
     private val repository: OppgaveRepository,
-    private val flytJobbRepository: FlytJobbRepository
+    private val flytJobbRepository: FlytJobbRepository,
+    private val pdlGraphqlGateway: PdlGraphqlGateway,
 ) : JobbUtfører {
     private val log = LoggerFactory.getLogger(OppdaterOppgaveEnhetJobb::class.java)
 
@@ -28,12 +29,18 @@ class OppdaterOppgaveEnhetJobb(
             return
         }
 
-        log.info("Sjekker addressebeskyttelse for ${oppgaverForIdent.keys.size} identer, dette blir ${Math.ceilDiv(oppgaverForIdent.keys.size, 1000)} kall mot PDL.")
+        log.info(
+            "Sjekker addressebeskyttelse for ${oppgaverForIdent.keys.size} identer, dette blir ${
+                Math.ceilDiv(
+                    oppgaverForIdent.keys.size,
+                    1000
+                )
+            } kall mot PDL."
+        )
         val identerMedStrengtFortroligAdresse = oppgaverForIdent.keys.toList()
             .chunked(1000)
             .flatMap { identBatch ->
-                PdlGraphqlGateway.withClientCredentialsRestClient()
-                    .hentAdressebeskyttelseForIdenter(identBatch).hentPersonBolk ?: emptyList()
+                pdlGraphqlGateway.hentAdressebeskyttelseForIdenter(identBatch).hentPersonBolk ?: emptyList()
             }
             .filter {
                 it.person!!.adressebeskyttelse!!
@@ -70,7 +77,11 @@ class OppdaterOppgaveEnhetJobb(
 
     companion object : Jobb {
         override fun konstruer(connection: DBConnection): JobbUtfører {
-            return OppdaterOppgaveEnhetJobb(OppgaveRepository(connection), FlytJobbRepositoryImpl(connection))
+            return OppdaterOppgaveEnhetJobb(
+                OppgaveRepository(connection),
+                FlytJobbRepositoryImpl(connection),
+                PdlGraphqlGateway.withClientCredentialsRestClient()
+            )
         }
 
         override fun type() = "oppgave.oppdaterOppgaveEnhet"

@@ -58,6 +58,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 
@@ -1085,7 +1086,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgavePåVent.påVentTil).isNotNull()
 
         // saksbehandler avreserverer
-        avreserverOppgave(OppgaveId(oppgavePåVent.id!!, oppgavePåVent.versjon), saksbehandler)
+        avreserverOppgave(oppgavePåVent.oppgaveId(), saksbehandler)
 
         // ny hendelse
         val nyttMottattDokument = BehandlingFlytStoppetHendelse(
@@ -2343,8 +2344,9 @@ class OppdaterOppgaveServiceTest {
     ) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                graphClient,
-                unleashService,
+                UnleashService(FakeUnleash().apply {
+                    enableAll()
+                }),
                 veilarbarboppfolgingGateway,
                 sykefravarsoppfolgingGateway,
                 enhetService,
@@ -2352,6 +2354,7 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
+                NomApiGateway.withClientCredentialsRestClient(),
                 MarkeringRepository(connection),
             ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
@@ -2360,8 +2363,9 @@ class OppdaterOppgaveServiceTest {
     private fun sendDokumentFlytStoppetHendelse(hendelse: DokumentflytStoppetHendelse) {
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                graphClient,
-                enabledUnleashService(),
+                UnleashService(FakeUnleash().apply {
+                    enableAll()
+                }),
                 veilarbarboppfolgingGateway,
                 sykefravarsoppfolgingGateway,
                 enhetService,
@@ -2369,8 +2373,8 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
+                NomApiGateway.withClientCredentialsRestClient(),
                 MarkeringRepository(connection),
-
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }

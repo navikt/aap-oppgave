@@ -6,6 +6,7 @@ data class PersonRequest(val ident: String)
 
 enum class OppgaveKategori {
     MEDLEMSKAP,
+    STUDENT,
     LOKALKONTOR,
     KVALITETSSIKRING,
     NAY,
@@ -17,6 +18,7 @@ data class NåværendeEnhet(
     val oppgaveKategori: OppgaveKategori,
     val enhet: String,
     val markertSomHasteSak: Boolean,
+    val venteÅrsak: String?,
     val saksnummer: String
 )
 

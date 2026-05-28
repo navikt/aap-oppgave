@@ -5,7 +5,6 @@ import no.nav.aap.motor.Jobb
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.motor.JobbUtfører
 import no.nav.aap.motor.cron.CronExpression
-import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.unleash.FeatureToggles
@@ -30,13 +29,13 @@ class VarsleOmOppgaverIkkeEndretJobb(
         log.info("Fant ${oppgaverIkkeEndretPåFemUker.size} oppgaver som ikke er endret på mer enn fem uker, hvorav ${oppgaverIkkeHosNay.size} ikke er hos NAY.")
         if (unleashService.isEnabled(FeatureToggles.VarsleOmOppgaverEldreEnn7Dager)) {
             oppgaverIkkeHosNay.forEach {
+                log.info(
+                    "Oppgave ${it.oppgaveId()} for avklaringsbehov ${it.avklaringsbehovKode} på enhet ${it.enhetForKø} er ikke endret siden ${(it.endretTidspunkt ?: it.opprettetTidspunkt).toLocalDate()}. Saksnummer: ${it.saksnummer}"
+                )
+            }
+            if (oppgaverIkkeHosNay.isNotEmpty()) {
                 log.error(
-                    "Oppgave ${
-                        OppgaveId(
-                            it.id!!,
-                            it.versjon
-                        )
-                    } for avklaringsbehov ${it.avklaringsbehovKode} på enhet ${it.enhetForKø} er ikke endret siden ${(it.endretTidspunkt ?: it.opprettetTidspunkt).toLocalDate()}. Saksnummer: ${it.saksnummer}"
+                    "Fant ${oppgaverIkkeHosNay.size} som ikke er endret på lang tid. Sjekk info-logger med denne trace-id for hvilke det gjelder."
                 )
             }
         }

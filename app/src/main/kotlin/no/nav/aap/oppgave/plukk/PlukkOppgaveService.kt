@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.plukk
 
+import kotlinx.coroutines.runBlocking
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
@@ -10,7 +11,6 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -22,9 +22,9 @@ class PlukkOppgaveService(
     val enhetService: IEnhetService,
     val oppgaveRepository: OppgaveRepository,
     val flytJobbRepository: FlytJobbRepository,
+    val reserverOppgaveService: ReserverOppgaveService,
 ) {
-    private val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
-    private val log: Logger = LoggerFactory.getLogger(PlukkOppgaveService::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
 
     fun plukkOppgave(
@@ -34,20 +34,16 @@ class PlukkOppgaveService(
     ): OppgaveDto? {
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
 
-        val harTilgang = TilgangGateway.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
+        // TODO: Bli kvitt runBlocking
+        val harTilgang = runBlocking {
+            TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
+        }
         if (harTilgang) {
             if (oppgave.reservertAv == ident) {
                 // Reserveres av samme bruker som allerede har reservert oppgave, så da skal ingenting skje.
                 return oppgave
             }
-            val oppgaveIdMedVersjon = OppgaveId(oppgave.id!!, oppgave.versjon)
-            oppgaveRepository.reserverOppgave(
-                oppgaveIdMedVersjon,
-                ident,
-                ident,
-                ansattInfoGateway.hentAnsattNavnHvisFinnes(ident)
-            )
-            sendOppgaveStatusOppdatering(oppgaveIdMedVersjon, HendelseType.RESERVERT, flytJobbRepository)
+            reserverOppgaveService.reserverOppgave(oppgave.oppgaveId(), ident, ident)
             return oppgave
         } else {
             log.info("Bruker har ikke tilgang til oppgave med id: $oppgaveId")
@@ -85,9 +81,7 @@ class PlukkOppgaveService(
             )
         log.info("Oppdaterer enhet for oppgave ${oppgave.id} til ${nyEnhet.gjeldendeEnhet()} etter tilgang avslått på plukk. Saksnummer: ${oppgave.saksnummer}")
         oppgaveRepository.oppdatereOppgave(
-            oppgaveId = OppgaveId(requireNotNull(oppgave.id) {
-                "OppgaveID kan ikke være null"
-            }, oppgave.versjon),
+            oppgaveId = oppgave.oppgaveId(),
             endretAvIdent = KELVIN,
             personIdent = oppgave.personIdent,
             enhet = nyEnhet.enhet,
@@ -114,8 +108,7 @@ class PlukkOppgaveService(
         val oppgave = oppgaveRepository.hentOppgave(oppgaveId.id)
         if (oppgave.reservertAv == ident) {
             log.info("Avreserverer oppgave ${oppgaveId.id} etter at tilgang ble avslått på plukk.")
-            oppgaveRepository.avreserverOppgave(oppgaveId, ident)
-            sendOppgaveStatusOppdatering(oppgaveId, HendelseType.AVRESERVERT, flytJobbRepository)
+            reserverOppgaveService.avreserverOppgave(oppgaveId, ident)
         }
     }
 }

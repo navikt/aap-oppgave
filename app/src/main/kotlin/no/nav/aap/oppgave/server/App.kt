@@ -18,13 +18,13 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.routing
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import java.time.Duration
 import javax.sql.DataSource
+import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
-import no.nav.aap.komponenter.config.configForKey
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureConfig
-import no.nav.aap.komponenter.server.AZURE
+import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.server.auth.IdentityProvider
 import no.nav.aap.komponenter.server.commonKtorModule
 import no.nav.aap.komponenter.server.plugins.NavIdentInterceptor
@@ -34,14 +34,20 @@ import no.nav.aap.motor.retry.RetryService
 import no.nav.aap.oppgave.actuator.actuatorApi
 import no.nav.aap.oppgave.avreserverOppgave
 import no.nav.aap.oppgave.drift.driftApi
+import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.enhetStatus
 import no.nav.aap.oppgave.enhet.hentEnhetApi
 import no.nav.aap.oppgave.enhet.nayEnhetForPerson
+import no.nav.aap.oppgave.enhet.oppfølgingsenhet.OppfølgingsenhetService
 import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
 import no.nav.aap.oppgave.filter.hentFilterApi
 import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
 import no.nav.aap.oppgave.filter.slettFilterApi
+import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
+import no.nav.aap.oppgave.klienter.norg.NorgGateway
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.markering.markeringApi
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
@@ -59,19 +65,27 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
+import no.nav.aap.tilgang.TilgangGateway
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 val secureLogger: Logger = LoggerFactory.getLogger("team-logs")
 private const val ANTALL_WORKERS = 5
 
-val isTexasEnabled = configForKey("ENABLE_TEXAS").toBoolean()
-
 fun main() {
     Thread.currentThread().setUncaughtExceptionHandler { _, e ->
         LoggerFactory.getLogger("App")
             .error("Ikke-håndert exception: ${e::class.qualifiedName}. Se sikker logg for stacktrace")
         secureLogger.error("Uhåndtert feil", e)
+    }
+    thread(isDaemon = true) {
+        val log = LoggerFactory.getLogger("main")
+        while (true) {
+            Thread.sleep(Duration.ofMinutes(10))
+            for ((tråd, stack) in Thread.getAllStackTraces().entries) {
+                log.info("tråd {}\n {}", tråd.name, stack.joinToString("\n") { it.toString() })
+            }
+        }
     }
     embeddedServer(Netty, configure = {
         connector {
@@ -92,60 +106,59 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     * Midlertidig løsning for å enkelt skru av og på Texas.
     * Gjøres for å bekrefte/avkrefte teorien om at Texas er årsaken til den økte feilraten den siste
     **/
-    if (isTexasEnabled) {
-        commonKtorModule(
-            prometheus = prometheus,
-            infoModel = InfoModel(
-                title = "AAP - Oppgave",
-                description = """
-                For å teste API i dev, besøk
-                <a href="https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:aap:oppgave">Token Generator</a> for å få token.
-                """.trimIndent(),
-            ),
-            identityProvider = IdentityProvider.ENTRA_ID
-        )
-    } else {
-        commonKtorModule(
-            prometheus, AzureConfig(), InfoModel(
-                title = "AAP - Oppgave",
-                description = """
-                For å teste API i dev, besøk
-                <a href="https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:aap:oppgave">Token Generator</a> for å få token.
-                """.trimIndent(),
-            )
-        )
-    }
+    commonKtorModule(
+        prometheus = prometheus,
+        infoModel = InfoModel(
+            title = "AAP - Oppgave",
+            description = """
+            For å teste API i dev, besøk
+            <a href="https://azure-token-generator.intern.dev.nav.no/api/obo?aud=dev-gcp:aap:oppgave">Token Generator</a> for å få token.
+            """.trimIndent(),
+        ),
+        identityProvider = IdentityProvider.ENTRA_ID
+    )
 
     install(StatusPages, StatusPagesConfigHelper.setup())
 
     val dataSource = initDatasource(dbConfig, prometheus)
     Migrering.migrate(dataSource)
 
-    val iMsGraphClient = MsGraphGateway(prometheus)
+    val norgGateway = NorgGateway()
+    val pdlGraphqlGateway = PdlGraphqlGateway.withClientCredentialsRestClient()
+    val oppfølgingsenhetService = OppfølgingsenhetService(dataSource, VeilarbarenaGateway())
+
+    val enhetService = EnhetService(
+        msGraphClient = MsGraphGateway(prometheus),
+        norgKlient = norgGateway,
+        pdlGraphqlKlient = pdlGraphqlGateway,
+        oppfølgingsenhetService = oppfølgingsenhetService
+    )
+
+    val nomApiGateway = NomApiGateway.withClientCredentialsRestClient()
 
     motor(dataSource, prometheus)
 
     routing {
-        authenticate(if (isTexasEnabled) IdentityProvider.ENTRA_ID.value else AZURE) {
+        authenticate(IdentityProvider.ENTRA_ID.value) {
             install(NavIdentInterceptor)
 
             apiRouting {
                 // Oppdater oppgaver fra applikasjonene
-                oppdaterBehandlingOppgaverApi(dataSource, iMsGraphClient, prometheus)
-                oppdaterPostmottakOppgaverApi(dataSource, iMsGraphClient, prometheus)
-                oppdaterTilbakekrevingOppgaverApi(dataSource, iMsGraphClient, prometheus)
+                oppdaterBehandlingOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
+                oppdaterPostmottakOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
+                oppdaterTilbakekrevingOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
                 // Plukk/endre oppgave
-                plukkOppgaveApi(dataSource, prometheus)
-                avreserverOppgave(dataSource, prometheus)
+                plukkOppgaveApi(dataSource, prometheus, enhetService, nomApiGateway)
+                avreserverOppgave(dataSource, prometheus, nomApiGateway)
                 mottattDokumentApi(dataSource, prometheus)
-                tildelOppgaveApi(dataSource, prometheus)
+                tildelOppgaveApi(dataSource, enhetService, norgGateway, prometheus, nomApiGateway)
                 // Hent oppgave(r)
-                hentOppgaveApi(dataSource, prometheus)
-                oppgavelisteApi(dataSource, prometheus)
-                hentOppgaveEnhetApi(dataSource, prometheus)
-                mineOppgaverApi(dataSource, prometheus)
-                søkApi(dataSource, prometheus)
-                markeringApi(dataSource, prometheus)
+                hentOppgaveApi(dataSource, enhetService, norgGateway, prometheus)
+                oppgavelisteApi(dataSource, enhetService, norgGateway, prometheus)
+                hentOppgaveEnhetApi(dataSource, enhetService, norgGateway, prometheus)
+                mineOppgaverApi(dataSource, enhetService, norgGateway, prometheus)
+                søkApi(dataSource, enhetService, norgGateway, prometheus)
+                markeringApi(dataSource, prometheus, nomApiGateway)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
                 opprettEllerOppdaterFilterApi(dataSource, prometheus)
@@ -154,16 +167,19 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 hentAntallOppgaver(dataSource, prometheus)
                 // Enheter
                 enhetStatus(dataSource)
-                hentEnhetApi(iMsGraphClient, prometheus)
-                nayEnhetForPerson(iMsGraphClient, prometheus)
-                synkroniserEnhetPåOppgaveApi(dataSource, iMsGraphClient, prometheus)
+                hentEnhetApi(enhetService, norgGateway, prometheus)
+                nayEnhetForPerson(enhetService, prometheus)
+                synkroniserEnhetPåOppgaveApi(dataSource, enhetService, prometheus)
                 // Motor-API
                 motorApi(dataSource)
                 // Drifts-API
-                driftApi(dataSource)
+                driftApi(dataSource, enhetService, norgGateway)
             }
         }
         actuatorApi(prometheus)
+    }
+    if (Miljø.erProd()) {
+        TilgangGateway.initialiserPrometheus(prometheus)
     }
 }
 

@@ -7,7 +7,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.io.InputStream
 import java.net.URI
@@ -18,14 +18,14 @@ interface IPdlGateway {
     fun hentAdressebeskyttelseForIdenter(identer: List<String>): PdlData
 }
 
-class PdlGraphqlGateway(
+class PdlGraphqlGateway private constructor(
     private val restClient: RestClient<InputStream>
 ) : IPdlGateway {
-    private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.pdl.url")).resolve("/graphql")
+    private val graphqlUrl = URI.create(requiredConfigForKey("INTEGRASJON_PDL_URL")).resolve("/graphql")
 
     companion object {
         private fun getClientConfig() = ClientConfig(
-            scope = requiredConfigForKey("integrasjon.pdl.scope"),
+            scope = requiredConfigForKey("INTEGRASJON_PDL_SCOPE"),
         )
 
         private const val BEHANDLINGSNUMMER_AAP_SAKSBEHANDLING = "B287"
@@ -34,7 +34,7 @@ class PdlGraphqlGateway(
             PdlGraphqlGateway(
                 RestClient(
                     config = getClientConfig(),
-                    tokenProvider = ClientCredentialsTokenProvider,
+                    tokenProvider = AzureM2MTokenProvider,
                     responseHandler = PdlResponseHandler(),
                     prometheus = prometheus
                 )

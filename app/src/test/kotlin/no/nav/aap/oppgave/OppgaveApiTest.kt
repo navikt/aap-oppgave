@@ -36,8 +36,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.enhet.Enhet
@@ -48,6 +48,7 @@ import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
@@ -64,6 +65,7 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
+import no.nav.aap.tilgang.TilgangGateway
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
@@ -121,7 +123,7 @@ class OppgaveApiTest {
         assertThat(oppgave!!.enhet).isEqualTo("superNav!")
 
         // Hent hele oppgaven
-        val oppgaven = hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
+        val oppgaven = hentOppgave(oppgave.oppgaveId())
         assertThat(oppgaven.årsakerTilBehandling).containsExactly("SØKNAD")
         assertThat(oppgaven.vurderingsbehov).containsExactly("SØKNAD")
 
@@ -143,7 +145,7 @@ class OppgaveApiTest {
         )
 
         // Sjekk at oppgaven er avsluttet
-        val avsluttetOppgave = hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
+        val avsluttetOppgave = hentOppgave(oppgave.oppgaveId())
         assertThat(avsluttetOppgave.status).isEqualTo(no.nav.aap.oppgave.verdityper.Status.AVSLUTTET)
     }
 
@@ -193,7 +195,7 @@ class OppgaveApiTest {
         )
 
         // Sjekk at oppgave er avsluttet
-        val avsluttetOppgave = hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
+        val avsluttetOppgave = hentOppgave(oppgave.oppgaveId())
         assertThat(avsluttetOppgave.status).isEqualTo(no.nav.aap.oppgave.verdityper.Status.AVSLUTTET)
     }
 
@@ -238,7 +240,7 @@ class OppgaveApiTest {
             .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name, "Bedre ting å gjøre")
 
         val uthentetPåVent = hentOppgave(
-            påVentOppgaver.tilOppgaveId()
+            påVentOppgaver.oppgaveId()
         )
         assertThat(uthentetPåVent)
             .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
@@ -394,6 +396,32 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `Skal få plukket oppgave dersom tilgang`(fakesConfig: FakesConfig) {
+        val saksnummer = "100001"
+        val referanse = UUID.randomUUID()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                )
+            )
+        )
+
+        val oppgave = hentOppgave(referanse)
+
+        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
+        val nesteOppgave = plukkOppgave(oppgave!!.oppgaveId())
+        assertThat(nesteOppgave).isNotNull()
+    }
+
+    @Test
     fun `Skal ikke få plukket oppgave dersom tilgang nektes`(fakesConfig: FakesConfig) {
         val saksnummer = "100001"
         val referanse = UUID.randomUUID()
@@ -415,12 +443,9 @@ class OppgaveApiTest {
         val oppgave = hentOppgave(referanse)
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
-        assertThrows<ManglerTilgangException> { plukkOppgave(oppgave!!.tilOppgaveId()) }
-
-        fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
-        val nesteOppgave = plukkOppgave(oppgave!!.tilOppgaveId())
-        assertThat(nesteOppgave).isNotNull()
+        assertThrows<ManglerTilgangException> { plukkOppgave(oppgave!!.oppgaveId()) }
     }
+
 
     @Test
     fun `Oppgave skal avreserveres dersom tilgang nektes`(fakesConfig: FakesConfig) {
@@ -442,7 +467,7 @@ class OppgaveApiTest {
         )
 
         // reserverer oppgave
-        plukkOppgave(hentOppgave(referanse)!!.tilOppgaveId())
+        plukkOppgave(hentOppgave(referanse)!!.oppgaveId())
         val reservertOppgaveMedTilgang = hentOppgave(
             referanse = referanse,
         )
@@ -454,14 +479,14 @@ class OppgaveApiTest {
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         assertThatThrownBy {
             plukkOppgave(
-                reservertOppgaveMedTilgang!!.tilOppgaveId()
+                reservertOppgaveMedTilgang!!.oppgaveId()
             )
         }
             .isInstanceOf(ManglerTilgangException::class.java)
 
         // sjekk at reservasjon er fjernet
         val oppgaveUtenReservasjon =
-            hentOppgave(reservertOppgaveMedTilgang!!.tilOppgaveId())
+            hentOppgave(reservertOppgaveMedTilgang!!.oppgaveId())
         assertThat(oppgaveUtenReservasjon).isNotNull()
         assertThat(oppgaveUtenReservasjon.reservertAv == null)
         assertThat(oppgaveUtenReservasjon.reservertTidspunkt == null)
@@ -506,8 +531,8 @@ class OppgaveApiTest {
         // reserverer begge oppgaver
         val oppgave1 = hentOppgave(referanse1)
         val oppgave2 = hentOppgave(referanse2)
-        reserverOppgave(oppgave1!!.tilOppgaveId(), "saksbehandler1", "saksbehandler1")
-        reserverOppgave(oppgave2!!.tilOppgaveId(), "saksbehandler2", "saksbehandler2")
+        reserverOppgave(oppgave1!!.oppgaveId(), "saksbehandler1", "saksbehandler1")
+        reserverOppgave(oppgave2!!.oppgaveId(), "saksbehandler2", "saksbehandler2")
 
         // kall endepunkt for avreservering
         val avreserverteOppgaveIds = avreserverOppgaver(listOf(oppgave1.id!!, oppgave2.id!!))
@@ -692,12 +717,12 @@ class OppgaveApiTest {
         // plukk uten tilgang
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         fakesConfig.relaterteIdenterPåBehandling = emptyList()
-        assertThatThrownBy { plukkOppgave(oppgaveMedNyEnhet.tilOppgaveId()) }.isInstanceOf(
+        assertThatThrownBy { plukkOppgave(oppgaveMedNyEnhet.oppgaveId()) }.isInstanceOf(
             ManglerTilgangException::class.java
         )
 
         // enhet skal ha blitt oppdatert etter mislykket plukk
-        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedNyEnhet.tilOppgaveId())
+        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedNyEnhet.oppgaveId())
         assertThat(oppgaveEtterOppdatering).isNotNull()
         assertThat(oppgaveEtterOppdatering.enhet).isEqualTo("superNav!")
         assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
@@ -730,12 +755,12 @@ class OppgaveApiTest {
         // plukk uten tilgang - det har kommet ny relatert ident på sak fra behandlingsflyt-pip
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         fakesConfig.relaterteIdenterPåBehandling = listOf(STRENGT_FORTROLIG_IDENT)
-        assertThatThrownBy { plukkOppgave(oppgaveMedGammelEnhet!!.tilOppgaveId()) }.isInstanceOf(
+        assertThatThrownBy { plukkOppgave(oppgaveMedGammelEnhet!!.oppgaveId()) }.isInstanceOf(
             ManglerTilgangException::class.java
         )
 
         // enhet skal ha blitt oppdatert med hensyn til relatert ident etter mislykket plukk
-        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedGammelEnhet!!.tilOppgaveId())
+        val oppgaveEtterOppdatering = hentOppgave(oppgaveMedGammelEnhet!!.oppgaveId())
         assertThat(oppgaveEtterOppdatering).isNotNull()
         assertThat(oppgaveEtterOppdatering.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
         assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
@@ -856,12 +881,12 @@ class OppgaveApiTest {
 
         // sett fortrolig adresse
         settFortroligAdresseForOppgave(
-            oppgaveId = oppgaveUtenFortroligAdresse!!.tilOppgaveId(), skalHaFortroligAdresse = true
+            oppgaveId = oppgaveUtenFortroligAdresse!!.oppgaveId(), skalHaFortroligAdresse = true
         )
 
         // hent på nytt
         val oppgaveMedFortroligAdresse = hentOppgave(
-            oppgaveUtenFortroligAdresse.tilOppgaveId()
+            oppgaveUtenFortroligAdresse.oppgaveId()
         )
         assertThat(oppgaveMedFortroligAdresse.harFortroligAdresse).isTrue()
     }
@@ -1021,7 +1046,11 @@ class OppgaveApiTest {
         val oppgave2Før = hentOppgave(oppgaveId2)
 
         initDatasource(dbConfig(), prometheus).transaction {
-            OppdaterOppgaveEnhetJobb(OppgaveRepository(it), FlytJobbRepositoryImpl(it)).utfør(
+            OppdaterOppgaveEnhetJobb(
+                OppgaveRepository(it),
+                FlytJobbRepositoryImpl(it),
+                PdlGraphqlGateway.withClientCredentialsRestClient()
+            ).utfør(
                 JobbInput(
                     OppdaterOppgaveEnhetJobb
                 )
@@ -1035,8 +1064,6 @@ class OppgaveApiTest {
         val oppgave2Etter = hentOppgave(oppgaveId2)
         assertEquals(oppgave2Før, oppgave2Etter)
     }
-
-    private fun OppgaveDto.tilOppgaveId() = OppgaveId(requireNotNull(this.id), this.versjon)
 
     private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
         return client.post(
@@ -1112,7 +1139,7 @@ class OppgaveApiTest {
         settNyMarkeringPåBehandling(behandlingref, markering)
 
         // reserver og hent mine oppgaver
-        plukkOppgave(hentOppgave(behandlingref)!!.tilOppgaveId())
+        plukkOppgave(hentOppgave(behandlingref)!!.oppgaveId())
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
         assertThat(mineOppgaver.oppgaver.first().markeringer).hasSize(1)
@@ -1152,7 +1179,7 @@ class OppgaveApiTest {
         settNyMarkeringPåBehandling(behandlingref, markering)
 
         // reserver
-        plukkOppgave(hentOppgave(behandlingref)!!.tilOppgaveId())
+        plukkOppgave(hentOppgave(behandlingref)!!.oppgaveId())
 
         // fjern markering
         fjernMarkeringPåBehandling(behandlingref, markering)
@@ -1447,12 +1474,12 @@ class OppgaveApiTest {
 
         private val client = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = ClientCredentialsTokenProvider
+            tokenProvider = AzureM2MTokenProvider
         )
 
         private val oboClient = RestClient.withDefaultResponseHandler(
             config = ClientConfig(scope = "oppgave"),
-            tokenProvider = OnBehalfOfTokenProvider
+            tokenProvider = AzureOBOTokenProvider
         )
 
         private val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -1509,7 +1536,7 @@ class OppgaveApiTest {
         private fun oppdaterOgHentOppgave(oppgave: OppgaveDto): OppgaveDto {
             initDatasource(dbConfig(), prometheus).transaction { connection ->
                 OppgaveRepository(connection).oppdatereOppgave(
-                    oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
+                    oppgaveId = oppgave.oppgaveId(),
                     endretAvIdent = "Kelvin",
                     personIdent = oppgave.personIdent,
                     enhet = oppgave.enhet,
@@ -1525,7 +1552,7 @@ class OppgaveApiTest {
                     utløptVentefrist = oppgave.utløptVentefrist
                 )
             }
-            return hentOppgave(OppgaveId(oppgave.id!!, oppgave.versjon))
+            return hentOppgave(oppgave.oppgaveId())
         }
 
         private fun opprettOppgave(
@@ -1571,6 +1598,7 @@ class OppgaveApiTest {
             }.start()
 
             port = server.port()
+            TilgangGateway.disableCaching()
         }
 
         @JvmStatic
