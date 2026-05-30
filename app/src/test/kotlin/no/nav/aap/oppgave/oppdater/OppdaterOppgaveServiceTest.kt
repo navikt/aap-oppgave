@@ -34,6 +34,7 @@ import no.nav.aap.oppgave.klienter.msgraph.Group
 import no.nav.aap.oppgave.klienter.msgraph.GroupMembers
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.msgraph.MemberOf
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.markering.BehandlingMarkering
@@ -43,7 +44,6 @@ import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
-import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
@@ -58,7 +58,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 
@@ -332,7 +331,10 @@ class OppdaterOppgaveServiceTest {
         val oppgaver = hentOppgaverForBehandling(behandlingsref)
         assertThat(oppgaver).hasSize(1).first()
             .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
-            .containsExactly(no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER.toString(), venteFrist)
+            .containsExactly(
+                no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER.toString(),
+                venteFrist
+            )
 
         // Ventebehovet avsluttes
         val hendelse3 = hendelse2.copy(
@@ -558,6 +560,470 @@ class OppdaterOppgaveServiceTest {
             .containsExactly(null, null)
     }
 
+    @Test
+    fun `Oppgave skal reserveres til beslutter som sendte saken i retur når saksbehandler har rettet og sendt tilbake`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.OPPRETTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+        val beslutter = "Beslutter"
+
+        val tilbakeTilBeslutter = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_OPPHOLDSKRAV,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "saksbehandler",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                            endretAv = beslutter,
+                            tidsstempel = nå.minusHours(1),
+                            begrunnelse = "oppholdskrav ikke oppfylt 1",
+                            årsakTilRetur = listOf(ÅrsakTilRetur(ÅrsakTilReturKode.FEIL_LOVANVENDELSE))
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusMinutes(10)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FORESLÅ_VEDTAK,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(4)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(30)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusMinutes(10)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(5)
+                        ),
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(tilbakeTilBeslutter)
+
+        val oppgave = hentOppgave(oppgaveId)
+        assertThat(oppgave.status).isEqualTo(Status.OPPRETTET)
+        assertThat(oppgave.reservertAv).isEqualTo(beslutter)
+    }
+
+    @Test
+    fun `Oppgave skal IKKE reserveres første gang sak sendes til beslutter`() {
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.AVSLUTTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FORESLÅ_VEDTAK.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+
+        // Ingen AVSLUTTET-endring på FATTE_VEDTAK → erReturTilToTrinn == false
+        val førsteTilBeslutter = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FORESLÅ_VEDTAK,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(1)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(5)
+                        ),
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(førsteTilBeslutter)
+
+        val åpneOppgaver = hentOppgaverForBehandling(behandlingsref).filter { it.status == Status.OPPRETTET }
+        assertThat(åpneOppgaver).hasSize(1)
+        assertThat(åpneOppgaver.first().reservertAv).isNull()
+    }
+
+    @Test
+    fun `Oppgave reserveres til siste beslutter ved flere retur fra beslutter`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.OPPRETTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+        val førsteBeslutter = "FørsteBeslutter"
+        val andreBeslutter = "AndreBeslutter"
+
+        val tilbakeTilBeslutterAndreGang = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_OPPHOLDSKRAV,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(6)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "saksbehandler",
+                            tidsstempel = nå.minusHours(5)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                            endretAv = førsteBeslutter,
+                            tidsstempel = nå.minusHours(4),
+                            begrunnelse = "Første retur",
+                            årsakTilRetur = listOf(ÅrsakTilRetur(ÅrsakTilReturKode.FEIL_LOVANVENDELSE))
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                            endretAv = andreBeslutter,
+                            tidsstempel = nå.minusHours(1),
+                            begrunnelse = "Andre retur",
+                            årsakTilRetur = listOf(ÅrsakTilRetur(ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE))
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusMinutes(10)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FORESLÅ_VEDTAK,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(4)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(30)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusMinutes(10)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(5)
+                        ),
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(tilbakeTilBeslutterAndreGang)
+
+        val oppgave = hentOppgave(oppgaveId)
+        assertThat(oppgave.reservertAv).isEqualTo(andreBeslutter)
+    }
+
+    @Test
+    fun `Oppgave skal ikke reserveres til Kelvin selv om Kelvin har SENDT_TILBAKE_FRA_BESLUTTER`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.OPPRETTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+
+        val tilbakeTilBeslutter = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_OPPHOLDSKRAV,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "saksbehandler",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(1),
+                            begrunnelse = "endret av Kelvin",
+                            årsakTilRetur = listOf(ÅrsakTilRetur(ÅrsakTilReturKode.FEIL_LOVANVENDELSE))
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusMinutes(10)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FORESLÅ_VEDTAK,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(4)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(30)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusMinutes(10)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(5)
+                        ),
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(tilbakeTilBeslutter)
+
+        val oppgave = hentOppgave(oppgaveId)
+        assertThat(oppgave.reservertAv).isNull()
+    }
+
+    @Test
+    fun `Oppgave skal ikke reserveres dersom ingen SENDT_TILBAKE_FRA_BESLUTTER finnes`() {
+        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+            status = Status.OPPRETTET,
+            enhet = ENHET_NAV_LØRENSKOG,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+        )
+
+        val nå = LocalDateTime.now()
+
+        // FATTE_VEDTAK har AVSLUTTET (erReturTilToTrinn == true), men ingen SENDT_TILBAKE_FRA_BESLUTTER
+        val hendelse = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = LocalDateTime.now(),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå,
+            erPåVent = false,
+            årsakerTilBehandling = listOf(),
+            mottattDokumenter = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Beslutter",
+                            tidsstempel = nå.minusHours(1)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(5)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FORESLÅ_VEDTAK,
+                    status = AvklaringsbehovStatus.AVSLUTTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(4)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusHours(3)
+                        ),
+                    )
+                ),
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(30)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.AVSLUTTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusMinutes(10)
+                        ),
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusMinutes(5)
+                        ),
+                    )
+                ),
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            relevanteIdenterPåBehandling = emptyList(),
+        )
+        sendBehandlingFlytStoppetHendelse(hendelse)
+
+        val oppgave = hentOppgave(oppgaveId)
+        assertThat(oppgave.reservertAv).isNull()
+    }
+
     private fun hentOppgaverForBehandling(
         behandlingsref: BehandlingReferanse
     ): List<OppgaveDto> = dataSource.transaction { connection ->
@@ -623,7 +1089,7 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(3)
-                    )
+                        )
                     )
                 ),
             ),
@@ -1026,7 +1492,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgaver på vent skal ikke reserveres på nytt etter avreservering`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
@@ -1575,7 +2041,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Lagrer utløpt ventefrist på oppgave når behandling tas av vent`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
@@ -1800,7 +2266,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Lagrer ikke utløpt ventefrist hvis saksbehandler tok behandling av vent`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
@@ -1914,7 +2380,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Lagrer utløpt ventefrist på postmottak-oppgaver`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
@@ -1971,35 +2437,35 @@ class OppdaterOppgaveServiceTest {
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
             avklaringsbehov = listOf(
-                    no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
-                        avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
-                        status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                        endringer = listOf(
-                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
-                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                                endretAv = "Kelvin",
-                                tidsstempel = nå.minusDays(2)
-                            )
-                        ),
-                    ),
-                    no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
-                        avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
-                        status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                        endringer = listOf(
-                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
-                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                                endretAv = "Saksbehandler",
-                                tidsstempel = nå.minusDays(1),
-                                frist = LocalDate.now(),
-                            ),
-                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
-                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
-                                endretAv = "Kelvin",
-                                tidsstempel = nå
-                            )
-                        ),
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusDays(2)
+                        )
                     ),
                 ),
+                no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
+                    status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                    endringer = listOf(
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                            endretAv = "Saksbehandler",
+                            tidsstempel = nå.minusDays(1),
+                            frist = LocalDate.now(),
+                        ),
+                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                            status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå
+                        )
+                    ),
+                ),
+            ),
             opprettetTidspunkt = nå.minusDays(2),
             hendelsesTidspunkt = nå.minusHours(5),
             saksnummer = saksnummer.toString()
@@ -2012,10 +2478,9 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgaveTattAvVent.utløptVentefrist).isEqualTo(LocalDate.now())
     }
 
-
     @Test
     fun `Trekk søknad-oppgaver rutes til Nav-kontor dersom de lå hos Nav-kontor fra før av`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, saksnummer, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
@@ -2325,7 +2790,7 @@ class OppdaterOppgaveServiceTest {
                 MottattDokumentRepository(connection),
                 NomApiGateway.withClientCredentialsRestClient(),
                 MarkeringRepository(connection),
-                ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+            ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }
 
