@@ -247,7 +247,7 @@ class OppdaterOppgaveService(
             }
         }
 
-        if (erReturTilToTrinn(avklaringsbehov) && unleashService.isEnabled(FeatureToggles.ReserverTilBeslutterEtterRetur)) {
+        if (erReturTilBeslutter(avklaringsbehov) && unleashService.isEnabled(FeatureToggles.ReserverTilBeslutterEtterRetur)) {
             val beslutterSomSendteIRetur = finnBeslutterSomSendteIRetur(oppgaveOppdatering)
 
             if (beslutterSomSendteIRetur != null && beslutterSomSendteIRetur != KELVIN) {
@@ -380,6 +380,11 @@ class OppdaterOppgaveService(
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
         )
+
+    private fun erReturTilBeslutter(avklaringsbehov: AvklaringsbehovHendelse): Boolean =
+        avklaringsbehov.avklaringsbehovKode.kode in setOf(
+            Definisjon.FATTE_VEDTAK.kode.name,
+        ) && avklaringsbehov.endringer.any { it.status == AvklaringsbehovStatus.AVSLUTTET }
 
     private fun erReturTilToTrinn(avklaringsbehov: AvklaringsbehovHendelse): Boolean {
         return (avklaringsbehov.avklaringsbehovKode.kode in setOf(
