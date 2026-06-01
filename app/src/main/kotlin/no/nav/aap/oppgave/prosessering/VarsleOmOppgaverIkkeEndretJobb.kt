@@ -20,11 +20,18 @@ class VarsleOmOppgaverIkkeEndretJobb(
     private val log = LoggerFactory.getLogger(VarsleOmOppgaverIkkeEndretJobb::class.java)
 
     override fun utfør(input: JobbInput) {
-        val alleÅpneOppgaverIkkePåVent = oppgaveRepository.hentAlleÅpneOppgaver().filter { !it.erPåVent && it.reservertAv == null }
+        val alleÅpneOppgaverIkkePåVent =
+            oppgaveRepository.hentAlleÅpneOppgaver().filter { !it.erPåVent && it.reservertAv == null }
         log.info("Fant ${alleÅpneOppgaverIkkePåVent.size} åpne oppgaver som ikke er på vent og ikke er reservert.")
         val nå = LocalDateTime.now()
-        val oppgaverIkkeEndretPåFemUker = alleÅpneOppgaverIkkePåVent.filter { (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusWeeks(5)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusWeeks(5)) }
-        val oppgaverIkkeHosNay = oppgaverIkkeEndretPåFemUker.filterNot { oppgave -> NAY_ENHETER.map { it.kode }.contains(oppgave.enhetForKø) }
+        val oppgaverIkkeEndretPåFemUker = alleÅpneOppgaverIkkePåVent.filter {
+            (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusWeeks(5)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusWeeks(
+                5
+            ))
+        }
+        val oppgaverIkkeHosNay = oppgaverIkkeEndretPåFemUker.filterNot { oppgave ->
+            NAY_ENHETER.map { it.kode }.contains(oppgave.enhetForKø)
+        }
 
         log.info("Fant ${oppgaverIkkeEndretPåFemUker.size} oppgaver som ikke er endret på mer enn fem uker, hvorav ${oppgaverIkkeHosNay.size} ikke er hos NAY.")
         if (unleashService.isEnabled(FeatureToggles.VarsleOmOppgaverEldreEnn7Dager)) {
@@ -34,8 +41,9 @@ class VarsleOmOppgaverIkkeEndretJobb(
                 )
             }
             if (oppgaverIkkeHosNay.isNotEmpty()) {
+                val enheter = oppgaverIkkeHosNay.map { it.enhetForKø }.toSet()
                 log.error(
-                    "Fant ${oppgaverIkkeHosNay.size} som ikke er endret på lang tid. Sjekk info-logger med denne trace-id for hvilke det gjelder."
+                    "Fant ${oppgaverIkkeHosNay.size} på enhetene $enheter som ikke er endret på lang tid. Sjekk info-logger med denne trace-id for hvilke det gjelder."
                 )
             }
         }
