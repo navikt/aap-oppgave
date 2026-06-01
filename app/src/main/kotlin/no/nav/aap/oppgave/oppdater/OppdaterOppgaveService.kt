@@ -246,6 +246,31 @@ class OppdaterOppgaveService(
                 utledReservasjonForGjenåpnetOppgave(oppgaveOppdatering, eksisterendeOppgave, avklaringsbehov)
             }
         }
+
+        if (erReturTilBeslutter(avklaringsbehov) && unleashService.isEnabled(FeatureToggles.ReserverTilBeslutterEtterRetur)) {
+            val beslutterSomSendteIRetur = finnBeslutterSomSendteIRetur(oppgaveOppdatering)
+
+            if (beslutterSomSendteIRetur != null && beslutterSomSendteIRetur != KELVIN) {
+                log.info("Reserverer oppgave ${eksisterendeOppgave.oppgaveId()} til beslutter som sendte i retur: $beslutterSomSendteIRetur")
+                reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
+                    eksisterendeOppgave.behandlingRef,
+                    beslutterSomSendteIRetur
+                )
+            } else {
+                log.info("Fant ingen beslutter å reservere til for oppgave ${eksisterendeOppgave.oppgaveId()}")
+            }
+        }
+    }
+
+    private fun finnBeslutterSomSendteIRetur(oppgaveOppdatering: OppgaveOppdatering): String? {
+        return oppgaveOppdatering.avklaringsbehov
+            .flatMap { behov ->
+                behov.endringer
+                    .filter { it.status == AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER }
+                    .map { endring -> Pair(endring.tidsstempel, endring.endretAv) }
+            }
+            .maxByOrNull { it.first }
+            ?.second
     }
 
     private fun håndterReservasjonFraBehandlingsflyt(
@@ -355,6 +380,11 @@ class OppdaterOppgaveService(
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
         )
+
+    private fun erReturTilBeslutter(avklaringsbehov: AvklaringsbehovHendelse): Boolean =
+        avklaringsbehov.avklaringsbehovKode.kode in setOf(
+            Definisjon.FATTE_VEDTAK.kode.name,
+        ) && avklaringsbehov.endringer.any { it.status == AvklaringsbehovStatus.AVSLUTTET }
 
     private fun erReturTilToTrinn(avklaringsbehov: AvklaringsbehovHendelse): Boolean {
         return (avklaringsbehov.avklaringsbehovKode.kode in setOf(
