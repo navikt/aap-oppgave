@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.server
 
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -21,6 +22,26 @@ object StatusPagesConfigHelper {
             val logger = LoggerFactory.getLogger(javaClass)
 
             when (cause) {
+                is ClientRequestException -> {
+                    if (cause.response.status == HttpStatusCode.RequestTimeout) {
+                        logger.warn("Timeout ved kall til '$uri'", cause)
+                        call.respondWithError(
+                            ApiException(
+                                status = HttpStatusCode.RequestTimeout,
+                                message = "Forespørselen tok for lang tid. Prøv igjen om litt."
+                            )
+                        )
+                    } else {
+                        logger.error("Feil ved kall til '$uri'.", cause)
+                        call.respondWithError(
+                            ApiException(
+                                status = cause.response.status,
+                                message = "Feil ved kall til '$uri'."
+                            )
+                        )
+                    }
+                }
+
                 is HttpRequestTimeoutException,
                 is HttpTimeoutException -> {
                     logger.warn("Timeout mot $uri: ", cause)
