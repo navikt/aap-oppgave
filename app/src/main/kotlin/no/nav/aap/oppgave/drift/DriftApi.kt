@@ -19,6 +19,7 @@ import no.nav.aap.oppgave.filter.EnhetFilter
 import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.Filtermodus
+import no.nav.aap.oppgave.filter.MarkeringFilter
 import no.nav.aap.oppgave.filter.OpprettFilter
 import no.nav.aap.oppgave.filter.OppdaterFilter
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
@@ -98,6 +99,7 @@ fun NormalOpenAPIRoute.driftApi(
                 val filterId = dataSource.transaction { connection ->
                     val filterRepo = FilterRepository(connection)
                     val enhetFilter = request.enheter.map { EnhetFilter(it.enhet, it.filtermodus) }
+                    val markeringFilter = request.markeringer.map { MarkeringFilter(it.type, it.filtermodus) }
 
                     if (request.id != null) {
                         filterRepo.oppdater(
@@ -108,6 +110,7 @@ fun NormalOpenAPIRoute.driftApi(
                                 avklaringsbehovtyper = request.avklaringsbehovKoder,
                                 behandlingstyper = request.behandlingstyper,
                                 enhetFilter = enhetFilter,
+                                markeringer = markeringFilter,
                                 endretAv = ident(),
                                 endretTidspunkt = LocalDateTime.now(),
                             )
@@ -120,6 +123,7 @@ fun NormalOpenAPIRoute.driftApi(
                                 avklaringsbehovtyper = request.avklaringsbehovKoder,
                                 behandlingstyper = request.behandlingstyper,
                                 enhetFilter = enhetFilter,
+                                markeringer = markeringFilter,
                                 type = request.type,
                                 opprettetAv = ident(),
                                 opprettetTidspunkt = LocalDateTime.now(),
@@ -179,6 +183,8 @@ private fun FilterDto.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilte
     ekskluderteEnheter = (enhetPerFilter[id] ?: emptyList())
         .filter { it.filtermodus == Filtermodus.EKSKLUDER }
         .map { it.enhetNr },
+    inkluderteMarkeringer = inkluderteMarkeringer.toList(),
+    ekskluderteMarkeringer = ekskluderteMarkeringer.toList(),
     opprettetAv = opprettetAv,
     opprettetTidspunkt = opprettetTidspunkt,
     endretAv = endretAv,
