@@ -7,6 +7,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.ÅrsakTilOpprettelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingId
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingReferanse
@@ -2680,6 +2681,62 @@ class OppdaterOppgaveServiceTest {
 
         assertThat(
             hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
+    }
+    
+    @Test
+    fun `AVSLAG_11_5-markering opprettes og fjernes basert på behandlingsmetadata`() {
+        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
+        val saksnummer = Saksnummer("123")
+        val nå = LocalDateTime.now()
+
+        val hendelseMedAvslag115 = BehandlingFlytStoppetHendelse(
+            personIdent = "12345678901",
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            status = BehandlingStatus.UTREDES,
+            opprettetTidspunkt = nå.minusDays(3),
+            behandlingType = TypeBehandling.Førstegangsbehandling,
+            versjon = "Kelvin 1.0",
+            hendelsesTidspunkt = nå.minusHours(1),
+            erPåVent = false,
+            mottattDokumenter = listOf(),
+            reserverTil = null,
+            årsakerTilBehandling = listOf(),
+            avklaringsbehov = listOf(
+                AvklaringsbehovHendelseDto(
+                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
+                    status = AvklaringsbehovStatus.OPPRETTET,
+                    endringer = listOf(
+                        EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET,
+                            endretAv = "Kelvin",
+                            tidsstempel = nå.minusHours(2)
+                        )
+                    )
+                )
+            ),
+            vurderingsbehov = listOf("SØKNAD"),
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            relevanteIdenterPåBehandling = emptyList(),
+            behandlingMetadata = BehandlingsflytMetadata.AVSLAG_11_5_FØRSTEGANGSBEHANDLING,
+        )
+
+        sendBehandlingFlytStoppetHendelse(hendelseMedAvslag115)
+
+        assertThat(
+            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
+        ).isTrue()
+
+        // Send oppdatert hendelse uten AVSLAG_11_5-metadata — markeringen skal fjernes
+        val hendelseUtenAvslag115 = hendelseMedAvslag115.copy(
+            hendelsesTidspunkt = nå,
+            behandlingMetadata = null,
+        )
+        sendBehandlingFlytStoppetHendelse(hendelseUtenAvslag115)
+
+        assertThat(
+            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
+        ).isFalse()
     }
 
     private fun sendBehandlingFlytStoppetHendelse(

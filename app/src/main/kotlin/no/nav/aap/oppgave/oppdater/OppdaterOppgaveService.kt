@@ -76,8 +76,8 @@ class OppdaterOppgaveService(
             else -> oppdaterOppgaver(oppgaveOppdatering, oppgaveMap)
         }
 
-        markeringService.oppdaterHastemarkeringForSoning(oppgaveOppdatering).let {
-            if (it.erEndret()) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
+        markeringService.oppdaterMarkeringer(oppgaveOppdatering).let { endringer ->
+            if (endringer.any { it.erEndret() }) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
         }
 
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
