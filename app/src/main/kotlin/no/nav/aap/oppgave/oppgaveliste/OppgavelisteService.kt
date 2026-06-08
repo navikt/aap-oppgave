@@ -166,7 +166,7 @@ class OppgavelisteService(
 
         return filter.copy(
             behandlingstyper = utvidetFilter.behandlingstyper,
-            avklaringsbehovKoder = avklaringsbehovKoder
+            avklaringsbehovKoder = avklaringsbehovKoder,
         )
     }
 

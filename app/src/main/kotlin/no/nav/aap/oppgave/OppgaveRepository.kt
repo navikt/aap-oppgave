@@ -753,6 +753,25 @@ class OppgaveRepository(private val connection: DBConnection) {
                 behandlingstyper.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
             sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
         }
+        
+        // Markeringer - inkluder
+        if (inkluderteMarkeringer.isNotEmpty()) {
+            val stringListeAvMarkeringer =
+                inkluderteMarkeringer.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
+            sb.append(
+                "EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
+            )
+        }
+
+        // Markeringer - ekskluder
+        if (ekskluderteMarkeringer.isNotEmpty()) {
+            val stringListeAvMarkeringer =
+                ekskluderteMarkeringer.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
+            sb.append(
+                "NOT EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
+            )
+        }
+        
         // Enheter
         if (enheter.isNotEmpty()) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }

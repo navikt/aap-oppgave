@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.filter
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import java.time.LocalDateTime
 
 data class OpprettFilter(
@@ -12,11 +13,17 @@ data class OpprettFilter(
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
     val enhetFilter: List<EnhetFilter>? = null,
+    val markeringer: List<MarkeringFilter> = emptyList(),
     val type: FilterType = FilterType.GENERELL,
 )
 
 data class EnhetFilter(
     val enhetNr: String,
+    val filtermodus: Filtermodus
+)
+
+data class MarkeringFilter(
+    val markeringType: MarkeringForBehandling,
     val filtermodus: Filtermodus
 )
 
@@ -26,6 +33,7 @@ data class OppdaterFilter(
     val beskrivelse: String,
     val avklaringsbehovtyper: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
+    val markeringer: List<MarkeringFilter> = emptyList(),
     val enhetFilter: List<EnhetFilter>? = null,
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
@@ -50,6 +58,8 @@ class FilterRepository(private val connection: DBConnection) {
         opprettFilterAvklaringsbehovtyper(filterId, filter.avklaringsbehovtyper)
         opprettFilterBehandlingstyper(filterId, filter.behandlingstyper)
         opprettFilterEnheter(filterId, filter.enhetFilter)
+        opprettFilterMarkeringer(filterId, filter.markeringer)
+
         return filterId
     }
 
@@ -60,6 +70,7 @@ class FilterRepository(private val connection: DBConnection) {
         opprettFilterAvklaringsbehovtyper(filter.id, filter.avklaringsbehovtyper)
         opprettFilterBehandlingstyper(filter.id, filter.behandlingstyper)
         opprettFilterEnheter(filter.id, filter.enhetFilter)
+        opprettFilterMarkeringer(filter.id, filter.markeringer)
         return filter.id
     }
 
@@ -118,6 +129,10 @@ class FilterRepository(private val connection: DBConnection) {
             setParams { setLong(1, filterId) }
         }
         connection.execute("DELETE FROM FILTER_BEHANDLINGSTYPE WHERE FILTER_ID = ?") {
+            setParams { setLong(1, filterId) }
+        }
+
+        connection.execute("DELETE FROM FILTER_MARKERING WHERE FILTER_ID = ?") {
             setParams { setLong(1, filterId) }
         }
     }
@@ -195,6 +210,21 @@ class FilterRepository(private val connection: DBConnection) {
         }
     }
 
+    private fun opprettFilterMarkeringer(filterId: Long, markeringer: List<MarkeringFilter>) {
+        val insertFilterMarkeringerSql = """
+            INSERT INTO FILTER_MARKERING (FILTER_ID, TYPE, FILTERMODUS) VALUES (?, ?, ?)
+        """.trimIndent()
+
+        connection.executeBatch(insertFilterMarkeringerSql, markeringer) {
+            setParams { markering ->
+                setLong(1, filterId)
+                setEnumName(2, markering.markeringType)
+                setEnumName(3, markering.filtermodus)
+            }
+        }
+    }
+
+
     private fun hentFilterForEnheter(enheter: List<String>?): List<FilterDto> {
         val enhetsfilter = if (!enheter.isNullOrEmpty())
             """AND ID IN (SELECT FILTER_ID FROM FILTER_ENHET WHERE FILTER_MODUS = 'INKLUDER' AND (ENHET = 'ALLE' OR ENHET = ANY(?::text[])))
@@ -234,10 +264,19 @@ class FilterRepository(private val connection: DBConnection) {
 
         val alleFilterAvklaringsbehovtype = hentAlleFilterAvklaringsbehovtype(null)
         val alleFilterBehandlingstyper = hentAlleFilterBehandlingstyper(null)
+        val alleFilterMarkeringer = hentAlleFilterMarkeringer(null)
         val alleFilterMedFelter = alleFilter.map { filter ->
             filter.copy(
                 avklaringsbehovKoder = alleFilterAvklaringsbehovtype[filter.id] ?: emptySet(),
-                behandlingstyper = alleFilterBehandlingstyper[filter.id] ?: emptySet()
+                behandlingstyper = alleFilterBehandlingstyper[filter.id] ?: emptySet(),
+                inkluderteMarkeringer = (alleFilterMarkeringer[filter.id] ?: emptyList())
+                    .filter { it.filtermodus == Filtermodus.INKLUDER }
+                    .map { it.markeringType }
+                    .toSet(),
+                ekskluderteMarkeringer = (alleFilterMarkeringer[filter.id] ?: emptyList())
+                    .filter { it.filtermodus == Filtermodus.EKSKLUDER }
+                    .map { it.markeringType }
+                    .toSet(),
             )
         }
         return alleFilterMedFelter.sortedBy { it.navn }
@@ -276,10 +315,19 @@ class FilterRepository(private val connection: DBConnection) {
         }
         val alleFilterAvklaringsbehovtype = hentAlleFilterAvklaringsbehovtype(filterId)
         val alleFilterBehandlingstyper = hentAlleFilterBehandlingstyper(filterId)
+        val alleFilterMarkeringer = hentAlleFilterMarkeringer(filterId)
         val alleFilterMedFelter = alleFilter.map { filter ->
             filter.copy(
                 avklaringsbehovKoder = alleFilterAvklaringsbehovtype[filter.id] ?: emptySet(),
-                behandlingstyper = alleFilterBehandlingstyper[filter.id] ?: emptySet()
+                behandlingstyper = alleFilterBehandlingstyper[filter.id] ?: emptySet(),
+                inkluderteMarkeringer = (alleFilterMarkeringer[filter.id] ?: emptyList())
+                    .filter { it.filtermodus == Filtermodus.INKLUDER }
+                    .map { it.markeringType }
+                    .toSet(),
+                ekskluderteMarkeringer = (alleFilterMarkeringer[filter.id] ?: emptyList())
+                    .filter { it.filtermodus == Filtermodus.EKSKLUDER }
+                    .map { it.markeringType }
+                    .toSet(),
             )
         }
         return alleFilterMedFelter
@@ -358,10 +406,47 @@ class FilterRepository(private val connection: DBConnection) {
             }
     }
 
+    private fun hentAlleFilterMarkeringer(filterId: Long?): Map<Long, List<MarkeringFilter>> {
+        val filterIdClause = if (filterId != null) " AND FILTER_ID = ?" else ""
+        val query = """
+            SELECT
+                F.ID AS FILTER_ID,
+                FM.TYPE,
+                FM.FILTERMODUS
+            FROM
+                FILTER F,
+                FILTER_MARKERING FM
+            WHERE
+                F.ID = FM.FILTER_ID AND
+                F.SLETTET = FALSE
+                $filterIdClause
+        """.trimIndent()
+
+        val alleMarkeringFiltre = connection.queryList(query) {
+            setParams {
+                if (filterId != null) {
+                    setLong(1, filterId)
+                }
+            }
+            setRowMapper { row ->
+                Pair(
+                    row.getLong("FILTER_ID"),
+                    MarkeringFilter(
+                        markeringType = row.getEnum("TYPE"),
+                        filtermodus = Filtermodus.valueOf(row.getString("FILTERMODUS"))
+                    )
+                )
+            }
+        }
+
+        return alleMarkeringFiltre
+            .groupBy { it.first }
+            .mapValues { entry -> entry.value.map { it.second } }
+    }
+
 }
 
 enum class Filtermodus {
     INKLUDER,
     EKSKLUDER
 }
-

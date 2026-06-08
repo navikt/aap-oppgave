@@ -1119,6 +1119,108 @@ class OppgaveRepositoryTest {
         assertThat(søkMedPaging10PåBehandlingOpprettetEldsteFørst.oppgaver[3].id).isEqualTo(vanligOppgave1.id)
     }
 
+    @Test
+    fun `Skal filtrere oppgaver basert på én markeringstype`() {
+        val hasteRef = UUID.randomUUID()
+        val spesialRef = UUID.randomUUID()
+        val ingenMarkeringRef = UUID.randomUUID()
+
+        val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
+        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
+
+        markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
+        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+
+        val hasterResultat = finnAlleOppgaver(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK), inkluderteMarkeringer = setOf(MarkeringForBehandling.HASTER))
+        )
+        assertThat(hasterResultat.oppgaver.map { it.id }).containsExactly(hasteOppgave.id)
+
+        val spesialResultat = finnAlleOppgaver(
+            TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                inkluderteMarkeringer = setOf(MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+            )
+        )
+        assertThat(spesialResultat.oppgaver.map { it.id }).containsExactly(spesialOppgave.id)
+    }
+
+    @Test
+    fun `Skal filtrere oppgaver basert på flere markeringstyper`() {
+        val hasteRef = UUID.randomUUID()
+        val spesialRef = UUID.randomUUID()
+        val ingenMarkeringRef = UUID.randomUUID()
+
+        val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
+        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
+
+        markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
+        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+
+        val resultat = finnAlleOppgaver(
+            TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                inkluderteMarkeringer = setOf(MarkeringForBehandling.HASTER, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+            )
+        )
+
+        assertThat(resultat.oppgaver).hasSize(2)
+        assertThat(resultat.oppgaver.map { it.id }).containsExactlyInAnyOrder(hasteOppgave.id, spesialOppgave.id)
+    }
+
+    @Test
+    fun `Tom markeringsliste i filter returnerer alle oppgaver uavhengig av markering`() {
+        val hasteRef = UUID.randomUUID()
+        val ingenMarkeringRef = UUID.randomUUID()
+
+        val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
+        val umarkertOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
+
+        markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
+
+        val resultat = finnAlleOppgaver(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK), inkluderteMarkeringer = emptySet())
+        )
+
+        assertThat(resultat.oppgaver).hasSize(2)
+        assertThat(resultat.oppgaver.map { it.id }).containsExactlyInAnyOrder(hasteOppgave.id, umarkertOppgave.id)
+    }
+
+    @Test
+    fun `Skal ekskludere oppgaver med gitt markeringstype fra filter`() {
+        val hasteRef = UUID.randomUUID()
+        val spesialRef = UUID.randomUUID()
+        val ingenMarkeringRef = UUID.randomUUID()
+
+        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        val umarkertOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
+
+        markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
+        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+
+        // Ekskluder HASTER — skal returnere spesial og umarkert, men ikke haste
+        val utenHaste = finnAlleOppgaver(
+            TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                ekskluderteMarkeringer = setOf(MarkeringForBehandling.HASTER)
+            )
+        )
+        assertThat(utenHaste.oppgaver).hasSize(2)
+        assertThat(utenHaste.oppgaver.map { it.id }).containsExactlyInAnyOrder(spesialOppgave.id, umarkertOppgave.id)
+
+        // Ekskluder begge — skal kun returnere umarkert
+        val utenBegge = finnAlleOppgaver(
+            TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                ekskluderteMarkeringer = setOf(MarkeringForBehandling.HASTER, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+            )
+        )
+        assertThat(utenBegge.oppgaver).hasSize(1)
+        assertThat(utenBegge.oppgaver.map { it.id }).containsExactly(umarkertOppgave.id)
+    }
+
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
         dataSource.transaction { connection ->
             OppgaveRepository(connection).avsluttOppgave(oppgaveId, "test")
@@ -1234,6 +1336,15 @@ class OppgaveRepositoryTest {
             markeringRepository.oppdaterMarkering(
                 hasterBehandlingsref,
                 BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", "me")
+            )
+        }
+    }
+
+    private fun markerOppgave(behandlingRef: UUID, markeringType: MarkeringForBehandling) {
+        dataSource.transaction { connection ->
+            MarkeringRepository(connection).oppdaterMarkering(
+                behandlingRef,
+                BehandlingMarkering(markeringType, "begrunnelse", "test")
             )
         }
     }

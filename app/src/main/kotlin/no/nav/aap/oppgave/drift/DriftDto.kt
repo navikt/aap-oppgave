@@ -3,6 +3,7 @@ package no.nav.aap.oppgave.drift
 import no.nav.aap.oppgave.filter.FilterType
 import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDateTime
 import java.util.UUID
@@ -36,6 +37,8 @@ data class FilterDriftResponse(
     val behandlingstyper: Set<Behandlingstype>,
     val inkluderteEnheter: List<String>,
     val ekskluderteEnheter: List<String>,
+    val inkluderteMarkeringer: List<MarkeringForBehandling>,
+    val ekskluderteMarkeringer: List<MarkeringForBehandling>,
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String?,
@@ -50,10 +53,16 @@ data class FilterDriftRequest(
     val avklaringsbehovKoder: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
     val enheter: List<EnhetDriftRequest> = emptyList(),
+    val markeringer: List<MarkeringDriftRequest> = emptyList(),
 )
 
 data class EnhetDriftRequest(
     val enhet: String,
+    val filtermodus: Filtermodus,
+)
+
+data class MarkeringDriftRequest(
+    val type: MarkeringForBehandling,
     val filtermodus: Filtermodus,
 )
 
