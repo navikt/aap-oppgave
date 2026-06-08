@@ -2682,53 +2682,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(
             hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
     }
-
-    @Test
-    fun `AVSLAG_11_5-markering opprettes når behandlingsmetadata er AVSLAG_11_5_FØRSTEGANGSBEHANDLING`() {
-        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
-        val saksnummer = Saksnummer("123")
-        val nå = LocalDateTime.now()
-
-        val hendelseMedAvslag115 = BehandlingFlytStoppetHendelse(
-            personIdent = "12345678901",
-            saksnummer = saksnummer,
-            referanse = behandlingsref,
-            status = BehandlingStatus.UTREDES,
-            opprettetTidspunkt = nå.minusDays(3),
-            behandlingType = TypeBehandling.Førstegangsbehandling,
-            versjon = "Kelvin 1.0",
-            hendelsesTidspunkt = nå.minusHours(1),
-            erPåVent = false,
-            mottattDokumenter = listOf(),
-            reserverTil = null,
-            årsakerTilBehandling = listOf(),
-            avklaringsbehov = listOf(
-                AvklaringsbehovHendelseDto(
-                    avklaringsbehovDefinisjon = Definisjon.AVKLAR_SYKDOM,
-                    status = AvklaringsbehovStatus.OPPRETTET,
-                    endringer = listOf(
-                        EndringDTO(
-                            status = AvklaringsbehovStatus.OPPRETTET,
-                            endretAv = "Kelvin",
-                            tidsstempel = nå.minusHours(2)
-                        )
-                    )
-                )
-            ),
-            vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
-            relevanteIdenterPåBehandling = emptyList(),
-            behandlingMetadata = BehandlingsflytMetadata.AVSLAG_11_5_FØRSTEGANGSBEHANDLING,
-        )
-
-        sendBehandlingFlytStoppetHendelse(hendelseMedAvslag115)
-
-        val avslag115Markering =
-            hentMarkeringerForBehandling(behandlingsref).single { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
-        assertThat(avslag115Markering.begrunnelse).isEqualTo("Førstegangsbehandling ligger an til avslag på § 11-5")
-        assertThat(avslag115Markering.opprettetAv).isEqualTo("Kelvin")
-    }
-
+    
     @Test
     fun `AVSLAG_11_5-markering opprettes og fjernes basert på behandlingsmetadata`() {
         val behandlingsref = BehandlingReferanse(UUID.randomUUID())
