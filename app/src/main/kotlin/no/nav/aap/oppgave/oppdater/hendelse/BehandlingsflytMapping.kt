@@ -4,12 +4,14 @@ import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
+import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -25,13 +27,18 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         behandlingStatus = this.status.tilBehandlingsstatus(),
         årsakTilOpprettelse = this.årsakTilOpprettelse.name,
         behandlingstype = this.behandlingType.tilBehandlingstype(),
+        behandlingMetadata = this.behandlingMetadata.tilBehandlingMetadata(),
         opprettetTidspunkt = this.opprettetTidspunkt,
-        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(this.saksnummer, this.behandlingType.tilBehandlingstype()),
+        avklaringsbehov = this.avklaringsbehov.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(
+            this.saksnummer,
+            this.behandlingType.tilBehandlingstype()
+        ),
         reserverTil = when (this.reserverTil) {
             KELVIN -> {
                 logger.warn("behandlingsflyt foreslår at vi reserverer oppgave til KELVIN i behandling ${referanse.referanse}, ignorerer anbefaling")
                 null
             }
+
             else ->
                 this.reserverTil
         },
@@ -89,11 +96,23 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.Aktivitetsplikt11_9 -> Behandlingstype.AKTIVITETSPLIKT_11_9
     }
 
-private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(saksnummer: Saksnummer, behandlingType: Behandlingstype): List<AvklaringsbehovHendelse> {
+private fun BehandlingsflytMetadata?.tilBehandlingMetadata(): BehandlingMetadata? =
+    when (this) {
+        BehandlingsflytMetadata.AVSLAG_11_5_FØRSTEGANGSBEHANDLING -> BehandlingMetadata.AVSLAG_11_5_FØRSTEGANGSBEHANDLING
+        null -> null
+    }
+
+private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflytUtenVentebehov(
+    saksnummer: Saksnummer,
+    behandlingType: Behandlingstype
+): List<AvklaringsbehovHendelse> {
     val avklaringsbehovUtenVentebehov = this
         .filter { !it.avklaringsbehovDefinisjon.erVentebehov() }
         .tilAvklaringsbehovHendelseForBehandlingsflyt()
-    if (avklaringsbehovUtenVentebehov.isEmpty() && this.isNotEmpty() && !this.erOppfølgingsbehandlingPåVent(behandlingType)) {
+    if (avklaringsbehovUtenVentebehov.isEmpty() && this.isNotEmpty() && !this.erOppfølgingsbehandlingPåVent(
+            behandlingType
+        )
+    ) {
         // når det bare er ventebehov opprettes ikke oppgave, og behandlingen blir borte fra oppgavelista
         // unntaket er å vente på frist på oppfølgingsbehandling, den skal ikke opprette oppgave.
         logger.error("Mottok hendelse fra behandlingsflyt med bare ventebehov: ${this.map { it.avklaringsbehovDefinisjon.name }} på sak $saksnummer")
@@ -102,7 +121,8 @@ private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehand
 }
 
 private fun List<AvklaringsbehovHendelseDto>.erOppfølgingsbehandlingPåVent(behandlingType: Behandlingstype): Boolean {
-    return behandlingType == Behandlingstype.OPPFØLGINGSBEHANDLING && this.map { it.avklaringsbehovDefinisjon }.contains(Definisjon.VENT_PÅ_OPPFØLGING)
+    return behandlingType == Behandlingstype.OPPFØLGINGSBEHANDLING && this.map { it.avklaringsbehovDefinisjon }
+        .contains(Definisjon.VENT_PÅ_OPPFØLGING)
 }
 
 private fun List<AvklaringsbehovHendelseDto>.tilAvklaringsbehovHendelseForBehandlingsflyt(): List<AvklaringsbehovHendelse> {
