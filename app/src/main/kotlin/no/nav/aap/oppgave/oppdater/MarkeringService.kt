@@ -19,7 +19,7 @@ class MarkeringService(
     private val markeringRepository: MarkeringRepository,
 ) {
     private val HASTEMARKERING_BEGRUNNELSE_SONING = "Ny soning, mulig stans"
-    private val AVSLAG_11_5_BEGRUNNELSE = "Førstegangsbehandling ligger an til avslag på § 11-5"
+    private val AVSLAG_11_5_BEGRUNNELSE = "Førstegangsbehandling er innstilt til avslag på § 11-5"
 
     fun oppdaterMarkeringer(oppgaveOppdatering: OppgaveOppdatering): List<Endring> {
         return listOf(
