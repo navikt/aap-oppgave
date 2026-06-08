@@ -125,13 +125,11 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(10)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(9)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(6),
@@ -141,18 +139,15 @@ class OppdaterOppgaveServiceTest {
                                     ÅrsakTilReturKode.MANGLENDE_UTREDNING
                                 )
                             )
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(6)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(5)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(4),
@@ -164,8 +159,7 @@ class OppdaterOppgaveServiceTest {
                             )
                         )
                     )
-                ),
-                AvklaringsbehovHendelseDto(
+                ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
                     status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                     endringer = listOf(
@@ -173,13 +167,11 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(8)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(7)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(4),
@@ -310,30 +302,27 @@ class OppdaterOppgaveServiceTest {
         val venteFrist = LocalDate.now().plusDays(1)
 
         val hendelse2 = hendelse.copy(
-            avklaringsbehov = hendelse.avklaringsbehov +
-                    no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
-                        avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
+            avklaringsbehov = hendelse.avklaringsbehov + no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
+                avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.MANUELT_SATT_PÅ_VENT,
+                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                endringer = listOf(
+                    no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
                         status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                        endringer = listOf(
-                            no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
-                                status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                                endretAv = "Saksbehandler",
-                                tidsstempel = nå.minusHours(1),
-                                frist = venteFrist,
-                                årsakTilSattPåVent = no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER
-                            )
-                        )
+                        endretAv = "Saksbehandler",
+                        tidsstempel = nå.minusHours(1),
+                        frist = venteFrist,
+                        årsakTilSattPåVent = no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER
                     )
+                )
+            )
         )
 
         sendDokumentFlytStoppetHendelse(hendelse2)
 
         val oppgaver = hentOppgaverForBehandling(behandlingsref)
-        assertThat(oppgaver).hasSize(1).first()
-            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+        assertThat(oppgaver).hasSize(1).first().extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
             .containsExactly(
-                no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER.toString(),
-                venteFrist
+                no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER.toString(), venteFrist
             )
 
         // Ventebehovet avsluttes
@@ -350,14 +339,12 @@ class OppdaterOppgaveServiceTest {
                         )
                     )
                 } else it
-            }
-        )
+            })
 
         sendDokumentFlytStoppetHendelse(hendelse3)
         val oppgaver2 = hentOppgaverForBehandling(behandlingsref)
 
-        assertThat(oppgaver2).hasSize(1).first()
-            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+        assertThat(oppgaver2).hasSize(1).first().extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
             .containsExactly(null, null)
     }
 
@@ -530,14 +517,12 @@ class OppdaterOppgaveServiceTest {
 
         val oppgaver = hentOppgaverForBehandling(behandlingsref)
 
-        assertThat(oppgaver).hasSize(1).first()
-            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+        assertThat(oppgaver).hasSize(1).first().extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
             .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_UTENLANDSK_VIDEREFORING_AVKLARING.toString(), venteFrist)
 
         // Ventebehovet avsluttes
         val hendelse3 = hendelse2.copy(
-            erPåVent = false,
-            avklaringsbehov = hendelse2.avklaringsbehov.map {
+            erPåVent = false, avklaringsbehov = hendelse2.avklaringsbehov.map {
                 if (it.avklaringsbehovDefinisjon == Definisjon.MANUELT_SATT_PÅ_VENT) {
                     it.copy(
                         endringer = it.endringer + EndringDTO(
@@ -555,8 +540,7 @@ class OppdaterOppgaveServiceTest {
 
         val oppgaver2 = hentOppgaverForBehandling(behandlingsref)
 
-        assertThat(oppgaver2).hasSize(1).first()
-            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+        assertThat(oppgaver2).hasSize(1).first().extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
             .containsExactly(null, null)
     }
 
@@ -1033,8 +1017,7 @@ class OppdaterOppgaveServiceTest {
     }
 
     private fun avreserverOppgave(
-        oppgaveId: OppgaveId,
-        ident: String
+        oppgaveId: OppgaveId, ident: String
     ) {
         dataSource.transaction { connection ->
             OppgaveRepository(connection).avreserverOppgave(oppgaveId, ident)
@@ -1122,22 +1105,16 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(2)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(1)
-                        ),
-                        EndringDTO(
-                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-                            årsakTilRetur = listOf(
+                        ), EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER, årsakTilRetur = listOf(
                                 ÅrsakTilRetur(
                                     ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
                                 )
-                            ),
-                            begrunnelse = "xxx",
-                            endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusMinutes(3)
+                            ), begrunnelse = "xxx", endretAv = "Kvalitetssikrer", tidsstempel = nå.minusMinutes(3)
                         )
                     )
                 ),
@@ -1149,16 +1126,12 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(3)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(2)
-                        ),
-                        EndringDTO(
-                            status = AvklaringsbehovStatus.OPPRETTET,
-                            endretAv = "Kelvin",
-                            tidsstempel = nå
+                        ), EndringDTO(
+                            status = AvklaringsbehovStatus.OPPRETTET, endretAv = "Kelvin", tidsstempel = nå
                         )
                     )
                 ),
@@ -1259,22 +1232,16 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(2)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(1)
-                        ),
-                        EndringDTO(
-                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-                            årsakTilRetur = listOf(
+                        ), EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER, årsakTilRetur = listOf(
                                 ÅrsakTilRetur(
                                     ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
                                 )
-                            ),
-                            begrunnelse = "xxx",
-                            endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusMinutes(3)
+                            ), begrunnelse = "xxx", endretAv = "Kvalitetssikrer", tidsstempel = nå.minusMinutes(3)
                         )
                     )
                 ),
@@ -1324,26 +1291,19 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(2)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(1)
-                        ),
-                        EndringDTO(
-                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
-                            årsakTilRetur = listOf(
+                        ), EndringDTO(
+                            status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER, årsakTilRetur = listOf(
                                 ÅrsakTilRetur(
                                     ÅrsakTilReturKode.MANGELFULL_BEGRUNNELSE
                                 )
-                            ),
-                            begrunnelse = "xxx",
-                            endretAv = "Kvalitetssikrer",
-                            tidsstempel = nå.minusMinutes(3)
+                            ), begrunnelse = "xxx", endretAv = "Kvalitetssikrer", tidsstempel = nå.minusMinutes(3)
                         )
                     )
-                ),
-                AvklaringsbehovHendelseDto(
+                ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
                     status = AvklaringsbehovStatus.OPPRETTET,
                     endringer = listOf(
@@ -1358,8 +1318,7 @@ class OppdaterOppgaveServiceTest {
                             tidsstempel = nå.minusHours(2)
                         ),
                     )
-                ),
-                AvklaringsbehovHendelseDto(
+                ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.MANUELT_SATT_PÅ_VENT,
                     status = AvklaringsbehovStatus.OPPRETTET,
                     endringer = listOf(
@@ -1421,8 +1380,7 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(2)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(1)
@@ -1646,15 +1604,13 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(10)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Veileder",
                             tidsstempel = nå.minusHours(9)
                         )
                     ),
-                ),
-                AvklaringsbehovHendelseDto(
+                ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
                     status = AvklaringsbehovStatus.OPPRETTET,
                     endringer = listOf(
@@ -1697,13 +1653,11 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(10)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Veileder",
                             tidsstempel = nå.minusHours(9)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(6),
@@ -1716,8 +1670,7 @@ class OppdaterOppgaveServiceTest {
                         )
                     ),
 
-                    ),
-                AvklaringsbehovHendelseDto(
+                    ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
                     status = AvklaringsbehovStatus.AVSLUTTET,
                     endringer = listOf(
@@ -1768,13 +1721,11 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(10)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Veileder",
                             tidsstempel = nå.minusHours(9)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
                             endretAv = "Kvalitetssikrer",
                             tidsstempel = nå.minusHours(6),
@@ -1784,15 +1735,13 @@ class OppdaterOppgaveServiceTest {
                                     ÅrsakTilReturKode.MANGLENDE_UTREDNING
                                 )
                             )
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Veileder",
                             tidsstempel = nå.minusHours(5),
                         )
                     )
-                ),
-                AvklaringsbehovHendelseDto(
+                ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.KVALITETSSIKRING,
                     status = AvklaringsbehovStatus.OPPRETTET,
                     endringer = listOf(
@@ -1859,15 +1808,13 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(10)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(9)
                         )
                     ),
-                ),
-                AvklaringsbehovHendelseDto(
+                ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
                     status = AvklaringsbehovStatus.OPPRETTET,
                     endringer = listOf(
@@ -1910,13 +1857,11 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(10)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(9)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Beslutter",
                             tidsstempel = nå.minusHours(6),
@@ -1929,8 +1874,7 @@ class OppdaterOppgaveServiceTest {
                         )
                     ),
 
-                    ),
-                AvklaringsbehovHendelseDto(
+                    ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
                     status = AvklaringsbehovStatus.AVSLUTTET,
                     endringer = listOf(
@@ -1981,13 +1925,11 @@ class OppdaterOppgaveServiceTest {
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(10)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Veileder",
                             tidsstempel = nå.minusHours(9)
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER,
                             endretAv = "Beslutter",
                             tidsstempel = nå.minusHours(6),
@@ -1997,15 +1939,13 @@ class OppdaterOppgaveServiceTest {
                                     ÅrsakTilReturKode.MANGLENDE_UTREDNING
                                 )
                             )
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusHours(5),
                         )
                     )
-                ),
-                AvklaringsbehovHendelseDto(
+                ), AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = Definisjon.FATTE_VEDTAK,
                     status = AvklaringsbehovStatus.OPPRETTET,
                     endringer = listOf(
@@ -2129,8 +2069,7 @@ class OppdaterOppgaveServiceTest {
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(1),
                             frist = LocalDate.now()
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå,
@@ -2185,8 +2124,7 @@ class OppdaterOppgaveServiceTest {
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(1),
                             frist = LocalDate.now()
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå,
@@ -2237,13 +2175,11 @@ class OppdaterOppgaveServiceTest {
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(1),
                             frist = LocalDate.now()
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå,
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             status = AvklaringsbehovStatus.OPPRETTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå.plusHours(1),
@@ -2354,8 +2290,7 @@ class OppdaterOppgaveServiceTest {
                             endretAv = "Kelvin",
                             tidsstempel = nå.minusHours(1),
                             frist = LocalDate.now()
-                        ),
-                        EndringDTO(
+                        ), EndringDTO(
                             // siste endring med status avsluttet på siste avsluttede ventebehov er endret av saksbehandler
                             status = AvklaringsbehovStatus.AVSLUTTET,
                             endretAv = "saksbehandler",
@@ -2426,8 +2361,7 @@ class OppdaterOppgaveServiceTest {
 
         val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
         assertThat(oppgavePåVent.erPåVent).isTrue()
-        assertThat(oppgavePåVent.avklaringsbehovKode)
-            .isEqualTo(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
+        assertThat(oppgavePåVent.avklaringsbehovKode).isEqualTo(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
         assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
 
         val hendelseTattAvVent = DokumentflytStoppetHendelse(
@@ -2457,8 +2391,7 @@ class OppdaterOppgaveServiceTest {
                             endretAv = "Saksbehandler",
                             tidsstempel = nå.minusDays(1),
                             frist = LocalDate.now(),
-                        ),
-                        no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
+                        ), no.nav.aap.postmottak.kontrakt.hendelse.EndringDTO(
                             status = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Status.AVSLUTTET,
                             endretAv = "Kelvin",
                             tidsstempel = nå
@@ -2681,8 +2614,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(soningHendelse)
 
         val hasterMarkeringEtterSoning =
-            hentMarkeringerForBehandling(behandlingsref)
-                .single { it.markeringType == MarkeringForBehandling.HASTER }
+            hentMarkeringerForBehandling(behandlingsref).single { it.markeringType == MarkeringForBehandling.HASTER }
         assertThat(hasterMarkeringEtterSoning.begrunnelse).isEqualTo("Ny soning, mulig stans")
         assertThat(hasterMarkeringEtterSoning.opprettetAv).isEqualTo("Kelvin")
 
@@ -2706,9 +2638,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(utenSoning)
 
         assertThat(
-            hentMarkeringerForBehandling(behandlingsref)
-                .any { it.markeringType == MarkeringForBehandling.HASTER }
-        ).isFalse()
+            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
     }
 
     @Test
@@ -2749,19 +2679,18 @@ class OppdaterOppgaveServiceTest {
         )
 
         assertThat(
-            hentMarkeringerForBehandling(behandlingsref)
-                .any { it.markeringType == MarkeringForBehandling.HASTER }
-        ).isFalse()
+            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
     }
 
     private fun sendBehandlingFlytStoppetHendelse(
         hendelse: BehandlingFlytStoppetHendelse
     ) {
+        val unleash = UnleashService(FakeUnleash().apply {
+            enableAll()
+        })
         dataSource.transaction { connection ->
             OppdaterOppgaveService(
-                UnleashService(FakeUnleash().apply {
-                    enableAll()
-                }),
+                unleash,
                 veilarbarboppfolgingGateway,
                 sykefravarsoppfolgingGateway,
                 enhetService,
@@ -2769,18 +2698,22 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
+                MarkeringService(
+                    unleash,
+                    MarkeringRepository(connection)
+                ),
                 NomApiGateway.withClientCredentialsRestClient(),
-                MarkeringRepository(connection),
             ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }
 
     private fun sendDokumentFlytStoppetHendelse(hendelse: DokumentflytStoppetHendelse) {
         dataSource.transaction { connection ->
+            val unleash = UnleashService(FakeUnleash().apply {
+                enableAll()
+            })
             OppdaterOppgaveService(
-                UnleashService(FakeUnleash().apply {
-                    enableAll()
-                }),
+                unleash,
                 veilarbarboppfolgingGateway,
                 sykefravarsoppfolgingGateway,
                 enhetService,
@@ -2788,9 +2721,10 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
+                MarkeringService(unleash, MarkeringRepository(connection)),
                 NomApiGateway.withClientCredentialsRestClient(),
-                MarkeringRepository(connection),
-            ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+
+                ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
     }
 
