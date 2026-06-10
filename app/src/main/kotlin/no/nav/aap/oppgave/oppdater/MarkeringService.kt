@@ -29,8 +29,6 @@ class MarkeringService(
     }
 
     fun oppdaterAvslagSykdomMarkering(oppgaveOppdatering: OppgaveOppdatering): Endring {
-        if (!unleashService.isEnabled(FeatureToggles.AvslagSykdomMarkering)) return Endring.INGEN_ENDRING
-
         val referanse = oppgaveOppdatering.referanse
         val eksisterMarkering = finnEksisterendeAvslagSykdom(oppgaveOppdatering.referanse)
         val skalHaMarkering =
