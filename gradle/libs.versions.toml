@@ -4,7 +4,7 @@ jackson = "2.21.3"
 komponenter = "2.0.71"
 tilgang = "1.0.225"
 behandlingsflytVersjon = "0.0.618"
-postmottakVersjon = "6.0.4"
+postmottakVersjon = "6.0.6"
 junit = "6.0.3"
 testcontainers = "1.21.4"
 
