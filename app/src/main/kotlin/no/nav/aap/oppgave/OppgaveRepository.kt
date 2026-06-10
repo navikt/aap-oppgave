@@ -652,9 +652,10 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val query = """
             SELECT $alleOppgaveFelt
-            FROM OPPGAVE
-            WHERE RESERVERT_AV = ?
-              AND STATUS != 'AVSLUTTET' $kunPåVentQuery
+            FROM OPPGAVE o
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
+            WHERE o.RESERVERT_AV = ?
+              AND o.STATUS != 'AVSLUTTET' $kunPåVentQuery
             ORDER BY $sortering $sorteringRekkefølge
         """.trimIndent()
 
@@ -865,14 +866,15 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private fun oppgaveSorteringQuery(sortBy: OppgaveSorteringFelt): String {
         return when (sortBy) {
-            OppgaveSorteringFelt.PERSONIDENT -> "person_ident"
-            OppgaveSorteringFelt.SAKSNUMMER -> "saksnummer"
-            OppgaveSorteringFelt.BEHANDLINGSTYPE -> "behandlingstype"
-            OppgaveSorteringFelt.BEHANDLING_OPPRETTET -> "behandling_opprettet"
-            OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "aarsak_til_opprettelse"
-            OppgaveSorteringFelt.AVKLARINGSBEHOV_KODE -> "avklaringsbehov_type"
-            OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "opprettet_tidspunkt"
-            OppgaveSorteringFelt.RESERVERT_AV -> "reservert_av"
+            OppgaveSorteringFelt.PERSONIDENT -> "o.person_ident"
+            OppgaveSorteringFelt.SAKSNUMMER -> "o.saksnummer"
+            OppgaveSorteringFelt.BEHANDLINGSTYPE -> "o.behandlingstype"
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET -> "o.behandling_opprettet"
+            OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "o.aarsak_til_opprettelse"
+            OppgaveSorteringFelt.AVKLARINGSBEHOV_KODE -> "o.avklaringsbehov_type"
+            OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "o.opprettet_tidspunkt"
+            OppgaveSorteringFelt.RESERVERT_AV -> "o.reservert_av"
+            OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP -> "t.belop"
         }
     }
 
