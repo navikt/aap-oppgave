@@ -12,6 +12,7 @@ enum class Behandlingstype(val fraBehandlingsflyt: Boolean) {
     AKTIVITETSPLIKT_11_9(true),
 
     // Fra postmottak
+    FORDELING(false),
     DOKUMENT_HÅNDTERING(false),
     JOURNALFØRING(false)
 }
