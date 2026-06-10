@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInformasjon
 import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.IEnhetService
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingGateway
@@ -34,7 +35,6 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
-import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -44,7 +44,6 @@ import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 
 class OppdaterOppgaveService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
@@ -191,7 +190,7 @@ class OppdaterOppgaveService(
             }
         }
 
-        if (erReturTilBeslutter(avklaringsbehov) && unleashService.isEnabled(FeatureToggles.ReserverTilBeslutterEtterRetur)) {
+        if (erReturTilBeslutter(avklaringsbehov)) {
             val beslutterSomSendteIRetur = finnBeslutterSomSendteIRetur(oppgaveOppdatering)
 
             if (beslutterSomSendteIRetur != null && beslutterSomSendteIRetur != KELVIN) {
