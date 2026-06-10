@@ -54,7 +54,10 @@ Velg konfigurasjonen `TestApp` i Run/Debug-menyen.
 
 Alternativt, kjør opp mot behandlingsflyt:
 
-```./gradlew runTestAppMotBehandlingsflyt```
+```
+docker-compose up -d
+./gradlew runTestAppMotBehandlingsflyt
+```
 
 ### Kjøre lokalt mot dev-gcp
 
