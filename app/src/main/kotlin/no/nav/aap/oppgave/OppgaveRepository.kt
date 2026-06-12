@@ -419,7 +419,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         if (utvidetFilter.markertHaster == true) {
-            sb.append(" AND EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}')")
+            sb.append(" AND EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}')")
         }
 
         return sb.toString()
@@ -449,27 +449,27 @@ class OppgaveRepository(private val connection: DBConnection) {
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
         val orderBy = if (hastemarkeringerFørst) {
-            "ORDER BY CASE WHEN EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref) THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
+            "ORDER BY CASE WHEN EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref) THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
         } else {
             "ORDER BY $sortering $sorteringsRekkefølge"
         }
 
         // COUNT(*) OVER() beregnes som et vindusfunksjonskall før OFFSET/FETCH, så vi slipper en ekstra spørring
         val hentNesteOppgaveQuery = """
-            SELECT o.*, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE, COUNT(*) OVER() AS total_count
+            SELECT OPPGAVE.*, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE, COUNT(*) OVER() AS total_count
             FROM 
-                OPPGAVE o
-            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
+                OPPGAVE
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on OPPGAVE.ID = t.OPPGAVE_ID
             LEFT JOIN LATERAL (
                 SELECT enhet as enhet_forrige_oppgave
                 FROM OPPGAVE sao_inner
-                WHERE sao_inner.behandling_ref = o.behandling_ref
+                WHERE sao_inner.behandling_ref = OPPGAVE.behandling_ref
                   AND sao_inner.status = 'AVSLUTTET'
                 ORDER BY sao_inner.endret_tidspunkt DESC
                 LIMIT 1
             ) sao ON true
             WHERE 
-                ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
+                ${filter.whereClause()} OPPGAVE.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
             
             $orderBy
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
@@ -653,6 +653,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val query = """
             SELECT $alleOppgaveFelt
             FROM OPPGAVE
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on OPPGAVE.ID = t.OPPGAVE_ID
             WHERE RESERVERT_AV = ?
               AND STATUS != 'AVSLUTTET' $kunPåVentQuery
             ORDER BY $sortering $sorteringRekkefølge
@@ -759,7 +760,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             val stringListeAvMarkeringer =
                 inkluderteMarkeringer.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
             sb.append(
-                "EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
+                "EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
             )
         }
 
@@ -768,7 +769,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             val stringListeAvMarkeringer =
                 ekskluderteMarkeringer.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
             sb.append(
-                "NOT EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
+                "NOT EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
             )
         }
         
@@ -865,14 +866,15 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private fun oppgaveSorteringQuery(sortBy: OppgaveSorteringFelt): String {
         return when (sortBy) {
-            OppgaveSorteringFelt.PERSONIDENT -> "person_ident"
-            OppgaveSorteringFelt.SAKSNUMMER -> "saksnummer"
-            OppgaveSorteringFelt.BEHANDLINGSTYPE -> "behandlingstype"
-            OppgaveSorteringFelt.BEHANDLING_OPPRETTET -> "behandling_opprettet"
-            OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "aarsak_til_opprettelse"
-            OppgaveSorteringFelt.AVKLARINGSBEHOV_KODE -> "avklaringsbehov_type"
-            OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "opprettet_tidspunkt"
-            OppgaveSorteringFelt.RESERVERT_AV -> "reservert_av"
+            OppgaveSorteringFelt.PERSONIDENT -> "OPPGAVE.person_ident"
+            OppgaveSorteringFelt.SAKSNUMMER -> "OPPGAVE.saksnummer"
+            OppgaveSorteringFelt.BEHANDLINGSTYPE -> "OPPGAVE.behandlingstype"
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET -> "OPPGAVE.behandling_opprettet"
+            OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "OPPGAVE.aarsak_til_opprettelse"
+            OppgaveSorteringFelt.AVKLARINGSBEHOV_KODE -> "OPPGAVE.avklaringsbehov_type"
+            OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "OPPGAVE.opprettet_tidspunkt"
+            OppgaveSorteringFelt.RESERVERT_AV -> "OPPGAVE.reservert_av"
+            OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP -> "t.belop"
         }
     }
 
@@ -885,42 +887,42 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private companion object {
         val alleOppgaveFelt = """
-            ID,
-            PERSON_IDENT,
-            SAKSNUMMER,
-            BEHANDLING_REF,
-            JOURNALPOST_ID,
-            ENHET,
-            OPPFOLGINGSENHET,
-            VEILEDER_ARBEID,
-            VEILEDER_SYKDOM,
-            BEHANDLING_OPPRETTET,
-            AVKLARINGSBEHOV_TYPE,
-            STATUS,
-            BEHANDLINGSTYPE,
-            PAA_VENT_TIL,
-            PAA_VENT_AARSAK,
-            VENTE_BEGRUNNELSE,
-            SISTE_PAA_VENT_AARSAK,
-            SISTE_VENTE_BEGRUNNELSE,
-            RESERVERT_AV,
-            RESERVERT_AV_NAVN,
-            RESERVERT_TIDSPUNKT,
-            OPPRETTET_AV,
-            OPPRETTET_TIDSPUNKT,
-            ENDRET_AV,
-            ENDRET_TIDSPUNKT,
-            VERSJON,
-            AARSAKER_TIL_BEHANDLING,
-            FORTROLIG_ADRESSE,
-            ER_SKJERMET,
-            ULESTE_DOKUMENTER,
-            RETUR_AARSAK,
-            RETUR_BEGRUNNELSE,
-            retur_aarsaker,
-            retur_returnert_av,
-            AARSAK_TIL_OPPRETTELSE,
-            UTLOEPT_VENTEFRIST
+            OPPGAVE.ID,
+            OPPGAVE.PERSON_IDENT,
+            OPPGAVE.SAKSNUMMER,
+            OPPGAVE.BEHANDLING_REF,
+            OPPGAVE.JOURNALPOST_ID,
+            OPPGAVE.ENHET,
+            OPPGAVE.OPPFOLGINGSENHET,
+            OPPGAVE.VEILEDER_ARBEID,
+            OPPGAVE.VEILEDER_SYKDOM,
+            OPPGAVE.BEHANDLING_OPPRETTET,
+            OPPGAVE.AVKLARINGSBEHOV_TYPE,
+            OPPGAVE.STATUS,
+            OPPGAVE.BEHANDLINGSTYPE,
+            OPPGAVE.PAA_VENT_TIL,
+            OPPGAVE.PAA_VENT_AARSAK,
+            OPPGAVE.VENTE_BEGRUNNELSE,
+            OPPGAVE.SISTE_PAA_VENT_AARSAK,
+            OPPGAVE.SISTE_VENTE_BEGRUNNELSE,
+            OPPGAVE.RESERVERT_AV,
+            OPPGAVE.RESERVERT_AV_NAVN,
+            OPPGAVE.RESERVERT_TIDSPUNKT,
+            OPPGAVE.OPPRETTET_AV,
+            OPPGAVE.OPPRETTET_TIDSPUNKT,
+            OPPGAVE.ENDRET_AV,
+            OPPGAVE.ENDRET_TIDSPUNKT,
+            OPPGAVE.VERSJON,
+            OPPGAVE.AARSAKER_TIL_BEHANDLING,
+            OPPGAVE.FORTROLIG_ADRESSE,
+            OPPGAVE.ER_SKJERMET,
+            OPPGAVE.ULESTE_DOKUMENTER,
+            OPPGAVE.RETUR_AARSAK,
+            OPPGAVE.RETUR_BEGRUNNELSE,
+            OPPGAVE.retur_aarsaker,
+            OPPGAVE.retur_returnert_av,
+            OPPGAVE.AARSAK_TIL_OPPRETTELSE,
+            OPPGAVE.UTLOEPT_VENTEFRIST
         """.trimIndent()
 
     }
