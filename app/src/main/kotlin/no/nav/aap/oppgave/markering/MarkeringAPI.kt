@@ -55,6 +55,34 @@ fun NormalOpenAPIRoute.markeringApi(
         respondWithStatus(HttpStatusCode.OK)
     }
 
+    route("/{referanse}/ny-hendelse").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto>() { request, dto ->
+        dataSource.transaction { connection ->
+            MarkeringRepository(connection).lagreMarkeringMedHendelse(
+                referanse = request.referanse,
+                BehandlingMarkering(
+                    dto.markeringType,
+                    dto.begrunnelse,
+                    bruker().ident,
+                    opprettetAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident),
+                    hendelseType = dto.hendelseType
+                )
+            )
+            val oppgavePåBehandling =
+                OppgaveRepository(connection).hentOppgaver(request.referanse).first { it.status == Status.OPPRETTET }
+
+            if (oppgavePåBehandling.id != null) {
+                log.info("Sender oppdatering til statistikk pga. ny markering på behandling. OppgaveId: ${oppgavePåBehandling.id}, behandlingsreferanse: ${oppgavePåBehandling.behandlingRef}")
+                sendOppgaveStatusOppdatering(
+                    oppgaveId = oppgavePåBehandling.oppgaveId(),
+                    hendelseType = HendelseType.OPPDATERT,
+                    repository = FlytJobbRepository(connection),
+                )
+            }
+        }
+
+        respondWithStatus(HttpStatusCode.OK)
+    }
+
     route("/{referanse}/hent-markeringer").get<BehandlingReferanse, List<MarkeringDto>> { request ->
         prometheus.httpCallCounter("/hent-markeringer").increment()
 

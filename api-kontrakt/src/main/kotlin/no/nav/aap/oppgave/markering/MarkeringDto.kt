@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.markering
 
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import java.time.LocalDateTime
 
 data class MarkeringDto(
@@ -9,4 +10,5 @@ data class MarkeringDto(
     val opprettetAv: String? = null,
     val opprettetTidspunkt: LocalDateTime? = null,
     val opprettetAvNavn: String? = null,
+    val hendelseType: MarkeringHendelseType? = null,
 )

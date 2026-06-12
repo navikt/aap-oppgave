@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.markering
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
+import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import java.util.UUID
 
 class MarkeringRepository(
@@ -36,6 +37,28 @@ class MarkeringRepository(
                 setString(3, markering.begrunnelse)
                 setString(4, markering.opprettetAv)
                 setString(5, markering.opprettetAvNavn)
+            }
+        }
+    }
+
+    fun lagreMarkeringMedHendelse(
+        referanse: UUID,
+        markering: BehandlingMarkering,
+    ) {
+        val query =
+            """
+            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn, hendelse_type)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """.trimIndent()
+
+        connection.execute(query) {
+            setParams {
+                setUUID(1, referanse)
+                setEnumName(2, markering.markeringType)
+                setString(3, markering.begrunnelse)
+                setString(4, markering.opprettetAv)
+                setString(5, markering.opprettetAvNavn)
+                setEnumName(6, markering.hendelseType)
             }
         }
     }
@@ -81,6 +104,7 @@ class MarkeringRepository(
             begrunnelse = row.getStringOrNull("begrunnelse"),
             opprettetAv = row.getString("opprettet_av"),
             opprettetAvNavn = row.getStringOrNull("opprettet_av_navn"),
-            opprettetTidspunkt = row.getLocalDateTimeOrNull("opprettet_tid")
+            hendelseType = row.getEnumOrNull<MarkeringHendelseType?, MarkeringHendelseType>("hendelse_type"),
+            opprettetTidspunkt = row.getLocalDateTimeOrNull("opprettet_tid"),
         )
 }
