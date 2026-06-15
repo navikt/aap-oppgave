@@ -201,7 +201,9 @@ class OppgaveRepository(private val connection: DBConnection) {
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean? = false,
         returInformasjon: ReturInformasjon?,
-        utløptVentefrist: LocalDate? = null
+        utløptVentefrist: LocalDate? = null,
+        forrigeKvalitetssikrerIdent: String? = null,
+        forrigeKvalitetssikrerNavn: String? = null,
     ) {
         val query = """
             UPDATE 
@@ -229,6 +231,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 RETUR_BEGRUNNELSE = ?,
                 ER_SKJERMET = ?,
                 UTLOEPT_VENTEFRIST = ?,
+                FORRIGE_KVALITETSSIKRER_IDENT = ?,
+                FORRIGE_KVALITETSSIKRER_NAVN = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -257,8 +261,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(18, returInformasjon?.begrunnelse)
                 setBoolean(19, erSkjermet)
                 setLocalDate(20, utløptVentefrist)
-                setLong(21, oppgaveId.id)
-                setLong(22, oppgaveId.versjon)
+                setString(21, forrigeKvalitetssikrerIdent)
+                setString(22, forrigeKvalitetssikrerNavn)
+                setLong(23, oppgaveId.id)
+                setLong(24, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -842,7 +848,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                     endretAv = row.getStringOrNull("retur_returnert_av") ?: "UKJENT",
                 )
             },
-            tilbakekrevingsVarsDto = tilbakekrevingVars
+            tilbakekrevingsVarsDto = tilbakekrevingVars,
+            forrigeKvalitetssikrerIdent = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_IDENT"),
+            forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
         )
     }
 
@@ -922,7 +930,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPGAVE.retur_aarsaker,
             OPPGAVE.retur_returnert_av,
             OPPGAVE.AARSAK_TIL_OPPRETTELSE,
-            OPPGAVE.UTLOEPT_VENTEFRIST
+            OPPGAVE.UTLOEPT_VENTEFRIST,
+            OPPGAVE.FORRIGE_KVALITETSSIKRER_IDENT,
+            OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN
         """.trimIndent()
 
     }

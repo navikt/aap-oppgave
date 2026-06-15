@@ -87,6 +87,8 @@ data class OppgaveDto(
     val harUlesteDokumenter: Boolean? = false,
     val markeringer: List<MarkeringDto> = emptyList(),
     val tilbakekrevingsVarsDto: TilbakekrevingsVarsDto? = null,
+    val forrigeKvalitetssikrerIdent: String? = null,
+    val forrigeKvalitetssikrerNavn: String? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.

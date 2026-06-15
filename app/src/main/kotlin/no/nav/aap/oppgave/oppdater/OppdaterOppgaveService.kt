@@ -55,7 +55,7 @@ class OppdaterOppgaveService(
     private val tilbakekrevingRepository: TilbakekrevingRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
     private val markeringService: MarkeringService,
-    ansattInfoGateway: AnsattInfoGateway,
+    private val ansattInfoGateway: AnsattInfoGateway,
 ) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
@@ -151,6 +151,12 @@ class OppdaterOppgaveService(
         )
         val erSkjermet = enhetService.erSkjermet(oppgaveOppdatering.personIdent)
 
+        // bare relevant å lagre ned forrige på kvalitetssikrer-oppgaver
+        val forrigeKvalitetssikrer =
+            if (avklaringsbehov.avklaringsbehovKode.kode == Definisjon.KVALITETSSIKRING.kode.name) utledForrigeKvalitetssikrer(
+                avklaringsbehov
+            ) else null
+
         loggOppdatering(eksisterendeOppgave, oppgaveOppdatering.venteInformasjon?.årsakTilSattPåVent)
         oppgaveRepository.oppdatereOppgave(
             oppgaveId = eksisterendeOppgave.oppgaveId(),
@@ -168,7 +174,13 @@ class OppdaterOppgaveService(
             erSkjermet = erSkjermet,
             harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
             returInformasjon = utledReturInformasjon(avklaringsbehov, oppgaveOppdatering),
-            utløptVentefrist = utledUtløptVentefrist(oppgaveOppdatering, eksisterendeOppgave)
+            utløptVentefrist = utledUtløptVentefrist(oppgaveOppdatering, eksisterendeOppgave),
+            forrigeKvalitetssikrerIdent = forrigeKvalitetssikrer,
+            forrigeKvalitetssikrerNavn = forrigeKvalitetssikrer?.let {
+                ansattInfoGateway.hentAnsattNavnHvisFinnes(
+                    forrigeKvalitetssikrer
+                )
+            }
         )
 
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
@@ -214,6 +226,16 @@ class OppdaterOppgaveService(
             }
             .maxByOrNull { it.first }
             ?.second
+    }
+
+    private fun utledForrigeKvalitetssikrer(avklaringsbehov: AvklaringsbehovHendelse): String? {
+        val hvemAvsluttetBehovetSist = avklaringsbehov.endringer.filter { it.status == AvklaringsbehovStatus.AVSLUTTET }
+            .maxByOrNull { it.tidsstempel }?.endretAv
+        if (hvemAvsluttetBehovetSist == KELVIN) {
+            return null
+        }
+        return hvemAvsluttetBehovetSist
+
     }
 
     private fun håndterReservasjonFraBehandlingsflyt(
