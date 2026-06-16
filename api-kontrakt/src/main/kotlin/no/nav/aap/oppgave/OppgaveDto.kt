@@ -29,6 +29,11 @@ data class TilbakekrevingsVarsDto(
     val tilbakekrevings_beløp: BigDecimal
 )
 
+data class ForrigeKvalitetssikrerInfo(
+    val forrigeKvalitetssikrerIdent: String,
+    val forrigeKvalitetssikrerNavn: String? = null,
+)
+
 enum class ÅrsakTilReturKode {
     MANGELFULL_BEGRUNNELSE,
     MANGLENDE_UTREDNING,
@@ -87,8 +92,7 @@ data class OppgaveDto(
     val harUlesteDokumenter: Boolean? = false,
     val markeringer: List<MarkeringDto> = emptyList(),
     val tilbakekrevingsVarsDto: TilbakekrevingsVarsDto? = null,
-    val forrigeKvalitetssikrerIdent: String? = null,
-    val forrigeKvalitetssikrerNavn: String? = null,
+    val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerInfo? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.

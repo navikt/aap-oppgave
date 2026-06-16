@@ -16,14 +16,14 @@ import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
-import java.util.*
+import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
 class FeilVersjonException(
     val oppgaveId: OppgaveId,
     val faktiskVersjon: Long,
-): RuntimeException("Endring av $oppgaveId feilet fordi faktisk versjon er $faktiskVersjon")
+) : RuntimeException("Endring av $oppgaveId feilet fordi faktisk versjon er $faktiskVersjon")
 
 class OppgaveRepository(private val connection: DBConnection) {
 
@@ -760,7 +760,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 behandlingstyper.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
             sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
         }
-        
+
         // Markeringer - inkluder
         if (inkluderteMarkeringer.isNotEmpty()) {
             val stringListeAvMarkeringer =
@@ -778,7 +778,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 "NOT EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
             )
         }
-        
+
         // Enheter
         if (enheter.isNotEmpty()) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
@@ -849,8 +849,12 @@ class OppgaveRepository(private val connection: DBConnection) {
                 )
             },
             tilbakekrevingsVarsDto = tilbakekrevingVars,
-            forrigeKvalitetssikrerIdent = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_IDENT"),
-            forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
+            forrigeKvalitetssikrerInfo = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_IDENT")?.let {
+                ForrigeKvalitetssikrerInfo(
+                    forrigeKvalitetssikrerIdent = it,
+                    forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
+                )
+            },
         )
     }
 

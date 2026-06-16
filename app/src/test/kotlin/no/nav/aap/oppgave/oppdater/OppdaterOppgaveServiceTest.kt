@@ -2797,7 +2797,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
         val kvalitetssikringsOppgave = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
-        assertThat(kvalitetssikringsOppgave.forrigeKvalitetssikrerIdent).isNull()
+        assertThat(kvalitetssikringsOppgave.forrigeKvalitetssikrerInfo?.forrigeKvalitetssikrerIdent).isNull()
 
 
         val returFraKvalitetssikrer = BehandlingFlytStoppetHendelse(
@@ -2866,7 +2866,7 @@ class OppdaterOppgaveServiceTest {
 
         assertThat(returOppgave.returInformasjon?.status).isEqualTo(ReturStatus.RETUR_FRA_KVALITETSSIKRER)
         assertThat(returOppgave.avklaringsbehovKode).isEqualTo(Definisjon.AVKLAR_SYKDOM.kode.name)
-        assertThat(returOppgave.forrigeKvalitetssikrerIdent).isNull()
+        assertThat(returOppgave.forrigeKvalitetssikrerInfo?.forrigeKvalitetssikrerIdent).isNull()
 
         val returTilKvalitetssikrer = BehandlingFlytStoppetHendelse(
             personIdent = "12345678901",
@@ -2942,7 +2942,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(returTilToTrinn.returInformasjon?.status).isEqualTo(ReturStatus.RETUR_FRA_VEILEDER)
         assertThat(returTilToTrinn.returInformasjon?.endretAv).isEqualTo("Veileder")
         assertThat(returTilToTrinn.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
-        assertThat(returTilToTrinn.forrigeKvalitetssikrerIdent).isEqualTo("Kvalitetssikrer")
+        assertThat(returTilToTrinn.forrigeKvalitetssikrerInfo?.forrigeKvalitetssikrerIdent).isEqualTo("Kvalitetssikrer")
     }
 
     private fun sendBehandlingFlytStoppetHendelse(
