@@ -66,7 +66,11 @@ class MarkeringRepository(
     fun hentMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
         val query =
             """
-            SELECT * FROM MARKERING WHERE behandling_ref = ?
+            SELECT DISTINCT ON (markering_type) *
+            FROM MARKERING
+            WHERE behandling_ref = ?
+              AND (hendelse_type = 'OPPRETTET' OR hendelse_type IS NULL)
+            ORDER BY markering_type, opprettet_tid DESC
             """.trimIndent()
 
         val markeringer =
