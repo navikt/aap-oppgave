@@ -20,9 +20,6 @@ class MottattDokumentService(
             return
         }
 
-        mottattDokumentRepository.registrerDokumenterSomLest(behandlingRef, ident)
-        log.info("Registrerte ${ulesteDokumenter.size} dokument(er) av type ${ulesteDokumenter.joinToString(", ") { it.type }} som lest")
-
         val oppgave = oppgaveRepository.hentOppgaver(behandlingRef).firstOrNull { it.status != Status.AVSLUTTET }
         require(oppgave != null) { "Fant ingen åpen oppgave for behandling $behandlingRef" }
 
@@ -30,5 +27,8 @@ class MottattDokumentService(
             oppgaveId = oppgave.oppgaveId(),
             harUlesteDokumenter = false
         )
+
+        mottattDokumentRepository.registrerDokumenterSomLest(behandlingRef, ident)
+        log.info("Registrerte ${ulesteDokumenter.size} dokument(er) av type ${ulesteDokumenter.joinToString(", ") { it.type }} som lest")
     }
 }
