@@ -68,9 +68,9 @@ fun NormalOpenAPIRoute.markeringApi(
                 )
             )
             val oppgavePåBehandling =
-                OppgaveRepository(connection).hentOppgaver(request.referanse).first { it.status == Status.OPPRETTET }
+                OppgaveRepository(connection).hentOppgaver(request.referanse).firstOrNull { it.status == Status.OPPRETTET }
 
-            if (oppgavePåBehandling.id != null) {
+            if (oppgavePåBehandling?.id != null) {
                 log.info("Sender oppdatering til statistikk pga. ny markering på behandling. OppgaveId: ${oppgavePåBehandling.id}, behandlingsreferanse: ${oppgavePåBehandling.behandlingRef}")
                 sendOppgaveStatusOppdatering(
                     oppgaveId = oppgavePåBehandling.oppgaveId(),
@@ -83,12 +83,12 @@ fun NormalOpenAPIRoute.markeringApi(
         respondWithStatus(HttpStatusCode.OK)
     }
 
-    route("/{referanse}/hent-markeringer").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+    route("/{referanse}/hent-siste-aktive-hastemarkering").get<BehandlingReferanse, List<MarkeringDto>> { request ->
         prometheus.httpCallCounter("/hent-markeringer").increment()
 
         val markeringer =
             dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentMarkeringerForBehandling(request.referanse)
+                MarkeringRepository(connection).hentSisteAktiveHastemarkering(request.referanse)
             }
         respond(markeringer.tilDto())
     }
@@ -128,7 +128,8 @@ fun List<BehandlingMarkering>.tilDto(): List<MarkeringDto> {
             begrunnelse = it.begrunnelse,
             opprettetAv = it.opprettetAv,
             opprettetAvNavn = it.opprettetAvNavn,
-            opprettetTidspunkt = it.opprettetTidspunkt
+            opprettetTidspunkt = it.opprettetTidspunkt,
+            hendelseType = it.hendelseType,
         )
     }
 }

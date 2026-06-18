@@ -66,9 +66,28 @@ class MarkeringRepository(
     fun hentMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
         val query =
             """
+            SELECT * FROM MARKERING WHERE behandling_ref = ?
+            """.trimIndent()
+
+        val markeringer =
+            connection.queryList(query) {
+                setParams {
+                    setUUID(1, referanse)
+                }
+                setRowMapper {
+                    markeringMapper(it)
+                }
+            }
+        return markeringer
+    }
+
+    fun hentSisteAktiveHastemarkering(referanse: UUID): List<BehandlingMarkering> {
+        val query =
+            """
             SELECT DISTINCT ON (markering_type) *
             FROM MARKERING
             WHERE behandling_ref = ?
+              AND markering_type = 'HASTER'
               AND (hendelse_type = 'OPPRETTET' OR hendelse_type IS NULL)
             ORDER BY markering_type, opprettet_tid DESC
             """.trimIndent()
