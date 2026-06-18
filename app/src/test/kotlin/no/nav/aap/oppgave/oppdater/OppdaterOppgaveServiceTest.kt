@@ -3033,7 +3033,7 @@ class OppdaterOppgaveServiceTest {
 
     private fun hentMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<BehandlingMarkering> {
         return dataSource.transaction { connection ->
-            MarkeringRepository(connection).hentMarkeringerForBehandling(behandlingsref.referanse)
+            MarkeringRepository(connection).hentMarkeringerOgHistorikk(behandlingsref.referanse)
         }
     }
 

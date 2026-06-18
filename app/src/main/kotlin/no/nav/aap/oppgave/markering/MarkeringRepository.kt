@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.markering
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import java.util.UUID
 
@@ -9,10 +10,11 @@ class MarkeringRepository(
     private val connection: DBConnection
 ) {
 
+    @Deprecated("Bruk lagreMarkeringNy")
     fun oppdaterMarkering(referanse: UUID, markering: BehandlingMarkering) {
         // Kan bare ha én markering av gitt type på en behandling
         val markeringSkalOverskrives =
-            hentMarkeringerForBehandling(referanse).any { it.markeringType == markering.markeringType }
+            hentMarkeringerOgHistorikk(referanse).any { it.markeringType == markering.markeringType }
 
         if (markeringSkalOverskrives) {
             slettMarkering(referanse, markering)
@@ -20,6 +22,7 @@ class MarkeringRepository(
         lagreMarkering(referanse, markering)
     }
 
+    @Deprecated("Bruk lagreMarkeringNy")
     private fun lagreMarkering(
         referanse: UUID,
         markering: BehandlingMarkering
@@ -41,7 +44,7 @@ class MarkeringRepository(
         }
     }
 
-    fun lagreMarkeringMedHendelse(
+    fun lagreMarkeringNy(
         referanse: UUID,
         markering: BehandlingMarkering,
     ) {
@@ -63,7 +66,8 @@ class MarkeringRepository(
         }
     }
 
-    fun hentMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
+    @Deprecated("Bruk hentMarkeringerOgHistorikk")
+    fun hentMarkeringerOgHistorikk(referanse: UUID): List<BehandlingMarkering> {
         val query =
             """
             SELECT * FROM MARKERING WHERE behandling_ref = ?
@@ -81,13 +85,13 @@ class MarkeringRepository(
         return markeringer
     }
 
-    fun hentSisteAktiveHastemarkering(referanse: UUID): List<BehandlingMarkering> {
+    fun hentSisteAktiveMarkering(referanse: UUID, markeringType: MarkeringForBehandling): List<BehandlingMarkering> {
         val query =
             """
             SELECT DISTINCT ON (markering_type) *
             FROM MARKERING
             WHERE behandling_ref = ?
-              AND markering_type = 'HASTER'
+              AND markering_type = ?
               AND (hendelse_type = 'OPPRETTET' OR hendelse_type IS NULL)
             ORDER BY markering_type, opprettet_tid DESC
             """.trimIndent()
@@ -96,6 +100,7 @@ class MarkeringRepository(
             connection.queryList(query) {
                 setParams {
                     setUUID(1, referanse)
+                    setEnumName(2, markeringType)
                 }
                 setRowMapper {
                     markeringMapper(it)
@@ -104,6 +109,7 @@ class MarkeringRepository(
         return markeringer
     }
 
+    @Deprecated("Bruk lagreMarkeringNy")
     fun slettMarkering(
         referanse: UUID,
         markering: BehandlingMarkering

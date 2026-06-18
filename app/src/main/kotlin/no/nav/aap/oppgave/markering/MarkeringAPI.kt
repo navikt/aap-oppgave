@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 
 private val log = LoggerFactory.getLogger("markeringApi")
 
@@ -28,6 +29,7 @@ fun NormalOpenAPIRoute.markeringApi(
     prometheus: PrometheusMeterRegistry,
     ansattInfoGateway: AnsattInfoGateway,
 ) {
+    // Deprecated: /ny-hendelse skal ta over for denne
     route("/{referanse}/ny-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
         dataSource.transaction { connection ->
             MarkeringRepository(connection).oppdaterMarkering(
@@ -57,7 +59,7 @@ fun NormalOpenAPIRoute.markeringApi(
 
     route("/{referanse}/ny-hendelse").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto>() { request, dto ->
         dataSource.transaction { connection ->
-            MarkeringRepository(connection).lagreMarkeringMedHendelse(
+            MarkeringRepository(connection).lagreMarkeringNy(
                 referanse = request.referanse,
                 BehandlingMarkering(
                     dto.markeringType,
@@ -83,12 +85,22 @@ fun NormalOpenAPIRoute.markeringApi(
         respondWithStatus(HttpStatusCode.OK)
     }
 
-    route("/{referanse}/hent-siste-aktive-hastemarkering").get<BehandlingReferanse, List<MarkeringDto>> { request ->
-        prometheus.httpCallCounter("/hent-markeringer").increment()
+    route("/{referanse}/hent-markeringer-og-historikk").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+        prometheus.httpCallCounter("/hent-markeringer-og-historikk").increment()
 
         val markeringer =
             dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentSisteAktiveHastemarkering(request.referanse)
+                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.referanse)
+            }
+        respond(markeringer.tilDto())
+    }
+
+    route("/{referanse}/hent-siste-aktive-hastemarkering").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+        prometheus.httpCallCounter("/hent-siste-aktive-hastemarkering").increment()
+
+        val markeringer =
+            dataSource.transaction { connection ->
+                MarkeringRepository(connection).hentSisteAktiveMarkering(request.referanse, MarkeringForBehandling.HASTER)
             }
         respond(markeringer.tilDto())
     }

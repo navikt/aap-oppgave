@@ -99,7 +99,7 @@ class MarkeringService(
 
     private fun finnEksisterendeSoningHaster(referanse: UUID): Boolean =
         markeringRepository
-            .hentMarkeringerForBehandling(referanse)
+            .hentMarkeringerOgHistorikk(referanse)
             .any {
                 it.begrunnelse == HASTEMARKERING_BEGRUNNELSE_SONING &&
                         it.opprettetAv == KELVIN &&
@@ -108,7 +108,7 @@ class MarkeringService(
 
     private fun finnEksisterendeAvslagSykdom(referanse: UUID): Boolean =
         markeringRepository
-            .hentMarkeringerForBehandling(referanse)
+            .hentMarkeringerOgHistorikk(referanse)
             .any {
                 it.begrunnelse == AVSLAG_11_5_BEGRUNNELSE &&
                         it.opprettetAv == KELVIN &&
