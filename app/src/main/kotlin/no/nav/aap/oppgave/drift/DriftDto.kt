@@ -1,15 +1,15 @@
 package no.nav.aap.oppgave.drift
 
+import java.time.LocalDateTime
+import java.util.UUID
 import no.nav.aap.oppgave.filter.FilterType
 import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
-import java.time.LocalDateTime
-import java.util.UUID
 
 
-data class OppgaveDriftsinfoDTO(
+internal data class OppgaveDriftsinfoDTO(
     val oppgaveId: Long,
     val behandlingRef: UUID,
     val status: Status,
@@ -20,7 +20,8 @@ data class OppgaveDriftsinfoDTO(
     val veilederSykdom: String?,
     val opprettetTidspunkt: LocalDateTime,
     val endretTidspunkt: LocalDateTime?,
-    val avklaringsbehovKode: String
+    val avklaringsbehovKode: String,
+    val historikk: List<OppgaveHistorikkDto>,
 )
 
 data class DriftFilterResponsDTO(
@@ -70,4 +71,14 @@ data class AvklaringsbehovDto(val kode: String, val navn: String)
 
 data class SlettFilterRequest(
     val id: Long,
+)
+
+internal data class OppgaveHistorikkDto(
+    val status: Status,
+    val reservertAv: String?,
+    val reservertTidspunkt: LocalDateTime?,
+    val endretAv: String?,
+    val endretTidspunkt: LocalDateTime?,
+    val enhet: String,
+    val oppfølgingsenhet: String?
 )

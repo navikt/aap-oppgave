@@ -1,18 +1,18 @@
 package no.nav.aap.oppgave.drift
 
-import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
-import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
-import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
 import java.time.LocalDateTime
 import javax.sql.DataSource
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.EnhetFilter
@@ -20,12 +20,15 @@ import no.nav.aap.oppgave.filter.FilterDto
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.filter.MarkeringFilter
-import no.nav.aap.oppgave.filter.OpprettFilter
 import no.nav.aap.oppgave.filter.OppdaterFilter
+import no.nav.aap.oppgave.filter.OpprettFilter
+import no.nav.aap.oppgave.historikk.OppgaveHistorikk
+import no.nav.aap.oppgave.historikk.OppgaveHistorikkRepository
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.server.authenticate.ident
+import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon as PostmottakDefinisjon
 import no.nav.aap.tilgang.Drift
 import no.nav.aap.tilgang.RollerConfig
@@ -41,6 +44,8 @@ fun NormalOpenAPIRoute.driftApi(
         route("/oppgave/behandling/{referanse}") {
             post<BehandlingReferanse, List<OppgaveDriftsinfoDTO>, Unit> { params, _ ->
                 val oppgaver = dataSource.transaction { connection ->
+                    val historikkRepository = OppgaveHistorikkRepository(connection)
+
                     OppgavelisteService(
                         OppgaveRepository(connection),
                         MarkeringRepository(connection),
@@ -48,21 +53,7 @@ fun NormalOpenAPIRoute.driftApi(
                         norgGateway
                     )
                         .hentOppgaverForBehandling(params.referanse)
-                        .map {
-                            OppgaveDriftsinfoDTO(
-                                oppgaveId = it.id!!,
-                                behandlingRef = it.behandlingRef,
-                                status = it.status,
-                                enhet = it.enhet,
-                                oppfølgingsenhet = it.oppfølgingsenhet,
-                                reservertAv = it.reservertAv,
-                                veilederArbeid = it.veilederArbeid,
-                                veilederSykdom = it.veilederSykdom,
-                                opprettetTidspunkt = it.opprettetTidspunkt,
-                                endretTidspunkt = it.endretTidspunkt,
-                                avklaringsbehovKode = it.avklaringsbehovKode,
-                            )
-                        }
+                        .map { it.mapTilOppgaveDriftsinfo(historikkRepository.hentHistorikkForOppgave(it.id!!)) }
                         .sortedByDescending { it.opprettetTidspunkt }
                 }
 
@@ -189,6 +180,31 @@ private fun FilterDto.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilte
     opprettetTidspunkt = opprettetTidspunkt,
     endretAv = endretAv,
     endretTidspunkt = endretTidspunkt,
+)
+
+private fun OppgaveDto.mapTilOppgaveDriftsinfo(historikk: List<OppgaveHistorikk>) = OppgaveDriftsinfoDTO(
+    oppgaveId = id!!,
+    behandlingRef = behandlingRef,
+    status = status,
+    enhet = enhet,
+    oppfølgingsenhet = oppfølgingsenhet,
+    reservertAv = reservertAv,
+    veilederArbeid = veilederArbeid,
+    veilederSykdom = veilederSykdom,
+    opprettetTidspunkt = opprettetTidspunkt,
+    endretTidspunkt = endretTidspunkt,
+    avklaringsbehovKode = avklaringsbehovKode,
+    historikk = historikk.map {
+        OppgaveHistorikkDto(
+            status = it.status,
+            reservertAv = it.reservertAv,
+            reservertTidspunkt = it.reservertTidspunkt,
+            endretAv = it.endretAv,
+            endretTidspunkt = it.endretTidspunkt,
+            enhet = it.enhet,
+            oppfølgingsenhet = it.oppfølgingsenhet,
+        )
+    }
 )
 
 private fun hentAlleManuelleAvklaringsbehovKoder(): Set<String> {
