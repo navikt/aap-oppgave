@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 
 private val log = LoggerFactory.getLogger("markeringApi")
 
@@ -28,6 +29,7 @@ fun NormalOpenAPIRoute.markeringApi(
     prometheus: PrometheusMeterRegistry,
     ansattInfoGateway: AnsattInfoGateway,
 ) {
+    // Deprecated: /ny-hendelse skal ta over for denne
     route("/{referanse}/ny-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
         dataSource.transaction { connection ->
             MarkeringRepository(connection).oppdaterMarkering(
@@ -55,16 +57,67 @@ fun NormalOpenAPIRoute.markeringApi(
         respondWithStatus(HttpStatusCode.OK)
     }
 
+    route("/{referanse}/ny-hendelse").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto>() { request, dto ->
+        dataSource.transaction { connection ->
+            val oppgavePåBehandling =
+                OppgaveRepository(connection).hentOppgaver(request.referanse).firstOrNull { it.status == Status.OPPRETTET }
+
+            if (oppgavePåBehandling?.id != null) {
+                log.info("Sender oppdatering til statistikk pga. ny markering på behandling. OppgaveId: ${oppgavePåBehandling.id}, behandlingsreferanse: ${oppgavePåBehandling.behandlingRef}")
+                sendOppgaveStatusOppdatering(
+                    oppgaveId = oppgavePåBehandling.oppgaveId(),
+                    hendelseType = HendelseType.OPPDATERT,
+                    repository = FlytJobbRepository(connection),
+                )
+            }
+
+            MarkeringRepository(connection).lagreMarkeringNy(
+                referanse = request.referanse,
+                BehandlingMarkering(
+                    dto.markeringType,
+                    dto.begrunnelse,
+                    bruker().ident,
+                    opprettetAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident),
+                    hendelseType = dto.hendelseType
+                )
+            )
+        }
+
+        respondWithStatus(HttpStatusCode.OK)
+    }
+
+    // Deprecated: /ny-hendelse skal ta over for denne
     route("/{referanse}/hent-markeringer").get<BehandlingReferanse, List<MarkeringDto>> { request ->
         prometheus.httpCallCounter("/hent-markeringer").increment()
 
         val markeringer =
             dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentMarkeringerForBehandling(request.referanse)
+                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.referanse)
             }
         respond(markeringer.tilDto())
     }
 
+    route("/{referanse}/hent-markeringer-og-historikk").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+        prometheus.httpCallCounter("/hent-markeringer-og-historikk").increment()
+
+        val markeringer =
+            dataSource.transaction { connection ->
+                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.referanse)
+            }
+        respond(markeringer.tilDto())
+    }
+
+    route("/{referanse}/hent-siste-aktive-hastemarkering").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+        prometheus.httpCallCounter("/hent-siste-aktive-hastemarkering").increment()
+
+        val markeringer =
+            dataSource.transaction { connection ->
+                MarkeringRepository(connection).hentSisteAktiveMarkering(request.referanse, MarkeringForBehandling.HASTER)
+            }
+        respond(markeringer.tilDto())
+    }
+
+    // Deprecated: /ny-hendelse skal ta over for denne
     route("/{referanse}/fjern-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
         prometheus.httpCallCounter("/fjern-markering").increment()
         dataSource.transaction { connection ->
@@ -100,7 +153,8 @@ fun List<BehandlingMarkering>.tilDto(): List<MarkeringDto> {
             begrunnelse = it.begrunnelse,
             opprettetAv = it.opprettetAv,
             opprettetAvNavn = it.opprettetAvNavn,
-            opprettetTidspunkt = it.opprettetTidspunkt
+            opprettetTidspunkt = it.opprettetTidspunkt,
+            hendelseType = it.hendelseType,
         )
     }
 }
