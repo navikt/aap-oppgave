@@ -38,6 +38,8 @@ fun NormalOpenAPIRoute.opprettEllerOppdaterFilterApi(dataSource: DataSource, pro
                     beskrivelse = request.beskrivelse,
                     avklaringsbehovtyper = request.avklaringsbehovKoder,
                     behandlingstyper = request.behandlingstyper,
+                    markeringer = request.inkluderteMarkeringer.map { MarkeringFilter(it, Filtermodus.INKLUDER) } +
+                                  request.ekskluderteMarkeringer.map { MarkeringFilter(it, Filtermodus.EKSKLUDER) },
                     endretAv = ident(),
                     endretTidspunkt = LocalDateTime.now(),
                 ))
@@ -49,7 +51,9 @@ fun NormalOpenAPIRoute.opprettEllerOppdaterFilterApi(dataSource: DataSource, pro
                     behandlingstyper = request.behandlingstyper,
                     opprettetAv = ident(),
                     opprettetTidspunkt = LocalDateTime.now(),
-                    enhetFilter = request.enheter?.map { EnhetFilter(it, Filtermodus.INKLUDER) } // TODO: enhetsfilteret bør inkluderes i dtoen
+                    enhetFilter = request.enheter?.map { EnhetFilter(it, Filtermodus.INKLUDER) },
+                    markeringer = request.inkluderteMarkeringer.map { MarkeringFilter(it, Filtermodus.INKLUDER) } +
+                                  request.ekskluderteMarkeringer.map { MarkeringFilter(it, Filtermodus.EKSKLUDER) },
                 ))
             }
         }

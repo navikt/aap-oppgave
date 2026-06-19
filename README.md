@@ -52,6 +52,13 @@ Velg konfigurasjonen `TestApp` i Run/Debug-menyen.
 
 ```./gradlew runTestApp```
 
+Alternativt, kjør opp mot behandlingsflyt:
+
+```
+docker-compose up -d
+./gradlew runTestAppMotBehandlingsflyt
+```
+
 ### Kjøre lokalt mot dev-gcp
 
 Prosjektet inneholder en run config som kan kjøres av IntelliJ. Burde være synlig under "Run configurations" med navnet

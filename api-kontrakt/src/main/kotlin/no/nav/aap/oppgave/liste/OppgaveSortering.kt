@@ -9,6 +9,7 @@ enum class OppgaveSorteringFelt {
     AVKLARINGSBEHOV_KODE,
     OPPRETTET_TIDSPUNKT,
     RESERVERT_AV,
+    TILBAKEKREVINGS_BELOP,
 }
 
 enum class OppgaveSorteringRekkefølge {

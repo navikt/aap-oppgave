@@ -6,22 +6,17 @@ import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_BESLUTTER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_SAKSBEHANDLER_POSTMOTTAK
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaGateway
-import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
+import no.nav.aap.oppgave.enhet.oppfølgingsenhet.OppfølgingsenhetService
 import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
 import no.nav.aap.oppgave.klienter.nom.skjerming.NomSkjermingGateway
 import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingGateway
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
-import no.nav.aap.oppgave.klienter.norg.NorgGateway
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
 import no.nav.aap.oppgave.klienter.pdl.IPdlGateway
-import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
-import no.nav.aap.oppgave.unleash.IUnleashService
-import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import org.slf4j.LoggerFactory
 
 data class EnhetForOppgave(
@@ -46,7 +41,15 @@ enum class FylkesenheterSomSkalBehandleKlager(val enhetsnummer: String) {
 
 interface IEnhetService {
     fun hentEnheter(ident: String, currentToken: OidcToken): List<String>
-    fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String? = null, skalOverstyresTilLokalkontor: Boolean? = false, erFørstegangsbehandling: Boolean): EnhetForOppgave
+    fun utledEnhetForOppgave(
+        avklaringsbehovKode: AvklaringsbehovKode,
+        ident: String?,
+        relevanteIdenter: List<String>,
+        saksnummer: String? = null,
+        skalOverstyresTilLokalkontor: Boolean? = false,
+        erFørstegangsbehandling: Boolean
+    ): EnhetForOppgave
+
     fun skalHaFortroligAdresse(ident: String?, relevanteIdenter: List<String>): Boolean
     fun erSkjermet(ident: String?): Boolean
 }
@@ -58,20 +61,26 @@ interface IEnhetService {
  */
 class EnhetService(
     private val msGraphClient: IMsGraphGateway,
-    private val pdlGraphqlKlient: IPdlGateway = PdlGraphqlGateway.withClientCredentialsRestClient(),
+    private val pdlGraphqlKlient: IPdlGateway,
     private val nomSkjermingGateway: SkjermingGateway = NomSkjermingGateway(),
-    private val norgKlient: INorgGateway = NorgGateway(),
-    private val veilarbarenaKlient: IVeilarbarenaGateway = VeilarbarenaGateway(),
-    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService()
+    private val oppfølgingsenhetService: OppfølgingsenhetService,
+    private val norgKlient: INorgGateway
 ) : IEnhetService {
-    private val log = LoggerFactory.getLogger(EnhetService::class.java)
+    private val log = LoggerFactory.getLogger(this::class.java)
 
     override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
         return msGraphClient.hentEnhetsgrupper(ident, currentToken).groups
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
     }
 
-    override fun utledEnhetForOppgave(avklaringsbehovKode: AvklaringsbehovKode, ident: String?, relevanteIdenter: List<String>, saksnummer: String?, skalOverstyresTilLokalkontor: Boolean?, erFørstegangsbehandling: Boolean): EnhetForOppgave {
+    override fun utledEnhetForOppgave(
+        avklaringsbehovKode: AvklaringsbehovKode,
+        ident: String?,
+        relevanteIdenter: List<String>,
+        saksnummer: String?,
+        skalOverstyresTilLokalkontor: Boolean?,
+        erFørstegangsbehandling: Boolean
+    ): EnhetForOppgave {
         if (skalOverstyresTilLokalkontor == true) {
             log.info("Oppgave overstyres til Nav-kontor for avklaringsbehov ${avklaringsbehovKode.kode}. Saksnummer: $saksnummer")
             return finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling)
@@ -100,14 +109,20 @@ class EnhetService(
         }
     }
 
-    private fun finnEnhetForKlageoppgave(ident: String?, relevanteIdenter: List<String>, saksnummer: String?): EnhetForOppgave {
+    private fun finnEnhetForKlageoppgave(
+        ident: String?,
+        relevanteIdenter: List<String>,
+        saksnummer: String?
+    ): EnhetForOppgave {
         // Ruter klageoppgave til fylkeskontor for de fylkene som har bedt om det
-        val fylkesenhetForOppgave = finnFylkesEnhet(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling = false)
+        val fylkesenhetForOppgave =
+            finnFylkesEnhet(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling = false)
         if (fylkesenhetForOppgave.gjeldendeEnhet() in FylkesenheterSomSkalBehandleKlager.entries.map { it.enhetsnummer }) {
             log.info("Ruter klageoppgave til fylkesenhet. Saksnummer: $saksnummer")
             return fylkesenhetForOppgave
         }
-        val lokalEnhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling = false)
+        val lokalEnhet =
+            finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling = false)
         if (lokalEnhet.gjeldendeEnhet() in ENHETER_REGION_SUNNFJORD.map { it.kode }) {
             log.info("Enhet for klageoppgave for lokalkontor utledet til ${lokalEnhet.gjeldendeEnhet()}, ruter oppgaven til Nav Sunnfjord (1476)")
             return EnhetForOppgave(
@@ -137,7 +152,12 @@ class EnhetService(
         })
     }
 
-    private fun finnFylkesEnhet(ident: String?, relevanteIdenter: List<String>, saksnummer: String?, erFørstegangsbehandling: Boolean): EnhetForOppgave {
+    private fun finnFylkesEnhet(
+        ident: String?,
+        relevanteIdenter: List<String>,
+        saksnummer: String?,
+        erFørstegangsbehandling: Boolean
+    ): EnhetForOppgave {
         val enhet = finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling)
         // Vikafossen + egen ansatt-enheter kvalitetssikrer egne saker
         if (enhet.enhet == Enhet.NAV_VIKAFOSSEN.kode || erSkjermet(ident)) {
@@ -199,7 +219,12 @@ class EnhetService(
         )
     }
 
-    private fun finnEnhetstilknytningForPerson(ident: String?, relevanteIdenter: List<String>, saksnummer: String?, erFørstegangsbehandling: Boolean): EnhetForOppgave {
+    private fun finnEnhetstilknytningForPerson(
+        ident: String?,
+        relevanteIdenter: List<String>,
+        saksnummer: String?,
+        erFørstegangsbehandling: Boolean
+    ): EnhetForOppgave {
         val tilknytningOgSkjerming = finnTilknytningOgSkjerming(ident)
         val strengesteGradering = finnStrengesteGradering(tilknytningOgSkjerming.diskresjonskode, relevanteIdenter)
 
@@ -208,7 +233,11 @@ class EnhetService(
         val enhetFraNorg =
             if (strengesteGradering == Diskresjonskode.SPSF) {
                 Enhet.NAV_VIKAFOSSEN.kode
-            } else if (skalTilNavUtland(tilknytningOgSkjerming.geografiskTilknytning, tilknytningOgSkjerming.erNavAnsatt)) {
+            } else if (skalTilNavUtland(
+                    tilknytningOgSkjerming.geografiskTilknytning,
+                    tilknytningOgSkjerming.erNavAnsatt
+                )
+            ) {
                 Enhet.NAV_UTLAND.kode
             } else {
                 norgKlient.finnEnhet(
@@ -239,7 +268,7 @@ class EnhetService(
 
     private fun finnOppfølgingsenhet(ident: String?): String? {
         val enhetFraArena = if (ident != null) {
-            veilarbarenaKlient.hentOppfølgingsenhet(ident)
+            oppfølgingsenhetService.hentOppfølgingsenhet(ident)
         } else {
             null
         }
@@ -295,11 +324,16 @@ class EnhetService(
             }
         }
 
-    private fun finnStrengesteGradering(søkersGradering: Diskresjonskode, relevanteIdenter: List<String> = emptyList()): Diskresjonskode {
+    private fun finnStrengesteGradering(
+        søkersGradering: Diskresjonskode,
+        relevanteIdenter: List<String> = emptyList()
+    ): Diskresjonskode {
         val graderingerForRelevanteIdenter = if (relevanteIdenter.isEmpty()) {
             emptyList()
         } else {
-            pdlGraphqlKlient.hentAdressebeskyttelseForIdenter(relevanteIdenter).hentPersonBolk?.flatMap { it.person?.adressebeskyttelse ?: emptyList() }?.map { it.gradering.tilDiskresjonskode() }
+            pdlGraphqlKlient.hentAdressebeskyttelseForIdenter(relevanteIdenter).hentPersonBolk?.flatMap {
+                it.person?.adressebeskyttelse ?: emptyList()
+            }?.map { it.gradering.tilDiskresjonskode() }
         }
         val alleGraderinger = graderingerForRelevanteIdenter?.plus(søkersGradering) ?: listOf(søkersGradering)
         return alleGraderinger.max()
@@ -314,9 +348,11 @@ class EnhetService(
     }
 
     private fun skalTilNavUtland(geoTilknytning: GeografiskTilknytning?, erSkjermet: Boolean) =
-        // Skal ikke kunne gå til Nav Utland dersom egen ansatt
+    // Skal ikke kunne gå til Nav Utland dersom egen ansatt
         // Hvis PDL returnerer ukjent kommune (9999), eller geotilknytning ikke finnes, eller geotilknytning er utland -> Nav Utland
-        !erSkjermet && (geoTilknytning == null || geoTilknytning.gtType == GeografiskTilknytningType.UTLAND || mapGeografiskTilknytningTilKode(geoTilknytning) == "9999")
+        !erSkjermet && (geoTilknytning == null || geoTilknytning.gtType == GeografiskTilknytningType.UTLAND || mapGeografiskTilknytningTilKode(
+            geoTilknytning
+        ) == "9999")
 
     companion object {
         private const val ENHET_GROUP_PREFIX = "0000-GA-ENHET_"

@@ -7,22 +7,23 @@ import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 import java.io.InputStream
 import java.net.URI
 import java.time.Duration
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 
 interface AnsattInfoGateway {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
 }
 
-class NomApiGateway(
+class NomApiGateway
+private constructor(
     private val restClient: RestClient<InputStream>,
 ): AnsattInfoGateway {
     private val log = LoggerFactory.getLogger(NomApiGateway::class.java)
-    private val graphqlUrl = URI.create(requiredConfigForKey("integrasjon.nom.api.url"))
+    private val graphqlUrl = URI.create(requiredConfigForKey("INTEGRASJON_NOM_API_URL"))
 
     companion object {
         private val saksbehandlerNavnCache = Caffeine.newBuilder()
@@ -32,7 +33,7 @@ class NomApiGateway(
             .build<String, String>()
 
         private fun getClientConfig() = ClientConfig(
-            scope = requiredConfigForKey("integrasjon.nom.api.scope"),
+            scope = requiredConfigForKey("INTEGRASJON_NOM_API_SCOPE"),
         )
 
         init {
@@ -43,7 +44,7 @@ class NomApiGateway(
             NomApiGateway(
                 RestClient(
                     config = getClientConfig(),
-                    tokenProvider = ClientCredentialsTokenProvider,
+                    tokenProvider = AzureM2MTokenProvider,
                     responseHandler = NomApiResponseHandler(),
                     prometheus = prometheus
                 )

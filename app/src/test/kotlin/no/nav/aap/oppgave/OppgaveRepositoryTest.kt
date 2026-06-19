@@ -29,7 +29,7 @@ import java.math.BigDecimal
 import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 import kotlin.test.fail
 
 class OppgaveRepositoryTest {
@@ -100,7 +100,8 @@ class OppgaveRepositoryTest {
                     opprettetTidspunkt = LocalDateTime.now().minusDays(10),
                     enheter = setOf(Enhet.NAY.kode),
                     type = FilterType.GENERELL,
-                )
+                ),
+                hastemarkeringerFørst = true
             )
         }
 
@@ -113,7 +114,8 @@ class OppgaveRepositoryTest {
                     opprettetTidspunkt = LocalDateTime.now().minusDays(10),
                     enheter = setOf(Enhet.NAV_UTLAND.kode),
                     type = FilterType.GENERELL,
-                )
+                ),
+                hastemarkeringerFørst = true
             )
         }
 
@@ -149,7 +151,8 @@ class OppgaveRepositoryTest {
                 paging = Paging(
                     side = 1,
                     antallPerSide = 5
-                )
+                ),
+                hastemarkeringerFørst = true
             )
         }
         // Sender med 5 oppgaver til frontend, men det finnes 20 totalt
@@ -169,7 +172,8 @@ class OppgaveRepositoryTest {
                 paging = Paging(
                     side = 1,
                     antallPerSide = 5
-                )
+                ),
+                hastemarkeringerFørst = true
             )
         }
 
@@ -197,7 +201,7 @@ class OppgaveRepositoryTest {
         assertThat(mineOppgaverFørAvslutt.first().reservertAvNavn).isEqualTo(saksbehandlerNavn)
 
         val oppgaveSomSkalAvsluttes = mineOppgaverFørAvslutt.first { it.id == oppgaveId4.id }
-        avsluttOppgave(OppgaveId(oppgaveSomSkalAvsluttes.id!!, oppgaveSomSkalAvsluttes.versjon))
+        avsluttOppgave(oppgaveSomSkalAvsluttes.oppgaveId())
 
         dataSource.transaction { connection ->
             val oppgaver = OppgaveRepository(connection).hentMineOppgaver("bruker1")
@@ -213,7 +217,7 @@ class OppgaveRepositoryTest {
         var mineOppgaver = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(1)
 
-        avreserverOppgave(OppgaveId(mineOppgaver.first().id!!, mineOppgaver.first().versjon), "saksbehandler1")
+        avreserverOppgave(mineOppgaver.first().oppgaveId(), "saksbehandler1")
         mineOppgaver = mineOppgaver("saksbehandler1")
         assertThat(mineOppgaver).hasSize(0)
 
@@ -337,12 +341,6 @@ class OppgaveRepositoryTest {
         reserverOppgave(oppgave2, bruker)
         reserverOppgave(oppgave3, bruker)
         reserverOppgave(oppgave4, bruker)
-
-        val mineOppgaver = mineOppgaver(bruker)
-        assertThat(mineOppgaver).hasSize(4)
-
-        val mineOppgaverPaged = mineOppgaver(bruker, Paging(1, 2))
-        assertThat(mineOppgaverPaged).hasSize(2)
     }
 
     @Test
@@ -543,7 +541,7 @@ class OppgaveRepositoryTest {
 
         dataSource.transaction { connection ->
             OppgaveRepository(connection).oppdatereOppgave(
-                oppgaveId = OppgaveId(oppgavePåVent.id!!, oppgavePåVent.versjon),
+                oppgaveId = oppgavePåVent.oppgaveId(),
                 endretAvIdent = "z123",
                 personIdent = oppgavePåVent.personIdent,
                 enhet = oppgavePåVent.enhet,
@@ -569,7 +567,7 @@ class OppgaveRepositoryTest {
 
         dataSource.transaction { connection ->
             OppgaveRepository(connection).oppdatereOppgave(
-                oppgaveId = OppgaveId(oppgaveEtterAvVent.id!!, oppgaveEtterAvVent.versjon),
+                oppgaveId = oppgaveEtterAvVent.oppgaveId(),
                 endretAvIdent = "z123",
                 personIdent = oppgaveEtterAvVent.personIdent,
                 enhet = oppgaveEtterAvVent.enhet,
@@ -628,7 +626,7 @@ class OppgaveRepositoryTest {
             returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", "")
         )
         val hasterBehandlingsref = UUID.randomUUID()
-        val oppgave5 = opprettOppgave(
+        val hasteOppgave = opprettOppgave(
             enhet = ENHET_NAV_ENEBAKK,
             avklaringsbehovKode = AvklaringsbehovKode("5003"),
             returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", ""),
@@ -739,12 +737,39 @@ class OppgaveRepositoryTest {
 
         assertThat(alleOppgaver.oppgaver).hasSize(7)
         assertThat(søkMedUtvidetFilter.oppgaver).hasSize(4)
+        assertThat(søkMedUtvidetFilter.oppgaver.first().id).isEqualTo(hasteOppgave.id)
         assertThat(søkMedutvidetFilterMedStatusPåVentOgReturStatus.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterPåVent.oppgaver).hasSize(2)
         assertThat(søkMedUtvidetFilterHastesøk.oppgaver).hasSize(1)
         assertThat(søkMedUtvidetFilterVentefristUtløpt.oppgaver).hasSize(1)
         assertThat(merEnnSøkEks.oppgaver).hasSize(0)
         assertThat(merEnnSøkInk.oppgaver).hasSize(1)
+    }
+
+    @Test
+    fun `fom og tom i utvidet filter filtrerer på behandling opprettet`() {
+        val innenforRange = opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2024, 1, 15, 12, 0)
+        )
+        opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2024, 1, 9, 12, 0)
+        )
+        opprettOppgave(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2024, 1, 21, 12, 0)
+        )
+
+        val resultat = finnAlleOppgaverMedUtvidetFilter(
+            filter = TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
+                fom = LocalDate.of(2024, 1, 10),
+                tom = LocalDate.of(2024, 1, 20)
+            ),
+        )
+
+        assertThat(resultat.oppgaver.map { it.id }).containsExactly(innenforRange.id)
     }
 
     @Test
@@ -785,7 +810,8 @@ class OppgaveRepositoryTest {
     fun `beløpMindreEnn filter er inklusiv - inkluderer tilbakekrevingsoppgaver med eksakt beløp`() {
         val tilbakekrevingOppgave = opprettOppgave(
             enhet = ENHET_NAV_ENEBAKK,
-            behandlingstype = Behandlingstype.TILBAKEKREVING)
+            behandlingstype = Behandlingstype.TILBAKEKREVING
+        )
         opprettTilbakekrevingVars(
             tilbakekrevingOppgave.id,
             BigDecimal("1000.00"),
@@ -884,7 +910,10 @@ class OppgaveRepositoryTest {
 
         // Lovvalg-medlemskap-kø skal bare inneholde lovvalgsoppgaven
         val oppgavelisteLovvalg = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = setOf(Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name)),
+            filter = TransientFilterDto(
+                enheter = setOf("4491"),
+                avklaringsbehovKoder = setOf(Definisjon.AVKLAR_LOVVALG_MEDLEMSKAP.kode.name)
+            ),
             paging = null,
             utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
                 årsaker = setOf(),
@@ -913,8 +942,12 @@ class OppgaveRepositoryTest {
         assertThat(oppgavelisteHeleNAY.oppgaver).hasSize(4)
 
         val oppgavelisteBeslutter = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = setOf(Definisjon.FATTE_VEDTAK.kode.name,
-                Definisjon.SKRIV_VEDTAKSBREV.kode.name)),
+            filter = TransientFilterDto(
+                enheter = setOf("4491"), avklaringsbehovKoder = setOf(
+                    Definisjon.FATTE_VEDTAK.kode.name,
+                    Definisjon.SKRIV_VEDTAKSBREV.kode.name
+                )
+            ),
             paging = null,
             utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
                 årsaker = setOf(),
@@ -929,8 +962,12 @@ class OppgaveRepositoryTest {
 
         // Skal kunne filtrere beslutter-køen på spesifikk beslutter-oppgave
         val oppgavelisteBeslutterBareVedtaksbrev = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = setOf(Definisjon.FATTE_VEDTAK.kode.name,
-                Definisjon.SKRIV_VEDTAKSBREV.kode.name)),
+            filter = TransientFilterDto(
+                enheter = setOf("4491"), avklaringsbehovKoder = setOf(
+                    Definisjon.FATTE_VEDTAK.kode.name,
+                    Definisjon.SKRIV_VEDTAKSBREV.kode.name
+                )
+            ),
             paging = null,
             utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
                 årsaker = setOf(),
@@ -945,8 +982,12 @@ class OppgaveRepositoryTest {
 
         // Om man prøver å filtrere på en avklaringsbehovkode som ikke er i køen, returneres ingen oppgaver
         val oppgavelisteRequestInkonsistenteverdier = finnAlleOppgaverMedUtvidetFilter(
-            filter = TransientFilterDto(enheter = setOf("4491"), avklaringsbehovKoder = setOf(Definisjon.FATTE_VEDTAK.kode.name,
-                Definisjon.SKRIV_VEDTAKSBREV.kode.name)),
+            filter = TransientFilterDto(
+                enheter = setOf("4491"), avklaringsbehovKoder = setOf(
+                    Definisjon.FATTE_VEDTAK.kode.name,
+                    Definisjon.SKRIV_VEDTAKSBREV.kode.name
+                )
+            ),
             paging = null,
             utvidetOppgavelisteFilter = UtvidetOppgavelisteFilter(
                 årsaker = setOf(),
@@ -1008,27 +1049,177 @@ class OppgaveRepositoryTest {
         assertThat(oppgave).isNull()
     }
 
-    private fun avklaringsbehovFilter(vararg avklaringsbehovKoder: String) =
-        FilterDto(
-            1,
-            "Filter for test",
-            "Filter for test",
-            avklaringsbehovKoder = avklaringsbehovKoder.toSet(),
-            opprettetAv = "test",
-            opprettetTidspunkt = LocalDateTime.now(),
-            type = FilterType.GENERELL,
+
+    @Test
+    fun `Oppgaver med hastemarkering skal ligge først etter sortering`() {
+        val hasteBehandlingref1 = UUID.randomUUID()
+        val hasteBehandlingref2 = UUID.randomUUID()
+        val hasteBehandlingref3 = UUID.randomUUID()
+        markerHasteOppgave(hasteBehandlingref1)
+        markerHasteOppgave(hasteBehandlingref2)
+        markerHasteOppgave(hasteBehandlingref3)
+        val hasteOppgave1 = opprettOppgave(
+            behandlingRef = hasteBehandlingref1,
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.now().minusDays(4)
+        )
+        val hasteOppgave2 = opprettOppgave(
+            behandlingRef = hasteBehandlingref2,
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.now().minusDays(3)
+        )
+        val hasteOppgave3 = opprettOppgave(
+            behandlingRef = hasteBehandlingref3,
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.now().minusDays(1)
+        )
+        val vanligOppgave1 =
+            opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = LocalDateTime.now().minusDays(10))
+        val vanligOppgave2 =
+            opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = LocalDateTime.now().plusDays(10))
+        val vanligOppgave3 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
+
+
+        val søkMedPaging2PåBehandlingOpprettetNyesteFørst =
+            finnLedigeOppgaver(
+                TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+                paging = Paging(1, 2),
+                sortBy = OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+                rekkefølge = OppgaveSorteringRekkefølge.DESC
+            )
+
+        // forventer to hastemarkeringer, selv om en vanlig oppgave egentlig er nyest
+        assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.oppgaver).hasSize(2)
+        assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.oppgaver[0].id).isEqualTo(hasteOppgave3.id)
+        assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.oppgaver[1].id).isEqualTo(hasteOppgave2.id)
+        assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.antallGjenstaaende).isEqualTo(4)
+
+        val søkMedPaging5PåBehandlingOpprettetNyesteFørst =
+            finnLedigeOppgaver(
+                TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+                paging = Paging(1, 5),
+                sortBy = OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+                rekkefølge = OppgaveSorteringRekkefølge.DESC
+            )
+
+        // forventer de tre hastemarkeringene øverst, så den nyeste av de vanlige oppgavene
+        assertThat(søkMedPaging5PåBehandlingOpprettetNyesteFørst.oppgaver[0].id).isEqualTo(hasteOppgave3.id)
+        assertThat(søkMedPaging5PåBehandlingOpprettetNyesteFørst.oppgaver[3].id).isEqualTo(vanligOppgave2.id)
+        assertThat(søkMedPaging5PåBehandlingOpprettetNyesteFørst.antallGjenstaaende).isEqualTo(1)
+
+        val søkMedPaging10PåBehandlingOpprettetEldsteFørst =
+            finnLedigeOppgaver(
+                TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+                paging = Paging(1, 10),
+                sortBy = OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+                rekkefølge = OppgaveSorteringRekkefølge.ASC
+            )
+
+        assertThat(søkMedPaging10PåBehandlingOpprettetEldsteFørst.oppgaver[0].id).isEqualTo(hasteOppgave1.id)
+        assertThat(søkMedPaging10PåBehandlingOpprettetEldsteFørst.oppgaver[3].id).isEqualTo(vanligOppgave1.id)
+    }
+
+    @Test
+    fun `Skal filtrere oppgaver basert på én markeringstype`() {
+        val hasteRef = UUID.randomUUID()
+        val spesialRef = UUID.randomUUID()
+        val ingenMarkeringRef = UUID.randomUUID()
+
+        val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
+        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
+
+        markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
+        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+
+        val hasterResultat = finnAlleOppgaver(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK), inkluderteMarkeringer = setOf(MarkeringForBehandling.HASTER))
+        )
+        assertThat(hasterResultat.oppgaver.map { it.id }).containsExactly(hasteOppgave.id)
+
+        val spesialResultat = finnAlleOppgaver(
+            TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                inkluderteMarkeringer = setOf(MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+            )
+        )
+        assertThat(spesialResultat.oppgaver.map { it.id }).containsExactly(spesialOppgave.id)
+    }
+
+    @Test
+    fun `Skal filtrere oppgaver basert på flere markeringstyper`() {
+        val hasteRef = UUID.randomUUID()
+        val spesialRef = UUID.randomUUID()
+        val ingenMarkeringRef = UUID.randomUUID()
+
+        val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
+        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
+
+        markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
+        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+
+        val resultat = finnAlleOppgaver(
+            TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                inkluderteMarkeringer = setOf(MarkeringForBehandling.HASTER, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+            )
         )
 
-    private fun behandlingstypeFilter(vararg behandlingstyper: Behandlingstype) =
-        FilterDto(
-            1,
-            "Filter for test",
-            "Filter for test",
-            behandlingstyper = behandlingstyper.toSet(),
-            opprettetAv = "test",
-            opprettetTidspunkt = LocalDateTime.now(),
-            type = FilterType.GENERELL,
+        assertThat(resultat.oppgaver).hasSize(2)
+        assertThat(resultat.oppgaver.map { it.id }).containsExactlyInAnyOrder(hasteOppgave.id, spesialOppgave.id)
+    }
+
+    @Test
+    fun `Tom markeringsliste i filter returnerer alle oppgaver uavhengig av markering`() {
+        val hasteRef = UUID.randomUUID()
+        val ingenMarkeringRef = UUID.randomUUID()
+
+        val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
+        val umarkertOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
+
+        markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
+
+        val resultat = finnAlleOppgaver(
+            TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK), inkluderteMarkeringer = emptySet())
         )
+
+        assertThat(resultat.oppgaver).hasSize(2)
+        assertThat(resultat.oppgaver.map { it.id }).containsExactlyInAnyOrder(hasteOppgave.id, umarkertOppgave.id)
+    }
+
+    @Test
+    fun `Skal ekskludere oppgaver med gitt markeringstype fra filter`() {
+        val hasteRef = UUID.randomUUID()
+        val spesialRef = UUID.randomUUID()
+        val ingenMarkeringRef = UUID.randomUUID()
+
+        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        val umarkertOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
+
+        markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
+        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+
+        // Ekskluder HASTER — skal returnere spesial og umarkert, men ikke haste
+        val utenHaste = finnAlleOppgaver(
+            TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                ekskluderteMarkeringer = setOf(MarkeringForBehandling.HASTER)
+            )
+        )
+        assertThat(utenHaste.oppgaver).hasSize(2)
+        assertThat(utenHaste.oppgaver.map { it.id }).containsExactlyInAnyOrder(spesialOppgave.id, umarkertOppgave.id)
+
+        // Ekskluder begge — skal kun returnere umarkert
+        val utenBegge = finnAlleOppgaver(
+            TransientFilterDto(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                ekskluderteMarkeringer = setOf(MarkeringForBehandling.HASTER, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+            )
+        )
+        assertThat(utenBegge.oppgaver).hasSize(1)
+        assertThat(utenBegge.oppgaver.map { it.id }).containsExactly(umarkertOppgave.id)
+    }
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
         dataSource.transaction { connection ->
@@ -1048,21 +1239,38 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun mineOppgaver(ident: String, paging: Paging? = null): List<OppgaveDto> {
+    private fun mineOppgaver(ident: String): List<OppgaveDto> {
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).hentMineOppgaver(ident, paging)
+            OppgaveRepository(connection).hentMineOppgaver(ident)
         }
     }
 
-    private fun finnLedigeOppgaver(filter: Filter, paging: Paging? = null): OppgaveRepository.FinnOppgaverDto {
+    private fun finnLedigeOppgaver(
+        filter: Filter,
+        paging: Paging? = null,
+        sortBy: OppgaveSorteringFelt? = null,
+        rekkefølge: OppgaveSorteringRekkefølge = OppgaveSorteringRekkefølge.ASC,
+    ): OppgaveRepository.FinnOppgaverDto {
         return dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = true)
+            OppgaveRepository(connection).finnOppgaver(
+                filter,
+                paging = paging,
+                kunLedigeOppgaver = true,
+                sortBy = sortBy,
+                rekkefølge = rekkefølge,
+                hastemarkeringerFørst = true
+            )
         }
     }
 
     private fun finnAlleOppgaver(filter: Filter, paging: Paging? = null): OppgaveRepository.FinnOppgaverDto {
         return dataSource.transaction(readOnly = true) { connection ->
-            OppgaveRepository(connection).finnOppgaver(filter, paging = paging, kunLedigeOppgaver = false)
+            OppgaveRepository(connection).finnOppgaver(
+                filter,
+                paging = paging,
+                kunLedigeOppgaver = false,
+                hastemarkeringerFørst = true
+            )
         }
     }
 
@@ -1078,7 +1286,8 @@ class OppgaveRepositoryTest {
                 paging = paging,
                 kunLedigeOppgaver = false,
                 sortBy = sortBy,
-                rekkefølge = sortOrder
+                rekkefølge = sortOrder,
+                hastemarkeringerFørst = true
             )
         }
     }
@@ -1089,7 +1298,10 @@ class OppgaveRepositoryTest {
         utvidetOppgavelisteFilter: UtvidetOppgavelisteFilter
     ): OppgaveRepository.FinnOppgaverDto {
         // Kombinerer filtre på samme måte som i OppgavelisteService
-        val avklaringsbehovKoder = utledAvklaringsbehovKoderForUtvidetFilter(filter.avklaringsbehovKoder, utvidetOppgavelisteFilter.avklaringsbehovKoder)
+        val avklaringsbehovKoder = utledAvklaringsbehovKoderForUtvidetFilter(
+            filter.avklaringsbehovKoder,
+            utvidetOppgavelisteFilter.avklaringsbehovKoder
+        )
         if (avklaringsbehovKoder.isEmpty() && utvidetOppgavelisteFilter.avklaringsbehovKoder.isNotEmpty() && filter.avklaringsbehovKoder.isNotEmpty()) {
             return OppgaveRepository.FinnOppgaverDto(
                 oppgaver = emptyList(),
@@ -1106,7 +1318,8 @@ class OppgaveRepositoryTest {
                 filter = kombinertFilter,
                 paging = paging,
                 kunLedigeOppgaver = false,
-                utvidetFilter = utvidetOppgavelisteFilter
+                utvidetFilter = utvidetOppgavelisteFilter,
+                hastemarkeringerFørst = true
             )
         }
     }
@@ -1127,10 +1340,19 @@ class OppgaveRepositoryTest {
         }
     }
 
+    private fun markerOppgave(behandlingRef: UUID, markeringType: MarkeringForBehandling) {
+        dataSource.transaction { connection ->
+            MarkeringRepository(connection).oppdaterMarkering(
+                behandlingRef,
+                BehandlingMarkering(markeringType, "begrunnelse", "test")
+            )
+        }
+    }
+
     private fun settUtløptVentefrist(oppgave: OppgaveDto, utløptVentefrist: LocalDate?) {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).oppdatereOppgave(
-                oppgaveId = OppgaveId(oppgave.id!!, oppgave.versjon),
+                oppgaveId = oppgave.oppgaveId(),
                 endretAvIdent = "z123",
                 utløptVentefrist = utløptVentefrist,
                 personIdent = oppgave.personIdent,

@@ -8,10 +8,10 @@ import no.nav.aap.komponenter.httpklient.httpclient.Header
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 import java.time.Duration
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 
 private data class HentVeilederSykefravarsoppfolgingResponse(
     val tildeltVeilederident: String?,
@@ -28,15 +28,15 @@ object SykefravarsoppfolgingGateway : ISykefravarsoppfolgingGateway {
         .recordStats()
         .build<String, HentVeilederSykefravarsoppfolgingResponse>()
 
-    private val url = URI.create(requiredConfigForKey("integrasjon.syfo.url"))
+    private val url = URI.create(requiredConfigForKey("INTEGRASJON_SYFO_URL"))
 
     private val config = ClientConfig(
-        scope = requiredConfigForKey("integrasjon.syfo.scope"),
+        scope = requiredConfigForKey("INTEGRASJON_SYFO_SCOPE"),
     )
 
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
-        tokenProvider = ClientCredentialsTokenProvider,
+        tokenProvider = AzureM2MTokenProvider,
         prometheus = prometheus
     )
 

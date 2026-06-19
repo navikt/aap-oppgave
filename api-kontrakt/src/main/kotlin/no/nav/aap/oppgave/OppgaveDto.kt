@@ -23,9 +23,15 @@ data class ReturInformasjon(
     val endretAv: String,
 )
 
+@Suppress("PropertyName")
 data class TilbakekrevingsVarsDto(
     val tilbakekrevings_URL : String,
     val tilbakekrevings_beløp: BigDecimal
+)
+
+data class ForrigeKvalitetssikrerInfo(
+    val forrigeKvalitetssikrerIdent: String,
+    val forrigeKvalitetssikrerNavn: String? = null,
 )
 
 enum class ÅrsakTilReturKode {
@@ -36,6 +42,8 @@ enum class ÅrsakTilReturKode {
     SKRIVEFEIL,
     FOR_DETALJERT,
     IKKE_INDIVIDUELL_OG_KONKRET,
+    MANGLENDE_JOURNALFØRING,
+    MANGLENDE_KILDEHENVISNING,
 }
 
 /**
@@ -84,6 +92,7 @@ data class OppgaveDto(
     val harUlesteDokumenter: Boolean? = false,
     val markeringer: List<MarkeringDto> = emptyList(),
     val tilbakekrevingsVarsDto: TilbakekrevingsVarsDto? = null,
+    val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerInfo? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.
@@ -112,4 +121,9 @@ data class OppgaveDto(
             behandlingstype = this.behandlingstype
         )
     }
+
+    fun oppgaveId() = OppgaveId(
+        requireNotNull(id) { "Oppgave har ingen id" },
+        versjon,
+    )
 }

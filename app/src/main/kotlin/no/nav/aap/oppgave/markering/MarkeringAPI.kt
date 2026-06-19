@@ -12,23 +12,22 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.bruker
 import no.nav.aap.motor.FlytJobbRepository
-import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 
 private val log = LoggerFactory.getLogger("markeringApi")
 
 fun NormalOpenAPIRoute.markeringApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry,
+    ansattInfoGateway: AnsattInfoGateway,
 ) {
-    val ansattInfoGateway = NomApiGateway.withClientCredentialsRestClient()
     route("/{referanse}/ny-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
         dataSource.transaction { connection ->
             MarkeringRepository(connection).oppdaterMarkering(
@@ -46,7 +45,7 @@ fun NormalOpenAPIRoute.markeringApi(
             if (oppgavePåBehandling.id != null) {
                 log.info("Sender oppdatering til statistikk pga. ny markering på behandling. OppgaveId: ${oppgavePåBehandling.id}, behandlingsreferanse: ${oppgavePåBehandling.behandlingRef}")
                 sendOppgaveStatusOppdatering(
-                    oppgaveId = OppgaveId(oppgavePåBehandling.id!!, oppgavePåBehandling.versjon),
+                    oppgaveId = oppgavePåBehandling.oppgaveId(),
                     hendelseType = HendelseType.OPPDATERT,
                     repository = FlytJobbRepository(connection),
                 )
@@ -84,7 +83,7 @@ fun NormalOpenAPIRoute.markeringApi(
             if (oppgavePåBehandling.id != null) {
                 log.info("Sender oppdatering til statistikk pga. fjernet markering på behandling. OppgaveId: ${oppgavePåBehandling.id}, behandlingsreferanse: ${oppgavePåBehandling.behandlingRef}")
                 sendOppgaveStatusOppdatering(
-                    oppgaveId = OppgaveId(oppgavePåBehandling.id!!, oppgavePåBehandling.versjon),
+                    oppgaveId = oppgavePåBehandling.oppgaveId(),
                     hendelseType = HendelseType.OPPDATERT,
                     repository = FlytJobbRepository(connection),
                 )

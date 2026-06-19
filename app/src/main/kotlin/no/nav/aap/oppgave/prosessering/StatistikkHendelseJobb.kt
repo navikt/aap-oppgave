@@ -77,7 +77,8 @@ private fun fraOppgaveDto(oppgaveDto: OppgaveDto, markeringer: List<BehandlingMa
         endretAv = oppgaveDto.endretAv,
         endretTidspunkt = oppgaveDto.endretTidspunkt,
         versjon = oppgaveDto.versjon,
-        harHasteMarkering = markeringer.any { it.markeringType === MarkeringForBehandling.HASTER }
+        harHasteMarkering = markeringer.any { it.markeringType === MarkeringForBehandling.HASTER },
+        harAvslagSykdomMarkering = markeringer.any { it.markeringType === MarkeringForBehandling.AVSLAG_11_5 }
     )
 }
 

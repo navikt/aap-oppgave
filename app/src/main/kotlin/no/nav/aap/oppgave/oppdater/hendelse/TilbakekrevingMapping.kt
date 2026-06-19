@@ -5,6 +5,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.dokumenter.TilbakekrevingBeh
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import kotlin.collections.emptyList
 
 fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
@@ -19,7 +20,14 @@ fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering(): OppgaveO
         vurderingsbehov = emptyList(),
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
-        venteInformasjon = null,
+        venteInformasjon = this.gjenopptas?.let { frist ->
+            VenteInformasjon(
+                frist = frist,
+                årsakTilSattPåVent = this.venteGrunn?.name,
+                sattPåVentAv = TILBAKEKREVING,
+                begrunnelse = null,
+            )
+        },
         totaltFeilutbetaltBeløp = this.totaltFeilutbetaltBeløp,
         tilbakekrevingsUrl = this.saksbehandlingURL
     )
@@ -67,6 +75,14 @@ fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHe
                 ), AvklaringsbehovStatus.OPPRETTET, emptyList()
             )
         )
+
+        TilbakekrevingBehandlingsstatus.TIL_FORHÅNDSVARSEL -> listOf(
+            AvklaringsbehovHendelse(
+                AvklaringsbehovKode(
+                    TilbakeKrevingAvklaringsbehovKoder.SAKSBEHANDLE_TILBAKEKREVING.kode
+                ), AvklaringsbehovStatus.OPPRETTET, emptyList()
+            )
+        )
     }
 }
 
@@ -78,4 +94,5 @@ fun TilbakekrevingBehandlingsstatus.tilBehandlingsstatus() =
         TilbakekrevingBehandlingsstatus.TIL_BESLUTTER -> BehandlingStatus.ÅPEN
         TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> BehandlingStatus.ÅPEN
         TilbakekrevingBehandlingsstatus.TIL_GODKJENNING -> BehandlingStatus.ÅPEN
+        TilbakekrevingBehandlingsstatus.TIL_FORHÅNDSVARSEL -> BehandlingStatus.ÅPEN
     }

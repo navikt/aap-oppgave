@@ -9,8 +9,8 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
+import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
@@ -19,6 +19,11 @@ import java.time.LocalDate
 import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
+
+class FeilVersjonException(
+    val oppgaveId: OppgaveId,
+    val faktiskVersjon: Long,
+) : RuntimeException("Endring av $oppgaveId feilet fordi faktisk versjon er $faktiskVersjon")
 
 class OppgaveRepository(private val connection: DBConnection) {
 
@@ -196,7 +201,9 @@ class OppgaveRepository(private val connection: DBConnection) {
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean? = false,
         returInformasjon: ReturInformasjon?,
-        utløptVentefrist: LocalDate? = null
+        utløptVentefrist: LocalDate? = null,
+        forrigeKvalitetssikrerIdent: String? = null,
+        forrigeKvalitetssikrerNavn: String? = null,
     ) {
         val query = """
             UPDATE 
@@ -224,6 +231,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 RETUR_BEGRUNNELSE = ?,
                 ER_SKJERMET = ?,
                 UTLOEPT_VENTEFRIST = ?,
+                FORRIGE_KVALITETSSIKRER_IDENT = ?,
+                FORRIGE_KVALITETSSIKRER_NAVN = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -252,8 +261,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(18, returInformasjon?.begrunnelse)
                 setBoolean(19, erSkjermet)
                 setLocalDate(20, utløptVentefrist)
-                setLong(21, oppgaveId.id)
-                setLong(22, oppgaveId.versjon)
+                setString(21, forrigeKvalitetssikrerIdent)
+                setString(22, forrigeKvalitetssikrerNavn)
+                setLong(23, oppgaveId.id)
+                setLong(24, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -406,15 +417,15 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         if (utvidetFilter.fom != null) {
-            sb.append(" AND OPPRETTET_TIDSPUNKT >= '${utvidetFilter.fom}'")
+            sb.append(" AND BEHANDLING_OPPRETTET >= '${utvidetFilter.fom}'")
         }
 
         if (utvidetFilter.tom != null) {
-            sb.append(" AND OPPRETTET_TIDSPUNKT <= '${utvidetFilter.tom}'")
+            sb.append(" AND BEHANDLING_OPPRETTET <= '${utvidetFilter.tom}'")
         }
 
         if (utvidetFilter.markertHaster == true) {
-            sb.append(" AND EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = o.behandling_ref AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}')")
+            sb.append(" AND EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}')")
         }
 
         return sb.toString()
@@ -427,14 +438,15 @@ class OppgaveRepository(private val connection: DBConnection) {
         kunLedigeOppgaver: Boolean? = true,
         utvidetFilter: UtvidetOppgavelisteFilter? = null,
         sortBy: OppgaveSorteringFelt? = null,
-        enheterMedNavn: Map<String, String> = emptyMap()
+        enheterMedNavn: Map<String, String> = emptyMap(),
+        hastemarkeringerFørst: Boolean
     ): FinnOppgaverDto {
         val offset = if (paging != null) {
             (paging.side - 1) * paging.antallPerSide
         } else {
             0
         }
-        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
+        val limit = paging?.antallPerSide ?: 50
         val kunLedigeQuery =
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
@@ -442,32 +454,45 @@ class OppgaveRepository(private val connection: DBConnection) {
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
+        val orderBy = if (hastemarkeringerFørst) {
+            "ORDER BY CASE WHEN EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref) THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
+        } else {
+            "ORDER BY $sortering $sorteringsRekkefølge"
+        }
 
         // COUNT(*) OVER() beregnes som et vindusfunksjonskall før OFFSET/FETCH, så vi slipper en ekstra spørring
         val hentNesteOppgaveQuery = """
-            SELECT o.*, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE, COUNT(*) OVER() AS total_count
+            SELECT OPPGAVE.*, sao.enhet_forrige_oppgave as ENHET_FORRIGE_OPPGAVE, COUNT(*) OVER() AS total_count
             FROM 
-                OPPGAVE o
-            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on o.ID = t.OPPGAVE_ID
+                OPPGAVE
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on OPPGAVE.ID = t.OPPGAVE_ID
             LEFT JOIN LATERAL (
                 SELECT enhet as enhet_forrige_oppgave
                 FROM OPPGAVE sao_inner
-                WHERE sao_inner.behandling_ref = o.behandling_ref
+                WHERE sao_inner.behandling_ref = OPPGAVE.behandling_ref
                   AND sao_inner.status = 'AVSLUTTET'
                 ORDER BY sao_inner.endret_tidspunkt DESC
                 LIMIT 1
             ) sao ON true
             WHERE 
-                ${filter.whereClause()} o.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
-            ORDER BY ${sortering} ${sorteringsRekkefølge} 
+                ${filter.whereClause()} OPPGAVE.STATUS != 'AVSLUTTET' $utvidetFilterQuery $kunLedigeQuery
+            
+            $orderBy
             OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
         val resultat = connection.queryList(hentNesteOppgaveQuery) {
             setRowMapper { row ->
                 val tilbakekreving = getTilbakekreving(row, connection)
-                val enhetNrForrigeOppgave = try { row.getStringOrNull("ENHET_FORRIGE_OPPGAVE") } catch (_: Exception) { null }
-                Pair(oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn), row.getInt("total_count"))
+                val enhetNrForrigeOppgave = try {
+                    row.getStringOrNull("ENHET_FORRIGE_OPPGAVE")
+                } catch (_: Exception) {
+                    null
+                }
+                Pair(
+                    oppgaveMapper(row, tilbakekreving, enhetNrForrigeOppgave, enheterMedNavn),
+                    row.getInt("total_count")
+                )
             }
         }
 
@@ -578,6 +603,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         reservertAvIdent: String,
         reservertAvNavn: String?
     ) {
+        require(reservertAvIdent != KELVIN) { "kan ikke reservere oppgave til KELVIN" }
         val updaterOppgaveReservasjonQuery = """
             UPDATE 
                 OPPGAVE 
@@ -601,24 +627,29 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLong(4, oppgaveId.id)
                 setLong(5, oppgaveId.versjon)
             }
-            setResultValidator { require(it == 1) { "Prøvde å reservere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
+            setResultValidator { endredeRader ->
+                require(endredeRader <= 1) { "Prøvde å reservere én oppgave, men fant $endredeRader oppgaver. Oppgave: $oppgaveId" }
+
+                if (endredeRader == 0) {
+                    val lagretOppgave = hentOppgave(oppgaveId.id)
+                    if (lagretOppgave.reservertAv == reservertAvIdent && lagretOppgave.endretAv == endretAvIdent) {
+                        /* Noop / idempotent oppførsel. Oppgaven er allerede reservert riktig. Kanskje vi fikk samme request to
+                         * ganger på grunn av at bruker klikket to ganger raskt etter hverandre fordi vi har treghet i systemet?
+                         */
+                    } else {
+                        throw FeilVersjonException(oppgaveId, lagretOppgave.versjon)
+                    }
+                }
+            }
         }
     }
 
     fun hentMineOppgaver(
         ident: String,
-        paging: Paging? = null,
         kunPåVent: Boolean = false,
         sortBy: OppgaveSorteringFelt? = null,
         sortOrder: OppgaveSorteringRekkefølge? = null
     ): List<OppgaveDto> {
-        val offset = if (paging != null) {
-            (paging.side - 1) * paging.antallPerSide
-        } else {
-            0
-        }
-        val limit = paging?.antallPerSide ?: Int.MAX_VALUE // TODO: Fjern MAX_VALUE når vi har paging i FE
-
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
         val sortering = oppgaveSorteringQuery(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
@@ -628,10 +659,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         val query = """
             SELECT $alleOppgaveFelt
             FROM OPPGAVE
+            LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on OPPGAVE.ID = t.OPPGAVE_ID
             WHERE RESERVERT_AV = ?
               AND STATUS != 'AVSLUTTET' $kunPåVentQuery
             ORDER BY $sortering $sorteringRekkefølge
-            OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY
         """.trimIndent()
 
         return connection.queryList(query) {
@@ -692,6 +723,28 @@ class OppgaveRepository(private val connection: DBConnection) {
         return oppgaver.firstOrNull()
     }
 
+    fun hentSisteOppfølgingsenhetForPersonIdent(
+        ident: String,
+    ): String? {
+        val query = """
+            SELECT OPPFOLGINGSENHET
+            FROM OPPGAVE
+            WHERE PERSON_IDENT = ?
+              AND OPPFOLGINGSENHET IS NOT NULL
+            ORDER BY BEHANDLING_OPPRETTET DESC, OPPRETTET_TIDSPUNKT DESC
+            LIMIT 1
+        """.trimIndent()
+
+        return connection.queryFirstOrNull(query) {
+            setParams {
+                setString(1, ident)
+            }
+            setRowMapper { row ->
+                row.getString("OPPFOLGINGSENHET")
+            }
+        }
+    }
+
     private fun Filter.whereClause(): String {
         val sb = StringBuilder()
 
@@ -707,6 +760,25 @@ class OppgaveRepository(private val connection: DBConnection) {
                 behandlingstyper.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
             sb.append("BEHANDLINGSTYPE in $stringListeAvBehandlingstyper AND ")
         }
+
+        // Markeringer - inkluder
+        if (inkluderteMarkeringer.isNotEmpty()) {
+            val stringListeAvMarkeringer =
+                inkluderteMarkeringer.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
+            sb.append(
+                "EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
+            )
+        }
+
+        // Markeringer - ekskluder
+        if (ekskluderteMarkeringer.isNotEmpty()) {
+            val stringListeAvMarkeringer =
+                ekskluderteMarkeringer.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
+            sb.append(
+                "NOT EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
+            )
+        }
+
         // Enheter
         if (enheter.isNotEmpty()) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
@@ -776,7 +848,13 @@ class OppgaveRepository(private val connection: DBConnection) {
                     endretAv = row.getStringOrNull("retur_returnert_av") ?: "UKJENT",
                 )
             },
-            tilbakekrevingsVarsDto = tilbakekrevingVars
+            tilbakekrevingsVarsDto = tilbakekrevingVars,
+            forrigeKvalitetssikrerInfo = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_IDENT")?.let {
+                ForrigeKvalitetssikrerInfo(
+                    forrigeKvalitetssikrerIdent = it,
+                    forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
+                )
+            },
         )
     }
 
@@ -800,14 +878,15 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private fun oppgaveSorteringQuery(sortBy: OppgaveSorteringFelt): String {
         return when (sortBy) {
-            OppgaveSorteringFelt.PERSONIDENT -> "person_ident"
-            OppgaveSorteringFelt.SAKSNUMMER -> "saksnummer"
-            OppgaveSorteringFelt.BEHANDLINGSTYPE -> "behandlingstype"
-            OppgaveSorteringFelt.BEHANDLING_OPPRETTET -> "behandling_opprettet"
-            OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "aarsak_til_opprettelse"
-            OppgaveSorteringFelt.AVKLARINGSBEHOV_KODE -> "avklaringsbehov_type"
-            OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "opprettet_tidspunkt"
-            OppgaveSorteringFelt.RESERVERT_AV -> "reservert_av"
+            OppgaveSorteringFelt.PERSONIDENT -> "OPPGAVE.person_ident"
+            OppgaveSorteringFelt.SAKSNUMMER -> "OPPGAVE.saksnummer"
+            OppgaveSorteringFelt.BEHANDLINGSTYPE -> "OPPGAVE.behandlingstype"
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET -> "OPPGAVE.behandling_opprettet"
+            OppgaveSorteringFelt.ÅRSAK_TIL_OPPRETTELSE -> "OPPGAVE.aarsak_til_opprettelse"
+            OppgaveSorteringFelt.AVKLARINGSBEHOV_KODE -> "OPPGAVE.avklaringsbehov_type"
+            OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "OPPGAVE.opprettet_tidspunkt"
+            OppgaveSorteringFelt.RESERVERT_AV -> "OPPGAVE.reservert_av"
+            OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP -> "t.belop"
         }
     }
 
@@ -820,42 +899,44 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private companion object {
         val alleOppgaveFelt = """
-            ID,
-            PERSON_IDENT,
-            SAKSNUMMER,
-            BEHANDLING_REF,
-            JOURNALPOST_ID,
-            ENHET,
-            OPPFOLGINGSENHET,
-            VEILEDER_ARBEID,
-            VEILEDER_SYKDOM,
-            BEHANDLING_OPPRETTET,
-            AVKLARINGSBEHOV_TYPE,
-            STATUS,
-            BEHANDLINGSTYPE,
-            PAA_VENT_TIL,
-            PAA_VENT_AARSAK,
-            VENTE_BEGRUNNELSE,
-            SISTE_PAA_VENT_AARSAK,
-            SISTE_VENTE_BEGRUNNELSE,
-            RESERVERT_AV,
-            RESERVERT_AV_NAVN,
-            RESERVERT_TIDSPUNKT,
-            OPPRETTET_AV,
-            OPPRETTET_TIDSPUNKT,
-            ENDRET_AV,
-            ENDRET_TIDSPUNKT,
-            VERSJON,
-            AARSAKER_TIL_BEHANDLING,
-            FORTROLIG_ADRESSE,
-            ER_SKJERMET,
-            ULESTE_DOKUMENTER,
-            RETUR_AARSAK,
-            RETUR_BEGRUNNELSE,
-            retur_aarsaker,
-            retur_returnert_av,
-            AARSAK_TIL_OPPRETTELSE,
-            UTLOEPT_VENTEFRIST
+            OPPGAVE.ID,
+            OPPGAVE.PERSON_IDENT,
+            OPPGAVE.SAKSNUMMER,
+            OPPGAVE.BEHANDLING_REF,
+            OPPGAVE.JOURNALPOST_ID,
+            OPPGAVE.ENHET,
+            OPPGAVE.OPPFOLGINGSENHET,
+            OPPGAVE.VEILEDER_ARBEID,
+            OPPGAVE.VEILEDER_SYKDOM,
+            OPPGAVE.BEHANDLING_OPPRETTET,
+            OPPGAVE.AVKLARINGSBEHOV_TYPE,
+            OPPGAVE.STATUS,
+            OPPGAVE.BEHANDLINGSTYPE,
+            OPPGAVE.PAA_VENT_TIL,
+            OPPGAVE.PAA_VENT_AARSAK,
+            OPPGAVE.VENTE_BEGRUNNELSE,
+            OPPGAVE.SISTE_PAA_VENT_AARSAK,
+            OPPGAVE.SISTE_VENTE_BEGRUNNELSE,
+            OPPGAVE.RESERVERT_AV,
+            OPPGAVE.RESERVERT_AV_NAVN,
+            OPPGAVE.RESERVERT_TIDSPUNKT,
+            OPPGAVE.OPPRETTET_AV,
+            OPPGAVE.OPPRETTET_TIDSPUNKT,
+            OPPGAVE.ENDRET_AV,
+            OPPGAVE.ENDRET_TIDSPUNKT,
+            OPPGAVE.VERSJON,
+            OPPGAVE.AARSAKER_TIL_BEHANDLING,
+            OPPGAVE.FORTROLIG_ADRESSE,
+            OPPGAVE.ER_SKJERMET,
+            OPPGAVE.ULESTE_DOKUMENTER,
+            OPPGAVE.RETUR_AARSAK,
+            OPPGAVE.RETUR_BEGRUNNELSE,
+            OPPGAVE.retur_aarsaker,
+            OPPGAVE.retur_returnert_av,
+            OPPGAVE.AARSAK_TIL_OPPRETTELSE,
+            OPPGAVE.UTLOEPT_VENTEFRIST,
+            OPPGAVE.FORRIGE_KVALITETSSIKRER_IDENT,
+            OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN
         """.trimIndent()
 
     }

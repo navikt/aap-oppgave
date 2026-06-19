@@ -7,7 +7,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
 import java.net.URI
 import java.time.Duration
@@ -19,15 +19,15 @@ interface SkjermingGateway {
 }
 
 class NomSkjermingGateway : SkjermingGateway {
-    private val url = URI.create(requiredConfigForKey("integrasjon.nom.url"))
+    private val url = URI.create(requiredConfigForKey("INTEGRASJON_NOM_URL"))
 
     private val config = ClientConfig(
-        scope = requiredConfigForKey("integrasjon.nom.scope"),
+        scope = requiredConfigForKey("INTEGRASJON_NOM_SCOPE"),
     )
 
     private val client = RestClient.withDefaultResponseHandler(
         config = config,
-        tokenProvider = ClientCredentialsTokenProvider,
+        tokenProvider = AzureM2MTokenProvider,
         prometheus = prometheus
     )
 

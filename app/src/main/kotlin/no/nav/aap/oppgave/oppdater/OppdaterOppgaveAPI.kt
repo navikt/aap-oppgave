@@ -11,22 +11,27 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOpp
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
+import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
+import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
 import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphGateway,
-    prometheus: PrometheusMeterRegistry
-) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
+    enhetService: EnhetService,
+    prometheus: PrometheusMeterRegistry,
+    ansattInfoGateway: AnsattInfoGateway,
+    ) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
         operasjon = Operasjon.SAKSBEHANDLE,
         applicationsOnly = true,
@@ -34,24 +39,32 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-oppgaver").increment()
-    dataSource.transaction { connection ->
-        OppdaterOppgaveService(
-            msGraphClient,
-            oppgaveRepository = OppgaveRepository(connection),
-            flytJobbRepository = FlytJobbRepositoryImpl(connection),
-            mottattDokumentRepository = MottattDokumentRepository(connection),
-            tilbakekrevingRepository = TilbakekrevingRepository(connection),
-        ).håndterNyOppgaveOppdatering(
-            request.tilOppgaveOppdatering()
-        )
+    MDC.putCloseable("saksnummer", request.saksnummer.toString()).use {
+        dataSource.transaction { connection ->
+            OppdaterOppgaveService(
+                enhetService = enhetService,
+                oppgaveRepository = OppgaveRepository(connection),
+                flytJobbRepository = FlytJobbRepositoryImpl(connection),
+                mottattDokumentRepository = MottattDokumentRepository(connection),
+                tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                ansattInfoGateway = ansattInfoGateway,
+                markeringService = MarkeringService(
+                    UnleashServiceProvider.provideUnleashService(),
+                    MarkeringRepository(connection),
+                ),
+            ).håndterNyOppgaveOppdatering(
+                request.tilOppgaveOppdatering()
+            )
+        }
     }
     respondWithStatus(HttpStatusCode.OK)
 }
 
 fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphGateway,
-    prometheus: PrometheusMeterRegistry
+    enhetService: EnhetService,
+    prometheus: PrometheusMeterRegistry,
+    ansattInfoGateway: AnsattInfoGateway,
 ) = route("/oppdater-postmottak-oppgaver").authorizedPost<Unit, Unit, DokumentflytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
         operasjon = Operasjon.SAKSBEHANDLE,
@@ -60,22 +73,30 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-postmottak-oppgaver").increment()
-    dataSource.transaction { connection ->
-        OppdaterOppgaveService(
-            msGraphClient,
-            oppgaveRepository = OppgaveRepository(connection),
-            flytJobbRepository = FlytJobbRepositoryImpl(connection),
-            mottattDokumentRepository = MottattDokumentRepository(connection),
-            tilbakekrevingRepository = TilbakekrevingRepository(connection),
-        ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+    MDC.putCloseable("journalpostId", request.journalpostId.toString()).use {
+        dataSource.transaction { connection ->
+            OppdaterOppgaveService(
+                enhetService = enhetService,
+                oppgaveRepository = OppgaveRepository(connection),
+                flytJobbRepository = FlytJobbRepositoryImpl(connection),
+                mottattDokumentRepository = MottattDokumentRepository(connection),
+                tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                ansattInfoGateway = ansattInfoGateway,
+                markeringService = MarkeringService(
+                    UnleashServiceProvider.provideUnleashService(),
+                    MarkeringRepository(connection),
+                ),
+            ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+        }
     }
     respondWithStatus(HttpStatusCode.OK)
 }
 
 fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     dataSource: DataSource,
-    msGraphClient: IMsGraphGateway,
-    prometheus: PrometheusMeterRegistry
+    enhetService: EnhetService,
+    prometheus: PrometheusMeterRegistry,
+    ansattInfoGateway: AnsattInfoGateway,
 ) = route("/oppdater-tilbakekreving-oppgaver").authorizedPost<Unit, Unit, TilbakekrevingsbehandlingOppdatertHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
         operasjon = Operasjon.SAKSBEHANDLE,
@@ -86,14 +107,21 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     prometheus.httpCallCounter("/oppdater-tilbakekreving-oppgaver").increment()
     LoggerFactory.getLogger("tilbakekreving")
         .info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
-    dataSource.transaction { connection ->
-        OppdaterOppgaveService(
-            msGraphClient,
-            oppgaveRepository = OppgaveRepository(connection),
-            flytJobbRepository = FlytJobbRepositoryImpl(connection),
-            mottattDokumentRepository = MottattDokumentRepository(connection),
-            tilbakekrevingRepository = TilbakekrevingRepository(connection),
-        ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+    MDC.putCloseable("saksnummer", request.saksnummer.toString()).use {
+        dataSource.transaction { connection ->
+            OppdaterOppgaveService(
+                enhetService = enhetService,
+                oppgaveRepository = OppgaveRepository(connection),
+                flytJobbRepository = FlytJobbRepositoryImpl(connection),
+                mottattDokumentRepository = MottattDokumentRepository(connection),
+                tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                ansattInfoGateway = ansattInfoGateway,
+                markeringService = MarkeringService(
+                    UnleashServiceProvider.provideUnleashService(),
+                    MarkeringRepository(connection),
+                ),
+            ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+        }
     }
     respondWithStatus(HttpStatusCode.OK)
 }

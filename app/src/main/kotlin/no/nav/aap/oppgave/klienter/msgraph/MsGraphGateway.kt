@@ -14,8 +14,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.ClientCredentialsTokenProvider
-import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.OnBehalfOfTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
+import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.slf4j.LoggerFactory
 
@@ -28,19 +28,19 @@ interface IMsGraphGateway {
 class MsGraphGateway(
     prometheus: PrometheusMeterRegistry
 ) : IMsGraphGateway {
-    private val baseUrl = URI.create(requiredConfigForKey("ms.graph.base.url"))
+    private val baseUrl = URI.create(requiredConfigForKey("MS_GRAPH_BASE_URL"))
     private val clientConfig = ClientConfig(
-        scope = requiredConfigForKey("ms.graph.scope")
+        scope = requiredConfigForKey("MS_GRAPH_SCOPE")
     )
     private val httpClient = RestClient.withDefaultResponseHandler(
         config = clientConfig,
-        tokenProvider = OnBehalfOfTokenProvider,
+        tokenProvider = AzureOBOTokenProvider,
         prometheus = prometheus,
     )
 
     private val httpClientM2m = RestClient.withDefaultResponseHandler(
         config = clientConfig,
-        tokenProvider = ClientCredentialsTokenProvider,
+        tokenProvider = AzureM2MTokenProvider,
         prometheus = prometheus,
     )
 

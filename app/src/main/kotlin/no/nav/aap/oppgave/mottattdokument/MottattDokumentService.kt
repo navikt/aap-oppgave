@@ -1,7 +1,5 @@
 package no.nav.aap.oppgave.mottattdokument
 
-import no.nav.aap.oppgave.OppgaveDto
-import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
@@ -22,9 +20,6 @@ class MottattDokumentService(
             return
         }
 
-        mottattDokumentRepository.registrerDokumenterSomLest(behandlingRef, ident)
-        log.info("Registrerte ${ulesteDokumenter.size} dokument(er) av type ${ulesteDokumenter.joinToString(", ") { it.type }} som lest")
-
         val oppgave = oppgaveRepository.hentOppgaver(behandlingRef).firstOrNull { it.status != Status.AVSLUTTET }
         require(oppgave != null) { "Fant ingen åpen oppgave for behandling $behandlingRef" }
 
@@ -32,7 +27,8 @@ class MottattDokumentService(
             oppgaveId = oppgave.oppgaveId(),
             harUlesteDokumenter = false
         )
-    }
 
-    private fun OppgaveDto.oppgaveId() = OppgaveId(id!!, versjon)
+        mottattDokumentRepository.registrerDokumenterSomLest(behandlingRef, ident)
+        log.info("Registrerte ${ulesteDokumenter.size} dokument(er) av type ${ulesteDokumenter.joinToString(", ") { it.type }} som lest")
+    }
 }
