@@ -8,6 +8,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.ÅrsakTilOpprettelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilRetur
@@ -31,6 +32,7 @@ fun behandlingFlytHendelse(
     årsakTilOpprettelse: ÅrsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
     relevanteIdenterPåBehandling: List<String> = emptyList(),
     vurderingsbehov: List<String> = listOf("SØKNAD"),
+    behandlingMetadata: BehandlingMetadata? = null,
     block: BehandlingFlytHendelseBuilder.() -> Unit = {}
 ): BehandlingFlytStoppetHendelse {
     val builder = BehandlingFlytHendelseBuilder().apply(block)
@@ -51,6 +53,7 @@ fun behandlingFlytHendelse(
         vurderingsbehov = vurderingsbehov,
         årsakTilOpprettelse = årsakTilOpprettelse,
         relevanteIdenterPåBehandling = relevanteIdenterPåBehandling,
+        behandlingMetadata = behandlingMetadata
     )
 }
 
