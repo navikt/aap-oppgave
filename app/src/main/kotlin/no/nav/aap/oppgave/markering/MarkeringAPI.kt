@@ -59,16 +59,6 @@ fun NormalOpenAPIRoute.markeringApi(
 
     route("/{referanse}/ny-hendelse").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto>() { request, dto ->
         dataSource.transaction { connection ->
-            MarkeringRepository(connection).lagreMarkeringNy(
-                referanse = request.referanse,
-                BehandlingMarkering(
-                    dto.markeringType,
-                    dto.begrunnelse,
-                    bruker().ident,
-                    opprettetAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident),
-                    hendelseType = dto.hendelseType
-                )
-            )
             val oppgavePåBehandling =
                 OppgaveRepository(connection).hentOppgaver(request.referanse).firstOrNull { it.status == Status.OPPRETTET }
 
@@ -80,6 +70,17 @@ fun NormalOpenAPIRoute.markeringApi(
                     repository = FlytJobbRepository(connection),
                 )
             }
+
+            MarkeringRepository(connection).lagreMarkeringNy(
+                referanse = request.referanse,
+                BehandlingMarkering(
+                    dto.markeringType,
+                    dto.begrunnelse,
+                    bruker().ident,
+                    opprettetAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident),
+                    hendelseType = dto.hendelseType
+                )
+            )
         }
 
         respondWithStatus(HttpStatusCode.OK)
