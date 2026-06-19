@@ -86,6 +86,17 @@ fun NormalOpenAPIRoute.markeringApi(
         respondWithStatus(HttpStatusCode.OK)
     }
 
+    // Deprecated: /ny-hendelse skal ta over for denne
+    route("/{referanse}/hent-markeringer").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+        prometheus.httpCallCounter("/hent-markeringer").increment()
+
+        val markeringer =
+            dataSource.transaction { connection ->
+                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.referanse)
+            }
+        respond(markeringer.tilDto())
+    }
+
     route("/{referanse}/hent-markeringer-og-historikk").get<BehandlingReferanse, List<MarkeringDto>> { request ->
         prometheus.httpCallCounter("/hent-markeringer-og-historikk").increment()
 
@@ -106,6 +117,7 @@ fun NormalOpenAPIRoute.markeringApi(
         respond(markeringer.tilDto())
     }
 
+    // Deprecated: /ny-hendelse skal ta over for denne
     route("/{referanse}/fjern-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
         prometheus.httpCallCounter("/fjern-markering").increment()
         dataSource.transaction { connection ->

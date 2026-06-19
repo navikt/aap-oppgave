@@ -66,7 +66,6 @@ class MarkeringRepository(
         }
     }
 
-    @Deprecated("Bruk hentMarkeringerOgHistorikk")
     fun hentMarkeringerOgHistorikk(referanse: UUID): List<BehandlingMarkering> {
         val query =
             """
