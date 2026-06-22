@@ -29,8 +29,8 @@ class MarkeringRepository(
     ) {
         val query =
             """
-            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn, opprettet_tid)
+            VALUES (?, ?, ?, ?, ?, ?)
             """.trimIndent()
 
         connection.execute(query) {
@@ -40,6 +40,7 @@ class MarkeringRepository(
                 setString(3, markering.begrunnelse)
                 setString(4, markering.opprettetAv)
                 setString(5, markering.opprettetAvNavn)
+                setLocalDateTime(7, markering.opprettetTidspunkt)
             }
         }
     }
