@@ -133,6 +133,6 @@ class MarkeringRepository(
             opprettetAv = row.getString("opprettet_av"),
             opprettetAvNavn = row.getStringOrNull("opprettet_av_navn"),
             hendelseType = row.getEnumOrNull<MarkeringHendelseType?, MarkeringHendelseType>("hendelse_type"),
-            opprettetTidspunkt = row.getLocalDateTimeOrNull("opprettet_tid"),
+            opprettetTidspunkt = row.getLocalDateTime("opprettet_tid"),
         )
 }

@@ -1134,7 +1134,8 @@ class OppgaveApiTest {
         // legg på markering på behandling
         val markering = MarkeringDto(
             markeringType = MarkeringForBehandling.HASTER,
-            begrunnelse = "Haster"
+            begrunnelse = "Haster",
+            opprettetTidspunkt = LocalDateTime.now(),
         )
         settNyMarkeringPåBehandling(behandlingref, markering)
 
@@ -1174,7 +1175,8 @@ class OppgaveApiTest {
         // legg på markering på behandling
         val markering = MarkeringDto(
             markeringType = MarkeringForBehandling.HASTER,
-            begrunnelse = "Haster"
+            begrunnelse = "Haster",
+            opprettetTidspunkt = LocalDateTime.now(),
         )
         settNyMarkeringPåBehandling(behandlingref, markering)
 

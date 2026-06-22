@@ -8,7 +8,7 @@ data class MarkeringDto(
     val markeringType: MarkeringForBehandling,
     val begrunnelse: String? = null,
     val opprettetAv: String? = null,
-    val opprettetTidspunkt: LocalDateTime? = null,
+    val opprettetTidspunkt: LocalDateTime,
     val opprettetAvNavn: String? = null,
     val hendelseType: MarkeringHendelseType? = null,
 )
