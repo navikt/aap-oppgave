@@ -40,7 +40,7 @@ class MarkeringRepository(
                 setString(3, markering.begrunnelse)
                 setString(4, markering.opprettetAv)
                 setString(5, markering.opprettetAvNavn)
-                setLocalDateTime(7, markering.opprettetTidspunkt)
+                setLocalDateTime(6, markering.opprettetTidspunkt)
             }
         }
     }
