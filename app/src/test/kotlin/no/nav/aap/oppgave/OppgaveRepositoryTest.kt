@@ -1335,7 +1335,7 @@ class OppgaveRepositoryTest {
             val markeringRepository = MarkeringRepository(connection)
             markeringRepository.oppdaterMarkering(
                 hasterBehandlingsref,
-                BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", "me")
+                BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", opprettetAv = "me", opprettetTidspunkt = LocalDateTime.now())
             )
         }
     }
@@ -1344,7 +1344,7 @@ class OppgaveRepositoryTest {
         dataSource.transaction { connection ->
             MarkeringRepository(connection).oppdaterMarkering(
                 behandlingRef,
-                BehandlingMarkering(markeringType, "begrunnelse", "test")
+                BehandlingMarkering(markeringType, "begrunnelse", "test", opprettetTidspunkt = LocalDateTime.now())
             )
         }
     }

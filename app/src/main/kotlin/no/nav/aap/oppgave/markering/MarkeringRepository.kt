@@ -29,28 +29,7 @@ class MarkeringRepository(
     ) {
         val query =
             """
-            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn)
-            VALUES (?, ?, ?, ?, ?)
-            """.trimIndent()
-
-        connection.execute(query) {
-            setParams {
-                setUUID(1, referanse)
-                setEnumName(2, markering.markeringType)
-                setString(3, markering.begrunnelse)
-                setString(4, markering.opprettetAv)
-                setString(5, markering.opprettetAvNavn)
-            }
-        }
-    }
-
-    fun lagreMarkeringNy(
-        referanse: UUID,
-        markering: BehandlingMarkering,
-    ) {
-        val query =
-            """
-            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn, hendelse_type)
+            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn, opprettet_tid)
             VALUES (?, ?, ?, ?, ?, ?)
             """.trimIndent()
 
@@ -61,7 +40,30 @@ class MarkeringRepository(
                 setString(3, markering.begrunnelse)
                 setString(4, markering.opprettetAv)
                 setString(5, markering.opprettetAvNavn)
+                setLocalDateTime(6, markering.opprettetTidspunkt)
+            }
+        }
+    }
+
+    fun lagreMarkeringNy(
+        referanse: UUID,
+        markering: BehandlingMarkering,
+    ) {
+        val query =
+            """
+            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn, hendelse_type, opprettet_tid)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """.trimIndent()
+
+        connection.execute(query) {
+            setParams {
+                setUUID(1, referanse)
+                setEnumName(2, markering.markeringType)
+                setString(3, markering.begrunnelse)
+                setString(4, markering.opprettetAv)
+                setString(5, markering.opprettetAvNavn)
                 setEnumName(6, markering.hendelseType)
+                setLocalDateTime(7, markering.opprettetTidspunkt)
             }
         }
     }
@@ -133,6 +135,6 @@ class MarkeringRepository(
             opprettetAv = row.getString("opprettet_av"),
             opprettetAvNavn = row.getStringOrNull("opprettet_av_navn"),
             hendelseType = row.getEnumOrNull<MarkeringHendelseType?, MarkeringHendelseType>("hendelse_type"),
-            opprettetTidspunkt = row.getLocalDateTimeOrNull("opprettet_tid"),
+            opprettetTidspunkt = row.getLocalDateTime("opprettet_tid"),
         )
 }

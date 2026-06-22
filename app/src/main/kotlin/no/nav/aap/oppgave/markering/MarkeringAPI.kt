@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import java.time.LocalDateTime
 
 private val log = LoggerFactory.getLogger("markeringApi")
 
@@ -35,10 +36,11 @@ fun NormalOpenAPIRoute.markeringApi(
             MarkeringRepository(connection).oppdaterMarkering(
                 referanse = request.referanse,
                 BehandlingMarkering(
-                    dto.markeringType,
-                    dto.begrunnelse,
-                    bruker().ident,
-                    ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident)
+                    markeringType = dto.markeringType,
+                    begrunnelse = dto.begrunnelse,
+                    opprettetAv = bruker().ident,
+                    opprettetAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident),
+                    opprettetTidspunkt = LocalDateTime.now(),
                 )
             )
             val oppgavePåBehandling =
@@ -74,11 +76,12 @@ fun NormalOpenAPIRoute.markeringApi(
             MarkeringRepository(connection).lagreMarkeringNy(
                 referanse = request.referanse,
                 BehandlingMarkering(
-                    dto.markeringType,
-                    dto.begrunnelse,
-                    bruker().ident,
+                    markeringType = dto.markeringType,
+                    begrunnelse = dto.begrunnelse,
+                    opprettetAv = bruker().ident,
                     opprettetAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident),
-                    hendelseType = dto.hendelseType
+                    hendelseType = dto.hendelseType,
+                    opprettetTidspunkt = LocalDateTime.now(),
                 )
             )
         }
@@ -124,9 +127,10 @@ fun NormalOpenAPIRoute.markeringApi(
             MarkeringRepository(connection).slettMarkering(
                 request.referanse,
                 BehandlingMarkering(
-                    dto.markeringType,
-                    dto.begrunnelse,
-                    bruker().ident
+                    markeringType = dto.markeringType,
+                    begrunnelse = dto.begrunnelse,
+                    opprettetAv = bruker().ident,
+                    opprettetTidspunkt = LocalDateTime.now(),
                 )
             )
 

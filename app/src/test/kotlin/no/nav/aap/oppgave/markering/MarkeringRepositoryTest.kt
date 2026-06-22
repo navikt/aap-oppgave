@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 
 class MarkeringRepositoryTest {
@@ -27,13 +28,15 @@ class MarkeringRepositoryTest {
         val spesialkompetanseMarkering = BehandlingMarkering(
             markeringType = MarkeringForBehandling.KREVER_SPESIALKOMPETANSE,
             begrunnelse = "begrunnelseSpesialkompetanse",
-            opprettetAv = "saksbehandler"
+            opprettetAv = "saksbehandler",
+            opprettetTidspunkt = LocalDateTime.now()
         )
 
         val hasterMarkering = BehandlingMarkering(
             markeringType = MarkeringForBehandling.HASTER,
             begrunnelse = "begrunnelseHaster",
-            opprettetAv = "saksbehandler"
+            opprettetAv = "saksbehandler",
+            opprettetTidspunkt = LocalDateTime.now()
         )
 
         dataSource.transaction { connection ->
@@ -62,6 +65,7 @@ class MarkeringRepositoryTest {
             val nyMarkering = BehandlingMarkering(
                 markeringType = MarkeringForBehandling.HASTER,
                 opprettetAv = "saksbehandler2",
+                opprettetTidspunkt = LocalDateTime.now()
             )
             // ny hastemarkering, den gamle skal skrives over
             markeringRepository.oppdaterMarkering(behandlingId, nyMarkering)

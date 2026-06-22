@@ -12,6 +12,7 @@ import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import java.time.LocalDateTime
 import java.util.UUID
 
 class MarkeringService(
@@ -41,7 +42,8 @@ class MarkeringService(
                     markering = BehandlingMarkering(
                         markeringType = MarkeringForBehandling.AVSLAG_11_5,
                         begrunnelse = AVSLAG_11_5_BEGRUNNELSE,
-                        opprettetAv = KELVIN
+                        opprettetAv = KELVIN,
+                        opprettetTidspunkt = LocalDateTime.now(),
                     )
                 )
                 Endring.OPPDATERT
@@ -52,7 +54,8 @@ class MarkeringService(
                     referanse = referanse,
                     markering = BehandlingMarkering(
                         markeringType = MarkeringForBehandling.AVSLAG_11_5,
-                        opprettetAv = KELVIN
+                        opprettetAv = KELVIN,
+                        opprettetTidspunkt = LocalDateTime.now(),
                     )
                 )
                 Endring.SLETTET
@@ -76,7 +79,8 @@ class MarkeringService(
                     markering = BehandlingMarkering(
                         markeringType = MarkeringForBehandling.HASTER,
                         begrunnelse = HASTEMARKERING_BEGRUNNELSE_SONING,
-                        opprettetAv = KELVIN
+                        opprettetAv = KELVIN,
+                        opprettetTidspunkt = LocalDateTime.now(),
                     )
                 )
                 Endring.OPPDATERT
@@ -87,7 +91,8 @@ class MarkeringService(
                     referanse = referanse,
                     markering = BehandlingMarkering(
                         markeringType = MarkeringForBehandling.HASTER,
-                        opprettetAv = KELVIN
+                        opprettetAv = KELVIN,
+                        opprettetTidspunkt = LocalDateTime.now(),
                     )
                 )
                 Endring.SLETTET

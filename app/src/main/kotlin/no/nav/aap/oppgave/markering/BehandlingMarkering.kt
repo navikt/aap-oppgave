@@ -10,5 +10,5 @@ data class BehandlingMarkering(
     val opprettetAv: String,
     val opprettetAvNavn: String? = null,
     val hendelseType: MarkeringHendelseType? = null,
-    val opprettetTidspunkt: LocalDateTime? = null
+    val opprettetTidspunkt: LocalDateTime
 )
