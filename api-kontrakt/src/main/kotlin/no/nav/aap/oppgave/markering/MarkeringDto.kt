@@ -16,6 +16,5 @@ data class MarkeringDto(
 data class OpprettMarkeringDto(
     val markeringType: MarkeringForBehandling,
     val begrunnelse: String? = null,
-    val opprettetAvNavn: String? = null,
     val hendelseType: MarkeringHendelseType? = null,
 )
