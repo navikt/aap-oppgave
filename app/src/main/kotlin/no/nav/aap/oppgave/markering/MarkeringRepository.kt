@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.markering
 
+import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -14,7 +15,7 @@ class MarkeringRepository(
     fun oppdaterMarkering(referanse: UUID, markering: BehandlingMarkering) {
         // Kan bare ha én markering av gitt type på en behandling
         val markeringSkalOverskrives =
-            hentMarkeringerOgHistorikk(referanse).any { it.markeringType == markering.markeringType }
+            hentMarkeringerForBehandling(referanse).any { it.markeringType == markering.markeringType }
 
         if (markeringSkalOverskrives) {
             slettMarkering(referanse, markering)
@@ -68,22 +69,42 @@ class MarkeringRepository(
         }
     }
 
-    fun hentMarkeringerOgHistorikk(referanse: UUID): List<BehandlingMarkering> {
+    fun hentMarkeringerOgHistorikk(saksnummer: Saksnummer): List<BehandlingMarkering> {
         val query =
             """
-            SELECT * FROM MARKERING WHERE behandling_ref = ?
+            SELECT m.* FROM MARKERING m
+            WHERE m.behandling_ref IN (
+                SELECT DISTINCT o.behandling_ref FROM OPPGAVE o WHERE o.saksnummer = ?
+            )
+            ORDER BY m.opprettet_tid DESC
             """.trimIndent()
 
         val markeringer =
             connection.queryList(query) {
                 setParams {
-                    setUUID(1, referanse)
+                    setString(1, saksnummer.toString())
                 }
                 setRowMapper {
                     markeringMapper(it)
                 }
             }
         return markeringer
+    }
+
+    fun hentMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
+        val query =
+            """
+            SELECT * FROM MARKERING WHERE behandling_ref = ?
+            """.trimIndent()
+
+        return connection.queryList(query) {
+            setParams {
+                setUUID(1, referanse)
+            }
+            setRowMapper {
+                markeringMapper(it)
+            }
+        }
     }
 
     fun hentSisteAktiveMarkering(referanse: UUID, markeringType: MarkeringForBehandling): List<BehandlingMarkering> {

@@ -43,14 +43,14 @@ class MarkeringRepositoryTest {
             val markeringRepository = MarkeringRepository(connection)
             // lagre spesialkompetansemarkering
             markeringRepository.oppdaterMarkering(behandlingId, spesialkompetanseMarkering)
-            val hentetMarkering = markeringRepository.hentMarkeringerOgHistorikk(behandlingId)
+            val hentetMarkering = markeringRepository.hentMarkeringerForBehandling(behandlingId)
             assertThat(hentetMarkering).hasSize(1)
             assertThat(hentetMarkering.first().markeringType).isEqualTo(MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
             assertThat(hentetMarkering.first().begrunnelse).isEqualTo(spesialkompetanseMarkering.begrunnelse)
 
             // lagre hastemarkering
             markeringRepository.oppdaterMarkering(behandlingId, hasterMarkering)
-            val markeringer = markeringRepository.hentMarkeringerOgHistorikk(behandlingId)
+            val markeringer = markeringRepository.hentMarkeringerForBehandling(behandlingId)
             assertThat(markeringer).hasSize(2)
             assertThat(markeringer.map { it.markeringType }).containsExactlyInAnyOrder(
                 MarkeringForBehandling.KREVER_SPESIALKOMPETANSE,
@@ -69,17 +69,17 @@ class MarkeringRepositoryTest {
             )
             // ny hastemarkering, den gamle skal skrives over
             markeringRepository.oppdaterMarkering(behandlingId, nyMarkering)
-            assertThat(markeringRepository.hentMarkeringerOgHistorikk(behandlingId)).hasSize(2)
+            assertThat(markeringRepository.hentMarkeringerForBehandling(behandlingId)).hasSize(2)
             assertThat(
-                markeringRepository.hentMarkeringerOgHistorikk(behandlingId)
+                markeringRepository.hentMarkeringerForBehandling(behandlingId)
                     .first { it.markeringType == MarkeringForBehandling.HASTER }.opprettetAv
             ).isEqualTo("saksbehandler2")
             assertThat(
-                markeringRepository.hentMarkeringerOgHistorikk(behandlingId)
+                markeringRepository.hentMarkeringerForBehandling(behandlingId)
                     .first { it.markeringType == MarkeringForBehandling.HASTER }.begrunnelse
             ).isNull()
             assertThat(
-                markeringRepository.hentMarkeringerOgHistorikk(behandlingId).first().opprettetTidspunkt?.toLocalDate()
+                markeringRepository.hentMarkeringerForBehandling(behandlingId).first().opprettetTidspunkt?.toLocalDate()
             ).isEqualTo(LocalDate.now())
         }
     }

@@ -1634,7 +1634,7 @@ class OppdaterOppgaveServiceTest {
 
     private fun hentMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<BehandlingMarkering> {
         return dataSource.transaction { connection ->
-            MarkeringRepository(connection).hentMarkeringerOgHistorikk(behandlingsref.referanse)
+            MarkeringRepository(connection).hentMarkeringerForBehandling(behandlingsref.referanse)
         }
     }
 

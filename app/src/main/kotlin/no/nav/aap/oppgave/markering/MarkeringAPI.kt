@@ -9,6 +9,7 @@ import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
+import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.bruker
 import no.nav.aap.motor.FlytJobbRepository
@@ -95,17 +96,17 @@ fun NormalOpenAPIRoute.markeringApi(
 
         val markeringer =
             dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.referanse)
+                MarkeringRepository(connection).hentMarkeringerForBehandling(request.referanse)
             }
         respond(markeringer.tilDto())
     }
 
-    route("/{referanse}/hent-markeringer-og-historikk").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+    route("/{saksnummer}/hent-markeringer-og-historikk").get<Saksnummer, List<MarkeringDto>> { request ->
         prometheus.httpCallCounter("/hent-markeringer-og-historikk").increment()
 
         val markeringer =
             dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.referanse)
+                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request)
             }
         respond(markeringer.tilDto())
     }

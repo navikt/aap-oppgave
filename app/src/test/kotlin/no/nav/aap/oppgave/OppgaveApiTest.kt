@@ -1148,7 +1148,7 @@ class OppgaveApiTest {
         assertThat(mineOppgaver.oppgaver.first().markeringer.first().begrunnelse).isEqualTo(markering.begrunnelse)
 
         // hent markering fra endepunkt
-        val markeringer = hentMarkeringerOgHistorikk(behandlingref)
+        val markeringer = hentMarkeringerForBehandling(behandlingref)
         assertThat(markeringer).hasSize(1)
         assertThat(markeringer?.first()?.markeringType).isEqualTo(MarkeringForBehandling.HASTER)
         assertThat(markeringer?.first()?.begrunnelse).isEqualTo(markering.begrunnelse)
@@ -1405,7 +1405,7 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentMarkeringerOgHistorikk(behandlingRef: UUID): List<MarkeringDto>? {
+    private fun hentMarkeringerForBehandling(behandlingRef: UUID): List<MarkeringDto>? {
         return client.get(
             URI.create("http://localhost:$port/$behandlingRef/hent-markeringer-og-historikk"),
             GetRequest()
