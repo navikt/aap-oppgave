@@ -1407,7 +1407,7 @@ class OppgaveApiTest {
 
     private fun hentMarkeringerForBehandling(behandlingRef: UUID): List<MarkeringDto>? {
         return client.get(
-            URI.create("http://localhost:$port/$behandlingRef/hent-markeringer-og-historikk"),
+            URI.create("http://localhost:$port/$behandlingRef/hent-markeringer"),
             GetRequest()
         )
     }
