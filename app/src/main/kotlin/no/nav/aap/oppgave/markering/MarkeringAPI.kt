@@ -31,7 +31,7 @@ fun NormalOpenAPIRoute.markeringApi(
     ansattInfoGateway: AnsattInfoGateway,
 ) {
     // Deprecated: /ny-hendelse skal ta over for denne
-    route("/{referanse}/ny-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
+    route("/{referanse}/ny-markering").post<BehandlingReferanse, BehandlingReferanse, OpprettMarkeringDto> { request, dto ->
         dataSource.transaction { connection ->
             MarkeringRepository(connection).oppdaterMarkering(
                 referanse = request.referanse,
@@ -59,7 +59,7 @@ fun NormalOpenAPIRoute.markeringApi(
         respondWithStatus(HttpStatusCode.OK)
     }
 
-    route("/{referanse}/ny-hendelse").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto>() { request, dto ->
+    route("/{referanse}/ny-hendelse").post<BehandlingReferanse, BehandlingReferanse, OpprettMarkeringDto> { request, dto ->
         dataSource.transaction { connection ->
             val oppgavePåBehandling =
                 OppgaveRepository(connection).hentOppgaver(request.referanse).firstOrNull { it.status == Status.OPPRETTET }
