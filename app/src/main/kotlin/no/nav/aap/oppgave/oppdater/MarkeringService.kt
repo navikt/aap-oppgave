@@ -66,8 +66,6 @@ class MarkeringService(
     }
     
     fun oppdaterHastemarkeringForSoning(oppgaveOppdatering: OppgaveOppdatering): Endring {
-        if (!unleashService.isEnabled(FeatureToggles.SoningHastemarkering)) return Endring.INGEN_ENDRING
-
         val referanse = oppgaveOppdatering.referanse
         val eksistererSoningHaster = finnEksisterendeSoningHaster(oppgaveOppdatering.referanse)
         val skalHaSoningHaster = skalHaAutomatiskSoningHaster(oppgaveOppdatering)
