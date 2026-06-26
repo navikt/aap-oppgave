@@ -51,6 +51,8 @@ import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
+import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.oppdater.MarkeringService
 import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
@@ -64,6 +66,7 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
 import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.TilgangGateway
 import org.assertj.core.api.Assertions.assertThat
@@ -1136,8 +1139,9 @@ class OppgaveApiTest {
             markeringType = MarkeringForBehandling.HASTER,
             begrunnelse = "Haster",
             opprettetTidspunkt = LocalDateTime.now(),
+            hendelseType = MarkeringHendelseType.OPPRETTET
         )
-        settNyMarkeringPåBehandling(behandlingref, markering)
+        opprettMarkeringHendelse(behandlingref, markering)
 
         // reserver og hent mine oppgaver
         plukkOppgave(hentOppgave(behandlingref)!!.oppgaveId())
@@ -1177,8 +1181,9 @@ class OppgaveApiTest {
             markeringType = MarkeringForBehandling.HASTER,
             begrunnelse = "Haster",
             opprettetTidspunkt = LocalDateTime.now(),
+            hendelseType = MarkeringHendelseType.OPPRETTET
         )
-        settNyMarkeringPåBehandling(behandlingref, markering)
+        opprettMarkeringHendelse(behandlingref, markering)
 
         // reserver
         plukkOppgave(hentOppgave(behandlingref)!!.oppgaveId())
@@ -1407,14 +1412,14 @@ class OppgaveApiTest {
 
     private fun hentSisteAktiveMarkeringerForBehandling(behandlingRef: UUID): List<MarkeringDto>? {
         return client.get(
-            URI.create("http://localhost:$port/$behandlingRef/hent-markeringer"),
+            URI.create("http://localhost:$port/$behandlingRef/hent-siste-aktive-markeringer-for-behandling"),
             GetRequest()
         )
     }
 
-    private fun settNyMarkeringPåBehandling(behandlingRef: UUID, markering: MarkeringDto): Unit? {
+    private fun opprettMarkeringHendelse(behandlingRef: UUID, markering: MarkeringDto): Unit? {
         return client.post(
-            URI.create("http://localhost:$port/$behandlingRef/ny-markering"),
+            URI.create("http://localhost:$port/$behandlingRef/opprett-markering-hendelse"),
             PostRequest(
                 body = markering,
                 additionalHeaders = listOf(

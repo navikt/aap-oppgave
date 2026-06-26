@@ -50,7 +50,6 @@ class OppgavelisteService(
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null) {
-            // TODO: viser [] i frontend
             val markeringer = markeringRepository.hentSisteAktiveMarkeringerForBehandling(behandlingReferanse.referanse)
             return oppgave.leggPåMarkeringer(markeringer.tilDto())
         }
