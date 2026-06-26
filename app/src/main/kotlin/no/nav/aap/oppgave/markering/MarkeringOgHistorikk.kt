@@ -1,0 +1,15 @@
+package no.nav.aap.oppgave.markering
+
+import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
+import java.time.LocalDateTime
+
+data class MarkeringOgHistorikk(
+    val behandlingRef: String,
+    val markeringType: MarkeringForBehandling,
+    val begrunnelse: String? = null,
+    val opprettetAv: String,
+    val opprettetAvNavn: String? = null,
+    val hendelseType: MarkeringHendelseType? = null,
+    val opprettetTidspunkt: LocalDateTime
+)

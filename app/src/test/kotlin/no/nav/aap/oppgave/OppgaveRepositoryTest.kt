@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -1333,18 +1334,18 @@ class OppgaveRepositoryTest {
     private fun markerHasteOppgave(hasterBehandlingsref: UUID) {
         dataSource.transaction { connection ->
             val markeringRepository = MarkeringRepository(connection)
-            markeringRepository.oppdaterMarkering(
+            markeringRepository.lagreMarkeringHendelse(
                 hasterBehandlingsref,
-                BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", opprettetAv = "me", opprettetTidspunkt = LocalDateTime.now())
+                BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", opprettetAv = "me", opprettetTidspunkt = LocalDateTime.now(), hendelseType = MarkeringHendelseType.OPPRETTET)
             )
         }
     }
 
     private fun markerOppgave(behandlingRef: UUID, markeringType: MarkeringForBehandling) {
         dataSource.transaction { connection ->
-            MarkeringRepository(connection).oppdaterMarkering(
+            MarkeringRepository(connection).lagreMarkeringHendelse(
                 behandlingRef,
-                BehandlingMarkering(markeringType, "begrunnelse", "test", opprettetTidspunkt = LocalDateTime.now())
+                BehandlingMarkering(markeringType, "begrunnelse", "test", opprettetTidspunkt = LocalDateTime.now(), hendelseType = MarkeringHendelseType.OPPRETTET)
             )
         }
     }

@@ -10,43 +10,7 @@ import java.util.UUID
 class MarkeringRepository(
     private val connection: DBConnection
 ) {
-
-    @Deprecated("Bruk lagreMarkeringNy")
-    fun oppdaterMarkering(referanse: UUID, markering: BehandlingMarkering) {
-        // Kan bare ha én markering av gitt type på en behandling
-        val markeringSkalOverskrives =
-            hentMarkeringerForBehandling(referanse).any { it.markeringType == markering.markeringType }
-
-        if (markeringSkalOverskrives) {
-            slettMarkering(referanse, markering)
-        }
-        lagreMarkering(referanse, markering)
-    }
-
-    @Deprecated("Bruk lagreMarkeringNy")
-    private fun lagreMarkering(
-        referanse: UUID,
-        markering: BehandlingMarkering
-    ) {
-        val query =
-            """
-            INSERT INTO MARKERING (behandling_ref, markering_type, begrunnelse, opprettet_av, opprettet_av_navn, opprettet_tid)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """.trimIndent()
-
-        connection.execute(query) {
-            setParams {
-                setUUID(1, referanse)
-                setEnumName(2, markering.markeringType)
-                setString(3, markering.begrunnelse)
-                setString(4, markering.opprettetAv)
-                setString(5, markering.opprettetAvNavn)
-                setLocalDateTime(6, markering.opprettetTidspunkt)
-            }
-        }
-    }
-
-    fun lagreMarkeringNy(
+    fun lagreMarkeringHendelse(
         referanse: UUID,
         markering: BehandlingMarkering,
     ) {
@@ -69,7 +33,7 @@ class MarkeringRepository(
         }
     }
 
-    fun hentMarkeringerOgHistorikk(saksnummer: Saksnummer): List<BehandlingMarkering> {
+    fun hentMarkeringerOgHistorikk(saksnummer: Saksnummer): List<MarkeringOgHistorikk> {
         val query =
             """
             SELECT m.* FROM MARKERING m
@@ -85,35 +49,26 @@ class MarkeringRepository(
                     setString(1, saksnummer.toString())
                 }
                 setRowMapper {
-                    markeringMapper(it)
+                    MarkeringOgHistorikk(
+                        behandlingRef = it.getString("behandling_ref"),
+                        markeringType = it.getEnum("markering_type"),
+                        begrunnelse = it.getStringOrNull("begrunnelse"),
+                        opprettetAv = it.getString("opprettet_av"),
+                        opprettetAvNavn = it.getStringOrNull("opprettet_av_navn"),
+                        hendelseType = it.getEnumOrNull<MarkeringHendelseType?, MarkeringHendelseType>("hendelse_type"),
+                        opprettetTidspunkt = it.getLocalDateTime("opprettet_tid"),
+                    )
                 }
             }
         return markeringer
     }
 
-    fun hentMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
-        val query =
-            """
-            SELECT * FROM MARKERING WHERE behandling_ref = ?
-            """.trimIndent()
-
-        return connection.queryList(query) {
-            setParams {
-                setUUID(1, referanse)
-            }
-            setRowMapper {
-                markeringMapper(it)
-            }
-        }
-    }
-
-    fun hentSisteAktiveMarkering(referanse: UUID, markeringType: MarkeringForBehandling): List<BehandlingMarkering> {
+    fun hentSisteAktiveMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
         val query =
             """
             SELECT DISTINCT ON (markering_type) *
             FROM MARKERING
             WHERE behandling_ref = ?
-              AND markering_type = ?
               AND (hendelse_type = 'OPPRETTET' OR hendelse_type IS NULL)
             ORDER BY markering_type, opprettet_tid DESC
             """.trimIndent()
@@ -122,31 +77,12 @@ class MarkeringRepository(
             connection.queryList(query) {
                 setParams {
                     setUUID(1, referanse)
-                    setEnumName(2, markeringType)
                 }
                 setRowMapper {
                     markeringMapper(it)
                 }
             }
         return markeringer
-    }
-
-    @Deprecated("Bruk lagreMarkeringNy")
-    fun slettMarkering(
-        referanse: UUID,
-        markering: BehandlingMarkering
-    ) {
-        val query =
-            """
-            DELETE FROM MARKERING WHERE behandling_ref = ? AND markering_type = ?
-            """.trimIndent()
-
-        connection.execute(query) {
-            setParams {
-                setUUID(1, referanse)
-                setEnumName(2, markering.markeringType)
-            }
-        }
     }
 
     private fun markeringMapper(row: Row): BehandlingMarkering =

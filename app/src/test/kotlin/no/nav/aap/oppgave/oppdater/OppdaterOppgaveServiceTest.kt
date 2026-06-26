@@ -1377,7 +1377,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(soningHendelse)
 
         val hasterMarkeringEtterSoning =
-            hentMarkeringerForBehandling(behandlingsref).single { it.markeringType == MarkeringForBehandling.HASTER }
+            hentSisteAktiveMarkeringerForBehandling(behandlingsref).single { it.markeringType == MarkeringForBehandling.HASTER }
         assertThat(hasterMarkeringEtterSoning.begrunnelse).isEqualTo("Ny soning, mulig stans")
         assertThat(hasterMarkeringEtterSoning.opprettetAv).isEqualTo("Kelvin")
 
@@ -1396,7 +1396,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(utenSoning)
 
         assertThat(
-            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
+            hentSisteAktiveMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
     }
 
     @Test
@@ -1416,7 +1416,7 @@ class OppdaterOppgaveServiceTest {
         }
         sendBehandlingFlytStoppetHendelse(hendelse)
         assertThat(
-            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
+            hentSisteAktiveMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
     }
 
     @Test
@@ -1439,7 +1439,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(hendelseMedAvslag115)
 
         assertThat(
-            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
+            hentSisteAktiveMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
         ).isTrue()
 
         // Send oppdatert hendelse uten AVSLAG_11_5-metadata — markeringen skal fjernes
@@ -1450,7 +1450,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(hendelseUtenAvslag115)
 
         assertThat(
-            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
+            hentSisteAktiveMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
         ).isFalse()
     }
 
@@ -1632,9 +1632,9 @@ class OppdaterOppgaveServiceTest {
         }
     }
 
-    private fun hentMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<BehandlingMarkering> {
+    private fun hentSisteAktiveMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<BehandlingMarkering> {
         return dataSource.transaction { connection ->
-            MarkeringRepository(connection).hentMarkeringerForBehandling(behandlingsref.referanse)
+            MarkeringRepository(connection).hentSisteAktiveMarkeringerForBehandling(behandlingsref.referanse)
         }
     }
 
