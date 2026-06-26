@@ -1177,22 +1177,28 @@ class OppgaveApiTest {
         )
 
         // legg på markering på behandling
-        val markering = MarkeringDto(
+        val markeringOpprettet = MarkeringDto(
             markeringType = MarkeringForBehandling.HASTER,
             begrunnelse = "Haster",
             opprettetTidspunkt = LocalDateTime.now(),
             hendelseType = MarkeringHendelseType.OPPRETTET
         )
-        opprettMarkeringHendelse(behandlingref, markering)
+        opprettMarkeringHendelse(behandlingref, markeringOpprettet)
 
         // reserver
         plukkOppgave(hentOppgave(behandlingref)!!.oppgaveId())
 
         // fjern markering
-        fjernMarkeringPåBehandling(behandlingref, markering)
+        val markeringFjernet = MarkeringDto(
+            markeringType = MarkeringForBehandling.HASTER,
+            begrunnelse = "Haster",
+            opprettetTidspunkt = LocalDateTime.now(),
+            hendelseType = MarkeringHendelseType.FJERNET
+        )
+        opprettMarkeringHendelse(behandlingref, markeringFjernet)
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
-        assertThat(mineOppgaver.oppgaver.first().markeringer).isEmpty()
+        assertThat(mineOppgaver.oppgaver.first().markeringer.any { it.markeringType == MarkeringForBehandling.HASTER && it.hendelseType == MarkeringHendelseType.FJERNET }).isTrue()
     }
 
     @Test
@@ -1420,18 +1426,6 @@ class OppgaveApiTest {
     private fun opprettMarkeringHendelse(behandlingRef: UUID, markering: MarkeringDto): Unit? {
         return client.post(
             URI.create("http://localhost:$port/$behandlingRef/opprett-markering-hendelse"),
-            PostRequest(
-                body = markering,
-                additionalHeaders = listOf(
-                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
-                )
-            )
-        )
-    }
-
-    private fun fjernMarkeringPåBehandling(behandlingRef: UUID, markering: MarkeringDto): Unit? {
-        return client.post(
-            URI.create("http://localhost:$port/$behandlingRef/fjern-markering"),
             PostRequest(
                 body = markering,
                 additionalHeaders = listOf(

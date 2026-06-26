@@ -1453,9 +1453,9 @@ class OppdaterOppgaveServiceTest {
         )
         sendBehandlingFlytStoppetHendelse(hendelseUtenAvslag115)
 
-        assertThat(
-            hentGjeldendeMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
-        ).isFalse()
+        val gjeldendeAvslag115 = hentGjeldendeMarkeringerForBehandling(behandlingsref)
+            .firstOrNull { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
+        assertThat(gjeldendeAvslag115?.hendelseType).isEqualTo(MarkeringHendelseType.FJERNET)
     }
 
     @Test
