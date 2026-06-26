@@ -3,7 +3,6 @@ package no.nav.aap.oppgave.markering
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
-import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import java.util.UUID
 
@@ -63,13 +62,12 @@ class MarkeringRepository(
         return markeringer
     }
 
-    fun hentSisteAktiveMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
+    fun hentGjeldendeMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
         val query =
             """
             SELECT DISTINCT ON (markering_type) *
             FROM MARKERING
             WHERE behandling_ref = ?
-              AND (hendelse_type = 'OPPRETTET' OR hendelse_type IS NULL)
             ORDER BY markering_type, opprettet_tid DESC
             """.trimIndent()
 

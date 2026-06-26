@@ -29,7 +29,7 @@ class StatistikkHendelseJobb(
         val oppgaveId = DefaultJsonMapper.fromJson<OppgaveId>(input.payload())
 
         oppgaveRepository.hentOppgave(oppgaveId.id).let { oppgaveDto ->
-            val markeringer = markeringRepository.hentSisteAktiveMarkeringerForBehandling(oppgaveDto.behandlingRef)
+            val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgaveDto.behandlingRef)
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,

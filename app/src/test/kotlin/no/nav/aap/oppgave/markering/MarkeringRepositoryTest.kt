@@ -50,14 +50,14 @@ class MarkeringRepositoryTest {
             val markeringRepository = MarkeringRepository(connection)
             // lagre spesialkompetansemarkering
             markeringRepository.lagreMarkeringHendelse(behandlingId, spesialkompetanseMarkering)
-            val hentetMarkering = markeringRepository.hentSisteAktiveMarkeringerForBehandling(behandlingId)
+            val hentetMarkering = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingId)
             assertThat(hentetMarkering).hasSize(1)
             assertThat(hentetMarkering.first().markeringType).isEqualTo(MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
             assertThat(hentetMarkering.first().begrunnelse).isEqualTo(spesialkompetanseMarkering.begrunnelse)
 
             // lagre hastemarkering
             markeringRepository.lagreMarkeringHendelse(behandlingId, hasterMarkering)
-            val markeringer = markeringRepository.hentSisteAktiveMarkeringerForBehandling(behandlingId)
+            val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingId)
             assertThat(markeringer).hasSize(2)
             assertThat(markeringer.map { it.markeringType }).containsExactlyInAnyOrder(
                 MarkeringForBehandling.KREVER_SPESIALKOMPETANSE,

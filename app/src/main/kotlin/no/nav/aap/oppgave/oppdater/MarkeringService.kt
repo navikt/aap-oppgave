@@ -2,7 +2,6 @@ package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.oppgave.markering.BehandlingMarkering
-import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
@@ -24,7 +23,7 @@ class MarkeringService(
     private val HASTEMARKERING_BEGRUNNELSE_SONING = "Ny soning, mulig stans"
     private val AVSLAG_11_5_BEGRUNNELSE = "Førstegangsbehandling er innstilt til avslag på § 11-5"
 
-    fun opprettMarkeringHendelseer(oppgaveOppdatering: OppgaveOppdatering): List<Endring> {
+    fun opprettMarkeringHendelser(oppgaveOppdatering: OppgaveOppdatering): List<Endring> {
         return listOf(
             oppdaterHastemarkeringForSoning(oppgaveOppdatering),
             oppdaterAvslagSykdomMarkering(oppgaveOppdatering)
@@ -108,7 +107,7 @@ class MarkeringService(
 
     private fun finnEksisterendeSoningHaster(referanse: UUID): Boolean =
         markeringRepository
-            .hentSisteAktiveMarkeringerForBehandling(referanse)
+            .hentGjeldendeMarkeringerForBehandling(referanse)
             .any {
                 it.begrunnelse == HASTEMARKERING_BEGRUNNELSE_SONING &&
                         it.opprettetAv == KELVIN &&
@@ -117,7 +116,7 @@ class MarkeringService(
 
     private fun finnEksisterendeAvslagSykdom(referanse: UUID): Boolean =
         markeringRepository
-            .hentSisteAktiveMarkeringerForBehandling(referanse)
+            .hentGjeldendeMarkeringerForBehandling(referanse)
             .any {
                 it.begrunnelse == AVSLAG_11_5_BEGRUNNELSE &&
                         it.opprettetAv == KELVIN &&

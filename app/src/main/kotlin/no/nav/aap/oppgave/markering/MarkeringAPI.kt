@@ -74,7 +74,7 @@ fun NormalOpenAPIRoute.markeringApi(
 
         val markeringer =
             dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentSisteAktiveMarkeringerForBehandling(request.referanse)
+                MarkeringRepository(connection).hentGjeldendeMarkeringerForBehandling(request.referanse)
             }
         respond(markeringer.tilDto())
     }

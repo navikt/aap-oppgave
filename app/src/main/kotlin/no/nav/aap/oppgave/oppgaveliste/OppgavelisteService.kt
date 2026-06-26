@@ -42,7 +42,7 @@ class OppgavelisteService(
         }
 
         return oppgaver.map { oppgave ->
-            val markeringer = markeringRepository.hentSisteAktiveMarkeringerForBehandling(oppgave.behandlingRef)
+            val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
             oppgave.leggPåMarkeringer(markeringer.tilDto())
         }
     }
@@ -50,7 +50,7 @@ class OppgavelisteService(
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null) {
-            val markeringer = markeringRepository.hentSisteAktiveMarkeringerForBehandling(behandlingReferanse.referanse)
+            val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
             return oppgave.leggPåMarkeringer(markeringer.tilDto())
         }
         return oppgave
@@ -119,7 +119,7 @@ class OppgavelisteService(
         val oppgaver =
             finnOppgaverDto.oppgaver.map { oppgave ->
                 val behandlingRef = oppgave.behandlingRef
-                val markeringer = markeringRepository.hentSisteAktiveMarkeringerForBehandling(behandlingRef)
+                val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
                 oppgave.leggPåMarkeringer(markeringer.tilDto())
             }
 
@@ -146,7 +146,7 @@ class OppgavelisteService(
             sortOrder = sortOrder
         ).map {
             it.leggPåMarkeringer(
-                markeringRepository.hentSisteAktiveMarkeringerForBehandling(requireNotNull(it.behandlingRef) {
+                markeringRepository.hentGjeldendeMarkeringerForBehandling(requireNotNull(it.behandlingRef) {
                     "Fant ikke behandlingsreferanse for oppgave med id ${it.id}"
                 }).tilDto()
             )
