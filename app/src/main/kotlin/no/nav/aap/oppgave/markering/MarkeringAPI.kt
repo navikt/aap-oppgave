@@ -69,8 +69,8 @@ fun NormalOpenAPIRoute.markeringApi(
         respond(markeringerOgHistorikk)
     }
 
-    route("/{referanse}/hent-siste-aktive-markeringer-for-behandling").get<BehandlingReferanse, List<MarkeringDto>> { request ->
-        prometheus.httpCallCounter("/hent-siste-aktive-markeringer-for-behandling").increment()
+    route("/{referanse}/hent-gjeldende-markeringer-for-behandling").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+        prometheus.httpCallCounter("/hent-gjeldende-markeringer-for-behandling").increment()
 
         val markeringer =
             dataSource.transaction { connection ->
