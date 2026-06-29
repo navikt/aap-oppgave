@@ -75,7 +75,7 @@ class OppdaterOppgaveService(
             else -> oppdaterOppgaver(oppgaveOppdatering, oppgaveMap)
         }
 
-        markeringService.oppdaterMarkeringer(oppgaveOppdatering).let { endringer ->
+        markeringService.opprettMarkeringHendelser(oppgaveOppdatering).let { endringer ->
             if (endringer.any { it.erEndret() }) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
         }
 

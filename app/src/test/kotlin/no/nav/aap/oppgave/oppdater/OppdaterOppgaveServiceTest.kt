@@ -45,6 +45,7 @@ import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.postmottak.kontrakt.journalpost.JournalpostId
@@ -1377,7 +1378,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(soningHendelse)
 
         val hasterMarkeringEtterSoning =
-            hentMarkeringerForBehandling(behandlingsref).single { it.markeringType == MarkeringForBehandling.HASTER }
+            hentGjeldendeMarkeringerForBehandling(behandlingsref).single { it.markeringType == MarkeringForBehandling.HASTER }
         assertThat(hasterMarkeringEtterSoning.begrunnelse).isEqualTo("Ny soning, mulig stans")
         assertThat(hasterMarkeringEtterSoning.opprettetAv).isEqualTo("Kelvin")
 
@@ -1395,8 +1396,11 @@ class OppdaterOppgaveServiceTest {
         }
         sendBehandlingFlytStoppetHendelse(utenSoning)
 
-        assertThat(
-            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
+        val gjeldendeMarkeringer = hentGjeldendeMarkeringerForBehandling(behandlingsref)
+        val harFjernetHastemarkering = gjeldendeMarkeringer.any {
+            it.markeringType == MarkeringForBehandling.HASTER && it.hendelseType == MarkeringHendelseType.FJERNET
+        }
+        assertThat(harFjernetHastemarkering).isTrue()
     }
 
     @Test
@@ -1416,7 +1420,7 @@ class OppdaterOppgaveServiceTest {
         }
         sendBehandlingFlytStoppetHendelse(hendelse)
         assertThat(
-            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
+            hentGjeldendeMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.HASTER }).isFalse()
     }
 
     @Test
@@ -1439,7 +1443,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(hendelseMedAvslag115)
 
         assertThat(
-            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
+            hentGjeldendeMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
         ).isTrue()
 
         // Send oppdatert hendelse uten AVSLAG_11_5-metadata — markeringen skal fjernes
@@ -1449,9 +1453,9 @@ class OppdaterOppgaveServiceTest {
         )
         sendBehandlingFlytStoppetHendelse(hendelseUtenAvslag115)
 
-        assertThat(
-            hentMarkeringerForBehandling(behandlingsref).any { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
-        ).isFalse()
+        val gjeldendeAvslag115 = hentGjeldendeMarkeringerForBehandling(behandlingsref)
+            .firstOrNull { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
+        assertThat(gjeldendeAvslag115?.hendelseType).isEqualTo(MarkeringHendelseType.FJERNET)
     }
 
     @Test
@@ -1632,9 +1636,9 @@ class OppdaterOppgaveServiceTest {
         }
     }
 
-    private fun hentMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<BehandlingMarkering> {
+    private fun hentGjeldendeMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<BehandlingMarkering> {
         return dataSource.transaction { connection ->
-            MarkeringRepository(connection).hentMarkeringerOgHistorikk(behandlingsref.referanse)
+            MarkeringRepository(connection).hentGjeldendeMarkeringerForBehandling(behandlingsref.referanse)
         }
     }
 

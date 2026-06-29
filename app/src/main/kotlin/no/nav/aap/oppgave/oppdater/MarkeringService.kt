@@ -12,6 +12,7 @@ import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -22,7 +23,7 @@ class MarkeringService(
     private val HASTEMARKERING_BEGRUNNELSE_SONING = "Ny soning, mulig stans"
     private val AVSLAG_11_5_BEGRUNNELSE = "Førstegangsbehandling er innstilt til avslag på § 11-5"
 
-    fun oppdaterMarkeringer(oppgaveOppdatering: OppgaveOppdatering): List<Endring> {
+    fun opprettMarkeringHendelser(oppgaveOppdatering: OppgaveOppdatering): List<Endring> {
         return listOf(
             oppdaterHastemarkeringForSoning(oppgaveOppdatering),
             oppdaterAvslagSykdomMarkering(oppgaveOppdatering)
@@ -37,25 +38,27 @@ class MarkeringService(
 
         return when {
             skalHaMarkering && !eksisterMarkering -> {
-                markeringRepository.oppdaterMarkering(
+                markeringRepository.lagreMarkeringHendelse(
                     referanse = referanse,
                     markering = BehandlingMarkering(
                         markeringType = MarkeringForBehandling.AVSLAG_11_5,
                         begrunnelse = AVSLAG_11_5_BEGRUNNELSE,
                         opprettetAv = KELVIN,
                         opprettetTidspunkt = LocalDateTime.now(),
+                        hendelseType = MarkeringHendelseType.OPPRETTET
                     )
                 )
                 Endring.OPPDATERT
             }
 
             !skalHaMarkering && eksisterMarkering -> {
-                markeringRepository.slettMarkering(
+                markeringRepository.lagreMarkeringHendelse(
                     referanse = referanse,
                     markering = BehandlingMarkering(
                         markeringType = MarkeringForBehandling.AVSLAG_11_5,
                         opprettetAv = KELVIN,
                         opprettetTidspunkt = LocalDateTime.now(),
+                        hendelseType = MarkeringHendelseType.FJERNET
                     )
                 )
                 Endring.SLETTET
@@ -72,25 +75,27 @@ class MarkeringService(
 
         return when {
             skalHaSoningHaster && !eksistererSoningHaster -> {
-                markeringRepository.oppdaterMarkering(
+                markeringRepository.lagreMarkeringHendelse(
                     referanse = referanse,
                     markering = BehandlingMarkering(
                         markeringType = MarkeringForBehandling.HASTER,
                         begrunnelse = HASTEMARKERING_BEGRUNNELSE_SONING,
                         opprettetAv = KELVIN,
                         opprettetTidspunkt = LocalDateTime.now(),
+                        hendelseType = MarkeringHendelseType.OPPRETTET
                     )
                 )
                 Endring.OPPDATERT
             }
 
             !skalHaSoningHaster && eksistererSoningHaster -> {
-                markeringRepository.slettMarkering(
+                markeringRepository.lagreMarkeringHendelse(
                     referanse = referanse,
                     markering = BehandlingMarkering(
                         markeringType = MarkeringForBehandling.HASTER,
                         opprettetAv = KELVIN,
                         opprettetTidspunkt = LocalDateTime.now(),
+                        hendelseType = MarkeringHendelseType.FJERNET
                     )
                 )
                 Endring.SLETTET
@@ -102,7 +107,7 @@ class MarkeringService(
 
     private fun finnEksisterendeSoningHaster(referanse: UUID): Boolean =
         markeringRepository
-            .hentMarkeringerOgHistorikk(referanse)
+            .hentGjeldendeMarkeringerForBehandling(referanse)
             .any {
                 it.begrunnelse == HASTEMARKERING_BEGRUNNELSE_SONING &&
                         it.opprettetAv == KELVIN &&
@@ -111,7 +116,7 @@ class MarkeringService(
 
     private fun finnEksisterendeAvslagSykdom(referanse: UUID): Boolean =
         markeringRepository
-            .hentMarkeringerOgHistorikk(referanse)
+            .hentGjeldendeMarkeringerForBehandling(referanse)
             .any {
                 it.begrunnelse == AVSLAG_11_5_BEGRUNNELSE &&
                         it.opprettetAv == KELVIN &&

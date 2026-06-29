@@ -13,15 +13,14 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.bruker
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
-import javax.sql.DataSource
-import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
-import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import java.time.LocalDateTime
+import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("markeringApi")
 
@@ -30,36 +29,7 @@ fun NormalOpenAPIRoute.markeringApi(
     prometheus: PrometheusMeterRegistry,
     ansattInfoGateway: AnsattInfoGateway,
 ) {
-    // Deprecated: /ny-hendelse skal ta over for denne
-    route("/{referanse}/ny-markering").post<BehandlingReferanse, BehandlingReferanse, OpprettMarkeringDto> { request, dto ->
-        dataSource.transaction { connection ->
-            MarkeringRepository(connection).oppdaterMarkering(
-                referanse = request.referanse,
-                BehandlingMarkering(
-                    markeringType = dto.markeringType,
-                    begrunnelse = dto.begrunnelse,
-                    opprettetAv = bruker().ident,
-                    opprettetAvNavn = ansattInfoGateway.hentAnsattNavnHvisFinnes(bruker().ident),
-                    opprettetTidspunkt = LocalDateTime.now(),
-                )
-            )
-            val oppgavePåBehandling =
-                OppgaveRepository(connection).hentOppgaver(request.referanse).first { it.status == Status.OPPRETTET }
-
-            if (oppgavePåBehandling.id != null) {
-                log.info("Sender oppdatering til statistikk pga. ny markering på behandling. OppgaveId: ${oppgavePåBehandling.id}, behandlingsreferanse: ${oppgavePåBehandling.behandlingRef}")
-                sendOppgaveStatusOppdatering(
-                    oppgaveId = oppgavePåBehandling.oppgaveId(),
-                    hendelseType = HendelseType.OPPDATERT,
-                    repository = FlytJobbRepository(connection),
-                )
-            }
-        }
-
-        respondWithStatus(HttpStatusCode.OK)
-    }
-
-    route("/{referanse}/ny-hendelse").post<BehandlingReferanse, BehandlingReferanse, OpprettMarkeringDto> { request, dto ->
+    route("/{referanse}/opprett-markering-hendelse").post<BehandlingReferanse, BehandlingReferanse, OpprettMarkeringDto> { request, dto ->
         dataSource.transaction { connection ->
             val oppgavePåBehandling =
                 OppgaveRepository(connection).hentOppgaver(request.referanse).firstOrNull { it.status == Status.OPPRETTET }
@@ -73,7 +43,7 @@ fun NormalOpenAPIRoute.markeringApi(
                 )
             }
 
-            MarkeringRepository(connection).lagreMarkeringNy(
+            MarkeringRepository(connection).lagreMarkeringHendelse(
                 referanse = request.referanse,
                 BehandlingMarkering(
                     markeringType = dto.markeringType,
@@ -89,64 +59,24 @@ fun NormalOpenAPIRoute.markeringApi(
         respondWithStatus(HttpStatusCode.OK)
     }
 
-    // Deprecated: /ny-hendelse skal ta over for denne
-    route("/{referanse}/hent-markeringer").get<BehandlingReferanse, List<MarkeringDto>> { request ->
-        prometheus.httpCallCounter("/hent-markeringer").increment()
-
-        val markeringer =
-            dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.referanse)
-            }
-        respond(markeringer.tilDto())
-    }
-
-    route("/{referanse}/hent-markeringer-og-historikk").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+    route("/{saksnummer}/hent-markeringer-og-historikk").get<SaksnummerPathParam, List<MarkeringOgHistorikk>> { request ->
         prometheus.httpCallCounter("/hent-markeringer-og-historikk").increment()
 
-        val markeringer =
+        val markeringerOgHistorikk =
             dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.referanse)
+                MarkeringRepository(connection).hentMarkeringerOgHistorikk(request.tilSaksnummer())
             }
-        respond(markeringer.tilDto())
+        respond(markeringerOgHistorikk)
     }
 
-    route("/{referanse}/hent-siste-aktive-hastemarkering").get<BehandlingReferanse, List<MarkeringDto>> { request ->
-        prometheus.httpCallCounter("/hent-siste-aktive-hastemarkering").increment()
+    route("/{referanse}/hent-gjeldende-markeringer-for-behandling").get<BehandlingReferanse, List<MarkeringDto>> { request ->
+        prometheus.httpCallCounter("/hent-gjeldende-markeringer-for-behandling").increment()
 
         val markeringer =
             dataSource.transaction { connection ->
-                MarkeringRepository(connection).hentSisteAktiveMarkering(request.referanse, MarkeringForBehandling.HASTER)
+                MarkeringRepository(connection).hentGjeldendeMarkeringerForBehandling(request.referanse)
             }
         respond(markeringer.tilDto())
-    }
-
-    // Deprecated: /ny-hendelse skal ta over for denne
-    route("/{referanse}/fjern-markering").post<BehandlingReferanse, BehandlingReferanse, MarkeringDto> { request, dto ->
-        prometheus.httpCallCounter("/fjern-markering").increment()
-        dataSource.transaction { connection ->
-            MarkeringRepository(connection).slettMarkering(
-                request.referanse,
-                BehandlingMarkering(
-                    markeringType = dto.markeringType,
-                    begrunnelse = dto.begrunnelse,
-                    opprettetAv = bruker().ident,
-                    opprettetTidspunkt = LocalDateTime.now(),
-                )
-            )
-
-            val oppgavePåBehandling =
-                OppgaveRepository(connection).hentOppgaver(request.referanse).first { it.status == Status.OPPRETTET }
-
-            if (oppgavePåBehandling.id != null) {
-                log.info("Sender oppdatering til statistikk pga. fjernet markering på behandling. OppgaveId: ${oppgavePåBehandling.id}, behandlingsreferanse: ${oppgavePåBehandling.behandlingRef}")
-                sendOppgaveStatusOppdatering(
-                    oppgaveId = oppgavePåBehandling.oppgaveId(),
-                    hendelseType = HendelseType.OPPDATERT,
-                    repository = FlytJobbRepository(connection),
-                )
-            }
-        }
-        respondWithStatus(HttpStatusCode.OK)
     }
 }
 
