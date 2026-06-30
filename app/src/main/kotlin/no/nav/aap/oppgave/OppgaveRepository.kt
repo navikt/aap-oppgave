@@ -803,7 +803,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         val enhetForrigeOppgave = enhetNrForrigeOppgave?.let { enhetNr ->
             EnhetDto(enhetNr = enhetNr, navn = enheterMedNavn[enhetNr] ?: enhetNr)
         }
-        return OppgaveDto(
+
+        val standardOppgaveDto = OppgaveDto(
             id = row.getLong("ID"),
             personIdent = row.getStringOrNull("PERSON_IDENT"),
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
@@ -855,6 +856,39 @@ class OppgaveRepository(private val connection: DBConnection) {
                     forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
                 )
             },
+        )
+
+        val behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
+        return when (behandlingstype) {
+            Behandlingstype.TILBAKEKREVING -> tilpassPåventDataForTilbakekreving(standardOppgaveDto, row)
+            else -> standardOppgaveDto
+        }
+
+    }
+
+    /* Oppgaver av typen tilbakekreving benytter samme påvent-status i oppgavelista som standard oppgaver
+       Men oppgaver fra tilbakeløsningen har andre triggere for endringer av påvent-tilstanden
+        - Kafka-topic behandling_endres fra tilbake-løsning kan komme inn med ny eller oppdatert oppgave som skal vises med status påvent hvis grunn/gjenopptas-dato ikke er null
+        - Utløpt påvent frist blir ikke varslet fra tilbake-løsninge, vi må selv sjekke ved henting av oppgaveliste om dagens dato har passert frist(gjenopptas) dato
+        - Oppheving av status påvent (påvent-status eller utløpt-status) skjer når tilbakeløsningen sender inn kafka behandling_endres uten grunn/gjenopptas-dato */
+    private fun tilpassPåventDataForTilbakekreving(
+        standardOppgaveDto: OppgaveDto,
+        row: Row
+    ): OppgaveDto {
+
+        val påVentTil = row.getLocalDateOrNull("PAA_VENT_TIL")
+        val utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST")
+        val erFristUtløpt = påVentTil != null && påVentTil <= LocalDate.now() && utløptVentefrist == null
+
+        return standardOppgaveDto.copy(
+            påVentTil = if (erFristUtløpt) null else påVentTil,
+            påVentÅrsak = if (erFristUtløpt) null else row.getStringOrNull("PAA_VENT_AARSAK"),
+            venteBegrunnelse = if (erFristUtløpt) null else row.getStringOrNull("VENTE_BEGRUNNELSE"),
+            forrigePåVentÅrsak = if (erFristUtløpt) row.getStringOrNull("PAA_VENT_AARSAK") else row.getStringOrNull("SISTE_PAA_VENT_AARSAK"),
+            forrigeVenteBegrunnelse = if (erFristUtløpt) row.getStringOrNull("VENTE_BEGRUNNELSE") else row.getStringOrNull(
+                "SISTE_VENTE_BEGRUNNELSE"
+            ),
+            utløptVentefrist = utløptVentefrist ?: if (erFristUtløpt) påVentTil else null
         )
     }
 
