@@ -455,7 +455,8 @@ class OppgaveRepository(private val connection: DBConnection) {
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
         val orderBy = if (hastemarkeringerFørst) {
-            "ORDER BY CASE WHEN EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref) THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
+            "ORDER BY CASE WHEN EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref " +
+                    "AND m.markering_type='${MarkeringForBehandling.HASTER}') THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
         } else {
             "ORDER BY $sortering $sorteringsRekkefølge"
         }
