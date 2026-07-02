@@ -1056,9 +1056,11 @@ class OppgaveRepositoryTest {
         val hasteBehandlingref1 = UUID.randomUUID()
         val hasteBehandlingref2 = UUID.randomUUID()
         val hasteBehandlingref3 = UUID.randomUUID()
+        val avslag11_5Behandlingref = UUID.randomUUID()
         markerHasteOppgave(hasteBehandlingref1)
         markerHasteOppgave(hasteBehandlingref2)
         markerHasteOppgave(hasteBehandlingref3)
+        markerOppgave(avslag11_5Behandlingref, MarkeringForBehandling.AVSLAG_11_5)
         val hasteOppgave1 = opprettOppgave(
             behandlingRef = hasteBehandlingref1,
             enhet = ENHET_NAV_ENEBAKK,
@@ -1076,6 +1078,13 @@ class OppgaveRepositoryTest {
         )
         val vanligOppgave1 =
             opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = LocalDateTime.now().minusDays(10))
+        
+        val avslag115oppgave = opprettOppgave(
+            behandlingRef = avslag11_5Behandlingref,
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.now()
+        )
+        
         val vanligOppgave2 =
             opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = LocalDateTime.now().plusDays(10))
         val vanligOppgave3 = opprettOppgave(enhet = ENHET_NAV_ENEBAKK)
@@ -1093,7 +1102,7 @@ class OppgaveRepositoryTest {
         assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.oppgaver).hasSize(2)
         assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.oppgaver[0].id).isEqualTo(hasteOppgave3.id)
         assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.oppgaver[1].id).isEqualTo(hasteOppgave2.id)
-        assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.antallGjenstaaende).isEqualTo(4)
+        assertThat(søkMedPaging2PåBehandlingOpprettetNyesteFørst.antallGjenstaaende).isEqualTo(5)
 
         val søkMedPaging5PåBehandlingOpprettetNyesteFørst =
             finnLedigeOppgaver(
@@ -1106,7 +1115,7 @@ class OppgaveRepositoryTest {
         // forventer de tre hastemarkeringene øverst, så den nyeste av de vanlige oppgavene
         assertThat(søkMedPaging5PåBehandlingOpprettetNyesteFørst.oppgaver[0].id).isEqualTo(hasteOppgave3.id)
         assertThat(søkMedPaging5PåBehandlingOpprettetNyesteFørst.oppgaver[3].id).isEqualTo(vanligOppgave2.id)
-        assertThat(søkMedPaging5PåBehandlingOpprettetNyesteFørst.antallGjenstaaende).isEqualTo(1)
+        assertThat(søkMedPaging5PåBehandlingOpprettetNyesteFørst.antallGjenstaaende).isEqualTo(2)
 
         val søkMedPaging10PåBehandlingOpprettetEldsteFørst =
             finnLedigeOppgaver(
