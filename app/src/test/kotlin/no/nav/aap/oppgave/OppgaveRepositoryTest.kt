@@ -1132,28 +1132,28 @@ class OppgaveRepositoryTest {
     @Test
     fun `Skal filtrere oppgaver basert på én markeringstype`() {
         val hasteRef = UUID.randomUUID()
-        val spesialRef = UUID.randomUUID()
+        val avslag115Ref = UUID.randomUUID()
         val ingenMarkeringRef = UUID.randomUUID()
 
         val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
-        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        val avslagOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = avslag115Ref)
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
 
         markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
-        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+        markerOppgave(avslag115Ref, MarkeringForBehandling.AVSLAG_11_5)
 
         val hasterResultat = finnAlleOppgaver(
             TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK), inkluderteMarkeringer = setOf(MarkeringForBehandling.HASTER))
         )
         assertThat(hasterResultat.oppgaver.map { it.id }).containsExactly(hasteOppgave.id)
 
-        val spesialResultat = finnAlleOppgaver(
+        val avslagResultat = finnAlleOppgaver(
             TransientFilterDto(
                 enheter = setOf(ENHET_NAV_ENEBAKK),
-                inkluderteMarkeringer = setOf(MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+                inkluderteMarkeringer = setOf(MarkeringForBehandling.AVSLAG_11_5)
             )
         )
-        assertThat(spesialResultat.oppgaver.map { it.id }).containsExactly(spesialOppgave.id)
+        assertThat(avslagResultat.oppgaver.map { it.id }).containsExactly(avslagOppgave.id)
     }
 
     @Test
@@ -1163,21 +1163,21 @@ class OppgaveRepositoryTest {
         val ingenMarkeringRef = UUID.randomUUID()
 
         val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
-        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        val avslag115Oppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
 
         markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
-        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+        markerOppgave(spesialRef, MarkeringForBehandling.AVSLAG_11_5)
 
         val resultat = finnAlleOppgaver(
             TransientFilterDto(
                 enheter = setOf(ENHET_NAV_ENEBAKK),
-                inkluderteMarkeringer = setOf(MarkeringForBehandling.HASTER, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+                inkluderteMarkeringer = setOf(MarkeringForBehandling.HASTER, MarkeringForBehandling.AVSLAG_11_5)
             )
         )
 
         assertThat(resultat.oppgaver).hasSize(2)
-        assertThat(resultat.oppgaver.map { it.id }).containsExactlyInAnyOrder(hasteOppgave.id, spesialOppgave.id)
+        assertThat(resultat.oppgaver.map { it.id }).containsExactlyInAnyOrder(hasteOppgave.id, avslag115Oppgave.id)
     }
 
     @Test
@@ -1201,16 +1201,16 @@ class OppgaveRepositoryTest {
     @Test
     fun `Skal ekskludere oppgaver med gitt markeringstype fra filter`() {
         val hasteRef = UUID.randomUUID()
-        val spesialRef = UUID.randomUUID()
+        val avslag115Ref = UUID.randomUUID()
         val ingenMarkeringRef = UUID.randomUUID()
 
-        val spesialOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = spesialRef)
+        val avslag115Oppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = avslag115Ref)
         val umarkertOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
 
         markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
-        markerOppgave(spesialRef, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+        markerOppgave(avslag115Ref, MarkeringForBehandling.AVSLAG_11_5)
 
-        // Ekskluder HASTER — skal returnere spesial og umarkert, men ikke haste
+        // Ekskluder HASTER — skal returnere avslag115 og umarkert, men ikke haste
         val utenHaste = finnAlleOppgaver(
             TransientFilterDto(
                 enheter = setOf(ENHET_NAV_ENEBAKK),
@@ -1218,13 +1218,13 @@ class OppgaveRepositoryTest {
             )
         )
         assertThat(utenHaste.oppgaver).hasSize(2)
-        assertThat(utenHaste.oppgaver.map { it.id }).containsExactlyInAnyOrder(spesialOppgave.id, umarkertOppgave.id)
+        assertThat(utenHaste.oppgaver.map { it.id }).containsExactlyInAnyOrder(avslag115Oppgave.id, umarkertOppgave.id)
 
         // Ekskluder begge — skal kun returnere umarkert
         val utenBegge = finnAlleOppgaver(
             TransientFilterDto(
                 enheter = setOf(ENHET_NAV_ENEBAKK),
-                ekskluderteMarkeringer = setOf(MarkeringForBehandling.HASTER, MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+                ekskluderteMarkeringer = setOf(MarkeringForBehandling.HASTER, MarkeringForBehandling.AVSLAG_11_5)
             )
         )
         assertThat(utenBegge.oppgaver).hasSize(1)
