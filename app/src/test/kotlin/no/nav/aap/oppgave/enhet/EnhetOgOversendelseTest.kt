@@ -14,7 +14,7 @@ class EnhetOgOversendelseTest {
 
     @Test
     fun `hvis ingen oppgaver returneres null`() {
-        val res = enhetOgOversendelse(listOf())
+        val res = enhetOgOversendelse(listOf(), emptyList())
 
         assertThat(res).isNull()
     }
@@ -26,7 +26,8 @@ class EnhetOgOversendelseTest {
                 listOf(
                     oppgave().copy(status = Status.AVSLUTTET),
                     oppgave().copy(påVentÅrsak = "FORDI_BARE").åpen()
-                )
+                ),
+                emptyList()
             )
 
         assertThat(res?.venteÅrsak).isEqualTo("FORDI_BARE")
@@ -44,7 +45,7 @@ class EnhetOgOversendelseTest {
                 oppgave(Definisjon.SAMORDNING_ARBEIDSGIVER, "4491").åpen(),
             )
 
-        val res = enhetOgOversendelse(oppgaver)!!
+        val res = enhetOgOversendelse(oppgaver, emptyList())!!
 
         assertThat(res.oversendtDato).isEqualTo(LocalDate.of(2022, 1, 1).plusDays(4))
     }
@@ -61,7 +62,7 @@ class EnhetOgOversendelseTest {
                 oppgave(Definisjon.FATTE_VEDTAK, "4491").åpen(),
             )
 
-        val res = enhetOgOversendelse(oppgaver)!!
+        val res = enhetOgOversendelse(oppgaver, emptyList())!!
 
         assertThat(res.oversendtDato).isEqualTo(LocalDate.of(2022, 1, 1).plusDays(4))
     }

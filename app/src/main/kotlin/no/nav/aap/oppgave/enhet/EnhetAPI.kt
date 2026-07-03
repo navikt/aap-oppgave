@@ -18,13 +18,13 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
 import no.nav.aap.oppgave.klienter.norg.NorgGateway
+import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.tilgang.AuthorizationMachineToMachineConfig
 import no.nav.aap.tilgang.Rolle
 import no.nav.aap.tilgang.authorizedPost
@@ -72,7 +72,12 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
             val oppgaver = OppgaveRepository(connection)
                 .hentOppgaverForIdent(request.ident)
 
-            enhetOgOversendelse(oppgaver)
+            val markeringRepository = MarkeringRepository(connection)
+            val hasteBehandlinger = oppgaver
+                .map { it.behandlingRef }
+                .filter { markeringRepository.hentGjeldendeMarkeringerForBehandling(it).isNotEmpty() }
+
+            enhetOgOversendelse(oppgaver, hasteBehandlinger)
         }
 
         respond(EnhetOgOversendelse(respons))
@@ -93,7 +98,7 @@ private fun førsteISisteSammenhengendeBlokk(
         .lastOrNull() ?: kandidater.first()
 }
 
-internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>): NåværendeEnhet? {
+internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>, hasteBehandlinger: List<UUID>): NåværendeEnhet? {
     val log = LoggerFactory.getLogger("enhet-status")
 
     val alleOppgaver = alleOppgaver
@@ -111,7 +116,7 @@ internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>): NåværendeEnh
         { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
 
     val erHastesak =
-        { oppgave: OppgaveDto -> oppgave.markeringer.any { it.markeringType == MarkeringForBehandling.HASTER } }
+        { oppgave: OppgaveDto -> oppgave.behandlingRef in hasteBehandlinger }
 
     val erKvalitetssikring: (oppgave: OppgaveDto) -> Boolean =
         { oppgave -> oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name }
