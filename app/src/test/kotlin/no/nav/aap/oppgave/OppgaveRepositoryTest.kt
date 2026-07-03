@@ -1136,7 +1136,7 @@ class OppgaveRepositoryTest {
         val ingenMarkeringRef = UUID.randomUUID()
 
         val hasteOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = hasteRef)
-        val avslagOppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = avslag115Ref)
+        val avslag115Oppgave = opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = avslag115Ref)
         opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingRef = ingenMarkeringRef)
 
         markerOppgave(hasteRef, MarkeringForBehandling.HASTER)
@@ -1153,7 +1153,7 @@ class OppgaveRepositoryTest {
                 inkluderteMarkeringer = setOf(MarkeringForBehandling.AVSLAG_11_5)
             )
         )
-        assertThat(avslagResultat.oppgaver.map { it.id }).containsExactly(avslagOppgave.id)
+        assertThat(avslagResultat.oppgaver.map { it.id }).containsExactly(avslag115Oppgave.id)
     }
 
     @Test

@@ -48,7 +48,7 @@ class MarkeringRepositoryTest {
 
         dataSource.transaction { connection ->
             val markeringRepository = MarkeringRepository(connection)
-            // lagre avslag_11-5-makering
+            // lagre avslag_11-5-markering
             markeringRepository.lagreMarkeringHendelse(behandlingId, avslag115Markering)
             val hentetMarkering = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingId)
             assertThat(hentetMarkering).hasSize(1)
