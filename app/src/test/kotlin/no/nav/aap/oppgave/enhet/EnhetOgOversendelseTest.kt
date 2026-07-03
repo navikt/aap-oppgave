@@ -67,6 +67,24 @@ class EnhetOgOversendelseTest {
         assertThat(res.oversendtDato).isEqualTo(LocalDate.of(2022, 1, 1).plusDays(4))
     }
 
+    @Test
+    fun `skal bli markert som hastesak hvis behandlingen finnes i hastebehandlinger-listen`() {
+        val oppgaver = listOf(oppgave().åpen())
+
+        val res = enhetOgOversendelse(oppgaver, listOf(behandlingRef))!!
+
+        assertThat(res.markertSomHasteSak).isTrue()
+    }
+
+    @Test
+    fun `skal ikke bli markert som hastesak hvis behandlingen ikke finnes i hastebehandlinger-listen`() {
+        val oppgaver = listOf(oppgave().åpen())
+
+        val res = enhetOgOversendelse(oppgaver, listOf(UUID.randomUUID()))!!
+
+        assertThat(res.markertSomHasteSak).isFalse()
+    }
+
     private val behandlingRef = UUID.randomUUID()
 
     private val tid = generateSequence(LocalDateTime.of(2022, 1, 1, 12, 0)) { it.plusDays(1) }.iterator()
