@@ -57,6 +57,55 @@ class TilbakekrevingMappingTest {
         assertThat(oppdatering.venteInformasjon!!.årsakTilSattPåVent).isNull()
     }
 
+    @Test
+    fun `venteInformasjon er null for TIL_GODKJENNING selv om gjenopptas og venteGrunn er satt`() {
+        val hendelseTilGodkjenning = stubTilbakekrevingsHendelse().copy(
+            behandlingStatus = TilbakekrevingBehandlingsstatus.TIL_GODKJENNING,
+            gjenopptas = LocalDate.now().plusMonths(1),
+            venteGrunn = TilbakekrevingVenteGrunn.AVVENTER_BRUKERUTTALELSE,
+        )
+
+        val oppdatering = hendelseTilGodkjenning.tilOppgaveOppdatering()
+
+        assertThat(oppdatering.venteInformasjon).isNull()
+    }
+
+    @Test
+    fun `venteInformasjon er null for TIL_BESLUTTER selv om gjenopptas og venteGrunn er satt`() {
+        val hendelseTilBeslutter = stubTilbakekrevingsHendelse().copy(
+            behandlingStatus = TilbakekrevingBehandlingsstatus.TIL_BESLUTTER,
+            gjenopptas = LocalDate.now().plusMonths(1),
+            venteGrunn = TilbakekrevingVenteGrunn.AVVENTER_BRUKERUTTALELSE,
+        )
+
+        val oppdatering = hendelseTilBeslutter.tilOppgaveOppdatering()
+
+        assertThat(oppdatering.venteInformasjon).isNull()
+    }
+
+    @Test
+    fun `venteInformasjon populeres fortsatt for saksbehandler-steg når gjenopptas er satt`() {
+        val gjenopptas = LocalDate.now().plusMonths(1)
+        val statuserForSaksbehandlerSteg = listOf(
+            TilbakekrevingBehandlingsstatus.OPPRETTET,
+            TilbakekrevingBehandlingsstatus.TIL_FORHÅNDSVARSEL,
+            TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER,
+        )
+
+        statuserForSaksbehandlerSteg.forEach { status ->
+            val hendelse = stubTilbakekrevingsHendelse().copy(
+                behandlingStatus = status,
+                gjenopptas = gjenopptas,
+                venteGrunn = TilbakekrevingVenteGrunn.AVVENTER_BRUKERUTTALELSE,
+            )
+
+            val oppdatering = hendelse.tilOppgaveOppdatering()
+
+            assertThat(oppdatering.venteInformasjon).isNotNull()
+            assertThat(oppdatering.venteInformasjon!!.frist).isEqualTo(gjenopptas)
+        }
+    }
+
     private fun stubTilbakekrevingsHendelse() = TilbakekrevingsbehandlingOppdatertHendelse(
         personIdent = "12345678901",
         saksnummer = Saksnummer("SAK".plus(Random.nextLong())),

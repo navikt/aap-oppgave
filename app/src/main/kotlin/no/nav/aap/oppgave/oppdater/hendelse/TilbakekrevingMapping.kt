@@ -20,18 +20,36 @@ fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering(): OppgaveO
         vurderingsbehov = emptyList(),
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
-        venteInformasjon = this.gjenopptas?.let { frist ->
-            VenteInformasjon(
-                frist = frist,
-                årsakTilSattPåVent = this.venteGrunn?.name,
-                sattPåVentAv = TILBAKEKREVING,
-                begrunnelse = null,
-            )
-        },
+        venteInformasjon = if (this.behandlingStatus.erSaksbehandlerSteg()) {
+            this.gjenopptas?.let { frist ->
+                VenteInformasjon(
+                    frist = frist,
+                    årsakTilSattPåVent = this.venteGrunn?.name,
+                    sattPåVentAv = TILBAKEKREVING,
+                    begrunnelse = null,
+                )
+            }
+        } else null,
         totaltFeilutbetaltBeløp = this.totaltFeilutbetaltBeløp,
         tilbakekrevingsUrl = this.saksbehandlingURL
     )
 }
+
+/* Ventestatus fra tilbake-løsningen gjelder kun saksbehandler-steget. Påvent skal ikke
+ * henge igjen på en nyopprettet beslutter-oppgave når behandlingen sendes til godkjenning.
+ *
+ * Statusene som resulterer i avklaringsbehov SAKSBEHANDLE_TILBAKEKREVING, se tilAvklaringsBehov(). */
+fun TilbakekrevingBehandlingsstatus.erSaksbehandlerSteg(): Boolean =
+    when (this) {
+        TilbakekrevingBehandlingsstatus.OPPRETTET,
+        TilbakekrevingBehandlingsstatus.TIL_BEHANDLING,
+        TilbakekrevingBehandlingsstatus.TIL_FORHÅNDSVARSEL,
+        TilbakekrevingBehandlingsstatus.RETUR_FRA_BESLUTTER -> true
+
+        TilbakekrevingBehandlingsstatus.TIL_BESLUTTER,
+        TilbakekrevingBehandlingsstatus.TIL_GODKJENNING,
+        TilbakekrevingBehandlingsstatus.AVSLUTTET -> false
+    }
 
 fun TilbakekrevingBehandlingsstatus.tilAvklaringsBehov(): List<AvklaringsbehovHendelse> {
     return when (this) {
