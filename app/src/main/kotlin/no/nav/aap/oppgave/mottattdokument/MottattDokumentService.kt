@@ -5,21 +5,30 @@ import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.util.*
 
-private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
+private val log = LoggerFactory.getLogger(MottattDokumentService::class.java)
 
 class MottattDokumentService(
-    val mottattDokumentRepository: MottattDokumentRepository,
-    val oppgaveRepository: OppgaveRepository,
+    private val mottattDokumentRepository: MottattDokumentRepository,
+    private val oppgaveRepository: OppgaveRepository,
 ) {
     fun registrerDokumenterLest(behandlingRef: UUID, ident: String) {
+        registrerDokumenterLestPåBehandling(behandlingRef, ident)
+        registrerDokumenterLestPåOppgave(behandlingRef)
+    }
+
+    fun registrerDokumenterLestPåBehandling(behandlingRef: UUID, ident: String) {
         log.info("Registrerer dokumenter for $behandlingRef som lest")
         val ulesteDokumenter = mottattDokumentRepository.hentUlesteDokumenter(behandlingRef)
 
         if (ulesteDokumenter.isEmpty()) {
-            log.warn("Fant ingen dokumenter som ikke er registrert som lest for behanding $behandlingRef")
+            log.info("Fant ingen dokumenter som ikke er registrert som lest for behandling $behandlingRef")
             return
         }
+        mottattDokumentRepository.registrerDokumenterSomLest(behandlingRef, ident)
+        log.info("Registrerte ${ulesteDokumenter.size} dokument(er) av type ${ulesteDokumenter.joinToString(", ") { it.type }} som lest")
+    }
 
+    private fun registrerDokumenterLestPåOppgave(behandlingRef: UUID) {
         val oppgave = oppgaveRepository.hentOppgaver(behandlingRef).firstOrNull { it.status != Status.AVSLUTTET }
         require(oppgave != null) { "Fant ingen åpen oppgave for behandling $behandlingRef" }
 
@@ -27,8 +36,5 @@ class MottattDokumentService(
             oppgaveId = oppgave.oppgaveId(),
             harUlesteDokumenter = false
         )
-
-        mottattDokumentRepository.registrerDokumenterSomLest(behandlingRef, ident)
-        log.info("Registrerte ${ulesteDokumenter.size} dokument(er) av type ${ulesteDokumenter.joinToString(", ") { it.type }} som lest")
     }
 }

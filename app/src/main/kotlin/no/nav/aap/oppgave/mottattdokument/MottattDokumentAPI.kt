@@ -13,8 +13,7 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
 
-fun NormalOpenAPIRoute.mottattDokumentApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) =
-
+fun NormalOpenAPIRoute.mottattDokumentApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
     route("/mottatt-dokumenter-lest").post<Unit, Unit, DokumenterLestDto> { _, dto ->
         prometheus.httpCallCounter("/mottatt-dokumenter-lest").increment()
 
@@ -32,3 +31,21 @@ fun NormalOpenAPIRoute.mottattDokumentApi(dataSource: DataSource, prometheus: Pr
 
         respondWithStatus(HttpStatusCode.OK)
     }
+
+    route("/fjern-helseopplysning-ikon").post<Unit, Unit, DokumenterLestDto> { _, dto ->
+        prometheus.httpCallCounter("/fjern-helseopplysning-ikon").increment()
+
+        dataSource.transaction { connection ->
+            val mottattDokumentService = MottattDokumentService(
+                MottattDokumentRepository(connection),
+                OppgaveRepository(connection),
+            )
+
+            mottattDokumentService.registrerDokumenterLestPåBehandling(
+                behandlingRef = dto.behandlingRef,
+                ident = ident()
+            )
+        }
+        respondWithStatus(HttpStatusCode.OK)
+    }
+}
