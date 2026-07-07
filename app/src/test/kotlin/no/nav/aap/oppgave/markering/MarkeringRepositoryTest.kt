@@ -30,13 +30,6 @@ class MarkeringRepositoryTest {
     @Test
     fun `kan lagre og hente markeringer på behandling`() {
         val behandlingId = UUID.randomUUID()
-        val spesialkompetanseMarkering = BehandlingMarkering(
-            markeringType = MarkeringForBehandling.KREVER_SPESIALKOMPETANSE,
-            begrunnelse = "begrunnelseSpesialkompetanse",
-            opprettetAv = "saksbehandler",
-            opprettetTidspunkt = LocalDateTime.now(),
-            hendelseType = MarkeringHendelseType.OPPRETTET
-        )
 
         val hasterMarkering = BehandlingMarkering(
             markeringType = MarkeringForBehandling.HASTER,
@@ -46,25 +39,32 @@ class MarkeringRepositoryTest {
             hendelseType = MarkeringHendelseType.OPPRETTET
         )
 
+        val avslag115Markering = BehandlingMarkering(
+            markeringType = MarkeringForBehandling.AVSLAG_11_5,
+            begrunnelse = "begrunnelseAvslag115",
+            opprettetAv = "saksbehandler",
+            opprettetTidspunkt = LocalDateTime.now()
+        )
+
         dataSource.transaction { connection ->
             val markeringRepository = MarkeringRepository(connection)
-            // lagre spesialkompetansemarkering
-            markeringRepository.lagreMarkeringHendelse(behandlingId, spesialkompetanseMarkering)
+            // lagre avslag_11-5-markering
+            markeringRepository.lagreMarkeringHendelse(behandlingId, avslag115Markering)
             val hentetMarkering = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingId)
             assertThat(hentetMarkering).hasSize(1)
-            assertThat(hentetMarkering.first().markeringType).isEqualTo(MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
-            assertThat(hentetMarkering.first().begrunnelse).isEqualTo(spesialkompetanseMarkering.begrunnelse)
+            assertThat(hentetMarkering.first().markeringType).isEqualTo(MarkeringForBehandling.AVSLAG_11_5)
+            assertThat(hentetMarkering.first().begrunnelse).isEqualTo(avslag115Markering.begrunnelse)
 
             // lagre hastemarkering
             markeringRepository.lagreMarkeringHendelse(behandlingId, hasterMarkering)
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingId)
             assertThat(markeringer).hasSize(2)
             assertThat(markeringer.map { it.markeringType }).containsExactlyInAnyOrder(
-                MarkeringForBehandling.KREVER_SPESIALKOMPETANSE,
+                MarkeringForBehandling.AVSLAG_11_5,
                 MarkeringForBehandling.HASTER
             )
             assertThat(markeringer.map { it.begrunnelse }).containsExactlyInAnyOrder(
-                "begrunnelseSpesialkompetanse",
+                "begrunnelseAvslag115",
                 "begrunnelseHaster"
             )
         }
@@ -136,7 +136,7 @@ class MarkeringRepositoryTest {
             markeringRepository.lagreMarkeringHendelse(
                 behandlingRef2,
                 BehandlingMarkering(
-                    markeringType = MarkeringForBehandling.KREVER_SPESIALKOMPETANSE,
+                    markeringType = MarkeringForBehandling.AVSLAG_11_5,
                     begrunnelse = "trenger spesialist",
                     opprettetAv = "saksbehandler1",
                     opprettetTidspunkt = LocalDateTime.now().minusHours(1),
@@ -162,10 +162,10 @@ class MarkeringRepositoryTest {
                 MarkeringHendelseType.FJERNET,
             )
 
-            // Skal inneholde markering fra behandling 2 (KREVER_SPESIALKOMPETANSE)
+            // Skal inneholde markering fra behandling 2 (AVSLAG_11_5)
             val markeringerBehandling2 = resultat.filter { it.behandlingRef == behandlingRef2.toString() }
             assertThat(markeringerBehandling2).hasSize(1)
-            assertThat(markeringerBehandling2.first().markeringType).isEqualTo(MarkeringForBehandling.KREVER_SPESIALKOMPETANSE)
+            assertThat(markeringerBehandling2.first().markeringType).isEqualTo(MarkeringForBehandling.AVSLAG_11_5)
 
             // Verifiser at resultatet er sortert nyeste først
             val tidspunkter = resultat.map { it.opprettetTidspunkt }
