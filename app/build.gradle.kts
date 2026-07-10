@@ -10,6 +10,7 @@ application {
 }
 
 tasks.register<JavaExec>("genererOpenApiJson") {
+    description = "Generer openapi.json og lagre den."
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("no.nav.aap.oppgave.server.GenererOpenApiJsonKt")
 }
