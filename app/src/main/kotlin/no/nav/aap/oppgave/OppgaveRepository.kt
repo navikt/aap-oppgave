@@ -928,6 +928,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
     private fun behandlingHarAktivMarkeringClause(markeringTyperSql: String): String {
+        // nyeste markering-hendelse på behandling må ha hendelse-type lik null eller OPPRETTET
         return """
         EXISTS (
             SELECT 1 FROM (
@@ -937,7 +938,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                   AND markering_type IN $markeringTyperSql
                 ORDER BY markering_type, opprettet_tid DESC
             ) gjeldende
-            WHERE gjeldende.hendelse_type = 'OPPRETTET'
+            WHERE gjeldende.hendelse_type IS DISTINCT FROM 'FJERNET'
         )
     """.trimIndent()
     }
