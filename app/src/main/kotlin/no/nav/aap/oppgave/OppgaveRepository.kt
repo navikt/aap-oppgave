@@ -425,7 +425,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
 
         if (utvidetFilter.markertHaster == true) {
-            sb.append(" AND EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE = '${MarkeringForBehandling.HASTER}')")
+            sb.append(" AND ${behandlingHarAktivMarkeringClause("('${MarkeringForBehandling.HASTER}')")}")
         }
 
         return sb.toString()
@@ -455,8 +455,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         )
         val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
         val orderBy = if (hastemarkeringerFørst) {
-            "ORDER BY CASE WHEN EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref " +
-                    "AND m.markering_type='${MarkeringForBehandling.HASTER}') THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
+            "ORDER BY CASE WHEN ${behandlingHarAktivMarkeringClause("('${MarkeringForBehandling.HASTER}')")} THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
         } else {
             "ORDER BY $sortering $sorteringsRekkefølge"
         }
@@ -766,18 +765,14 @@ class OppgaveRepository(private val connection: DBConnection) {
         if (inkluderteMarkeringer.isNotEmpty()) {
             val stringListeAvMarkeringer =
                 inkluderteMarkeringer.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
-            sb.append(
-                "EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
-            )
+            sb.append("${behandlingHarAktivMarkeringClause(stringListeAvMarkeringer)} AND ")
         }
 
         // Markeringer - ekskluder
         if (ekskluderteMarkeringer.isNotEmpty()) {
             val stringListeAvMarkeringer =
                 ekskluderteMarkeringer.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'${it.name}'" }
-            sb.append(
-                "NOT EXISTS (SELECT 1 FROM MARKERING m WHERE m.behandling_ref = OPPGAVE.behandling_ref AND m.MARKERING_TYPE IN $stringListeAvMarkeringer) AND "
-            )
+            sb.append("NOT ${behandlingHarAktivMarkeringClause(stringListeAvMarkeringer)} AND ")
         }
 
         // Enheter
@@ -931,6 +926,23 @@ class OppgaveRepository(private val connection: DBConnection) {
             OppgaveSorteringRekkefølge.DESC -> Rekkefølge.desc
         }
     }
+
+    private fun behandlingHarAktivMarkeringClause(markeringTyperSql: String): String {
+        // nyeste markering-hendelse på behandling må ha hendelse-type lik null eller OPPRETTET
+        return """
+        EXISTS (
+            SELECT 1 FROM (
+                SELECT DISTINCT ON (markering_type) hendelse_type
+                FROM MARKERING
+                WHERE behandling_ref = OPPGAVE.behandling_ref
+                  AND markering_type IN $markeringTyperSql
+                ORDER BY markering_type, opprettet_tid DESC
+            ) gjeldende
+            WHERE gjeldende.hendelse_type IS DISTINCT FROM 'FJERNET'
+        )
+    """.trimIndent()
+    }
+
 
     private companion object {
         val alleOppgaveFelt = """
