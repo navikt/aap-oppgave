@@ -1130,6 +1130,43 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Når hastemarkering fjernes skal oppgave ikke ligge først etter sortering lenger`() {
+        val hasteBehandlingref1 = UUID.randomUUID()
+        markerHasteOppgave(hasteBehandlingref1)
+        val hasteOppgave = opprettOppgave(
+            behandlingRef = hasteBehandlingref1,
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.now().minusDays(10)
+        )
+
+        val vanligOppgave =
+            opprettOppgave(enhet = ENHET_NAV_ENEBAKK, behandlingOpprettet = LocalDateTime.now().minusDays(4))
+
+        val søkPåBehandlingOpprettetNyesteFørst =
+            finnLedigeOppgaver(
+                TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+                sortBy = OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+                rekkefølge = OppgaveSorteringRekkefølge.DESC
+            )
+
+        assertThat(søkPåBehandlingOpprettetNyesteFørst.oppgaver.first().oppgaveId()).isEqualTo(hasteOppgave)
+        assertThat(søkPåBehandlingOpprettetNyesteFørst.oppgaver.last().oppgaveId()).isEqualTo(vanligOppgave)
+
+        // fjerner hastemarkering
+        fjernHastemarkering(hasteBehandlingref1)
+
+        val søkPåBehandlingOpprettetNyesteFørst2 =
+            finnLedigeOppgaver(
+                TransientFilterDto(enheter = setOf(ENHET_NAV_ENEBAKK)),
+                sortBy = OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+                rekkefølge = OppgaveSorteringRekkefølge.DESC
+            )
+
+        assertThat(søkPåBehandlingOpprettetNyesteFørst2.oppgaver.first().oppgaveId()).isEqualTo(vanligOppgave)
+        assertThat(søkPåBehandlingOpprettetNyesteFørst2.oppgaver.last().oppgaveId()).isEqualTo(hasteOppgave)
+    }
+
+    @Test
     fun `Skal filtrere oppgaver basert på én markeringstype`() {
         val hasteRef = UUID.randomUUID()
         val avslag115Ref = UUID.randomUUID()
@@ -1346,6 +1383,16 @@ class OppgaveRepositoryTest {
             markeringRepository.lagreMarkeringHendelse(
                 hasterBehandlingsref,
                 BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", opprettetAv = "me", opprettetTidspunkt = LocalDateTime.now(), hendelseType = MarkeringHendelseType.OPPRETTET)
+            )
+        }
+    }
+
+    private fun fjernHastemarkering(hasterBehandlingsref: UUID) {
+        dataSource.transaction { connection ->
+            val markeringRepository = MarkeringRepository(connection)
+            markeringRepository.lagreMarkeringHendelse(
+                hasterBehandlingsref,
+                BehandlingMarkering(MarkeringForBehandling.HASTER, "haster", opprettetAv = "me", opprettetTidspunkt = LocalDateTime.now(), hendelseType = MarkeringHendelseType.FJERNET)
             )
         }
     }
