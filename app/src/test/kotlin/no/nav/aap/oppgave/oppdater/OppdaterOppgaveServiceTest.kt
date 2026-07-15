@@ -20,7 +20,7 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturStatus
@@ -266,7 +266,7 @@ class OppdaterOppgaveServiceTest {
 
         val oppgaver = hentOppgaverForBehandling(behandlingsref)
         assertThat(oppgaver).hasSize(1).first()
-            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+            .extracting(Oppgave::påVentÅrsak, Oppgave::påVentTil)
             .containsExactly(
                 no.nav.aap.postmottak.kontrakt.hendelse.ÅrsakTilSettPåVent.VENTER_PÅ_OPPLYSNINGER.toString(),
                 venteFrist
@@ -291,7 +291,7 @@ class OppdaterOppgaveServiceTest {
         sendDokumentFlytStoppetHendelse(hendelse3)
         val oppgaver2 = hentOppgaverForBehandling(behandlingsref)
 
-        assertThat(oppgaver2).hasSize(1).first().extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+        assertThat(oppgaver2).hasSize(1).first().extracting(Oppgave::påVentÅrsak, Oppgave::påVentTil)
             .containsExactly(null, null)
     }
 
@@ -397,7 +397,7 @@ class OppdaterOppgaveServiceTest {
 
         val oppgaver = hentOppgaverForBehandling(behandlingsref)
 
-        assertThat(oppgaver).hasSize(1).first().extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+        assertThat(oppgaver).hasSize(1).first().extracting(Oppgave::påVentÅrsak, Oppgave::påVentTil)
             .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_UTENLANDSK_VIDEREFORING_AVKLARING.toString(), venteFrist)
 
         // Ventebehovet avsluttes
@@ -420,7 +420,7 @@ class OppdaterOppgaveServiceTest {
 
         val oppgaver2 = hentOppgaverForBehandling(behandlingsref)
 
-        assertThat(oppgaver2).hasSize(1).first().extracting(OppgaveDto::påVentÅrsak, OppgaveDto::påVentTil)
+        assertThat(oppgaver2).hasSize(1).first().extracting(Oppgave::påVentÅrsak, Oppgave::påVentTil)
             .containsExactly(null, null)
     }
 
@@ -622,7 +622,7 @@ class OppdaterOppgaveServiceTest {
 
     private fun hentOppgaverForBehandling(
         behandlingsref: BehandlingReferanse
-    ): List<OppgaveDto> = dataSource.transaction { connection ->
+    ): List<Oppgave> = dataSource.transaction { connection ->
         OppgaveRepository(connection).hentOppgaver(
             referanse = behandlingsref.referanse,
         )
@@ -1609,7 +1609,7 @@ class OppdaterOppgaveServiceTest {
         veilederSykdom: String? = null,
         utløptVentefrist: LocalDate? = null
     ): Triple<OppgaveId, Saksnummer, BehandlingReferanse> {
-        val oppgaveDto = OppgaveDto(
+        val oppgave = Oppgave(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
             enhet = enhet,
@@ -1625,12 +1625,12 @@ class OppdaterOppgaveServiceTest {
             utløptVentefrist = utløptVentefrist
         )
         val oppgaveId = dataSource.transaction { connection ->
-            OppgaveRepository(connection).opprettOppgave(oppgaveDto)
+            OppgaveRepository(connection).opprettOppgave(oppgave)
         }
         return Triple(oppgaveId, Saksnummer(saksnummer), BehandlingReferanse(behandlingRef))
     }
 
-    private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
+    private fun hentOppgave(oppgaveId: OppgaveId): Oppgave {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentOppgave(oppgaveId.id)
         }

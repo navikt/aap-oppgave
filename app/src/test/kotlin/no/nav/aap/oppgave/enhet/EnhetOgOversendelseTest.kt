@@ -1,7 +1,7 @@
 package no.nav.aap.oppgave.enhet
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
@@ -89,7 +89,7 @@ class EnhetOgOversendelseTest {
 
     private val tid = generateSequence(LocalDateTime.of(2022, 1, 1, 12, 0)) { it.plusDays(1) }.iterator()
 
-    fun oppgave(avklaringsbehov: Definisjon = Definisjon.AVKLAR_SYKDOM, enhet: String = "1234") = OppgaveDto(
+    fun oppgave(avklaringsbehov: Definisjon = Definisjon.AVKLAR_SYKDOM, enhet: String = "1234") = Oppgave(
         enhet = enhet,
         saksnummer = "SAK",
         behandlingRef = behandlingRef,
@@ -107,6 +107,6 @@ class EnhetOgOversendelseTest {
         behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING
     )
 
-    private fun OppgaveDto.åpen() = this.copy(status = Status.OPPRETTET)
+    private fun Oppgave.åpen() = this.copy(status = Status.OPPRETTET)
 
 }

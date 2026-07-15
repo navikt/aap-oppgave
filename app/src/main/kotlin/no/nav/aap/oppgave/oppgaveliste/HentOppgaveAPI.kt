@@ -8,10 +8,10 @@ import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import javax.sql.DataSource
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SøkDto
@@ -25,6 +25,7 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.plukk.TilgangService
 import no.nav.aap.tilgang.Operasjon
 import org.slf4j.LoggerFactory
+import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("hentOppgaveApi")
 
@@ -48,7 +49,7 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
     }
 
     if (oppgave != null) {
-        respond(oppgave.hentPersonNavn())
+        respond(oppgave.hentPersonNavn().tilOppgaveDto())
     } else {
         respondWithStatus(HttpStatusCode.NoContent)
     }
@@ -92,7 +93,7 @@ fun NormalOpenAPIRoute.søkApi(
 
         respond(
             SøkResponse(
-                oppgaver = oppgaver.hentPersonNavn(),
+                oppgaver = oppgaver.hentPersonNavn().map { it.tilOppgaveDto() },
                 harTilgang = harTilgang,
                 harAdressebeskyttelse = harAdressebeskyttelse,
             )
@@ -100,14 +101,14 @@ fun NormalOpenAPIRoute.søkApi(
     }
 }
 
-private fun harAdressebeskyttelse(oppgave: OppgaveDto): Boolean =
+private fun harAdressebeskyttelse(oppgave: Oppgave): Boolean =
     oppgave.enhet == Enhet.NAV_VIKAFOSSEN.kode ||
             erEgenAnsattEnhet(oppgave) ||
             oppgave.harFortroligAdresse == true
 
-private fun OppgaveDto.hentPersonNavn() = listOf(this).hentPersonNavn().first()
+private fun Oppgave.hentPersonNavn() = listOf(this).hentPersonNavn().first()
 
-private fun erEgenAnsattEnhet(oppgave: OppgaveDto): Boolean {
+private fun erEgenAnsattEnhet(oppgave: Oppgave): Boolean {
     // alle kontorer som slutter på 83 er egen ansatt-kontor, unntatt Nav Værnes
     return oppgave.enhet.endsWith("83") && oppgave.enhet != Enhet.NAV_VÆRNES.kode
 }

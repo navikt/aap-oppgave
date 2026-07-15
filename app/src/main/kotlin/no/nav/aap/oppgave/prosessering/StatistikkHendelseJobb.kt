@@ -6,7 +6,7 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.motor.Jobb
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.motor.JobbUtfører
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.markering.BehandlingMarkering
@@ -33,7 +33,7 @@ class StatistikkHendelseJobb(
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,
-                    oppgaveTilStatistikkDto = fraOppgaveDto(oppgaveDto, markeringer),
+                    oppgaveTilStatistikkDto = fraOppgave(oppgaveDto, markeringer),
                     sendtTidspunkt = LocalDateTime.now()
                 )
             )
@@ -59,24 +59,24 @@ class StatistikkHendelseJobb(
     }
 }
 
-private fun fraOppgaveDto(oppgaveDto: OppgaveDto, markeringer: List<BehandlingMarkering>): OppgaveTilStatistikkDto {
+private fun fraOppgave(oppgave: Oppgave, markeringer: List<BehandlingMarkering>): OppgaveTilStatistikkDto {
     return OppgaveTilStatistikkDto(
-        id = oppgaveDto.id,
-        personIdent = oppgaveDto.personIdent,
-        saksnummer = oppgaveDto.saksnummer,
-        behandlingRef = oppgaveDto.behandlingRef,
-        journalpostId = oppgaveDto.journalpostId,
-        enhet = oppgaveDto.enhetForKø,
-        avklaringsbehovKode = oppgaveDto.avklaringsbehovKode,
-        status = oppgaveDto.status,
-        behandlingstype = oppgaveDto.behandlingstype,
-        reservertAv = oppgaveDto.reservertAv,
-        reservertTidspunkt = oppgaveDto.reservertTidspunkt,
-        opprettetAv = oppgaveDto.opprettetAv,
-        opprettetTidspunkt = oppgaveDto.opprettetTidspunkt,
-        endretAv = oppgaveDto.endretAv,
-        endretTidspunkt = oppgaveDto.endretTidspunkt,
-        versjon = oppgaveDto.versjon,
+        id = oppgave.id,
+        personIdent = oppgave.personIdent,
+        saksnummer = oppgave.saksnummer,
+        behandlingRef = oppgave.behandlingRef,
+        journalpostId = oppgave.journalpostId,
+        enhet = oppgave.enhetForKø,
+        avklaringsbehovKode = oppgave.avklaringsbehovKode,
+        status = oppgave.status,
+        behandlingstype = oppgave.behandlingstype,
+        reservertAv = oppgave.reservertAv,
+        reservertTidspunkt = oppgave.reservertTidspunkt,
+        opprettetAv = oppgave.opprettetAv,
+        opprettetTidspunkt = oppgave.opprettetTidspunkt,
+        endretAv = oppgave.endretAv,
+        endretTidspunkt = oppgave.endretTidspunkt,
+        versjon = oppgave.versjon,
         harHasteMarkering = markeringer.any { it.markeringType === MarkeringForBehandling.HASTER },
         harAvslagSykdomMarkering = markeringer.any { it.markeringType === MarkeringForBehandling.AVSLAG_11_5 }
     )

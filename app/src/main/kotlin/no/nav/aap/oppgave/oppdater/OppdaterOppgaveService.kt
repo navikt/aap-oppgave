@@ -9,10 +9,10 @@ import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.ReturInformasjon
+import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
@@ -85,7 +85,7 @@ class OppdaterOppgaveService(
 
     private fun oppdaterOppgaver(
         oppgaveOppdatering: OppgaveOppdatering,
-        oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
+        oppgaveMap: Map<AvklaringsbehovKode, Oppgave>,
     ) {
         // avklaringsbehov kommer inn i riktig rekkefølge fra behandlingsflyt. Velger det første åpne
         val åpentAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.firstOrNull { it.status in ÅPNE_STATUSER }
@@ -108,7 +108,7 @@ class OppdaterOppgaveService(
 
     private fun oppdaterEksistendeOppgave(
         oppgaveOppdatering: OppgaveOppdatering,
-        eksisterendeOppgave: OppgaveDto,
+        eksisterendeOppgave: Oppgave,
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
         // Send oppdatering til statistikk på slutten, så man ikke får 3 forskjellige oppdateringer
@@ -130,7 +130,7 @@ class OppdaterOppgaveService(
     private fun oppdaterOppgave(
         oppgaveOppdatering: OppgaveOppdatering,
         avklaringsbehov: AvklaringsbehovHendelse,
-        eksisterendeOppgave: OppgaveDto
+        eksisterendeOppgave: Oppgave
     ) {
         val personIdent = oppgaveOppdatering.personIdent
         val skalOverstyresTilLokalkontor = skalOverstyresTilLokalKontor(oppgaveOppdatering, avklaringsbehov)
@@ -251,7 +251,7 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun loggOppdatering(eksisterendeOppgave: OppgaveDto, årsakTilSattPåVent: String?) {
+    private fun loggOppdatering(eksisterendeOppgave: Oppgave, årsakTilSattPåVent: String?) {
         if (eksisterendeOppgave.erÅpen) {
             log.info("Oppdaterer eksisterende oppgave ${eksisterendeOppgave.oppgaveId()} på avklaringsbehov ${eksisterendeOppgave.avklaringsbehovKode}. Venteinformasjon: $årsakTilSattPåVent")
         } else {
@@ -262,13 +262,13 @@ class OppdaterOppgaveService(
     private fun utledReturInformasjon(
         avklaringsbehov: AvklaringsbehovHendelse,
         oppgaveOppdatering: OppgaveOppdatering
-    ): ReturInformasjon? {
+    ): ReturInfo? {
         return utledReturFraToTrinn(avklaringsbehov) ?: utledReturTilToTrinn(avklaringsbehov, oppgaveOppdatering)
     }
 
     private fun utledUtløptVentefrist(
         oppgaveOppdatering: OppgaveOppdatering,
-        eksisterendeOppgave: OppgaveDto,
+        eksisterendeOppgave: Oppgave,
     ): LocalDate? {
         return when {
             oppgaveTattAvVentAutomatiskIDenneOppdateringen(oppgaveOppdatering, eksisterendeOppgave) ->
@@ -285,7 +285,7 @@ class OppdaterOppgaveService(
 
     private fun oppgaveTattAvVentAutomatiskIDenneOppdateringen(
         oppgaveOppdatering: OppgaveOppdatering,
-        eksisterendeOppgave: OppgaveDto
+        eksisterendeOppgave: Oppgave
     ): Boolean {
         // Eksisterende oppgave er på vent, ventebehov med frist i dag er sist endret av Kelvin, og behandlingen er ikke lenger på vent
         return eksisterendeOppgave.påVentTil != null && oppgaveOppdatering.tattAvVentAutomatisk && oppgaveOppdatering.venteInformasjon?.frist == null
@@ -294,13 +294,13 @@ class OppdaterOppgaveService(
     private fun utledReturTilToTrinn(
         avklaringsbehov: AvklaringsbehovHendelse,
         oppgaveOppdatering: OppgaveOppdatering,
-    ): ReturInformasjon? {
+    ): ReturInfo? {
         // Setter ReturInformasjon når behandling sendes tilbake til totrinn
         return if (erReturTilToTrinn(avklaringsbehov)) {
             log.info("Totrinnsoppgave gjenåpnet, setter retur fra veileder/saksbehandler.")
             val forrigeAvklaringsbehovLøstAvVeileder =
                 oppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov()?.first?.kode in AVKLARINGSBEHOV_FOR_VEILEDER.map { it.kode }
-            ReturInformasjon(
+            ReturInfo(
                 status = if (forrigeAvklaringsbehovLøstAvVeileder) {
                     ReturStatus.RETUR_FRA_VEILEDER
                 } else {
@@ -320,7 +320,7 @@ class OppdaterOppgaveService(
     }
 
     private fun avsluttOppgaverSenereIFlyt(
-        oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
+        oppgaveMap: Map<AvklaringsbehovKode, Oppgave>,
         åpentAvklaringsbehov: AvklaringsbehovHendelse
     ) {
         val oppgaverSomMåAvsluttes =
@@ -330,7 +330,7 @@ class OppdaterOppgaveService(
 
     private fun opprettNyOppgaveForAvklaringsbehov(
         oppgaveOppdatering: OppgaveOppdatering,
-        oppgaveMap: Map<AvklaringsbehovKode, OppgaveDto>,
+        oppgaveMap: Map<AvklaringsbehovKode, Oppgave>,
         åpentAvklaringsbehov: AvklaringsbehovHendelse
     ) {
         if (oppgaveMap.isNotEmpty()) {
@@ -360,7 +360,7 @@ class OppdaterOppgaveService(
 
     private fun utledReservasjonEtterReturFraTotrinn(
         avklaringsbehov: AvklaringsbehovHendelse,
-        eksisterendeOppgave: OppgaveDto
+        eksisterendeOppgave: Oppgave
     ) {
         val sistEndretAv = avklaringsbehov.sistEndretAv(AvklaringsbehovStatus.AVSLUTTET)
         if (sistEndretAv != KELVIN) {
@@ -377,7 +377,7 @@ class OppdaterOppgaveService(
 
     private fun utledReservasjonForGjenåpnetOppgave(
         oppgaveOppdatering: OppgaveOppdatering,
-        eksisterendeOppgave: OppgaveDto,
+        eksisterendeOppgave: Oppgave,
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
         // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt
@@ -395,7 +395,7 @@ class OppdaterOppgaveService(
 
     }
 
-    private fun utledReturFraToTrinn(avklaringsbehov: AvklaringsbehovHendelse): ReturInformasjon? {
+    private fun utledReturFraToTrinn(avklaringsbehov: AvklaringsbehovHendelse): ReturInfo? {
         val status = when (avklaringsbehov.status) {
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER -> ReturStatus.RETUR_FRA_BESLUTTER
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER -> ReturStatus.RETUR_FRA_KVALITETSSIKRER
@@ -405,7 +405,7 @@ class OppdaterOppgaveService(
 
         val sisteEndring = avklaringsbehov.sisteEndring()
 
-        return ReturInformasjon(
+        return ReturInfo(
             status = status,
             årsaker = sisteEndring.årsakTilRetur.map { ÅrsakTilReturKode.valueOf(it.name) },
             begrunnelse = requireNotNull(sisteEndring.begrunnelse) { "Det skal alltid finnes begrunnelse for retur." },
@@ -514,7 +514,7 @@ class OppdaterOppgaveService(
         return oppgaverPåBruker.map { it.saksnummer }.firstOrNull()
     }
 
-    private fun avslutteOppgaver(oppgaver: List<OppgaveDto>) {
+    private fun avslutteOppgaver(oppgaver: List<Oppgave>) {
         oppgaver
             .filter { it.status != Status.AVSLUTTET }
             .forEach {
@@ -581,11 +581,11 @@ class OppdaterOppgaveService(
         harFortroligAdresse: Boolean,
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean,
-        returInformasjon: ReturInformasjon?,
+        returInformasjon: ReturInfo?,
         utløptVentefrist: LocalDate? = null,
         saksnummer: String? = null,
-    ): OppgaveDto {
-        return OppgaveDto(
+    ): Oppgave {
+        return Oppgave(
             personIdent = personIdent,
             saksnummer = saksnummer,
             behandlingRef = this.referanse,
@@ -609,7 +609,7 @@ class OppdaterOppgaveService(
             erSkjermet = erSkjermet,
             returStatus = returInformasjon?.status,
             returInformasjon = returInformasjon?.let {
-                ReturInformasjon(
+                ReturInfo(
                     status = it.status,
                     årsaker = it.årsaker,
                     begrunnelse = it.begrunnelse,
@@ -661,7 +661,7 @@ class OppdaterOppgaveService(
             .firstOrNull { it.status == Status.OPPRETTET }
         if (åpenOppgave?.id != null) {
             sendOppgaveStatusOppdatering(
-                oppgaveId = OppgaveId(åpenOppgave.id!!, åpenOppgave.versjon),
+                oppgaveId = OppgaveId(åpenOppgave.id, åpenOppgave.versjon),
                 hendelseType = HendelseType.OPPDATERT,
                 repository = flytJobbRepository
             )

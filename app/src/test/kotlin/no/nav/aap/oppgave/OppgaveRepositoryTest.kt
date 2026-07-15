@@ -624,13 +624,13 @@ class OppgaveRepositoryTest {
             enhet = ENHET_NAV_ENEBAKK,
             avklaringsbehovKode = AvklaringsbehovKode("5003"),
             påVentÅrsak = "VENTER_PÅ_SVAR_FRA_BRUKER",
-            returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", "")
+            returInformasjon = ReturInfo(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", "")
         )
         val hasterBehandlingsref = UUID.randomUUID()
         val hasteOppgave = opprettOppgave(
             enhet = ENHET_NAV_ENEBAKK,
             avklaringsbehovKode = AvklaringsbehovKode("5003"),
-            returInformasjon = ReturInformasjon(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", ""),
+            returInformasjon = ReturInfo(ReturStatus.RETUR_FRA_BESLUTTER, listOf(), "", ""),
             behandlingRef = hasterBehandlingsref
         )
         markerHasteOppgave(hasterBehandlingsref)
@@ -1286,7 +1286,7 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun mineOppgaver(ident: String): List<OppgaveDto> {
+    private fun mineOppgaver(ident: String): List<Oppgave> {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentMineOppgaver(ident)
         }
@@ -1371,7 +1371,7 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun finnOppgaverForSak(saksnummer: String): List<OppgaveDto> {
+    private fun finnOppgaverForSak(saksnummer: String): List<Oppgave> {
         return dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection).finnOppgaverGittSaksnummer(saksnummer)
         }
@@ -1406,7 +1406,7 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun settUtløptVentefrist(oppgave: OppgaveDto, utløptVentefrist: LocalDate?) {
+    private fun settUtløptVentefrist(oppgave: Oppgave, utløptVentefrist: LocalDate?) {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).oppdatereOppgave(
                 oppgaveId = oppgave.oppgaveId(),
@@ -1429,7 +1429,7 @@ class OppgaveRepositoryTest {
         }
     }
 
-    private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
+    private fun hentOppgave(oppgaveId: OppgaveId): Oppgave {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentOppgave(oppgaveId.id)
         }
@@ -1449,11 +1449,11 @@ class OppgaveRepositoryTest {
         påVentÅrsak: String? = null,
         venteBegrunnelse: String? = null,
         harUlesteDokumenter: Boolean = false,
-        returInformasjon: ReturInformasjon? = null,
+        returInformasjon: ReturInfo? = null,
         årsakTilOpprettelse: String? = "SØKNAD",
         behandlingOpprettet: LocalDateTime = LocalDateTime.now().minusDays(3)
     ): OppgaveId {
-        val oppgaveDto = OppgaveDto(
+        val oppgave = Oppgave(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
             enhet = enhet,
@@ -1474,7 +1474,7 @@ class OppgaveRepositoryTest {
             årsakTilOpprettelse = årsakTilOpprettelse
         )
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).opprettOppgave(oppgaveDto)
+            OppgaveRepository(connection).opprettOppgave(oppgave)
         }
     }
 }

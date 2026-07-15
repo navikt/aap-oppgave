@@ -3,10 +3,10 @@ package no.nav.aap.oppgave.tilbakekreving
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.ReturInformasjon
+import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
@@ -69,11 +69,11 @@ class TilbakekrevingRepositoryTest {
         påVentÅrsak: String? = null,
         venteBegrunnelse: String? = null,
         harUlesteDokumenter: Boolean = false,
-        returInformasjon: ReturInformasjon? = null,
+        returInformasjon: ReturInfo? = null,
         årsakTilOpprettelse: String? = "SØKNAD",
         behandlingOpprettet: LocalDateTime =LocalDateTime.now().minusDays(3)
     ): OppgaveId {
-        val oppgaveDto = OppgaveDto(
+        val oppgave = Oppgave(
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
             enhet = enhet,
@@ -94,7 +94,7 @@ class TilbakekrevingRepositoryTest {
             årsakTilOpprettelse = årsakTilOpprettelse
         )
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).opprettOppgave(oppgaveDto)
+            OppgaveRepository(connection).opprettOppgave(oppgave)
         }
     }
 

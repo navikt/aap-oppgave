@@ -27,7 +27,7 @@ class FeilVersjonException(
 
 class OppgaveRepository(private val connection: DBConnection) {
 
-    fun opprettOppgave(oppgaveDto: OppgaveDto): OppgaveId {
+    fun opprettOppgave(oppgave: Oppgave): OppgaveId {
         val query = """
             INSERT INTO OPPGAVE (
                 SAKSNUMMER,
@@ -65,40 +65,40 @@ class OppgaveRepository(private val connection: DBConnection) {
         """.trimIndent()
         val id = connection.executeReturnKey(query) {
             setParams {
-                setString(1, oppgaveDto.saksnummer)
-                setUUID(2, oppgaveDto.behandlingRef)
-                setLong(3, oppgaveDto.journalpostId)
-                setString(4, oppgaveDto.enhet)
-                setString(5, oppgaveDto.oppfølgingsenhet)
-                setLocalDateTime(6, oppgaveDto.behandlingOpprettet)
-                setString(7, oppgaveDto.avklaringsbehovKode)
-                setString(8, oppgaveDto.status.name)
-                setString(9, oppgaveDto.behandlingstype.name)
-                setLocalDate(10, oppgaveDto.påVentTil)
-                setString(11, oppgaveDto.påVentÅrsak)
-                setString(12, oppgaveDto.opprettetAv)
-                setLocalDateTime(13, oppgaveDto.opprettetTidspunkt)
-                setString(14, oppgaveDto.personIdent)
-                setString(15, oppgaveDto.veilederArbeid)
-                setString(16, oppgaveDto.veilederSykdom)
-                setArray(17, oppgaveDto.vurderingsbehov)
-                setString(18, oppgaveDto.venteBegrunnelse)
-                setString(19, oppgaveDto.påVentÅrsak)
-                setString(20, oppgaveDto.venteBegrunnelse)
-                setBoolean(21, oppgaveDto.harFortroligAdresse)
-                setBoolean(22, oppgaveDto.harUlesteDokumenter)
-                setEnumName(23, oppgaveDto.returInformasjon?.status)
-                setString(24, oppgaveDto.returInformasjon?.begrunnelse)
-                setArray(25, oppgaveDto.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
-                setString(26, oppgaveDto.returInformasjon?.endretAv)
-                setString(27, oppgaveDto.årsakTilOpprettelse)
-                setBoolean(28, oppgaveDto.erSkjermet)
+                setString(1, oppgave.saksnummer)
+                setUUID(2, oppgave.behandlingRef)
+                setLong(3, oppgave.journalpostId)
+                setString(4, oppgave.enhet)
+                setString(5, oppgave.oppfølgingsenhet)
+                setLocalDateTime(6, oppgave.behandlingOpprettet)
+                setString(7, oppgave.avklaringsbehovKode)
+                setString(8, oppgave.status.name)
+                setString(9, oppgave.behandlingstype.name)
+                setLocalDate(10, oppgave.påVentTil)
+                setString(11, oppgave.påVentÅrsak)
+                setString(12, oppgave.opprettetAv)
+                setLocalDateTime(13, oppgave.opprettetTidspunkt)
+                setString(14, oppgave.personIdent)
+                setString(15, oppgave.veilederArbeid)
+                setString(16, oppgave.veilederSykdom)
+                setArray(17, oppgave.vurderingsbehov)
+                setString(18, oppgave.venteBegrunnelse)
+                setString(19, oppgave.påVentÅrsak)
+                setString(20, oppgave.venteBegrunnelse)
+                setBoolean(21, oppgave.harFortroligAdresse)
+                setBoolean(22, oppgave.harUlesteDokumenter)
+                setEnumName(23, oppgave.returInformasjon?.status)
+                setString(24, oppgave.returInformasjon?.begrunnelse)
+                setArray(25, oppgave.returInformasjon?.årsaker?.map { it.name } ?: emptyList())
+                setString(26, oppgave.returInformasjon?.endretAv)
+                setString(27, oppgave.årsakTilOpprettelse)
+                setBoolean(28, oppgave.erSkjermet)
             }
         }
         return OppgaveId(id, 0L)
     }
 
-    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
+    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): Oppgave? {
         val oppgaverForIdQuery = """
             SELECT 
                 $alleOppgaveFelt
@@ -121,7 +121,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentOppgaverForIdent(ident: String): List<OppgaveDto> {
+    fun hentOppgaverForIdent(ident: String): List<Oppgave> {
         val oppgaverForIdQuery = """
             SELECT 
                 $alleOppgaveFelt
@@ -143,7 +143,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentOppgave(oppgaveId: Long): OppgaveDto {
+    fun hentOppgave(oppgaveId: Long): Oppgave {
         val oppgaverForIdQuery = """
             SELECT 
                 $alleOppgaveFelt
@@ -164,7 +164,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentOppgaver(referanse: UUID): List<OppgaveDto> {
+    fun hentOppgaver(referanse: UUID): List<Oppgave> {
         val oppgaverForReferanseQuery = """
         SELECT 
             $alleOppgaveFelt
@@ -200,7 +200,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         harFortroligAdresse: Boolean? = false,
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean? = false,
-        returInformasjon: ReturInformasjon?,
+        returInformasjon: ReturInfo?,
         utløptVentefrist: LocalDate? = null,
         forrigeKvalitetssikrerIdent: String? = null,
         forrigeKvalitetssikrerNavn: String? = null,
@@ -505,7 +505,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
 
     data class IdentMedOppgaveId(val ident: String, val oppgaveId: Long, val versjon: Long)
-    data class FinnOppgaverDto(val oppgaver: List<OppgaveDto>, val antallGjenstaaende: Int, val antallTotalt: Int)
+    data class FinnOppgaverDto(val oppgaver: List<Oppgave>, val antallGjenstaaende: Int, val antallTotalt: Int)
 
     fun finnÅpneOppgaverIkkeVikafossen(): List<IdentMedOppgaveId> {
         val query = """
@@ -553,7 +553,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnOppgaverGittSaksnummer(saksnummer: String): List<OppgaveDto> {
+    fun finnOppgaverGittSaksnummer(saksnummer: String): List<Oppgave> {
         val hentOppgaverGittSaksnummerQuery = """
             SELECT 
                    $alleOppgaveFelt
@@ -575,7 +575,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnÅpneOppgaverGittPersonident(personIdent: String): List<OppgaveDto> {
+    fun finnÅpneOppgaverGittPersonident(personIdent: String): List<Oppgave> {
         val hentOppgaverGittPersonidentQuery = """
             SELECT 
                    $alleOppgaveFelt
@@ -649,7 +649,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         kunPåVent: Boolean = false,
         sortBy: OppgaveSorteringFelt? = null,
         sortOrder: OppgaveSorteringRekkefølge? = null
-    ): List<OppgaveDto> {
+    ): List<Oppgave> {
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
         val sortering = oppgaveSorteringQuery(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
@@ -677,7 +677,7 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
 
-    fun hentAlleÅpneOppgaver(): List<OppgaveDto> {
+    fun hentAlleÅpneOppgaver(): List<Oppgave> {
         val query = """
             SELECT 
                 $alleOppgaveFelt
@@ -792,15 +792,15 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private fun oppgaveMapper(
         row: Row,
-        tilbakekrevingVars: TilbakekrevingsVarsDto?,
+        tilbakekrevingVars: TilbakekrevingsVars?,
         enhetNrForrigeOppgave: String? = null,
         enheterMedNavn: Map<String, String> = emptyMap()
-    ): OppgaveDto {
+    ): Oppgave {
         val enhetForrigeOppgave = enhetNrForrigeOppgave?.let { enhetNr ->
             EnhetDto(enhetNr = enhetNr, navn = enheterMedNavn[enhetNr] ?: enhetNr)
         }
 
-        val standardOppgaveDto = OppgaveDto(
+        val standardOppgave = Oppgave(
             id = row.getLong("ID"),
             personIdent = row.getStringOrNull("PERSON_IDENT"),
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
@@ -837,7 +837,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK"),
             utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST"),
             returInformasjon = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")?.let {
-                ReturInformasjon(
+                ReturInfo(
                     status = it,
                     årsaker = row.getArray("RETUR_AARSAKER", String::class)
                         .map { årsak -> ÅrsakTilReturKode.valueOf(årsak) },
@@ -845,9 +845,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                     endretAv = row.getStringOrNull("retur_returnert_av") ?: "UKJENT",
                 )
             },
-            tilbakekrevingsVarsDto = tilbakekrevingVars,
+            tilbakekrevingsVars = tilbakekrevingVars,
             forrigeKvalitetssikrerInfo = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_IDENT")?.let {
-                ForrigeKvalitetssikrerInfo(
+                ForrigeKvalitetssikrer(
                     forrigeKvalitetssikrerIdent = it,
                     forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
                 )
@@ -856,8 +856,8 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
         return when (behandlingstype) {
-            Behandlingstype.TILBAKEKREVING -> tilpassPåventDataForTilbakekreving(standardOppgaveDto, row)
-            else -> standardOppgaveDto
+            Behandlingstype.TILBAKEKREVING -> tilpassPåventDataForTilbakekreving(standardOppgave, row)
+            else -> standardOppgave
         }
 
     }
@@ -868,15 +868,15 @@ class OppgaveRepository(private val connection: DBConnection) {
         - Utløpt påvent frist blir ikke varslet fra tilbake-løsninge, vi må selv sjekke ved henting av oppgaveliste om dagens dato har passert frist(gjenopptas) dato
         - Oppheving av status påvent (påvent-status eller utløpt-status) skjer når tilbakeløsningen sender inn kafka behandling_endres uten grunn/gjenopptas-dato */
     private fun tilpassPåventDataForTilbakekreving(
-        standardOppgaveDto: OppgaveDto,
+        standardOppgave: Oppgave,
         row: Row
-    ): OppgaveDto {
+    ): Oppgave {
 
         val påVentTil = row.getLocalDateOrNull("PAA_VENT_TIL")
         val utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST")
         val erFristUtløpt = påVentTil != null && påVentTil <= LocalDate.now() && utløptVentefrist == null
 
-        return standardOppgaveDto.copy(
+        return standardOppgave.copy(
             påVentTil = if (erFristUtløpt) null else påVentTil,
             påVentÅrsak = if (erFristUtløpt) null else row.getStringOrNull("PAA_VENT_AARSAK"),
             venteBegrunnelse = if (erFristUtløpt) null else row.getStringOrNull("VENTE_BEGRUNNELSE"),
@@ -891,13 +891,13 @@ class OppgaveRepository(private val connection: DBConnection) {
     private fun getTilbakekreving(
         row: Row,
         connection: DBConnection
-    ): TilbakekrevingsVarsDto? {
-        var tilbakekrevingVars: TilbakekrevingsVarsDto? = null
+    ): TilbakekrevingsVars? {
+        var tilbakekrevingVars: TilbakekrevingsVars? = null
         val behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
         if (behandlingstype == Behandlingstype.TILBAKEKREVING) {
             val tilbakekreving = TilbakekrevingRepository(connection).hent(row.getLong("ID"))
             tilbakekrevingVars =
-                TilbakekrevingsVarsDto(
+                TilbakekrevingsVars(
                     tilbakekreving.url,
                     tilbakekreving.beløp
                 )

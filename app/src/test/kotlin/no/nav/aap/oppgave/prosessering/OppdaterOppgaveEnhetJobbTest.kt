@@ -10,7 +10,7 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.Enhet
@@ -146,7 +146,7 @@ class OppdaterOppgaveEnhetJobbTest {
         veilederArbeid: String? = null,
         veilederSykdom: String? = null,
     ): OppgaveId {
-        val oppgaveDto = OppgaveDto(
+        val oppgave = Oppgave(
             personIdent = personIdent,
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
@@ -162,11 +162,11 @@ class OppdaterOppgaveEnhetJobbTest {
             opprettetTidspunkt = LocalDateTime.now()
         )
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).opprettOppgave(oppgaveDto)
+            OppgaveRepository(connection).opprettOppgave(oppgave)
         }
     }
 
-    private fun hentOppgave(oppgaveId: OppgaveId): OppgaveDto {
+    private fun hentOppgave(oppgaveId: OppgaveId): Oppgave {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentOppgave(oppgaveId.id)
         }

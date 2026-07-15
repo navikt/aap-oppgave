@@ -7,10 +7,10 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.komponenter.httpklient.httpclient.error.InternalServerErrorHttpResponsException
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.ReturInformasjon
+import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.enhet.oppfølgingsenhet.OppfølgingsenhetService
 import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaGateway
@@ -775,11 +775,11 @@ class EnhetServiceTest {
         påVentÅrsak: String? = null,
         venteBegrunnelse: String? = null,
         harUlesteDokumenter: Boolean = false,
-        returInformasjon: ReturInformasjon? = null,
+        returInformasjon: ReturInfo? = null,
         årsakTilOpprettelse: String? = "SØKNAD",
         behandlingOpprettet: LocalDateTime = LocalDateTime.now().minusDays(3)
     ): OppgaveId {
-        val oppgaveDto = OppgaveDto(
+        val oppgave = Oppgave(
             personIdent = personIdent,
             saksnummer = saksnummer,
             behandlingRef = behandlingRef,
@@ -801,7 +801,7 @@ class EnhetServiceTest {
             årsakTilOpprettelse = årsakTilOpprettelse
         )
         return dataSource.transaction { connection ->
-            OppgaveRepository(connection).opprettOppgave(oppgaveDto)
+            OppgaveRepository(connection).opprettOppgave(oppgave)
         }
     }
 
