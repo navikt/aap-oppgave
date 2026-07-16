@@ -35,7 +35,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
         prometheus.httpCallCounter("/plukk-oppgave").increment()
         val oppgave = PlukkOppgaveService.plukkOppgave(dataSource, enhetService, ansattInfoGateway, token(), ident(), request.oppgaveId)
         if (oppgave != null) {
-            respond(oppgave)
+            respond(oppgave.tilOppgaveDto())
         } else {
             log.info("Bruker kunne ikke plukke oppgave")
             respondWithStatus(HttpStatusCode.Unauthorized)

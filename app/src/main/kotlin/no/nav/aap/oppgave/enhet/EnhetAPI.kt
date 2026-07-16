@@ -13,7 +13,7 @@ import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
@@ -87,9 +87,9 @@ fun NormalOpenAPIRoute.enhetStatus(dataSource: DataSource) =
  * Returnerer første oppgave i den siste sammenhengende bolken av oppgaver fra kandidatlisten
  * */
 private fun førsteISisteSammenhengendeBlokk(
-    alleOppgaver: List<OppgaveDto>,
-    kandidater: List<OppgaveDto>
-): OppgaveDto {
+    alleOppgaver: List<Oppgave>,
+    kandidater: List<Oppgave>
+): Oppgave {
     val kandidatSet = kandidater.toSet()
     return alleOppgaver
         .reversed()
@@ -98,7 +98,7 @@ private fun førsteISisteSammenhengendeBlokk(
         .lastOrNull() ?: kandidater.first()
 }
 
-internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>, hasteBehandlinger: List<UUID>): NåværendeEnhet? {
+internal fun enhetOgOversendelse(alleOppgaver: List<Oppgave>, hasteBehandlinger: List<UUID>): NåværendeEnhet? {
     val log = LoggerFactory.getLogger("enhet-status")
 
     val alleOppgaver = alleOppgaver
@@ -112,16 +112,16 @@ internal fun enhetOgOversendelse(alleOppgaver: List<OppgaveDto>, hasteBehandling
 
     val oppgaver = alleOppgaver.filter { it.behandlingRef == behandlingReferanse }
 
-    val erHosNAY: (oppgave: OppgaveDto) -> Boolean =
+    val erHosNAY: (oppgave: Oppgave) -> Boolean =
         { oppgave -> oppgave.enhetForKø in NAY_ENHETER.map { it.kode } }
 
     val erHastesak =
-        { oppgave: OppgaveDto -> oppgave.behandlingRef in hasteBehandlinger }
+        { oppgave: Oppgave -> oppgave.behandlingRef in hasteBehandlinger }
 
-    val erKvalitetssikring: (oppgave: OppgaveDto) -> Boolean =
+    val erKvalitetssikring: (oppgave: Oppgave) -> Boolean =
         { oppgave -> oppgave.avklaringsbehovKode == Definisjon.KVALITETSSIKRING.kode.name }
 
-    val erBeslutterOppgave: (oppgave: OppgaveDto) -> Boolean =
+    val erBeslutterOppgave: (oppgave: Oppgave) -> Boolean =
         { oppgave ->
             Definisjon.entries.filter { it.løsesAv.contains(Rolle.BESLUTTER) }
                 .any { it.kode.name == oppgave.avklaringsbehovKode }

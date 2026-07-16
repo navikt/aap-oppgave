@@ -3,7 +3,7 @@ package no.nav.aap.oppgave.mottattdokument
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.assertj.core.api.Assertions.assertThat
@@ -58,7 +58,7 @@ class MottattDokumentServiceTest {
             referanse = UUID.randomUUID().toString(),
         )
 
-    private fun oppgave(behandlingRef: UUID) = OppgaveDto(
+    private fun oppgave(behandlingRef: UUID) = Oppgave(
         saksnummer = "1",
         behandlingRef = behandlingRef,
         behandlingOpprettet = LocalDateTime.now().minusDays(3),

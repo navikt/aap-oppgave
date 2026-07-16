@@ -12,7 +12,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.EnhetFilter
@@ -182,7 +182,7 @@ private fun FilterDto.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilte
     endretTidspunkt = endretTidspunkt,
 )
 
-private fun OppgaveDto.mapTilOppgaveDriftsinfo(historikk: List<OppgaveHistorikk>) = OppgaveDriftsinfoDTO(
+private fun Oppgave.mapTilOppgaveDriftsinfo(historikk: List<OppgaveHistorikk>) = OppgaveDriftsinfoDTO(
     oppgaveId = id!!,
     behandlingRef = behandlingRef,
     status = status,

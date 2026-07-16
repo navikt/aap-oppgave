@@ -25,7 +25,7 @@ class VarsleOmOppgaverIkkeEndretJobb(
         log.info("Fant ${alleÅpneOppgaverIkkePåVent.size} åpne oppgaver som ikke er på vent og ikke er reservert.")
         val nå = LocalDateTime.now()
         val oppgaverIkkeEndretPåFemUker = alleÅpneOppgaverIkkePåVent.filter {
-            (it.endretTidspunkt != null && it.endretTidspunkt!! < nå.minusWeeks(5)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusWeeks(
+            (it.endretTidspunkt != null && it.endretTidspunkt < nå.minusWeeks(5)) || (it.endretTidspunkt == null && it.opprettetTidspunkt < nå.minusWeeks(
                 5
             ))
         }

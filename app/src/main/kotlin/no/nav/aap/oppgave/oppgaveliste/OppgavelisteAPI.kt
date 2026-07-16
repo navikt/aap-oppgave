@@ -5,7 +5,6 @@ import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import javax.sql.DataSource
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.oppgave.OppgaveRepository
@@ -19,6 +18,7 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
+import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("oppgavelisteApi")
 
@@ -45,30 +45,32 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     } else {
                         null
                     }
-                Pair(OppgavelisteService(
-                    oppgaveRepository = OppgaveRepository(connection),
-                    markeringRepository = MarkeringRepository(connection),
-                    norgGateway = norgGateway,
-                    enhetService = enhetService,
-                ).hentOppgaverMedTilgang(
-                    request.utvidetFilter,
-                    request.enheter,
-                    request.paging,
-                    request.kunLedigeOppgaver == true,
-                    filter,
-                    veilederIdent,
-                    token(),
-                    ident(),
-                    request.sortering?.sortBy,
-                    request.sortering?.sortOrder,
-                    request.hastemarkeringerFørst == true
-                ), filter.behandlingstyper)
+                Pair(
+                    OppgavelisteService(
+                        oppgaveRepository = OppgaveRepository(connection),
+                        markeringRepository = MarkeringRepository(connection),
+                        norgGateway = norgGateway,
+                        enhetService = enhetService,
+                    ).hentOppgaverMedTilgang(
+                        request.utvidetFilter,
+                        request.enheter,
+                        request.paging,
+                        request.kunLedigeOppgaver == true,
+                        filter,
+                        veilederIdent,
+                        token(),
+                        ident(),
+                        request.sortering?.sortBy,
+                        request.sortering?.sortOrder,
+                        request.hastemarkeringerFørst == true
+                    ), filter.behandlingstyper
+                )
             }
 
         respond(
             OppgavelisteRespons(
                 antallTotalt = data.antallTotalt,
-                oppgaver = data.oppgaver.hentPersonNavn(),
+                oppgaver = data.oppgaver.hentPersonNavn().map { it.tilOppgaveDto() },
                 antallGjenstaaende = data.antallGjenstaaende,
                 sattFilterBehandlingstyper = bruktBehanlingstyperIFilter
             )

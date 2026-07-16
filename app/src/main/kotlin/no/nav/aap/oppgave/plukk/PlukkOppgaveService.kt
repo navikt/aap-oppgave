@@ -8,7 +8,7 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.IEnhetService
@@ -106,7 +106,7 @@ class PlukkOppgaveService(
             token: OidcToken,
             ident: String,
             oppgaveId: Long,
-        ): OppgaveDto? {
+        ): Oppgave? {
             val oppgave = dataSource.transaction(readOnly = true) {
                 OppgaveRepository(it).hentOppgave(oppgaveId)
             }

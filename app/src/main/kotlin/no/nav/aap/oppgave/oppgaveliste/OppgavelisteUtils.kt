@@ -2,7 +2,7 @@ package no.nav.aap.oppgave.oppgaveliste
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.flywaydb.core.api.logging.LogFactory
@@ -24,7 +24,7 @@ object OppgavelisteUtils {
         CaffeineCacheMetrics.monitor(prometheus, personinfoCache, "oppgave_navn")
     }
 
-    fun List<OppgaveDto>.hentPersonNavn(): List<OppgaveDto> {
+    fun List<Oppgave>.hentPersonNavn(): List<Oppgave> {
         val identer = mapNotNull { it.personIdent }.distinct()
         if (identer.isEmpty()) {
             return this
@@ -71,10 +71,10 @@ object OppgavelisteUtils {
             ?: emptyList()
     }
 
-    private fun OppgaveDto.medNavn(
+    private fun Oppgave.medNavn(
         ident: String?,
         samletNavnMap: Map<String, String?>
-    ): OppgaveDto {
+    ): Oppgave {
         val personNavn = ident?.let { samletNavnMap[it] } ?: ""
 
         return this.copy(personNavn = personNavn)

@@ -3,7 +3,7 @@ package no.nav.aap.oppgave.markering
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -82,7 +82,7 @@ class MarkeringRepositoryTest {
 
             // Opprett oppgaver som knytter behandlingene til samme saksnummer
             oppgaveRepository.opprettOppgave(
-                OppgaveDto(
+                Oppgave(
                     saksnummer = saksnummer,
                     behandlingRef = behandlingRef1,
                     enhet = "0100",
@@ -96,7 +96,7 @@ class MarkeringRepositoryTest {
                 )
             )
             oppgaveRepository.opprettOppgave(
-                OppgaveDto(
+                Oppgave(
                     saksnummer = saksnummer,
                     behandlingRef = behandlingRef2,
                     enhet = "0100",

@@ -46,13 +46,9 @@ enum class ÅrsakTilReturKode {
     MANGLENDE_KILDEHENVISNING,
 }
 
-/**
- * @param enhet Enhetsnummeret til enheten som er koblet til oppgaven.
- * TODO: Fjern sensitive felter
- */
 data class OppgaveDto(
-    val id: Long? = null,
-    val personIdent: String? = null,
+    val id: Long,
+    val personIdent: String,
     val personNavn: String? = null,
     val saksnummer: String? = null,
     val behandlingRef: UUID,
@@ -94,36 +90,8 @@ data class OppgaveDto(
     val tilbakekrevingsVarsDto: TilbakekrevingsVarsDto? = null,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerInfo? = null,
 ) {
-    /**
-     * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.
-     * Brukes for å sikre at oppgaver havner i riktig kø i oppgavelisten.
-     **/
-    val enhetForKø: String = oppfølgingsenhet ?: enhet
-
-    val erPåVent: Boolean = påVentTil != null
-
-    val erÅpen: Boolean = status == Status.OPPRETTET
-
-    init {
-        if (journalpostId == null) {
-            if (saksnummer == null) {
-                throw IllegalArgumentException("Saksnummer og behandlingRef kan ikke være null dersom journalpostId er null")
-            }
-        }
-    }
-
-    fun tilAvklaringsbehovReferanseDto(): AvklaringsbehovReferanseDto {
-        return AvklaringsbehovReferanseDto(
-            referanse = this.behandlingRef,
-            saksnummer = this.saksnummer,
-            journalpostId = this.journalpostId,
-            avklaringsbehovKode = this.avklaringsbehovKode,
-            behandlingstype = this.behandlingstype
-        )
-    }
-
     fun oppgaveId() = OppgaveId(
-        requireNotNull(id) { "Oppgave har ingen id" },
+        id,
         versjon,
     )
 }

@@ -5,7 +5,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.miljo.MiljøKode
-import no.nav.aap.oppgave.OppgaveDto
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
@@ -34,7 +34,7 @@ class OppgavelisteService(
     private val norgGateway: INorgGateway,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
-    fun søkEtterOppgaver(søketekst: String): List<OppgaveDto> {
+    fun søkEtterOppgaver(søketekst: String): List<Oppgave> {
         val oppgaver = if (søketekst.length >= 11) {
             oppgaveRepository.finnÅpneOppgaverGittPersonident(søketekst)
         } else {
@@ -47,7 +47,7 @@ class OppgavelisteService(
         }
     }
 
-    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): OppgaveDto? {
+    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): Oppgave? {
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null) {
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
@@ -135,7 +135,7 @@ class OppgavelisteService(
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
         sortOrder: OppgaveSorteringRekkefølge?,
-    ): List<OppgaveDto> {
+    ): List<Oppgave> {
 
         val aktivSortering = toggleAktivSortering(sortBy)
 
@@ -161,7 +161,7 @@ class OppgavelisteService(
         return if (sortBy == TILBAKEKREVINGS_BELOP && !aktivBelopSortering) null else sortBy
     }
 
-    fun hentOppgaverForBehandling(referanse: UUID): List<OppgaveDto> {
+    fun hentOppgaverForBehandling(referanse: UUID): List<Oppgave> {
         return oppgaveRepository.hentOppgaver(referanse)
     }
 
@@ -184,13 +184,13 @@ class OppgavelisteService(
         )
     }
 
-    private fun OppgaveDto.leggPåMarkeringer(markeringer: List<MarkeringDto>): OppgaveDto =
+    private fun Oppgave.leggPåMarkeringer(markeringer: List<MarkeringDto>): Oppgave =
         this.copy(markeringer = markeringer)
 
-    private fun List<OppgaveDto>.filtrerPåTilgang(
+    private fun List<Oppgave>.filtrerPåTilgang(
         token: OidcToken,
         ident: String
-    ): List<OppgaveDto> {
+    ): List<Oppgave> {
         val oppgaverFiltrertForKode7 = sjekkTilgangTilFortroligAdresse(enhetService, ident, token, this)
         val enhetsGrupper = enhetService.hentEnheter(ident, token)
         return oppgaverFiltrertForKode7
@@ -204,8 +204,8 @@ class OppgavelisteService(
         enhetService: EnhetService,
         ident: String,
         token: OidcToken,
-        oppgaver: List<OppgaveDto>
-    ): List<OppgaveDto> =
+        oppgaver: List<Oppgave>
+    ): List<Oppgave> =
         if (oppgaver.any { it.harFortroligAdresse == true } && !enhetService.kanSaksbehandleFortroligAdresse(
                 ident,
                 token
