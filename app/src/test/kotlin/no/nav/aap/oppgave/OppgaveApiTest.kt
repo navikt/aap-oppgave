@@ -536,7 +536,7 @@ class OppgaveApiTest {
         reserverOppgave(oppgave2!!.oppgaveId(), "saksbehandler2", "saksbehandler2")
 
         // kall endepunkt for avreservering
-        val avreserverteOppgaveIds = avreserverOppgaver(listOf(oppgave1.id!!, oppgave2.id!!))
+        val avreserverteOppgaveIds = avreserverOppgaver(listOf(oppgave1.id, oppgave2.id))
         val avreserverteOppgaver = avreserverteOppgaveIds?.map { hentOppgaveViaRepository(it) }
 
         assertThat(avreserverteOppgaver).hasSize(2)
@@ -598,20 +598,20 @@ class OppgaveApiTest {
         assertThat(naySaksbehandlere?.first()?.navIdent).isEqualTo("NayVeileder123")
 
         // Søk på å tildele både en NAY-oppgave og en kontor-oppgave skal returnere kun saksbehandlere som har tilgang til en av dem
-        val alleSaksbehandlere = søkEtterSaksbehandlere("Test", listOf(oppgave.id!!, oppgave2.id!!))?.saksbehandlere
+        val alleSaksbehandlere = søkEtterSaksbehandlere("Test", listOf(oppgave.id, oppgave2.id))?.saksbehandlere
         assertThat(alleSaksbehandlere).hasSize(2)
 
         // Når ingen matcher returneres tom liste
-        val ingenSaksbehandlere = søkEtterSaksbehandlere("xxxxx", listOf(oppgave.id!!, oppgave2.id!!))?.saksbehandlere
+        val ingenSaksbehandlere = søkEtterSaksbehandlere("xxxxx", listOf(oppgave.id, oppgave2.id))?.saksbehandlere
         assertThat(ingenSaksbehandlere).isEmpty()
 
         // Kan søke på fullt navn
-        val naySaksbehandler = søkEtterSaksbehandlere("test naysen", listOf(oppgave2.id!!))?.saksbehandlere
+        val naySaksbehandler = søkEtterSaksbehandlere("test naysen", listOf(oppgave2.id))?.saksbehandlere
         assertThat(naySaksbehandler).hasSize(1)
         assertThat(naySaksbehandler?.first()?.navIdent).isEqualTo("NayVeileder123")
 
         // Kan søke på NAV-ident
-        val naySaksbehandlerIdent = søkEtterSaksbehandlere("nayveileder123", listOf(oppgave2.id!!))?.saksbehandlere
+        val naySaksbehandlerIdent = søkEtterSaksbehandlere("nayveileder123", listOf(oppgave2.id))?.saksbehandlere
         assertThat(naySaksbehandlerIdent).hasSize(1)
         assertThat(naySaksbehandlerIdent?.first()?.navIdent).isEqualTo("NayVeileder123")
 
@@ -794,6 +794,7 @@ class OppgaveApiTest {
         oppdaterOgHentOppgave(
             Oppgave(
                 id = opprettetOppgave!!.id,
+                personIdent = "123",
                 saksnummer = opprettetOppgave.saksnummer,
                 behandlingRef = opprettetOppgave.behandlingRef,
                 enhet = Enhet.NAV_VIKAFOSSEN.kode,
@@ -816,6 +817,7 @@ class OppgaveApiTest {
         oppdaterOgHentOppgave(
             Oppgave(
                 id = opprettetOppgave.id,
+                personIdent = "123",
                 saksnummer = opprettetOppgave.saksnummer,
                 behandlingRef = opprettetOppgave.behandlingRef,
                 enhet = Enhet.NAV_VIKAFOSSEN.kode,
@@ -838,6 +840,7 @@ class OppgaveApiTest {
         oppdaterOgHentOppgave(
             Oppgave(
                 id = opprettetOppgave.id,
+                personIdent = "123",
                 saksnummer = opprettetOppgave.saksnummer,
                 behandlingRef = opprettetOppgave.behandlingRef,
                 enhet = Enhet.NAY_EGNE_ANSATTE.kode,

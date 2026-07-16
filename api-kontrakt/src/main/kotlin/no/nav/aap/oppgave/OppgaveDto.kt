@@ -47,8 +47,8 @@ enum class ÅrsakTilReturKode {
 }
 
 data class OppgaveDto(
-    val id: Long? = null,
-    val personIdent: String? = null,
+    val id: Long,
+    val personIdent: String,
     val personNavn: String? = null,
     val saksnummer: String? = null,
     val behandlingRef: UUID,

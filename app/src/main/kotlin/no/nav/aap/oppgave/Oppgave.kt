@@ -136,7 +136,9 @@ data class Oppgave(
             harFortroligAdresse = harFortroligAdresse,
             harUlesteDokumenter = harUlesteDokumenter,
             vurderingsbehov = vurderingsbehov,
-            personIdent = personIdent,
+            personIdent = requireNotNull(personIdent) {
+                "Personident kan ikke være null for OppgaveDto"
+            },
             personNavn = personNavn,
             behandlingRef = behandlingRef,
             enhet = enhet,
