@@ -56,6 +56,7 @@ import no.nav.aap.oppgave.oppgaveliste.hentOppgaveApi
 import no.nav.aap.oppgave.oppgaveliste.hentOppgaveEnhetApi
 import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
+import no.nav.aap.oppgave.oppgaveliste.sistEndretApi
 import no.nav.aap.oppgave.oppgaveliste.søkApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
@@ -148,6 +149,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 mineOppgaverApi(dataSource, enhetService, norgGateway, prometheus)
                 søkApi(dataSource, enhetService, norgGateway, prometheus)
                 markeringApi(dataSource, prometheus, nomApiGateway)
+                sistEndretApi(dataSource)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
                 opprettEllerOppdaterFilterApi(dataSource, prometheus)

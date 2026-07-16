@@ -10,10 +10,12 @@ import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.komponenter.server.auth.bruker
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.SakOgAvklaringsbehov
 import no.nav.aap.oppgave.SøkDto
 import no.nav.aap.oppgave.SøkResponse
 import no.nav.aap.oppgave.enhet.Enhet
@@ -98,6 +100,20 @@ fun NormalOpenAPIRoute.søkApi(
                 harAdressebeskyttelse = harAdressebeskyttelse,
             )
         )
+    }
+}
+
+fun NormalOpenAPIRoute.sistEndretApi(
+    dataSource: DataSource,
+) {
+    route("/mine-siste-oppgaver").get<Unit, List<SakOgAvklaringsbehov>> {
+        val resultat = dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection)
+                .hentSisteEndretAvSaksbehandler(bruker())
+                .map { SakOgAvklaringsbehov(it.first, it.second) }
+        }
+
+        respond(resultat)
     }
 }
 

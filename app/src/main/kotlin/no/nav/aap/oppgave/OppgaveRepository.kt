@@ -17,6 +17,7 @@ import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.util.UUID
+import no.nav.aap.komponenter.verdityper.Bruker
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
@@ -741,6 +742,26 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
             setRowMapper { row ->
                 row.getString("OPPFOLGINGSENHET")
+            }
+        }
+    }
+
+    fun hentSisteEndretAvSaksbehandler(bruker: Bruker): List<Pair<String, String>> {
+        val query = """
+            SELECT DISTINCT ON (o.saksnummer) o.saksnummer, o.avklaringsbehov_type
+            FROM oppgave o
+                     LEFT JOIN oppgave_historikk oh ON o.id = oh.oppgave_id
+            WHERE oh.endret_av = ?
+            ORDER BY o.saksnummer, oh.endret_tidspunkt DESC
+            LIMIT 15;
+        """.trimIndent()
+
+        return connection.queryList(query) {
+            setParams {
+                setString(1, bruker.ident)
+            }
+            setRowMapper { row ->
+                Pair(row.getString("saksnummer"), row.getString("avklaringsbehov_type"))
             }
         }
     }
