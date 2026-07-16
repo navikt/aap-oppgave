@@ -91,7 +91,7 @@ data class OppgaveDto(
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerInfo? = null,
 ) {
     fun oppgaveId() = OppgaveId(
-        requireNotNull(id) { "Oppgave har ingen id" },
+        id,
         versjon,
     )
 }
