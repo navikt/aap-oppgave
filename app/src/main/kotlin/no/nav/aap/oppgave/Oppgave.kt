@@ -101,7 +101,7 @@ data class Oppgave(
     init {
         if (journalpostId == null) {
             if (saksnummer == null) {
-                throw IllegalArgumentException("Saksnummer og behandlingRef kan ikke være null dersom journalpostId er null")
+                throw IllegalArgumentException("Saksnummer kan ikke være null dersom journalpostId er null")
             }
         }
     }

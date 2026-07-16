@@ -28,12 +28,12 @@ class StatistikkHendelseJobb(
         val hendelsesType = HendelseType.valueOf(input.parameter("hendelsesType"))
         val oppgaveId = DefaultJsonMapper.fromJson<OppgaveId>(input.payload())
 
-        oppgaveRepository.hentOppgave(oppgaveId.id).let { oppgaveDto ->
-            val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgaveDto.behandlingRef)
+        oppgaveRepository.hentOppgave(oppgaveId.id).let { oppgave ->
+            val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
             StatistikkGateway.avgiHendelse(
                 OppgaveHendelse(
                     hendelse = hendelsesType,
-                    oppgaveTilStatistikkDto = fraOppgave(oppgaveDto, markeringer),
+                    oppgaveTilStatistikkDto = fraOppgave(oppgave, markeringer),
                     sendtTidspunkt = LocalDateTime.now()
                 )
             )

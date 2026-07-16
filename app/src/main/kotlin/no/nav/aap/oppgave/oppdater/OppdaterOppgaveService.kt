@@ -608,14 +608,7 @@ class OppdaterOppgaveService(
             harFortroligAdresse = harFortroligAdresse,
             erSkjermet = erSkjermet,
             returStatus = returInformasjon?.status,
-            returInformasjon = returInformasjon?.let {
-                ReturInfo(
-                    status = it.status,
-                    årsaker = it.årsaker,
-                    begrunnelse = it.begrunnelse,
-                    endretAv = it.endretAv
-                )
-            },
+            returInformasjon = returInformasjon,
             utløptVentefrist = utløptVentefrist,
             harUlesteDokumenter = harUlesteDokumenter
         )

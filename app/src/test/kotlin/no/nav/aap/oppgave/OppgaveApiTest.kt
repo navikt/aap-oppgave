@@ -1547,14 +1547,7 @@ class OppgaveApiTest {
                     veilederSykdom = oppgave.veilederSykdom,
                     vurderingsbehov = oppgave.årsakerTilBehandling,
                     erSkjermet = oppgave.erSkjermet == true,
-                    returInformasjon = oppgave.returInformasjon?.let {
-                        ReturInfo(
-                            status = it.status,
-                            årsaker = it.årsaker,
-                            begrunnelse = it.begrunnelse,
-                            endretAv = it.endretAv
-                        )
-                    },
+                    returInformasjon = oppgave.returInformasjon,
                     utløptVentefrist = oppgave.utløptVentefrist
                 )
             }
