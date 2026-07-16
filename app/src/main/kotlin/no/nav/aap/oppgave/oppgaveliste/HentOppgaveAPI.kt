@@ -110,7 +110,6 @@ fun NormalOpenAPIRoute.sistEndretApi(
         val resultat = dataSource.transaction(readOnly = true) { connection ->
             OppgaveRepository(connection)
                 .hentSisteEndretAvSaksbehandler(bruker())
-                .map { SakOgAvklaringsbehov(it.first, it.second) }
         }
 
         respond(resultat)

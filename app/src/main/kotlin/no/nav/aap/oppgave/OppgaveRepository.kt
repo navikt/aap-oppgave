@@ -746,7 +746,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun hentSisteEndretAvSaksbehandler(bruker: Bruker): List<Pair<String, String>> {
+    fun hentSisteEndretAvSaksbehandler(bruker: Bruker): List<SakOgAvklaringsbehov> {
         val query = """
             SELECT DISTINCT ON (o.saksnummer) o.saksnummer, o.avklaringsbehov_type
             FROM oppgave o
@@ -761,7 +761,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(1, bruker.ident)
             }
             setRowMapper { row ->
-                Pair(row.getString("saksnummer"), row.getString("avklaringsbehov_type"))
+                SakOgAvklaringsbehov(
+                    saksnummer = row.getString("saksnummer"),
+                    avklaringsbehovKode = row.getString("avklaringsbehov_type")
+                )
             }
         }
     }
