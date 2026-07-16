@@ -52,17 +52,18 @@ import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterTilbakekrevingOppgaverApi
-import no.nav.aap.oppgave.oppgaveliste.hentOppgaveApi
-import no.nav.aap.oppgave.oppgaveliste.hentOppgaveEnhetApi
+import no.nav.aap.oppgave.hent.hentOppgaveApi
+import no.nav.aap.oppgave.hent.hentOppgaveEnhetApi
+import no.nav.aap.oppgave.hent.hentOppgaveVisningsinformasjonApi
 import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
-import no.nav.aap.oppgave.oppgaveliste.sistEndretApi
-import no.nav.aap.oppgave.oppgaveliste.søkApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
 import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
+import no.nav.aap.oppgave.søk.sistEndretApi
+import no.nav.aap.oppgave.søk.søkApi
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
 import no.nav.aap.tilgang.TilgangGateway
 import org.slf4j.Logger
@@ -144,6 +145,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 tildelOppgaveApi(dataSource, enhetService, norgGateway, prometheus, nomApiGateway)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, enhetService, norgGateway, prometheus)
+                hentOppgaveVisningsinformasjonApi(dataSource, enhetService, norgGateway, prometheus)
                 oppgavelisteApi(dataSource, enhetService, norgGateway, prometheus)
                 hentOppgaveEnhetApi(dataSource, enhetService, norgGateway, prometheus)
                 mineOppgaverApi(dataSource, enhetService, norgGateway, prometheus)

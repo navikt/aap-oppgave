@@ -16,7 +16,15 @@ enum class ReturStatus {
     RETUR_FRA_SAKSBEHANDLER,
 }
 
+@Deprecated("bruk ReturInformasjonDto")
 data class ReturInformasjon(
+    val status: ReturStatus,
+    val årsaker: List<ÅrsakTilReturKode>,
+    val begrunnelse: String,
+    val endretAv: String,
+)
+
+data class ReturInformasjonDto(
     val status: ReturStatus,
     val årsaker: List<ÅrsakTilReturKode>,
     val begrunnelse: String,
