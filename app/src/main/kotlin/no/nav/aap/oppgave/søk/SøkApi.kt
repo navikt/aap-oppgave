@@ -70,7 +70,7 @@ fun NormalOpenAPIRoute.søkApi(
         )
     }
 
-    route("/sok/v2").post<Unit, SøkResponseV2, SøkDto> { _, søk ->
+    route("/sok/v2").post<Unit, SøkResponseV2, SøkRequest> { _, søk ->
         prometheus.httpCallCounter("/sok/v2").increment()
         val oppgaver =
             dataSource.transaction(readOnly = true) { connection ->
