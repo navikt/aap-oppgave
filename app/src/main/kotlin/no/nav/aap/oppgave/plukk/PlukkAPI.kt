@@ -70,7 +70,54 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
                 message = "Oppgaven er allerede tildelt."
             )
 
-           Avsluttet -> throw ApiException(
+            Avsluttet -> throw ApiException(
+                status = HttpStatusCode.Conflict,
+                message = "Oppgaven er avsluttet."
+            )
+        }
+    }
+
+    route("/plukk-oppgave2").authorizedPost<Unit, PlukkOppgaveResponse, PlukkOppgaveRequest>(
+        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
+    ) { _, request ->
+        prometheus.httpCallCounter("/plukk-oppgave2").increment()
+
+        when (
+            val result = PlukkOppgaveService.plukkOppgave(
+                dataSource = dataSource,
+                enhetService = enhetService,
+                ansattInfoGateway = ansattInfoGateway,
+                token = token(),
+                ident = ident(),
+                oppgaveId = request.oppgaveId,
+                versjon = request.versjon,
+            )
+        ) {
+            is PlukkOppgaveService.PlukkResult.Plukket -> {
+                val plukketOppgave = result.oppgave
+                respond(
+                    PlukkOppgaveResponse(
+                        behandlingsreferanse = plukketOppgave.behandlingRef,
+                        saksnummer = plukketOppgave.saksnummer,
+                        journalpostId = plukketOppgave.journalpostId,
+                        behandlingstype = plukketOppgave.behandlingstype,
+                        tilbakekrevingUrl = plukketOppgave.tilbakekrevingsVars?.tilbakekrevings_URL
+                    )
+                )
+            }
+
+            IngenTilgang -> {
+                log.info("Bruker kunne ikke plukke oppgave grunnet manglende tilgang")
+                respondWithStatus(HttpStatusCode.Unauthorized)
+            }
+
+            AlleredeTildelt -> throw ApiException(
+                status = HttpStatusCode.Conflict,
+                message = "Oppgaven er allerede tildelt."
+            )
+
+
+            Avsluttet -> throw ApiException(
                 status = HttpStatusCode.Conflict,
                 message = "Oppgaven er avsluttet."
             )
