@@ -16,6 +16,8 @@ groups:
     group: c75883f9-4cb2-42c7-b75c-3f0f29ee3ead
   - name: AAP_DRIFT
     group: bc89623f-4624-4978-ac54-acd048c0f2a5
+  - name: NAIS_TEAM_AAP
+    group: ee2a0374-97a6-462e-9a05-3cb7be3d8fc5
 env:
   - name: INTEGRASJON_TILGANG_URL
     value: http://tilgang
