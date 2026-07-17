@@ -77,7 +77,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
         }
     }
 
-    route("/plukk-oppgave2").authorizedPost<Unit, PlukkOppgaveResponse, PlukkOppgaveRequest>(
+    route("/plukk-oppgave/v2").authorizedPost<Unit, PlukkOppgaveResponse, PlukkOppgaveRequest>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave2").increment()
@@ -93,7 +93,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
                 versjon = request.versjon,
             )
         ) {
-            is PlukkOppgaveService.PlukkResult.Plukket -> {
+            is Plukket -> {
                 val plukketOppgave = result.oppgave
                 respond(
                     PlukkOppgaveResponse(
