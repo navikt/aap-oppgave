@@ -9,6 +9,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.bruker
 import no.nav.aap.komponenter.server.auth.token
+import no.nav.aap.oppgave.BehandlingskontekstResponse
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SakOgAvklaringsbehov
@@ -137,6 +138,14 @@ private fun Oppgave.tilOppgaveISøkResponse(): OppgaveISøkResponse {
         reservertAvIdent = reservertAv,
         erPåVent = this.påVentTil != null,
         typeMarkeringer = this.markeringer.map { it.markeringType },
-        enhetForKø = this.enhetForKø
+        enhetForKø = this.enhetForKø,
+        avklaringsbehovKode = this.avklaringsbehovKode,
+        behandlingskontekst = BehandlingskontekstResponse(
+            behandlingstype = this.behandlingstype,
+            behandlingsreferanse = this.behandlingRef,
+            saksnummer = this.saksnummer,
+            journalpostId = this.journalpostId,
+            tilbakekrevingUrl = this.tilbakekrevingsVars?.tilbakekrevings_URL
+        ),
     )
 }
