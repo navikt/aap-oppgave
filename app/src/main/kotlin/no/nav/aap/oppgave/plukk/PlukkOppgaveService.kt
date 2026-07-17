@@ -8,6 +8,7 @@ import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.FeilVersjonException
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
@@ -106,28 +107,79 @@ class PlukkOppgaveService(
             token: OidcToken,
             ident: String,
             oppgaveId: Long,
-        ): Oppgave? {
+            versjon: Long,
+        ): PlukkResult {
             val oppgave = dataSource.transaction(readOnly = true) {
                 OppgaveRepository(it).hentOppgave(oppgaveId)
             }
 
             val harTilgang = TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
-
             if (!harTilgang) {
                 dataSource.transaction {
                     PlukkOppgaveService(enhetService, ansattInfoGateway, it)
                         .oppdaterOppgaveVedTilgangAvslått(oppgaveId = oppgave.oppgaveId(), ident = ident)
                 }
-                return null
+                return PlukkResult.IngenTilgang
             }
 
-            if (oppgave.reservertAv != ident) {
+            if (oppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET) {
+                return PlukkResult.Avsluttet
+            }
+
+            if (oppgave.versjon != versjon && oppgave.reservertAv != null && oppgave.reservertAv != ident) {
+                return PlukkResult.AlleredeTildelt
+            }
+
+            if (oppgave.reservertAv == ident) {
+                return PlukkResult.Plukket(oppgave)
+            }
+
+            return try {
                 dataSource.transaction { connection ->
-                    ReserverOppgaveService(connection, ansattInfoGateway).reserverOppgave(oppgave.oppgaveId(), ident, ident)
+                    ReserverOppgaveService(connection, ansattInfoGateway)
+                        .reserverOppgave(
+                            oppgaveId = OppgaveId(id = oppgaveId, versjon = versjon),
+                            endretAvIdent = ident,
+                            reservertAvIdent = ident
+                        )
+                }
+
+                val oppdatertOppgave = dataSource.transaction(readOnly = true) {
+                    OppgaveRepository(it).hentOppgave(oppgaveId)
+                }
+                PlukkResult.Plukket(oppdatertOppgave)
+            } catch (_: FeilVersjonException) {
+
+                val sisteOppgave = dataSource.transaction(readOnly = true) {
+                    OppgaveRepository(it).hentOppgave(oppgaveId)
+                }
+
+                when {
+                    sisteOppgave.status == no.nav.aap.oppgave.verdityper.Status.AVSLUTTET -> PlukkResult.Avsluttet
+                    sisteOppgave.reservertAv != null && sisteOppgave.reservertAv != ident -> PlukkResult.AlleredeTildelt
+                    sisteOppgave.reservertAv == ident -> PlukkResult.Plukket(sisteOppgave)
+                    else -> {
+                        dataSource.transaction { connection ->
+                            ReserverOppgaveService(connection, ansattInfoGateway)
+                                .reserverOppgave(
+                                    oppgaveId = sisteOppgave.oppgaveId(),
+                                    endretAvIdent = ident,
+                                    reservertAvIdent = ident
+                                )
+                        }
+                        val oppdatertOppgave = dataSource.transaction(readOnly = true) {
+                            OppgaveRepository(it).hentOppgave(oppgaveId)
+                        }
+                        PlukkResult.Plukket(oppdatertOppgave)
+                    }
                 }
             }
-
-            return oppgave
         }
     }
-}
+
+    sealed interface PlukkResult {
+        data class Plukket(val oppgave: Oppgave) : PlukkResult
+        data object IngenTilgang : PlukkResult
+        data object AlleredeTildelt : PlukkResult
+        data object Avsluttet : PlukkResult
+    }}

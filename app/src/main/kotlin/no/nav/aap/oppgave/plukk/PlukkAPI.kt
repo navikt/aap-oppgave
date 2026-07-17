@@ -6,6 +6,7 @@ import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import no.nav.aap.komponenter.httpklient.exception.ApiException
 import javax.sql.DataSource
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.oppgave.OppgaveDto
@@ -20,6 +21,10 @@ import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
+import no.nav.aap.oppgave.plukk.PlukkOppgaveService.PlukkResult.Plukket
+import no.nav.aap.oppgave.plukk.PlukkOppgaveService.PlukkResult.Avsluttet
+import no.nav.aap.oppgave.plukk.PlukkOppgaveService.PlukkResult.IngenTilgang
+import no.nav.aap.oppgave.plukk.PlukkOppgaveService.PlukkResult.AlleredeTildelt
 
 private val log = LoggerFactory.getLogger("plukkApi")
 
@@ -39,38 +44,36 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
             ansattInfoGateway,
             token(),
             ident(),
-            request.oppgaveId
+            request.oppgaveId,
+            versjon = request.versjon,
         )
-        if (oppgave != null) {
-            respond(oppgave.tilOppgaveDto())
-        } else {
-            log.info("Bruker kunne ikke plukke oppgave")
-            respondWithStatus(HttpStatusCode.Unauthorized)
-        }
-    }
 
-    route("/plukk-oppgave/v2").authorizedPost<Unit, PlukkOppgaveResponse, PlukkOppgaveRequest>(
-        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
-    ) { _, request ->
-        prometheus.httpCallCounter("/plukk-oppgave/v2").increment()
-        val plukketOppgave = PlukkOppgaveService.plukkOppgave(
-            dataSource,
-            enhetService,
-            ansattInfoGateway,
-            token(),
-            ident(),
-            request.oppgaveId
-        )
-        if (plukketOppgave != null) {
-            respond(PlukkOppgaveResponse(
-                behandlingsreferanse = plukketOppgave.behandlingRef,
-                saksnummer = plukketOppgave.saksnummer,
-                journalpostId = plukketOppgave.journalpostId,
-                behandlingstype = plukketOppgave.behandlingstype,
-                tilbakekrevingUrl = plukketOppgave.tilbakekrevingsVars?.tilbakekrevings_URL
-            ))
-        } else {
-            respondWithStatus(HttpStatusCode.Unauthorized)
+        when (
+            val result = PlukkOppgaveService.plukkOppgave(
+                dataSource = dataSource,
+                enhetService = enhetService,
+                ansattInfoGateway = ansattInfoGateway,
+                token = token(),
+                ident = ident(),
+                oppgaveId = request.oppgaveId,
+                versjon = request.versjon,
+            )
+        ) {
+            is Plukket -> respond(result.oppgave.tilOppgaveDto())
+            IngenTilgang -> {
+                log.info("Bruker kunne ikke plukke oppgave grunnet manglende tilgang")
+                respondWithStatus(HttpStatusCode.Unauthorized)
+            }
+
+            AlleredeTildelt -> throw ApiException(
+                status = HttpStatusCode.Conflict,
+                message = "Oppgaven er allerede tildelt."
+            )
+
+           Avsluttet -> throw ApiException(
+                status = HttpStatusCode.Conflict,
+                message = "Oppgaven er avsluttet."
+            )
         }
     }
 }

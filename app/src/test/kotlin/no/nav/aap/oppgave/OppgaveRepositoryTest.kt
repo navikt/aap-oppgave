@@ -26,6 +26,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
 import java.sql.SQLException
 import java.time.LocalDate
@@ -1266,6 +1267,23 @@ class OppgaveRepositoryTest {
         )
         assertThat(utenBegge.oppgaver).hasSize(1)
         assertThat(utenBegge.oppgaver.map { it.id }).containsExactly(umarkertOppgave.id)
+    }
+
+    @Test
+    fun `Skal ikke reservere avsluttet oppgave`() {
+        val oppgaveId = opprettOppgave(status = Status.AVSLUTTET)
+
+        assertThrows<FeilVersjonException> {
+            reserverOppgave(oppgaveId, "saksbehandler1")
+        }
+
+        dataSource.transaction { connection ->
+            val lagret = OppgaveRepository(connection).hentOppgave(oppgaveId.id)
+            assertThat(lagret.status).isEqualTo(Status.AVSLUTTET)
+            assertThat(lagret.reservertAv).isNull()
+            assertThat(lagret.reservertTidspunkt).isNull()
+            assertThat(lagret.versjon).isEqualTo(oppgaveId.versjon)
+        }
     }
 
     private fun avsluttOppgave(oppgaveId: OppgaveId) {
