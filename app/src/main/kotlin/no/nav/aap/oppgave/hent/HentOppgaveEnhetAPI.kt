@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.oppgaveliste
+package no.nav.aap.oppgave.hent
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.response.respond
@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.enhet.OppgaveEnhetResponse
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.tilgang.AuthorizationParamPathConfig
 import no.nav.aap.tilgang.authorizedGet
 

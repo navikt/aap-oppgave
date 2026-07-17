@@ -57,6 +57,8 @@ import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
+import no.nav.aap.oppgave.søk.SøkDto
+import no.nav.aap.oppgave.søk.SøkResponse
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkRequest
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkResponse

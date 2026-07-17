@@ -28,12 +28,19 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
     prometheus: PrometheusMeterRegistry,
     enhetService: EnhetService,
     ansattInfoGateway: AnsattInfoGateway,
-) =
+) {
     route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
-        val oppgave = PlukkOppgaveService.plukkOppgave(dataSource, enhetService, ansattInfoGateway, token(), ident(), request.oppgaveId)
+        val oppgave = PlukkOppgaveService.plukkOppgave(
+            dataSource,
+            enhetService,
+            ansattInfoGateway,
+            token(),
+            ident(),
+            request.oppgaveId
+        )
         if (oppgave != null) {
             respond(oppgave.tilOppgaveDto())
         } else {
@@ -41,3 +48,29 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
             respondWithStatus(HttpStatusCode.Unauthorized)
         }
     }
+
+    route("/plukk-oppgave/v2").authorizedPost<Unit, PlukkOppgaveResponse, PlukkOppgaveRequest>(
+        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
+    ) { _, request ->
+        prometheus.httpCallCounter("/plukk-oppgave/v2").increment()
+        val plukketOppgave = PlukkOppgaveService.plukkOppgave(
+            dataSource,
+            enhetService,
+            ansattInfoGateway,
+            token(),
+            ident(),
+            request.oppgaveId
+        )
+        if (plukketOppgave != null) {
+            respond(PlukkOppgaveResponse(
+                behandlingsreferanse = plukketOppgave.behandlingRef,
+                saksnummer = plukketOppgave.saksnummer,
+                journalpostId = plukketOppgave.journalpostId,
+                behandlingstype = plukketOppgave.behandlingstype,
+                tilbakekrevingUrl = plukketOppgave.tilbakekrevingsVars?.tilbakekrevings_URL
+            ))
+        } else {
+            respondWithStatus(HttpStatusCode.Unauthorized)
+        }
+    }
+}

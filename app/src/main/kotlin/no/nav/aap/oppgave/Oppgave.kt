@@ -21,11 +21,18 @@ data class ReturInfo(
         begrunnelse = begrunnelse,
         endretAv = endretAv
     )
+
+    fun tilReturInformasjonDto(): ReturInformasjonDto = ReturInformasjonDto(
+        status = status,
+        endretAv = endretAv,
+        begrunnelse = begrunnelse,
+        årsaker = årsaker
+    )
 }
 
 @Suppress("PropertyName")
 data class TilbakekrevingsVars(
-    val tilbakekrevings_URL : String,
+    val tilbakekrevings_URL: String,
     val tilbakekrevings_beløp: BigDecimal
 ) {
     fun tilDto(): TilbakekrevingsVarsDto = TilbakekrevingsVarsDto(
