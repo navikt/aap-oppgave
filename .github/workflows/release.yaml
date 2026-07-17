@@ -50,7 +50,7 @@ jobs:
           java-version: 21
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@v6
-      - uses: paulhatch/semantic-version@v6.0.2
+      - uses: paulhatch/semantic-version@v6.0.3
         id: tag
         with:
           change_path: "api-kontrakt/"
