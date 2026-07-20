@@ -12,19 +12,19 @@ data class OppgaveVisningsinformasjonResponse(
     val reservertAvIdent: String?,
     val returInformasjon: ReturInformasjonDto?,
     val markeringer: List<MarkeringDto>,
-    val påVentInfo: VenteInformasjonDto?,
-    val utløptVenteInfo: VenteInformasjonDto?,
-    val skjermingInfo: SkjermingInfoDto,
+    val påVentInfo: VenteInformasjonResponse?,
+    val utløptVenteInfo: VenteInformasjonResponse?,
+    val skjermingInfo: SkjermingInfoResponse,
     val harUlesteDokumenter: Boolean,
 )
 
-data class VenteInformasjonDto(
+data class VenteInformasjonResponse(
     val påVentTil: LocalDate,
     val påVentÅrsak: String,
     val venteBegrunnelse: String?,
 )
 
-data class SkjermingInfoDto(
+data class SkjermingInfoResponse(
     val harStrengtFortroligAdresse: Boolean,
     val harFortroligAdresse: Boolean,
     val erSkjermet: Boolean

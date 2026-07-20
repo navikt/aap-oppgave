@@ -82,14 +82,14 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
     returInformasjon = returInformasjon?.tilReturInformasjonDto(),
     markeringer = markeringer,
     påVentInfo = påVentTil?.let {
-        VenteInformasjonDto(
+        VenteInformasjonResponse(
             påVentTil = it,
             påVentÅrsak = requireNotNull(påVentÅrsak) { "Venteårsak kan ikke være null dersom ventefrist er satt" },
             venteBegrunnelse = venteBegrunnelse
         )
     },
     utløptVenteInfo = utløptVentefrist?.let {
-        VenteInformasjonDto(
+        VenteInformasjonResponse(
             påVentTil = it,
             påVentÅrsak = requireNotNull(forrigePåVentÅrsak) {
                 "Forrige venteårsak kan ikke være null hvis utløpt ventefrist er satt"
@@ -97,7 +97,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
             venteBegrunnelse = forrigeVenteBegrunnelse
         )
     },
-    skjermingInfo = SkjermingInfoDto(
+    skjermingInfo = SkjermingInfoResponse(
         harStrengtFortroligAdresse = enhet == Enhet.NAV_VIKAFOSSEN.kode,
         harFortroligAdresse = harFortroligAdresse == true,
         erSkjermet = erSkjermet == true
