@@ -12,6 +12,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.SaksnummerPathParam
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
@@ -29,21 +30,36 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
     enhetService: EnhetService,
     norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
-) = route("/{referanse}/hent-oppgave").get<BehandlingReferanse, OppgaveDto> { request ->
-    prometheus.httpCallCounter("/hent-oppgave").increment()
-    val oppgave = dataSource.transaction(readOnly = true) { connection ->
-        OppgavelisteService(
-            OppgaveRepository(connection),
-            MarkeringRepository(connection),
-            enhetService,
-            norgGateway
-        ).hentAktivOppgave(request)
+) {
+    route("/{referanse}/hent-oppgave").get<BehandlingReferanse, OppgaveDto> { request ->
+        prometheus.httpCallCounter("/hent-oppgave").increment()
+        val oppgave = dataSource.transaction(readOnly = true) { connection ->
+            OppgavelisteService(
+                OppgaveRepository(connection),
+                MarkeringRepository(connection),
+                enhetService,
+                norgGateway
+            ).hentAktivOppgave(request)
+        }
+
+        if (oppgave != null) {
+            respond(oppgave.hentPersonNavn().tilOppgaveDto())
+        } else {
+            respondWithStatus(HttpStatusCode.NoContent)
+        }
     }
 
-    if (oppgave != null) {
-        respond(oppgave.hentPersonNavn().tilOppgaveDto())
-    } else {
-        respondWithStatus(HttpStatusCode.NoContent)
+    route("/{saksnummer}/hent-oppgaver-paa-sak").get<SaksnummerPathParam, OppgaverPåSakResponse> { request ->
+        prometheus.httpCallCounter("/hent-oppgaver-paa-sak").increment()
+        val oppgaver = dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).hentAktiveOppgaverPåSak(request.saksnummer)
+        }
+
+        respond(
+            OppgaverPåSakResponse(
+                oppgaver = oppgaver.map { it.tilOppgavePåSakResponse() }
+            )
+        )
     }
 }
 
@@ -104,4 +120,14 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
     ),
     harUlesteDokumenter = harUlesteDokumenter == true
 )
+
+private fun Oppgave.tilOppgavePåSakResponse(): OppgavePåSakResponse {
+    return OppgavePåSakResponse(
+        id = requireNotNull(id) { "Oppgave må ha ID" },
+        versjon = versjon,
+        behandlingsreferanse = behandlingRef,
+        reservertAvIdent = reservertAv,
+        reservertAvNavn = reservertAvNavn,
+    )
+}
 

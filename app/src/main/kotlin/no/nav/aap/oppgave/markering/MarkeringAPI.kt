@@ -13,6 +13,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.bruker
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.SaksnummerPathParam
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering

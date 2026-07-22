@@ -3,6 +3,7 @@ package no.nav.aap.oppgave
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
+import no.nav.aap.komponenter.verdityper.Bruker
 import no.nav.aap.oppgave.enhet.EnhetDto
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
@@ -17,7 +18,6 @@ import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.util.UUID
-import no.nav.aap.komponenter.verdityper.Bruker
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
@@ -182,6 +182,27 @@ class OppgaveRepository(private val connection: DBConnection) {
             setRowMapper { row ->
                 val tilbakekreving = getTilbakekreving(row, connection)
                 oppgaveMapper(row, tilbakekreving)
+            }
+        }
+    }
+
+    fun hentAktiveOppgaverPåSak(saksnummer: String): List<Oppgave> {
+        val oppgaverForSakQuery = """
+        SELECT 
+            $alleOppgaveFelt
+        FROM 
+            OPPGAVE 
+        WHERE 
+            SAKSNUMMER = ?
+            AND STATUS = 'OPPRETTET'
+    """.trimIndent()
+
+        return connection.queryList(oppgaverForSakQuery) {
+            setParams {
+                setString(1, saksnummer)
+            }
+            setRowMapper { row ->
+                oppgaveMapper(row, null)
             }
         }
     }

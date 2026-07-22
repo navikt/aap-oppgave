@@ -1,4 +1,4 @@
-package no.nav.aap.oppgave.markering
+package no.nav.aap.oppgave
 
 import com.papsign.ktor.openapigen.annotations.parameters.PathParam
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
