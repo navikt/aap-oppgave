@@ -20,7 +20,7 @@ data class OppgaveVisningsinformasjonResponse(
 
 data class VenteInformasjonResponse(
     val påVentTil: LocalDate,
-    val påVentÅrsak: String,
+    val påVentÅrsak: String?,
     val venteBegrunnelse: String?,
 )
 

@@ -107,9 +107,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
     utløptVenteInfo = utløptVentefrist?.let {
         VenteInformasjonResponse(
             påVentTil = it,
-            påVentÅrsak = requireNotNull(forrigePåVentÅrsak) {
-                "Forrige venteårsak kan ikke være null hvis utløpt ventefrist er satt"
-            },
+            påVentÅrsak = forrigePåVentÅrsak,
             venteBegrunnelse = forrigeVenteBegrunnelse
         )
     },
