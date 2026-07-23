@@ -7,26 +7,17 @@ import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.server.auth.token
-import no.nav.aap.oppgave.BehandlingskontekstResponse
-import no.nav.aap.oppgave.ForrigeKvalitetssikrerInfo
-import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.FilterRepository
-import no.nav.aap.oppgave.hent.SkjermingInfoResponse
-import no.nav.aap.oppgave.hent.VenteInformasjonResponse
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
-import no.nav.aap.oppgave.liste.ListeOppgaveResponse
-import no.nav.aap.oppgave.liste.OppgaveMetadataResponse
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.liste.OppgavelisteResponsV2
-import no.nav.aap.oppgave.liste.OppgavelisteTagsResponse
-import no.nav.aap.oppgave.liste.PersonOgEnhetResponse
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
 import javax.sql.DataSource
@@ -132,75 +123,4 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
             )
         )
     }
-}
-
-private fun Oppgave.tilListeOppgaveResponse(): ListeOppgaveResponse {
-    return ListeOppgaveResponse(
-        behandlingOpprettet = behandlingOpprettet,
-        avklaringsbehovKode = avklaringsbehovKode,
-        vurderingsbehov = vurderingsbehov,
-        årsakTilOpprettelse = årsakTilOpprettelse,
-        oppgaveMetadataResponse = OppgaveMetadataResponse(
-            id = requireNotNull(id) { "Oppgave må ha ID" },
-            versjon = versjon,
-            status = status,
-            opprettetTidspunkt = opprettetTidspunkt
-        ),
-        behandlingskontekstResponse = BehandlingskontekstResponse(
-            behandlingsreferanse = behandlingRef,
-            journalpostId = journalpostId,
-            saksnummer = saksnummer,
-            behandlingstype = behandlingstype,
-            tilbakekrevingUrl = tilbakekrevingsVars?.tilbakekrevings_URL
-        ),
-        personOgEnhetResponse = PersonOgEnhetResponse(
-            personIdent = requireNotNull(personIdent) { "Oppgave må ha personIdent" },
-            personNavn = personNavn,
-            enhet = enhet,
-            oppfølgingsenhet = oppfølgingsenhet,
-            enhetForrigeOppgave = enhetForrigeOppgave
-        ),
-        oppgavelisteTagsResponse = OppgavelisteTagsResponse(
-            påVentInfo = påVentTil?.let {
-                VenteInformasjonResponse(
-                    påVentTil = påVentTil,
-                    påVentÅrsak = requireNotNull(påVentÅrsak) { "Oppgave har ventefrist men ikke årsak" },
-                    venteBegrunnelse = venteBegrunnelse
-                )
-            },
-            forrigePåVentInfo = utløptVentefrist?.let {
-                VenteInformasjonResponse(
-                    påVentTil = utløptVentefrist,
-                    påVentÅrsak = requireNotNull(forrigePåVentÅrsak) { "Oppgave har utløpt ventefrist men ikke årsak" },
-                    venteBegrunnelse = forrigeVenteBegrunnelse
-                )
-            },
-            returInformasjon = returInformasjon?.let {
-                ReturInformasjonDto(
-                    status = it.status,
-                    årsaker = it.årsaker,
-                    begrunnelse = it.begrunnelse,
-                    endretAv = it.endretAv
-                )
-            },
-            skjermingInfoResponse = SkjermingInfoResponse(
-                harStrengtFortroligAdresse = harStrengtFortroligAdresse,
-                harFortroligAdresse = harFortroligAdresse == true,
-                erSkjermet = erSkjermet == true
-            ),
-            harUlesteDokumenter = harUlesteDokumenter == true,
-            markeringer = markeringer,
-            forrigeKvalitetssikrerInfo = forrigeKvalitetssikrerInfo?.let {
-                ForrigeKvalitetssikrerInfo(
-                    forrigeKvalitetssikrerIdent = it.forrigeKvalitetssikrerIdent,
-                    forrigeKvalitetssikrerNavn = it.forrigeKvalitetssikrerNavn
-                )
-            }
-        ),
-        veilederArbeid = veilederArbeid,
-        veilederSykdom = veilederSykdom,
-        reservertAv = reservertAv,
-        reservertAvNavn = reservertAvNavn,
-        tilbakekrevingsVarsDto = tilbakekrevingsVars?.tilDto()
-    )
 }
