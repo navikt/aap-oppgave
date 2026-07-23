@@ -121,7 +121,7 @@ fun NormalOpenAPIRoute.sistEndretApi(
 }
 
 private fun harAdressebeskyttelse(oppgave: Oppgave): Boolean =
-    oppgave.enhet == Enhet.NAV_VIKAFOSSEN.kode ||
+    oppgave.harStrengtFortroligAdresse ||
             erEgenAnsattEnhet(oppgave) ||
             oppgave.harFortroligAdresse == true
 
