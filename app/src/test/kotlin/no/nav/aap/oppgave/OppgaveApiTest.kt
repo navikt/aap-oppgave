@@ -6,13 +6,6 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import java.net.URI
-import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
-import java.util.UUID
-import kotlin.test.AfterTest
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status
@@ -51,13 +44,14 @@ import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
-import no.nav.aap.oppgave.plukk.PlukkOppgaveDto
+import no.nav.aap.oppgave.plukk.PlukkOppgaveRequest
+import no.nav.aap.oppgave.plukk.PlukkOppgaveResponse
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
-import no.nav.aap.oppgave.søk.SøkDto
+import no.nav.aap.oppgave.søk.SøkRequest
 import no.nav.aap.oppgave.søk.SøkResponse
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkRequest
@@ -83,6 +77,13 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.net.URI
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import java.util.UUID
+import kotlin.test.AfterTest
 
 private const val TEST_IDENT = "01010012345"
 
@@ -491,8 +492,8 @@ class OppgaveApiTest {
         val oppgaveUtenReservasjon =
             hentOppgaveViaRepository(reservertOppgaveMedTilgang!!.oppgaveId())
         assertThat(oppgaveUtenReservasjon).isNotNull()
-        assertThat(oppgaveUtenReservasjon.reservertAv == null)
-        assertThat(oppgaveUtenReservasjon.reservertTidspunkt == null)
+        assertThat(oppgaveUtenReservasjon.reservertAv).isNull()
+        assertThat(oppgaveUtenReservasjon.reservertTidspunkt).isNull()
     }
 
     @Test
@@ -542,7 +543,7 @@ class OppgaveApiTest {
         val avreserverteOppgaver = avreserverteOppgaveIds?.map { hentOppgaveViaRepository(it) }
 
         assertThat(avreserverteOppgaver).hasSize(2)
-        assertThat(avreserverteOppgaver?.all { it.reservertAv == null && it.reservertTidspunkt == null })
+        assertThat(avreserverteOppgaver?.all { it.reservertAv == null && it.reservertTidspunkt == null }).isTrue()
 
     }
 
@@ -812,7 +813,7 @@ class OppgaveApiTest {
             )
         )
 
-        val søkResponseStrengtFortrolig = søkEtterOppgaver(SøkDto(saksnummer1))
+        val søkResponseStrengtFortrolig = søkEtterOppgaver(SøkRequest(saksnummer1))
         assertThat(søkResponseStrengtFortrolig?.harAdressebeskyttelse).isTrue()
 
         // sett fortrolig adresse
@@ -835,7 +836,7 @@ class OppgaveApiTest {
             )
         )
 
-        val søkResponseFortroligAdresse = søkEtterOppgaver(SøkDto(saksnummer1))
+        val søkResponseFortroligAdresse = søkEtterOppgaver(SøkRequest(saksnummer1))
         assertThat(søkResponseFortroligAdresse?.harAdressebeskyttelse).isTrue()
 
         // sett egen ansatt
@@ -858,7 +859,7 @@ class OppgaveApiTest {
             )
         )
 
-        val søkResponseEgenAnsatt = søkEtterOppgaver(SøkDto(saksnummer1))
+        val søkResponseEgenAnsatt = søkEtterOppgaver(SøkRequest(saksnummer1))
         assertThat(søkResponseEgenAnsatt?.harAdressebeskyttelse).isTrue()
 
     }
@@ -1395,11 +1396,11 @@ class OppgaveApiTest {
         )
     }
 
-    private fun plukkOppgave(oppgaveId: OppgaveId): OppgaveDto? {
+    private fun plukkOppgave(oppgaveId: OppgaveId): PlukkOppgaveResponse? {
         return client.post(
             URI.create("http://localhost:$port/plukk-oppgave"),
             PostRequest(
-                body = PlukkOppgaveDto(oppgaveId.id, oppgaveId.versjon),
+                body = PlukkOppgaveRequest(oppgaveId.id, oppgaveId.versjon),
                 additionalHeaders = listOf(
                     Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
                 )
@@ -1455,10 +1456,10 @@ class OppgaveApiTest {
         )!!
     }
 
-    private fun søkEtterOppgaver(søkDto: SøkDto): SøkResponse? {
+    private fun søkEtterOppgaver(søkRequest: SøkRequest): SøkResponse? {
         return oboClient.post(
             URI.create("http://localhost:$port/sok"),
-            PostRequest(body = søkDto, currentToken = getOboToken())
+            PostRequest(body = søkRequest, currentToken = getOboToken())
         )
     }
 
