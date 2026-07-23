@@ -1,11 +1,10 @@
 package no.nav.aap.oppgave.søk
 
 import no.nav.aap.oppgave.BehandlingskontekstResponse
-import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 
 data class SøkResponse(
-    val oppgaver: List<OppgaveDto>,
+    val oppgaver: List<OppgaveISøkResponse>,
     val harTilgang: Boolean,
     val harAdressebeskyttelse: Boolean,
 )

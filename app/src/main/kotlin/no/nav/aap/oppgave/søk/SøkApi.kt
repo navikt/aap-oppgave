@@ -36,7 +36,7 @@ fun NormalOpenAPIRoute.søkApi(
     norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
 ) {
-    route("/sok").post<Unit, SøkResponse, SøkDto> { _, søk ->
+    route("/sok").post<Unit, SøkResponse, SøkRequest> { _, søk ->
         prometheus.httpCallCounter("/sok").increment()
         val oppgaver =
             dataSource.transaction(readOnly = true) { connection ->
@@ -64,7 +64,7 @@ fun NormalOpenAPIRoute.søkApi(
 
         respond(
             SøkResponse(
-                oppgaver = oppgaver.hentPersonNavn().map { it.tilOppgaveDto() },
+                oppgaver = oppgaver.hentPersonNavn().map { it.tilOppgaveISøkResponse() },
                 harTilgang = harTilgang,
                 harAdressebeskyttelse = harAdressebeskyttelse,
             )
