@@ -8,7 +8,6 @@ import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.oppgave.BehandlingskontekstResponse
-import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.metrikker.httpCallCounter
@@ -19,10 +18,8 @@ import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.authorizedPost
-import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
-private val log = LoggerFactory.getLogger("plukkApi")
 
 fun NormalOpenAPIRoute.plukkOppgaveApi(
     dataSource: DataSource,
@@ -30,11 +27,11 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
     enhetService: EnhetService,
     ansattInfoGateway: AnsattInfoGateway,
 ) {
-    route("/plukk-oppgave").authorizedPost<Unit, OppgaveDto, PlukkOppgaveDto>(
+    route("/plukk-oppgave").authorizedPost<Unit, PlukkOppgaveResponse, PlukkOppgaveRequest>(
         RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/plukk-oppgave").increment()
-        val oppgave = PlukkOppgaveService.plukkOppgave(
+        val plukketOppgave = PlukkOppgaveService.plukkOppgave(
             dataSource,
             enhetService,
             ansattInfoGateway,
@@ -42,10 +39,19 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
             ident(),
             request.oppgaveId
         )
-        if (oppgave != null) {
-            respond(oppgave.tilOppgaveDto())
+        if (plukketOppgave != null) {
+            respond(
+                PlukkOppgaveResponse(
+                    BehandlingskontekstResponse(
+                        behandlingsreferanse = plukketOppgave.behandlingRef,
+                        saksnummer = plukketOppgave.saksnummer,
+                        journalpostId = plukketOppgave.journalpostId,
+                        behandlingstype = plukketOppgave.behandlingstype,
+                        tilbakekrevingUrl = plukketOppgave.tilbakekrevingsVars?.tilbakekrevings_URL
+                    )
+                )
+            )
         } else {
-            log.info("Bruker kunne ikke plukke oppgave")
             respondWithStatus(HttpStatusCode.Unauthorized)
         }
     }

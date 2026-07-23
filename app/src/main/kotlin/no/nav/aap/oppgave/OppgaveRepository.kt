@@ -769,12 +769,16 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun hentSisteEndretAvSaksbehandler(bruker: Bruker): List<SakOgAvklaringsbehov> {
         val query = """
-            SELECT DISTINCT ON (o.saksnummer) o.saksnummer, o.avklaringsbehov_type
-            FROM oppgave o
-                     LEFT JOIN oppgave_historikk oh ON o.id = oh.oppgave_id
-            WHERE oh.endret_av = ?
-            ORDER BY o.saksnummer, oh.endret_tidspunkt DESC
-            LIMIT 15;
+            SELECT saksnummer, avklaringsbehov_type, endret_tidspunkt
+            FROM (
+                SELECT DISTINCT ON (o.saksnummer) o.saksnummer, o.avklaringsbehov_type, oh.endret_tidspunkt
+                FROM oppgave o
+                    INNER JOIN oppgave_historikk oh ON o.id = oh.oppgave_id
+                WHERE oh.endret_av = ?
+                ORDER BY o.saksnummer, oh.endret_tidspunkt DESC
+            ) historikk
+            ORDER BY endret_tidspunkt DESC
+            LIMIT 15
         """.trimIndent()
 
         return connection.queryList(query) {
