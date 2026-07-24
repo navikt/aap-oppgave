@@ -55,33 +55,4 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
             respondWithStatus(HttpStatusCode.Forbidden)
         }
     }
-
-    route("/plukk-oppgave/v2").authorizedPost<Unit, PlukkOppgaveResponse, PlukkOppgaveRequest>(
-        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
-    ) { _, request ->
-        prometheus.httpCallCounter("/plukk-oppgave/v2").increment()
-        val plukketOppgave = PlukkOppgaveService.plukkOppgave(
-            dataSource,
-            enhetService,
-            ansattInfoGateway,
-            token(),
-            ident(),
-            request.oppgaveId
-        )
-        if (plukketOppgave != null) {
-            respond(
-                PlukkOppgaveResponse(
-                    BehandlingskontekstResponse(
-                        behandlingsreferanse = plukketOppgave.behandlingRef,
-                        saksnummer = plukketOppgave.saksnummer,
-                        journalpostId = plukketOppgave.journalpostId,
-                        behandlingstype = plukketOppgave.behandlingstype,
-                        tilbakekrevingUrl = plukketOppgave.tilbakekrevingsVars?.tilbakekrevings_URL
-                    )
-                )
-            )
-        } else {
-            respondWithStatus(HttpStatusCode.Unauthorized)
-        }
-    }
 }

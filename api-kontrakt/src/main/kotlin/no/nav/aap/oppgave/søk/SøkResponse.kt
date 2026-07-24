@@ -9,12 +9,6 @@ data class SøkResponse(
     val harAdressebeskyttelse: Boolean,
 )
 
-data class SøkResponseV2(
-    val oppgaver: List<OppgaveISøkResponse>,
-    val harTilgang: Boolean,
-    val harAdressebeskyttelse: Boolean,
-)
-
 data class OppgaveISøkResponse(
     val behandlingskontekst: BehandlingskontekstResponse,
     val avklaringsbehovKode: String,
