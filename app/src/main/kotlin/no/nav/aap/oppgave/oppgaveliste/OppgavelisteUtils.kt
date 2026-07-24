@@ -2,8 +2,17 @@ package no.nav.aap.oppgave.oppgaveliste
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
+import no.nav.aap.oppgave.BehandlingskontekstResponse
+import no.nav.aap.oppgave.ForrigeKvalitetssikrerInfo
 import no.nav.aap.oppgave.Oppgave
+import no.nav.aap.oppgave.ReturInformasjonDto
+import no.nav.aap.oppgave.hent.SkjermingInfoResponse
+import no.nav.aap.oppgave.hent.VenteInformasjonResponse
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
+import no.nav.aap.oppgave.liste.OppgaveMedKontekstResponse
+import no.nav.aap.oppgave.liste.OppgaveMetadataResponse
+import no.nav.aap.oppgave.liste.OppgavelisteTagsResponse
+import no.nav.aap.oppgave.liste.PersonOgEnhetResponse
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.flywaydb.core.api.logging.LogFactory
 import java.time.Duration
@@ -78,6 +87,77 @@ object OppgavelisteUtils {
         val personNavn = ident?.let { samletNavnMap[it] } ?: ""
 
         return this.copy(personNavn = personNavn)
+    }
+
+    fun Oppgave.tilListeOppgaveResponse(): OppgaveMedKontekstResponse {
+        return OppgaveMedKontekstResponse(
+            behandlingOpprettet = behandlingOpprettet,
+            avklaringsbehovKode = avklaringsbehovKode,
+            vurderingsbehov = vurderingsbehov,
+            årsakTilOpprettelse = årsakTilOpprettelse,
+            oppgaveMetadataResponse = OppgaveMetadataResponse(
+                id = requireNotNull(id) { "Oppgave må ha ID" },
+                versjon = versjon,
+                status = status,
+                opprettetTidspunkt = opprettetTidspunkt
+            ),
+            behandlingskontekstResponse = BehandlingskontekstResponse(
+                behandlingsreferanse = behandlingRef,
+                journalpostId = journalpostId,
+                saksnummer = saksnummer,
+                behandlingstype = behandlingstype,
+                tilbakekrevingUrl = tilbakekrevingsVars?.tilbakekrevings_URL
+            ),
+            personOgEnhetResponse = PersonOgEnhetResponse(
+                personIdent = requireNotNull(personIdent) { "Oppgave må ha personIdent" },
+                personNavn = personNavn,
+                enhet = enhet,
+                oppfølgingsenhet = oppfølgingsenhet,
+                enhetForrigeOppgave = enhetForrigeOppgave
+            ),
+            oppgavelisteTagsResponse = OppgavelisteTagsResponse(
+                påVentInfo = påVentTil?.let {
+                    VenteInformasjonResponse(
+                        påVentTil = påVentTil,
+                        påVentÅrsak = requireNotNull(påVentÅrsak) { "Oppgave har ventefrist men ikke årsak" },
+                        venteBegrunnelse = venteBegrunnelse
+                    )
+                },
+                forrigePåVentInfo = utløptVentefrist?.let {
+                    VenteInformasjonResponse(
+                        påVentTil = utløptVentefrist,
+                        påVentÅrsak = forrigePåVentÅrsak,
+                        venteBegrunnelse = forrigeVenteBegrunnelse
+                    )
+                },
+                returInformasjon = returInformasjon?.let {
+                    ReturInformasjonDto(
+                        status = it.status,
+                        årsaker = it.årsaker,
+                        begrunnelse = it.begrunnelse,
+                        endretAv = it.endretAv
+                    )
+                },
+                skjermingInfoResponse = SkjermingInfoResponse(
+                    harStrengtFortroligAdresse = harStrengtFortroligAdresse,
+                    harFortroligAdresse = harFortroligAdresse == true,
+                    erSkjermet = erSkjermet == true
+                ),
+                harUlesteDokumenter = harUlesteDokumenter == true,
+                markeringer = markeringer,
+                forrigeKvalitetssikrerInfo = forrigeKvalitetssikrerInfo?.let {
+                    ForrigeKvalitetssikrerInfo(
+                        forrigeKvalitetssikrerIdent = it.forrigeKvalitetssikrerIdent,
+                        forrigeKvalitetssikrerNavn = it.forrigeKvalitetssikrerNavn
+                    )
+                }
+            ),
+            veilederArbeid = veilederArbeid,
+            veilederSykdom = veilederSykdom,
+            reservertAv = reservertAv,
+            reservertAvNavn = reservertAvNavn,
+            tilbakekrevingsVarsDto = tilbakekrevingsVars?.tilDto()
+        )
     }
 }
 

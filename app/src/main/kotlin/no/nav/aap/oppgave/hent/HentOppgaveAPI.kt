@@ -13,7 +13,6 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SaksnummerPathParam
-import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
@@ -112,7 +111,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
         )
     },
     skjermingInfo = SkjermingInfoResponse(
-        harStrengtFortroligAdresse = enhet == Enhet.NAV_VIKAFOSSEN.kode,
+        harStrengtFortroligAdresse = harStrengtFortroligAdresse,
         harFortroligAdresse = harFortroligAdresse == true,
         erSkjermet = erSkjermet == true
     ),

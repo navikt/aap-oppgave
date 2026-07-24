@@ -7,7 +7,7 @@ import no.nav.aap.oppgave.verdityper.Status
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 enum class ReturStatus {
     RETUR_FRA_BESLUTTER,

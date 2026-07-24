@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave
 
+import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetDto
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -45,7 +46,7 @@ data class ForrigeKvalitetssikrer(
     val forrigeKvalitetssikrerIdent: String,
     val forrigeKvalitetssikrerNavn: String? = null,
 ) {
-    fun tilDto(): ForrigeKvalitetssikrerInfo = ForrigeKvalitetssikrerInfo(
+    fun tilResponse(): ForrigeKvalitetssikrerInfo = ForrigeKvalitetssikrerInfo(
         forrigeKvalitetssikrerIdent = forrigeKvalitetssikrerIdent,
         forrigeKvalitetssikrerNavn = forrigeKvalitetssikrerNavn
     )
@@ -104,6 +105,8 @@ data class Oppgave(
     val erPåVent: Boolean = påVentTil != null
 
     val erÅpen: Boolean = status == Status.OPPRETTET
+
+    val harStrengtFortroligAdresse: Boolean = enhet == Enhet.NAV_VIKAFOSSEN.kode
 
     init {
         if (journalpostId == null) {
@@ -171,7 +174,7 @@ data class Oppgave(
             erSkjermet = erSkjermet,
             markeringer = markeringer,
             tilbakekrevingsVarsDto = tilbakekrevingsVars?.tilDto(),
-            forrigeKvalitetssikrerInfo = forrigeKvalitetssikrerInfo?.tilDto(),
+            forrigeKvalitetssikrerInfo = forrigeKvalitetssikrerInfo?.tilResponse(),
         )
     }
 }
