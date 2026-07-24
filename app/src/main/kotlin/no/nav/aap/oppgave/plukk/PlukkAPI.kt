@@ -52,7 +52,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
                 )
             )
         } else {
-            respondWithStatus(HttpStatusCode.Unauthorized)
+            respondWithStatus(HttpStatusCode.Forbidden)
         }
     }
 
