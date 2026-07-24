@@ -3,10 +3,10 @@ package no.nav.aap.oppgave.hent
 import java.util.UUID
 
 data class OppgaverPåSakResponse(
-    val oppgaver: List<OppgavePåSakResponse>
+    val oppgaver: List<OppgavePåBehandlingResponse>
 )
 
-data class OppgavePåSakResponse(
+data class OppgavePåBehandlingResponse(
     val id: Long,
     val versjon: Long,
     val behandlingsreferanse: UUID,

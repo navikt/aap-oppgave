@@ -57,7 +57,7 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
 
         respond(
             OppgaverPåSakResponse(
-                oppgaver = oppgaver.map { it.tilOppgavePåSakResponse() }
+                oppgaver = oppgaver.map { it.tilOppgavePåBehandlingResponse() }
             )
         )
     }
@@ -119,8 +119,8 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
     harUlesteDokumenter = harUlesteDokumenter == true
 )
 
-private fun Oppgave.tilOppgavePåSakResponse(): OppgavePåSakResponse {
-    return OppgavePåSakResponse(
+private fun Oppgave.tilOppgavePåBehandlingResponse(): OppgavePåBehandlingResponse {
+    return OppgavePåBehandlingResponse(
         id = requireNotNull(id) { "Oppgave må ha ID" },
         versjon = versjon,
         behandlingsreferanse = behandlingRef,
