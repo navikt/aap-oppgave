@@ -25,9 +25,11 @@ CREATE INDEX IDX_OPPGAVE_AKTIV_RESERVERT_AV_OPPRETTET
     ON OPPGAVE (reservert_av, behandling_opprettet)
     WHERE status != 'AVSLUTTET';
 
--- Array-overlap-operator (&&) på AARSAKER_TIL_BEHANDLING krever GIN
+-- Array-overlap-operator (&&) på AARSAKER_TIL_BEHANDLING krever GIN.
+-- Partial fordi filteret kun brukes i finnOppgaver (alltid status != 'AVSLUTTET').
 CREATE INDEX IDX_OPPGAVE_AARSAKER_GIN
-    ON OPPGAVE USING GIN (aarsaker_til_behandling);
+    ON OPPGAVE USING GIN (aarsaker_til_behandling)
+    WHERE status != 'AVSLUTTET';
 
 -- IDX_OPPGAVE_RESERVERT_AV erstattes av den nye partial index over
 DROP INDEX IDX_OPPGAVE_RESERVERT_AV;
