@@ -22,12 +22,12 @@ data class OppgavelisteRespons(
 
 data class OppgavelisteResponsV2(
     val antallTotalt: Int,
-    val oppgaver: List<ListeOppgaveResponse>,
+    val oppgaver: List<OppgaveMedKontekstResponse>,
     val antallGjenstaaende: Int? = null,
     val sattFilterBehandlingstyper: Set<Behandlingstype>? = emptySet(),
 )
 
-data class ListeOppgaveResponse(
+data class OppgaveMedKontekstResponse(
     val behandlingOpprettet: LocalDateTime,
     val avklaringsbehovKode: String,
     val vurderingsbehov: List<String>,

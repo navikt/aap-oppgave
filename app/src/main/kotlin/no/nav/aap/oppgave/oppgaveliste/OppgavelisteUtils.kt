@@ -9,7 +9,7 @@ import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.hent.SkjermingInfoResponse
 import no.nav.aap.oppgave.hent.VenteInformasjonResponse
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
-import no.nav.aap.oppgave.liste.ListeOppgaveResponse
+import no.nav.aap.oppgave.liste.OppgaveMedKontekstResponse
 import no.nav.aap.oppgave.liste.OppgaveMetadataResponse
 import no.nav.aap.oppgave.liste.OppgavelisteTagsResponse
 import no.nav.aap.oppgave.liste.PersonOgEnhetResponse
@@ -89,8 +89,8 @@ object OppgavelisteUtils {
         return this.copy(personNavn = personNavn)
     }
 
-    fun Oppgave.tilListeOppgaveResponse(): ListeOppgaveResponse {
-        return ListeOppgaveResponse(
+    fun Oppgave.tilListeOppgaveResponse(): OppgaveMedKontekstResponse {
+        return OppgaveMedKontekstResponse(
             behandlingOpprettet = behandlingOpprettet,
             avklaringsbehovKode = avklaringsbehovKode,
             vurderingsbehov = vurderingsbehov,
