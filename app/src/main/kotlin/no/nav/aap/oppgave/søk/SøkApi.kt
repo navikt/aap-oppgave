@@ -70,41 +70,6 @@ fun NormalOpenAPIRoute.søkApi(
             )
         )
     }
-
-    route("/sok/v2").post<Unit, SøkResponseV2, SøkRequest> { _, søk ->
-        prometheus.httpCallCounter("/sok/v2").increment()
-        val oppgaver =
-            dataSource.transaction(readOnly = true) { connection ->
-                val søketekst = søk.søketekst.trim()
-                OppgavelisteService(
-                    OppgaveRepository(connection),
-                    MarkeringRepository(connection),
-                    enhetService,
-                    norgGateway
-                ).søkEtterOppgaver(søketekst)
-            }
-
-        if (oppgaver.isEmpty()) {
-            log.info("Fant ingen oppgaver basert på søketeksten")
-        }
-
-        val harAdressebeskyttelse = oppgaver.any { harAdressebeskyttelse(it) }
-        val harTilgang = oppgaver.all {
-            TilgangService.sjekkTilgang(
-                it.tilAvklaringsbehovReferanseDto(),
-                token(),
-                Operasjon.SE
-            )
-        }
-
-        respond(
-            SøkResponseV2(
-                oppgaver = oppgaver.map { it.tilOppgaveISøkResponse() },
-                harTilgang = harTilgang,
-                harAdressebeskyttelse = harAdressebeskyttelse,
-            )
-        )
-    }
 }
 
 fun NormalOpenAPIRoute.sistEndretApi(

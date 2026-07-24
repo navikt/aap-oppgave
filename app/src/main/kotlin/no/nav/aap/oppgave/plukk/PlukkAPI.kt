@@ -4,7 +4,7 @@ import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.response.respond
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.server.auth.token
 import no.nav.aap.oppgave.BehandlingskontekstResponse
@@ -53,35 +53,6 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
             )
         } else {
             respondWithStatus(HttpStatusCode.Forbidden)
-        }
-    }
-
-    route("/plukk-oppgave/v2").authorizedPost<Unit, PlukkOppgaveResponse, PlukkOppgaveRequest>(
-        RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
-    ) { _, request ->
-        prometheus.httpCallCounter("/plukk-oppgave/v2").increment()
-        val plukketOppgave = PlukkOppgaveService.plukkOppgave(
-            dataSource,
-            enhetService,
-            ansattInfoGateway,
-            token(),
-            ident(),
-            request.oppgaveId
-        )
-        if (plukketOppgave != null) {
-            respond(
-                PlukkOppgaveResponse(
-                    BehandlingskontekstResponse(
-                        behandlingsreferanse = plukketOppgave.behandlingRef,
-                        saksnummer = plukketOppgave.saksnummer,
-                        journalpostId = plukketOppgave.journalpostId,
-                        behandlingstype = plukketOppgave.behandlingstype,
-                        tilbakekrevingUrl = plukketOppgave.tilbakekrevingsVars?.tilbakekrevings_URL
-                    )
-                )
-            )
-        } else {
-            respondWithStatus(HttpStatusCode.Unauthorized)
         }
     }
 }
