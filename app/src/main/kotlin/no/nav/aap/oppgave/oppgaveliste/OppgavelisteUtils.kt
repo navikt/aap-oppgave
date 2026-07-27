@@ -95,27 +95,27 @@ object OppgavelisteUtils {
             avklaringsbehovKode = avklaringsbehovKode,
             vurderingsbehov = vurderingsbehov,
             årsakTilOpprettelse = årsakTilOpprettelse,
-            oppgaveMetadataResponse = OppgaveMetadataResponse(
+            oppgaveMetadata = OppgaveMetadataResponse(
                 id = requireNotNull(id) { "Oppgave må ha ID" },
                 versjon = versjon,
                 status = status,
                 opprettetTidspunkt = opprettetTidspunkt
             ),
-            behandlingskontekstResponse = BehandlingskontekstResponse(
+            behandlingskontekst = BehandlingskontekstResponse(
                 behandlingsreferanse = behandlingRef,
                 journalpostId = journalpostId,
                 saksnummer = saksnummer,
                 behandlingstype = behandlingstype,
                 tilbakekrevingUrl = tilbakekrevingsVars?.tilbakekrevings_URL
             ),
-            personOgEnhetResponse = PersonOgEnhetResponse(
+            personOgEnhet = PersonOgEnhetResponse(
                 personIdent = requireNotNull(personIdent) { "Oppgave må ha personIdent" },
                 personNavn = personNavn,
                 enhet = enhet,
                 oppfølgingsenhet = oppfølgingsenhet,
                 enhetForrigeOppgave = enhetForrigeOppgave
             ),
-            oppgavelisteTagsResponse = OppgavelisteTagsResponse(
+            oppgavelisteTags = OppgavelisteTagsResponse(
                 påVentInfo = påVentTil?.let {
                     VenteInformasjonResponse(
                         påVentTil = påVentTil,
@@ -138,7 +138,7 @@ object OppgavelisteUtils {
                         endretAv = it.endretAv
                     )
                 },
-                skjermingInfoResponse = SkjermingInfoResponse(
+                skjermingInfo = SkjermingInfoResponse(
                     harStrengtFortroligAdresse = harStrengtFortroligAdresse,
                     harFortroligAdresse = harFortroligAdresse == true,
                     erSkjermet = erSkjermet == true
@@ -156,7 +156,7 @@ object OppgavelisteUtils {
             veilederSykdom = veilederSykdom,
             reservertAv = reservertAv,
             reservertAvNavn = reservertAvNavn,
-            tilbakekrevingsVarsDto = tilbakekrevingsVars?.tilDto()
+            tilbakekrevingsVars = tilbakekrevingsVars?.tilDto()
         )
     }
 }
