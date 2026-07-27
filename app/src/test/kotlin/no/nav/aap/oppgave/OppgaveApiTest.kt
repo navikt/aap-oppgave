@@ -847,6 +847,7 @@ class OppgaveApiTest {
                 saksnummer = opprettetOppgave.saksnummer,
                 behandlingRef = opprettetOppgave.behandlingRef,
                 enhet = Enhet.NAY_EGNE_ANSATTE.kode,
+                erSkjermet = true,
                 oppfølgingsenhet = null,
                 veilederArbeid = opprettetOppgave.veilederArbeid,
                 behandlingOpprettet = opprettetOppgave.behandlingOpprettet,
@@ -1067,7 +1068,7 @@ class OppgaveApiTest {
         val oppgave1 = hentOppgaveViaRepository(oppgaveId1)
         assertEquals(Enhet.NAV_VIKAFOSSEN.kode, oppgave1.enhet)
         assertNull(oppgave1.reservertAv)
-        assertEquals(oppgave1.endretAv, "Kelvin")
+        assertEquals("Kelvin", oppgave1.endretAv)
         val oppgave2Etter = hentOppgaveViaRepository(oppgaveId2)
         assertEquals(oppgave2Før, oppgave2Etter)
     }
