@@ -54,7 +54,7 @@ class MarkeringRepository(
                         begrunnelse = it.getStringOrNull("begrunnelse"),
                         opprettetAv = it.getString("opprettet_av"),
                         opprettetAvNavn = it.getStringOrNull("opprettet_av_navn"),
-                        hendelseType = it.getEnumOrNull<MarkeringHendelseType?, MarkeringHendelseType>("hendelse_type"),
+                        hendelseType = it.getEnumOrNull<MarkeringHendelseType>("hendelse_type"),
                         opprettetTidspunkt = it.getLocalDateTime("opprettet_tid"),
                     )
                 }
@@ -89,7 +89,7 @@ class MarkeringRepository(
             begrunnelse = row.getStringOrNull("begrunnelse"),
             opprettetAv = row.getString("opprettet_av"),
             opprettetAvNavn = row.getStringOrNull("opprettet_av_navn"),
-            hendelseType = row.getEnumOrNull<MarkeringHendelseType?, MarkeringHendelseType>("hendelse_type"),
+            hendelseType = row.getEnumOrNull<MarkeringHendelseType>("hendelse_type"),
             opprettetTidspunkt = row.getLocalDateTime("opprettet_tid"),
         )
 }

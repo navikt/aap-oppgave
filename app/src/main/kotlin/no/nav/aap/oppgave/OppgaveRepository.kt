@@ -883,9 +883,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             erSkjermet = row.getBoolean("ER_SKJERMET"),
             harUlesteDokumenter = row.getBoolean("ULESTE_DOKUMENTER"),
             årsakTilOpprettelse = row.getStringOrNull("AARSAK_TIL_OPPRETTELSE"),
-            returStatus = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK"),
+            returStatus = row.getEnumOrNull<ReturStatus>("RETUR_AARSAK"),
             utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST"),
-            returInformasjon = row.getEnumOrNull<ReturStatus?, ReturStatus>("RETUR_AARSAK")?.let {
+            returInformasjon = row.getEnumOrNull<ReturStatus>("RETUR_AARSAK")?.let {
                 ReturInfo(
                     status = it,
                     årsaker = row.getArray("RETUR_AARSAKER", String::class)
