@@ -31,7 +31,7 @@ class FilterRepository(private val connection: DBConnection) {
         oppdaterFilter(filter)
         slettFilterParametre(filter.id)
         slettFilterEnheter(filter.id)
-        opprettFilterAvklaringsbehovtyper(filter.id, filter.avklaringsbehovtyper)
+        opprettFilterAvklaringsbehovtyper(filter.id, filter.avklaringsbehovKoder)
         opprettFilterBehandlingstyper(filter.id, filter.behandlingstyper)
         opprettFilterEnheter(filter.id, filter.enhetFilter)
         opprettFilterMarkeringer(filter.id, filter.markeringer)

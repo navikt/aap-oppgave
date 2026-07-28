@@ -99,7 +99,7 @@ fun NormalOpenAPIRoute.driftApi(
                                 id = request.id,
                                 navn = request.navn,
                                 beskrivelse = request.beskrivelse,
-                                avklaringsbehovtyper = request.avklaringsbehovKoder,
+                                avklaringsbehovKoder = request.avklaringsbehovKoder,
                                 behandlingstyper = request.behandlingstyper,
                                 enhetFilter = enhetFilter,
                                 markeringer = markeringFilter,

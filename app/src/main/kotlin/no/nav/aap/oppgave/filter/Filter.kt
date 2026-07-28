@@ -82,7 +82,7 @@ data class OppdaterFilter(
     val id: Long,
     val navn: String,
     val beskrivelse: String,
-    val avklaringsbehovtyper: Set<String> = emptySet(),
+    val avklaringsbehovKoder: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
     val markeringer: List<MarkeringFilter> = emptyList(),
     val enhetFilter: List<EnhetFilter>? = null,

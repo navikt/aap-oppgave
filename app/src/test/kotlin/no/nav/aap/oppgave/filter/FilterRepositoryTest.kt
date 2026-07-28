@@ -176,7 +176,7 @@ internal class FilterRepositoryTest {
                 navn = "Filter for avklar barnetillegg og revurdering",
                 beskrivelse = "Filter for avklar barnetillegg og revurdering",
                 behandlingstyper = setOf(Behandlingstype.REVURDERING),
-                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_BARNETILLEGG.kode.name),
+                avklaringsbehovKoder = setOf(Definisjon.AVKLAR_BARNETILLEGG.kode.name),
                 enhetFilter = listOf(
                     EnhetFilter("ALLE", Filtermodus.INKLUDER),
                     EnhetFilter("4402", Filtermodus.EKSKLUDER),
