@@ -23,7 +23,7 @@ fun NormalOpenAPIRoute.hentFilterApi(dataSource: DataSource, prometheus: Prometh
         prometheus.httpCallCounter("/filter/v2").increment()
         val filterListe = dataSource.transaction(readOnly = true) { connection ->
             FilterRepository(connection).hentForEnheter(req.enheter)
-        }.map { it.tilDtoV2() }
+        }.map { it.tilResponse() }
         respond(filterListe)
     }
 }

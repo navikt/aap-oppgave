@@ -27,7 +27,7 @@ data class Filter(
     val endretTidspunkt: LocalDateTime? = null,
     val type: FilterType,
 ) {
-    fun tilDtoV2(): FilterResponse {
+    fun tilResponse(): FilterResponse {
         return FilterResponse(
             id = id,
             navn = navn,
