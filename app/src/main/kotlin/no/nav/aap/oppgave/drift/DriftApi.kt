@@ -16,12 +16,13 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.filter.EnhetFilter
-import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.filter.MarkeringFilter
 import no.nav.aap.oppgave.filter.OppdaterFilter
 import no.nav.aap.oppgave.filter.OpprettFilter
+import no.nav.aap.oppgave.filter.tilDto
 import no.nav.aap.oppgave.historikk.OppgaveHistorikk
 import no.nav.aap.oppgave.historikk.OppgaveHistorikkRepository
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
@@ -111,7 +112,7 @@ fun NormalOpenAPIRoute.driftApi(
                             OpprettFilter(
                                 navn = request.navn,
                                 beskrivelse = request.beskrivelse,
-                                avklaringsbehovtyper = request.avklaringsbehovKoder,
+                                avklaringsbehovKoder = request.avklaringsbehovKoder,
                                 behandlingstyper = request.behandlingstyper,
                                 enhetFilter = enhetFilter,
                                 markeringer = markeringFilter,
@@ -161,11 +162,11 @@ fun NormalOpenAPIRoute.driftApi(
     }
 }
 
-private fun FilterDto.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilter>>) = FilterDriftResponse(
-    id = id!!,
+private fun Filter.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilter>>) = FilterDriftResponse(
+    id = id,
     navn = navn,
     beskrivelse = beskrivelse,
-    type = type,
+    type = type.tilDto(),
     avklaringsbehov = avklaringsbehovKoder.map { AvklaringsbehovDto(it, utledAvklaringsbehovnavn(it)) }.toSet(),
     behandlingstyper = behandlingstyper,
     inkluderteEnheter = (enhetPerFilter[id] ?: emptyList())

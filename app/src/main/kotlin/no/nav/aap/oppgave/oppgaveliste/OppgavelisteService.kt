@@ -10,7 +10,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
-import no.nav.aap.oppgave.filter.FilterDto
+import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP
@@ -72,7 +72,7 @@ class OppgavelisteService(
         enheter: Set<String>,
         paging: Paging,
         kunLedigeOppgaver: Boolean,
-        filter: FilterDto,
+        filter: Filter,
         veilederIdent: String?,
         token: OidcToken,
         ident: String,
@@ -166,9 +166,9 @@ class OppgavelisteService(
     }
 
     private fun validerOgKombinerFiltre(
-        filter: FilterDto,
+        filter: Filter,
         utvidetFilter: UtvidetOppgavelisteFilter?
-    ): FilterDto? {
+    ): Filter? {
         if (utvidetFilter == null) return filter
         val avklaringsbehovKoder =
             utledAvklaringsbehovKoderForUtvidetFilter(filter.avklaringsbehovKoder, utvidetFilter.avklaringsbehovKoder)

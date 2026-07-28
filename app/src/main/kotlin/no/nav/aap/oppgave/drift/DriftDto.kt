@@ -2,7 +2,7 @@ package no.nav.aap.oppgave.drift
 
 import java.time.LocalDateTime
 import java.util.UUID
-import no.nav.aap.oppgave.filter.FilterType
+import no.nav.aap.oppgave.filter.FilterTypeDto
 import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -33,7 +33,7 @@ data class FilterDriftResponse(
     val id: Long,
     val navn: String,
     val beskrivelse: String,
-    val type: FilterType,
+    val type: FilterTypeDto,
     val avklaringsbehov: Set<AvklaringsbehovDto>,
     val behandlingstyper: Set<Behandlingstype>,
     val inkluderteEnheter: List<String>,
@@ -50,7 +50,7 @@ data class FilterDriftRequest(
     val id: Long? = null,
     val navn: String,
     val beskrivelse: String,
-    val type: FilterType = FilterType.GENERELL,
+    val type: FilterTypeDto = FilterTypeDto.GENERELL,
     val avklaringsbehovKoder: Set<String> = emptySet(),
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
     val enheter: List<EnhetDriftRequest> = emptyList(),

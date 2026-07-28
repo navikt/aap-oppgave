@@ -39,8 +39,6 @@ import no.nav.aap.oppgave.enhet.nayEnhetForPerson
 import no.nav.aap.oppgave.enhet.oppfølgingsenhet.OppfølgingsenhetService
 import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
 import no.nav.aap.oppgave.filter.hentFilterApi
-import no.nav.aap.oppgave.filter.opprettEllerOppdaterFilterApi
-import no.nav.aap.oppgave.filter.slettFilterApi
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
@@ -156,8 +154,6 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 sistEndretApi(dataSource)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
-                opprettEllerOppdaterFilterApi(dataSource, prometheus)
-                slettFilterApi(dataSource, prometheus)
                 // Produksjonsstyring
                 hentAntallOppgaver(dataSource, prometheus)
                 // Enheter
