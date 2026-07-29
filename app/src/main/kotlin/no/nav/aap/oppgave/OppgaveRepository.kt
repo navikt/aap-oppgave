@@ -17,7 +17,7 @@ import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
-import java.util.*
+import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
