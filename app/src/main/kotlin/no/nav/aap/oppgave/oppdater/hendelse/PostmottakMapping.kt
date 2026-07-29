@@ -11,7 +11,7 @@ private val logger = LoggerFactory.getLogger(OppgaveOppdatering::class.java)
 fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
         personIdent = this.ident,
-        saksnummer = this.saksnummer,
+        saksnummer = null,
         referanse = this.referanse,
         journalpostId = this.journalpostId.referanse,
         behandlingStatus = this.status.tilBehandlingsstatus(),
