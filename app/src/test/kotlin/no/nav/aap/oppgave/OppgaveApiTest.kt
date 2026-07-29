@@ -1153,7 +1153,9 @@ class OppgaveApiTest {
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
         assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer).hasSize(1)
-        assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.first().markeringType).isEqualTo(MarkeringForBehandling.HASTER)
+        assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.first().markeringType).isEqualTo(
+            MarkeringForBehandling.HASTER
+        )
         assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.first().begrunnelse).isEqualTo(markering.begrunnelse)
 
         // hent markering fra endepunkt
@@ -1203,7 +1205,9 @@ class OppgaveApiTest {
         opprettMarkeringHendelse(behandlingref, markeringFjernet)
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
-        assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.any { it.markeringType == MarkeringForBehandling.HASTER && it.hendelseType == MarkeringHendelseType.FJERNET }).isTrue()
+        val gjeldendeHastemarkeringer =
+            mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.filter { it.markeringType == MarkeringForBehandling.HASTER }
+        assertThat(gjeldendeHastemarkeringer).isEmpty()
     }
 
     @Test

@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.statistikk.OppgaveHendelse
 import no.nav.aap.oppgave.statistikk.OppgaveTilStatistikkDto
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 

@@ -41,7 +41,6 @@ import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
-import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.postmottak.kontrakt.journalpost.JournalpostId
@@ -1393,10 +1392,10 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(utenSoning)
 
         val gjeldendeMarkeringer = hentGjeldendeMarkeringerForBehandling(behandlingsref)
-        val harFjernetHastemarkering = gjeldendeMarkeringer.any {
-            it.markeringType == MarkeringForBehandling.HASTER && it.hendelseType == MarkeringHendelseType.FJERNET
+        val gjeldendeHastemarkeringer = gjeldendeMarkeringer.filter {
+            it.markeringType == MarkeringForBehandling.HASTER
         }
-        assertThat(harFjernetHastemarkering).isTrue()
+        assertThat(gjeldendeHastemarkeringer).isEmpty()
     }
 
     @Test
@@ -1451,7 +1450,7 @@ class OppdaterOppgaveServiceTest {
 
         val gjeldendeAvslag115 = hentGjeldendeMarkeringerForBehandling(behandlingsref)
             .firstOrNull { it.markeringType == MarkeringForBehandling.AVSLAG_11_5 }
-        assertThat(gjeldendeAvslag115?.hendelseType).isEqualTo(MarkeringHendelseType.FJERNET)
+        assertThat(gjeldendeAvslag115?.hendelseType).isEqualTo(null)
     }
 
     @Test
