@@ -1,14 +1,11 @@
 package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
-import no.nav.aap.oppgave.markering.BehandlingMarkering
+import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.ÅPNE_STATUSER
-import no.nav.aap.oppgave.unleash.FeatureToggles
-import no.nav.aap.oppgave.unleash.IUnleashService
-import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -17,7 +14,6 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 class MarkeringService(
-    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val markeringRepository: MarkeringRepository,
 ) {
     private val HASTEMARKERING_BEGRUNNELSE_SONING = "Ny soning, mulig stans"
@@ -40,7 +36,7 @@ class MarkeringService(
             skalHaMarkering && !eksisterMarkering -> {
                 markeringRepository.lagreMarkeringHendelse(
                     referanse = referanse,
-                    markering = BehandlingMarkering(
+                    markering = Markering(
                         markeringType = MarkeringForBehandling.AVSLAG_11_5,
                         begrunnelse = AVSLAG_11_5_BEGRUNNELSE,
                         opprettetAv = KELVIN,
@@ -54,7 +50,7 @@ class MarkeringService(
             !skalHaMarkering && eksisterMarkering -> {
                 markeringRepository.lagreMarkeringHendelse(
                     referanse = referanse,
-                    markering = BehandlingMarkering(
+                    markering = Markering(
                         markeringType = MarkeringForBehandling.AVSLAG_11_5,
                         opprettetAv = KELVIN,
                         opprettetTidspunkt = LocalDateTime.now(),
@@ -77,7 +73,7 @@ class MarkeringService(
             skalHaSoningHaster && !eksistererSoningHaster -> {
                 markeringRepository.lagreMarkeringHendelse(
                     referanse = referanse,
-                    markering = BehandlingMarkering(
+                    markering = Markering(
                         markeringType = MarkeringForBehandling.HASTER,
                         begrunnelse = HASTEMARKERING_BEGRUNNELSE_SONING,
                         opprettetAv = KELVIN,
@@ -91,7 +87,7 @@ class MarkeringService(
             !skalHaSoningHaster && eksistererSoningHaster -> {
                 markeringRepository.lagreMarkeringHendelse(
                     referanse = referanse,
-                    markering = BehandlingMarkering(
+                    markering = Markering(
                         markeringType = MarkeringForBehandling.HASTER,
                         opprettetAv = KELVIN,
                         opprettetTidspunkt = LocalDateTime.now(),

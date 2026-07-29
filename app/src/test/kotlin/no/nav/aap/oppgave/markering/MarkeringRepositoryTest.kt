@@ -31,7 +31,7 @@ class MarkeringRepositoryTest {
     fun `kan lagre og hente markeringer på behandling`() {
         val behandlingId = UUID.randomUUID()
 
-        val hasterMarkering = BehandlingMarkering(
+        val hasterMarkering = Markering(
             markeringType = MarkeringForBehandling.HASTER,
             begrunnelse = "begrunnelseHaster",
             opprettetAv = "saksbehandler",
@@ -39,7 +39,7 @@ class MarkeringRepositoryTest {
             hendelseType = MarkeringHendelseType.OPPRETTET
         )
 
-        val avslag115Markering = BehandlingMarkering(
+        val avslag115Markering = Markering(
             markeringType = MarkeringForBehandling.AVSLAG_11_5,
             begrunnelse = "begrunnelseAvslag115",
             opprettetAv = "saksbehandler",
@@ -113,7 +113,7 @@ class MarkeringRepositoryTest {
             // Lagre markeringer på behandling 1
             markeringRepository.lagreMarkeringHendelse(
                 behandlingRef1,
-                BehandlingMarkering(
+                Markering(
                     markeringType = MarkeringForBehandling.HASTER,
                     begrunnelse = "haster veldig",
                     opprettetAv = "saksbehandler1",
@@ -123,7 +123,7 @@ class MarkeringRepositoryTest {
             )
             markeringRepository.lagreMarkeringHendelse(
                 behandlingRef1,
-                BehandlingMarkering(
+                Markering(
                     markeringType = MarkeringForBehandling.HASTER,
                     begrunnelse = "haster ikke lenger",
                     opprettetAv = "saksbehandler2",
@@ -135,7 +135,7 @@ class MarkeringRepositoryTest {
             // Lagre markering på behandling 2
             markeringRepository.lagreMarkeringHendelse(
                 behandlingRef2,
-                BehandlingMarkering(
+                Markering(
                     markeringType = MarkeringForBehandling.AVSLAG_11_5,
                     begrunnelse = "trenger spesialist",
                     opprettetAv = "saksbehandler1",

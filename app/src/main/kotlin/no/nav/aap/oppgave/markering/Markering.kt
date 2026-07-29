@@ -4,7 +4,7 @@ import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import java.time.LocalDateTime
 
-data class BehandlingMarkering(
+data class Markering(
     val markeringType: MarkeringForBehandling,
     val begrunnelse: String? = null,
     val opprettetAv: String,

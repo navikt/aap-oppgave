@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.oppgaveliste
 
-import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.miljo.Miljø
@@ -17,13 +16,13 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.markering.MarkeringDto
+import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
-import no.nav.aap.oppgave.markering.tilDto
+import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
-import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
+import java.util.UUID
 
 const val maksOppgaver = 50
 
@@ -43,7 +42,7 @@ class OppgavelisteService(
 
         return oppgaver.map { oppgave ->
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
-            oppgave.leggPåMarkeringer(markeringer.tilDto())
+            oppgave.leggPåMarkeringer(markeringer)
         }
     }
 
@@ -51,7 +50,7 @@ class OppgavelisteService(
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null) {
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
-            return oppgave.leggPåMarkeringer(markeringer.tilDto())
+            return oppgave.leggPåMarkeringer(markeringer)
         }
         return oppgave
     }
@@ -120,7 +119,7 @@ class OppgavelisteService(
             finnOppgaverDto.oppgaver.map { oppgave ->
                 val behandlingRef = oppgave.behandlingRef
                 val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
-                oppgave.leggPåMarkeringer(markeringer.tilDto())
+                oppgave.leggPåMarkeringer(markeringer)
             }
 
         return FinnOppgaverDto(
@@ -146,9 +145,7 @@ class OppgavelisteService(
             sortOrder = sortOrder
         ).map {
             it.leggPåMarkeringer(
-                markeringRepository.hentGjeldendeMarkeringerForBehandling(requireNotNull(it.behandlingRef) {
-                    "Fant ikke behandlingsreferanse for oppgave med id ${it.id}"
-                }).tilDto()
+                markeringRepository.hentGjeldendeMarkeringerForBehandling(it.behandlingRef)
             )
         }.hentPersonNavn()
 
@@ -184,7 +181,7 @@ class OppgavelisteService(
         )
     }
 
-    private fun Oppgave.leggPåMarkeringer(markeringer: List<MarkeringDto>): Oppgave =
+    private fun Oppgave.leggPåMarkeringer(markeringer: List<Markering>): Oppgave =
         this.copy(markeringer = markeringer)
 
     private fun List<Oppgave>.filtrerPåTilgang(

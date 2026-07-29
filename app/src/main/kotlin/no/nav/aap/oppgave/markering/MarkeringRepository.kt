@@ -11,7 +11,7 @@ class MarkeringRepository(
 ) {
     fun lagreMarkeringHendelse(
         referanse: UUID,
-        markering: BehandlingMarkering,
+        markering: Markering,
     ) {
         val query =
             """
@@ -62,7 +62,7 @@ class MarkeringRepository(
         return markeringer
     }
 
-    fun hentGjeldendeMarkeringerForBehandling(referanse: UUID): List<BehandlingMarkering> {
+    fun hentGjeldendeMarkeringerForBehandling(referanse: UUID): List<Markering> {
         val query =
             """
             SELECT DISTINCT ON (markering_type) *
@@ -83,8 +83,8 @@ class MarkeringRepository(
         return markeringer
     }
 
-    private fun markeringMapper(row: Row): BehandlingMarkering =
-        BehandlingMarkering(
+    private fun markeringMapper(row: Row): Markering =
+        Markering(
             markeringType = row.getEnum("markering_type"),
             begrunnelse = row.getStringOrNull("begrunnelse"),
             opprettetAv = row.getString("opprettet_av"),

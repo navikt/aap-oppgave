@@ -46,7 +46,7 @@ fun NormalOpenAPIRoute.markeringApi(
 
             MarkeringRepository(connection).lagreMarkeringHendelse(
                 referanse = request.referanse,
-                BehandlingMarkering(
+                Markering(
                     markeringType = dto.markeringType,
                     begrunnelse = dto.begrunnelse,
                     opprettetAv = bruker().ident,
@@ -81,7 +81,7 @@ fun NormalOpenAPIRoute.markeringApi(
     }
 }
 
-fun List<BehandlingMarkering>.tilDto(): List<MarkeringDto> {
+fun List<Markering>.tilDto(): List<MarkeringDto> {
     return map {
         MarkeringDto(
             markeringType = it.markeringType,

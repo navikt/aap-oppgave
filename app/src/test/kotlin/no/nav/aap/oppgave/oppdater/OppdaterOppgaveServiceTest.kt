@@ -29,14 +29,10 @@ import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
-import no.nav.aap.oppgave.klienter.msgraph.Group
-import no.nav.aap.oppgave.klienter.msgraph.GroupMembers
-import no.nav.aap.oppgave.klienter.msgraph.IMsGraphGateway
-import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
-import no.nav.aap.oppgave.markering.BehandlingMarkering
+import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
@@ -1567,7 +1563,6 @@ class OppdaterOppgaveServiceTest {
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
                 MarkeringService(
-                    unleash,
                     MarkeringRepository(connection)
                 ),
                 NomApiGateway.withClientCredentialsRestClient(),
@@ -1589,7 +1584,7 @@ class OppdaterOppgaveServiceTest {
                 FlytJobbRepository(connection),
                 TilbakekrevingRepository(connection),
                 MottattDokumentRepository(connection),
-                MarkeringService(unleash, MarkeringRepository(connection)),
+                MarkeringService(MarkeringRepository(connection)),
                 NomApiGateway.withClientCredentialsRestClient(),
 
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
@@ -1636,27 +1631,9 @@ class OppdaterOppgaveServiceTest {
         }
     }
 
-    private fun hentGjeldendeMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<BehandlingMarkering> {
+    private fun hentGjeldendeMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<Markering> {
         return dataSource.transaction { connection ->
             MarkeringRepository(connection).hentGjeldendeMarkeringerForBehandling(behandlingsref.referanse)
-        }
-    }
-
-    val graphClient = object : IMsGraphGateway {
-        override fun hentEnhetsgrupper(ident: String, currentToken: OidcToken): MemberOf {
-            return MemberOf(
-                groups = listOf(
-                    Group(name = "0000-GA-ENHET_$ENHET_NAV_LØRENSKOG", id = UUID.randomUUID()),
-                )
-            )
-        }
-
-        override fun hentFortroligAdresseGruppe(ident: String, currentToken: OidcToken): MemberOf {
-            return MemberOf()
-        }
-
-        override fun hentMedlemmerIGruppe(enhetsnummer: String): GroupMembers {
-            return GroupMembers()
         }
     }
 

@@ -11,7 +11,7 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.markering.BehandlingMarkering
+import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppgaveliste.utledAvklaringsbehovKoderForUtvidetFilter
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
@@ -1387,7 +1387,7 @@ class OppgaveRepositoryTest {
             val markeringRepository = MarkeringRepository(connection)
             markeringRepository.lagreMarkeringHendelse(
                 hasterBehandlingsref,
-                BehandlingMarkering(
+                Markering(
                     MarkeringForBehandling.HASTER,
                     "haster",
                     opprettetAv = "me",
@@ -1403,7 +1403,7 @@ class OppgaveRepositoryTest {
             val markeringRepository = MarkeringRepository(connection)
             markeringRepository.lagreMarkeringHendelse(
                 hasterBehandlingsref,
-                BehandlingMarkering(
+                Markering(
                     MarkeringForBehandling.HASTER,
                     "haster",
                     opprettetAv = "me",
@@ -1418,7 +1418,7 @@ class OppgaveRepositoryTest {
         dataSource.transaction { connection ->
             MarkeringRepository(connection).lagreMarkeringHendelse(
                 behandlingRef,
-                BehandlingMarkering(
+                Markering(
                     markeringType,
                     "begrunnelse",
                     "test",

@@ -3,9 +3,8 @@ package no.nav.aap.oppgave.oppdater
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import javax.sql.DataSource
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
 import no.nav.aap.komponenter.dbconnect.transaction
@@ -18,20 +17,20 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
-import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
 import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     dataSource: DataSource,
     enhetService: EnhetService,
     prometheus: PrometheusMeterRegistry,
     ansattInfoGateway: AnsattInfoGateway,
-    ) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
+) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
         operasjon = Operasjon.SAKSBEHANDLE,
         applicationsOnly = true,
@@ -49,7 +48,6 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
                 tilbakekrevingRepository = TilbakekrevingRepository(connection),
                 ansattInfoGateway = ansattInfoGateway,
                 markeringService = MarkeringService(
-                    UnleashServiceProvider.provideUnleashService(),
                     MarkeringRepository(connection),
                 ),
             ).håndterNyOppgaveOppdatering(
@@ -83,7 +81,6 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
                 tilbakekrevingRepository = TilbakekrevingRepository(connection),
                 ansattInfoGateway = ansattInfoGateway,
                 markeringService = MarkeringService(
-                    UnleashServiceProvider.provideUnleashService(),
                     MarkeringRepository(connection),
                 ),
             ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
@@ -117,7 +114,6 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
                 tilbakekrevingRepository = TilbakekrevingRepository(connection),
                 ansattInfoGateway = ansattInfoGateway,
                 markeringService = MarkeringService(
-                    UnleashServiceProvider.provideUnleashService(),
                     MarkeringRepository(connection),
                 ),
             ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
