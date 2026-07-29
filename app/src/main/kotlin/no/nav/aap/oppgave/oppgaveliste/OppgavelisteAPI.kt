@@ -72,7 +72,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
         respond(
             OppgavelisteRespons(
                 antallTotalt = data.antallTotalt,
-                oppgaver = data.oppgaver.hentPersonNavn().map { it.tilOppgaveDto() },
+                oppgaver = data.oppgaver.hentPersonNavn().map { it.tilListeOppgaveResponse() },
                 antallGjenstaaende = data.antallGjenstaaende,
                 sattFilterBehandlingstyper = bruktBehanlingstyperIFilter
             )
