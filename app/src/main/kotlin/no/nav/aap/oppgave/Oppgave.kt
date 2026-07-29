@@ -75,11 +75,7 @@ data class Oppgave(
     val venteBegrunnelse: String? = null,
     val forrigePåVentÅrsak: String? = null,
     val forrigeVenteBegrunnelse: String? = null,
-    @Deprecated("Bruk returInformasjon")
-    val returStatus: ReturStatus? = null,
     val returInformasjon: ReturInfo? = null,
-    @Deprecated("Bytt til vurderingsbehov når frontend er oppdatert")
-    val årsakerTilBehandling: List<String> = emptyList(),
     val vurderingsbehov: List<String> = emptyList(),
     val årsakTilOpprettelse: String? = null,
     val reservertAv: String? = null,
@@ -163,9 +159,7 @@ data class Oppgave(
             venteBegrunnelse = venteBegrunnelse,
             forrigePåVentÅrsak = forrigePåVentÅrsak,
             forrigeVenteBegrunnelse = forrigeVenteBegrunnelse,
-            returStatus = returStatus,
             returInformasjon = returInformasjon?.tilDto(),
-            årsakerTilBehandling = årsakerTilBehandling,
             årsakTilOpprettelse = årsakTilOpprettelse,
             reservertAv = reservertAv,
             reservertAvNavn = reservertAvNavn,

@@ -128,7 +128,6 @@ class OppgaveApiTest {
 
         // Hent hele oppgaven
         val oppgaven = hentOppgaveViaRepository(oppgave.oppgaveId())
-        assertThat(oppgaven.årsakerTilBehandling).containsExactly("SØKNAD")
         assertThat(oppgaven.vurderingsbehov).containsExactly("SØKNAD")
 
 
@@ -178,7 +177,6 @@ class OppgaveApiTest {
         assertThat(oppgave).isNotNull
         assertThat(oppgave!!.enhet).isEqualTo("4491")
         assertThat(oppgave.vurderingsbehov).contains("SØKNAD")
-        assertThat(oppgave.årsakerTilBehandling).isEqualTo(oppgave.vurderingsbehov)
         assertThat(oppgave.årsakTilOpprettelse).isEqualTo("SØKNAD")
 
 
@@ -1556,7 +1554,7 @@ class OppgaveApiTest {
                     oppfølgingsenhet = oppgave.oppfølgingsenhet,
                     veilederArbeid = oppgave.veilederArbeid,
                     veilederSykdom = oppgave.veilederSykdom,
-                    vurderingsbehov = oppgave.årsakerTilBehandling,
+                    vurderingsbehov = oppgave.vurderingsbehov,
                     erSkjermet = oppgave.erSkjermet == true,
                     returInformasjon = oppgave.returInformasjon,
                     utløptVentefrist = oppgave.utløptVentefrist
