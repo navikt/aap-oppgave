@@ -602,12 +602,10 @@ class OppdaterOppgaveService(
             påVentTil = påVentTil,
             påVentÅrsak = påVentÅrsak,
             venteBegrunnelse = venteBegrunnelse,
-            årsakerTilBehandling = vurderingsbehov,
             vurderingsbehov = vurderingsbehov,
             årsakTilOpprettelse = årsakTilOpprettelse,
             harFortroligAdresse = harFortroligAdresse,
             erSkjermet = erSkjermet,
-            returStatus = returInformasjon?.status,
             returInformasjon = returInformasjon,
             utløptVentefrist = utløptVentefrist,
             harUlesteDokumenter = harUlesteDokumenter

@@ -869,7 +869,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             venteBegrunnelse = row.getStringOrNull("VENTE_BEGRUNNELSE"),
             forrigePåVentÅrsak = row.getStringOrNull("SISTE_PAA_VENT_AARSAK"),
             forrigeVenteBegrunnelse = row.getStringOrNull("SISTE_VENTE_BEGRUNNELSE"),
-            årsakerTilBehandling = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             vurderingsbehov = row.getArray("AARSAKER_TIL_BEHANDLING", String::class),
             reservertAv = row.getStringOrNull("RESERVERT_AV"),
             reservertAvNavn = row.getStringOrNull("RESERVERT_AV_NAVN"),
@@ -883,7 +882,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             erSkjermet = row.getBoolean("ER_SKJERMET"),
             harUlesteDokumenter = row.getBoolean("ULESTE_DOKUMENTER"),
             årsakTilOpprettelse = row.getStringOrNull("AARSAK_TIL_OPPRETTELSE"),
-            returStatus = row.getEnumOrNull<ReturStatus>("RETUR_AARSAK"),
             utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST"),
             returInformasjon = row.getEnumOrNull<ReturStatus>("RETUR_AARSAK")?.let {
                 ReturInfo(
