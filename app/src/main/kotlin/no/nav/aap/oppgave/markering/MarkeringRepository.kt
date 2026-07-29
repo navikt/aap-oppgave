@@ -80,7 +80,7 @@ class MarkeringRepository(
                     markeringMapper(it)
                 }
             }
-        return markeringer
+        return markeringer.filter { it.hendelseType != MarkeringHendelseType.FJERNET}
     }
 
     private fun markeringMapper(row: Row): Markering =

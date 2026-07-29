@@ -44,7 +44,17 @@ fun NormalOpenAPIRoute.markeringApi(
                 )
             }
 
-            MarkeringRepository(connection).lagreMarkeringHendelse(
+            val markeringRepository = MarkeringRepository(connection)
+
+            val gjeldendeMarkering = markeringRepository.hentGjeldendeMarkeringerForBehandling(request.referanse)
+                .firstOrNull { it.markeringType == dto.markeringType }
+
+            if (gjeldendeMarkering?.hendelseType == dto.hendelseType) {
+                log.info("Markering med samme type, hendelse finnes allerede for behandling ${request.referanse}. Ingen ny markering lagres.")
+                return@transaction
+            }
+
+            markeringRepository.lagreMarkeringHendelse(
                 referanse = request.referanse,
                 Markering(
                     markeringType = dto.markeringType,

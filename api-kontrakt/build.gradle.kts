@@ -6,9 +6,6 @@ plugins {
 
 group = "no.nav.aap.oppgave"
 
-apply(plugin = "maven-publish")
-apply(plugin = "java-library")
-
 dependencies {
     implementation(libs.jacksonDatatypeJsr310)
     api(libs.ktorOpenapiGenerator)
