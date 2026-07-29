@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.SaksnummerPathParam
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
@@ -95,7 +96,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
     reservertAvNavn = reservertAvNavn,
     reservertAvIdent = reservertAv,
     returInformasjon = returInformasjon?.tilReturInformasjonDto(),
-    markeringer = markeringer,
+    markeringer = markeringer.tilDto(),
     påVentInfo = påVentTil?.let {
         VenteInformasjonResponse(
             påVentTil = it,

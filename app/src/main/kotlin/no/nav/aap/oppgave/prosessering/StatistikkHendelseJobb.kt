@@ -9,7 +9,7 @@ import no.nav.aap.motor.JobbUtfører
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.markering.BehandlingMarkering
+import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.statistikk.OppgaveHendelse
@@ -59,7 +59,7 @@ class StatistikkHendelseJobb(
     }
 }
 
-private fun fraOppgave(oppgave: Oppgave, markeringer: List<BehandlingMarkering>): OppgaveTilStatistikkDto {
+private fun fraOppgave(oppgave: Oppgave, markeringer: List<Markering>): OppgaveTilStatistikkDto {
     return OppgaveTilStatistikkDto(
         id = oppgave.id,
         personIdent = oppgave.personIdent,

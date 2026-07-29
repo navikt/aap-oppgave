@@ -2,7 +2,8 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetDto
-import no.nav.aap.oppgave.markering.MarkeringDto
+import no.nav.aap.oppgave.markering.Markering
+import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import java.math.BigDecimal
@@ -92,7 +93,7 @@ data class Oppgave(
     val harFortroligAdresse: Boolean? = false,
     val erSkjermet: Boolean? = false,
     val harUlesteDokumenter: Boolean? = false,
-    val markeringer: List<MarkeringDto> = emptyList(),
+    val markeringer: List<Markering> = emptyList(),
     val tilbakekrevingsVars: TilbakekrevingsVars? = null,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrer? = null,
 ) {
@@ -172,7 +173,7 @@ data class Oppgave(
             opprettetAv = opprettetAv,
             opprettetTidspunkt = opprettetTidspunkt,
             erSkjermet = erSkjermet,
-            markeringer = markeringer,
+            markeringer = markeringer.tilDto(),
             tilbakekrevingsVarsDto = tilbakekrevingsVars?.tilDto(),
             forrigeKvalitetssikrerInfo = forrigeKvalitetssikrerInfo?.tilResponse(),
         )
