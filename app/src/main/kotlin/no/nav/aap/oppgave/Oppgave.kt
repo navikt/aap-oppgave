@@ -1,7 +1,7 @@
 package no.nav.aap.oppgave
 
 import no.nav.aap.oppgave.enhet.Enhet
-import no.nav.aap.oppgave.enhet.EnhetDto
+import no.nav.aap.oppgave.enhet.EnhetInfo
 import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -61,7 +61,7 @@ data class Oppgave(
     val behandlingRef: UUID,
     val journalpostId: Long? = null,
     val enhet: String,
-    val enhetForrigeOppgave: EnhetDto? = null,
+    val enhetForrigeOppgave: EnhetInfo? = null,
     val oppfølgingsenhet: String?,
     val veilederArbeid: String? = null,
     val veilederSykdom: String? = null,
@@ -153,7 +153,7 @@ data class Oppgave(
             personNavn = personNavn,
             behandlingRef = behandlingRef,
             enhet = enhet,
-            enhetForrigeOppgave = enhetForrigeOppgave,
+            enhetForrigeOppgave = enhetForrigeOppgave?.tilDto(),
             oppfølgingsenhet = oppfølgingsenhet,
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
