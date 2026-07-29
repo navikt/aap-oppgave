@@ -4,7 +4,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.komponenter.verdityper.Bruker
-import no.nav.aap.oppgave.enhet.EnhetDto
+import no.nav.aap.oppgave.enhet.EnhetInfo
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -17,7 +17,7 @@ import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
 
@@ -846,7 +846,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         enheterMedNavn: Map<String, String> = emptyMap()
     ): Oppgave {
         val enhetForrigeOppgave = enhetNrForrigeOppgave?.let { enhetNr ->
-            EnhetDto(enhetNr = enhetNr, navn = enheterMedNavn[enhetNr] ?: enhetNr)
+            EnhetInfo(enhetNr = enhetNr, navn = enheterMedNavn[enhetNr] ?: enhetNr)
         }
 
         val standardOppgave = Oppgave(

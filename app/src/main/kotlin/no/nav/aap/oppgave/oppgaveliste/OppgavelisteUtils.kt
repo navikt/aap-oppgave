@@ -114,7 +114,7 @@ object OppgavelisteUtils {
                 personNavn = personNavn,
                 enhet = enhet,
                 oppfølgingsenhet = oppfølgingsenhet,
-                enhetForrigeOppgave = enhetForrigeOppgave
+                enhetForrigeOppgave = enhetForrigeOppgave?.tilDto()
             ),
             oppgavelisteTags = OppgavelisteTagsResponse(
                 påVentInfo = påVentTil?.let {
