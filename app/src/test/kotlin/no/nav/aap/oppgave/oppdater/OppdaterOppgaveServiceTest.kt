@@ -140,7 +140,6 @@ class OppdaterOppgaveServiceTest {
     @Test
     fun `oppgaver fra postmottak lukkes etter at saksnummer er satt`() {
         val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
-        val saksnummer = "123".let(::Saksnummer)
 
         val nå = LocalDateTime.now()
 
@@ -164,7 +163,6 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             opprettetTidspunkt = nå.minusHours(1),
-            saksnummer = null,
             hendelsesTidspunkt = nå.minusHours(1),
         )
         sendDokumentFlytStoppetHendelse(hendelse)
@@ -194,7 +192,6 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             opprettetTidspunkt = nå,
-            saksnummer = saksnummer.toString(),
             hendelsesTidspunkt = nå,
         )
         sendDokumentFlytStoppetHendelse(hendelse2)
@@ -230,7 +227,6 @@ class OppdaterOppgaveServiceTest {
                 )
             ),
             opprettetTidspunkt = nå.minusHours(2),
-            saksnummer = null,
             hendelsesTidspunkt = nå.minusHours(2),
         )
 
@@ -1166,7 +1162,7 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Lagrer utløpt ventefrist på postmottak-oppgaver`() {
-        val (_, saksnummer, behandlingsref) = opprettOppgave(
+        val (_, _, behandlingsref) = opprettOppgave(
             status = Status.AVSLUTTET,
             enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
@@ -1205,7 +1201,6 @@ class OppdaterOppgaveServiceTest {
             ),
             opprettetTidspunkt = nå.minusDays(2),
             hendelsesTidspunkt = nå.minusHours(5),
-            saksnummer = saksnummer.toString()
         )
 
         sendDokumentFlytStoppetHendelse(settPåVentHendelse)
@@ -1252,8 +1247,7 @@ class OppdaterOppgaveServiceTest {
                 ),
             ),
             opprettetTidspunkt = nå.minusDays(2),
-            hendelsesTidspunkt = nå.minusHours(5),
-            saksnummer = saksnummer.toString()
+            hendelsesTidspunkt = nå.minusHours(5)
         )
         sendDokumentFlytStoppetHendelse(hendelseTattAvVent)
 
