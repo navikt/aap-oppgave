@@ -26,6 +26,7 @@ data class FilterResponse(
     val navn: String,
     val beskrivelse: String,
     val type: FilterTypeDto,
+    val inneholderTilbakekreving: Boolean,
 )
 
 enum class FilterTypeDto {

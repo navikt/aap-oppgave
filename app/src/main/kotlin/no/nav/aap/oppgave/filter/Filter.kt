@@ -32,7 +32,8 @@ data class Filter(
             id = id,
             navn = navn,
             beskrivelse = beskrivelse,
-            type = type.tilDto()
+            type = type.tilDto(),
+            inneholderTilbakekreving = behandlingstyper.contains(Behandlingstype.TILBAKEKREVING)
         )
     }
 
