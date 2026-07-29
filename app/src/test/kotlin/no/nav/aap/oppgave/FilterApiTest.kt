@@ -4,28 +4,23 @@ import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
-import java.net.URI
-import java.time.Duration
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
-import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.ClientConfig
 import no.nav.aap.komponenter.httpklient.httpclient.RestClient
 import no.nav.aap.komponenter.httpklient.httpclient.get
-import no.nav.aap.komponenter.httpklient.httpclient.post
 import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
-import no.nav.aap.komponenter.httpklient.httpclient.request.PostRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
 import no.nav.aap.oppgave.fakes.Fakes
-import no.nav.aap.oppgave.filter.FilterDto
-import no.nav.aap.oppgave.filter.FilterId
-import no.nav.aap.oppgave.filter.FilterType
+import no.nav.aap.oppgave.filter.EnhetFilter
+import no.nav.aap.oppgave.filter.FilterRepository
+import no.nav.aap.oppgave.filter.FilterResponse
+import no.nav.aap.oppgave.filter.FilterTypeDto
+import no.nav.aap.oppgave.filter.Filtermodus
+import no.nav.aap.oppgave.filter.OpprettFilter
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
-import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -36,6 +31,11 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.net.URI
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import javax.sql.DataSource
 
 @ExtendWith(Fakes::class)
 @Testcontainers
@@ -50,6 +50,11 @@ class FilterApiTest {
 
         // Starter server
         private lateinit var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
+
+        private lateinit var dataSource: DataSource
+
+        private val ENHET_1 = "1234"
+        private val ENHET_2 = "1235"
 
         private val dbConfig = {
             DbConfig(
@@ -72,6 +77,7 @@ class FilterApiTest {
         @JvmStatic
         fun beforeAll() {
             postgres.start()
+            dataSource = initDatasource(dbConfig(), prometheus)
             server = embeddedServer(Netty, port = 0) {
                 server(dbConfig = dbConfig(), prometheus = prometheus)
             }.start()
@@ -84,6 +90,7 @@ class FilterApiTest {
         @AfterAll
         fun afterAll() {
             server.stop(0, 0)
+            dataSource.connection.close()
             postgres.close()
         }
     }
@@ -95,7 +102,7 @@ class FilterApiTest {
 
     private fun resetDatabase() {
         @Suppress("SqlWithoutWhere")
-        initDatasource(dbConfig(), prometheus).transaction {
+        dataSource.transaction {
             it.execute("DELETE FROM OPPGAVE_HISTORIKK")
             it.execute("DELETE FROM OPPGAVE")
             it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
@@ -106,145 +113,64 @@ class FilterApiTest {
     }
 
     @Test
-    fun `Endre filter`() {
-        // Opprett filter
-        opprettEllerOppdaterFilter(
-            FilterDto(
-                navn = "Avklare sykdom i førstegangsbehandling filter",
-                beskrivelse = "Avklare sykdom i førstegangsbehandling filter",
-                behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
-                avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
-                opprettetAv = "test",
-                opprettetTidspunkt = LocalDateTime.now(),
-                type = FilterType.GENERELL,
-            )
-        )
-
-        // Sjekk lagret filter
-        val alleFilter = hentAlleFilter()
-        assertThat(alleFilter).hasSize(1)
-        val hentetFilter = alleFilter.first()
-        assertThat(hentetFilter.behandlingstyper).isEqualTo(setOf(Behandlingstype.FØRSTEGANGSBEHANDLING))
-        assertThat(hentetFilter.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.AVKLAR_SYKDOM.kode.name))
-
-        // Oppdater filter
-        opprettEllerOppdaterFilter(
-            hentetFilter.copy(
-                navn = "Forslå vedtak i revurdering filter",
-                behandlingstyper = setOf(Behandlingstype.REVURDERING),
-                avklaringsbehovKoder = setOf(Definisjon.FORESLÅ_VEDTAK.kode.name),
-                endretAv = "test",
-                endretTidspunkt = LocalDateTime.now(),
-            )
-        )
-
-        // Sjekk oppdatert filter
-        val alleFilterEtterOppdatering = hentAlleFilter()
-        assertThat(alleFilterEtterOppdatering).hasSize(1)
-        val hentetFilterEtterOppdatering = alleFilterEtterOppdatering.first()
-        assertThat(hentetFilterEtterOppdatering.navn).isEqualTo("Forslå vedtak i revurdering filter")
-        assertThat(hentetFilterEtterOppdatering.behandlingstyper).isEqualTo(setOf(Behandlingstype.REVURDERING))
-        assertThat(hentetFilterEtterOppdatering.avklaringsbehovKoder).isEqualTo(setOf(Definisjon.FORESLÅ_VEDTAK.kode.name))
-    }
-
-    @Test
-    fun `Slette filter`() {
-        opprettEllerOppdaterFilter(
-            FilterDto(
-                navn = "Simpelt filter",
-                beskrivelse = "Simpelt filter",
-                opprettetAv = "test",
-                opprettetTidspunkt = LocalDateTime.now(),
-                type = FilterType.GENERELL,
-            )
-        )
-
-        val alleFilter = hentAlleFilter()
-        assertThat(alleFilter).hasSize(1)
-
-        val hentetFilter = alleFilter.first()
-        slettFilter(FilterId(hentetFilter.id!!))
-
-        val alleFilterEtterSletting = hentAlleFilter()
-        assertThat(alleFilterEtterSletting).hasSize(0)
-    }
-
-    @Test
     fun `Hente filter`() {
-        opprettEllerOppdaterFilter(
-            FilterDto(
-                navn = "Simpelt filter",
-                beskrivelse = "Et enkelt filter for alle oppgave",
-                opprettetAv = "test",
-                opprettetTidspunkt = LocalDateTime.now(),
-                type = FilterType.GENERELL,
-            )
-        )
-
+        opprettFiltre()
         val alleFilter = hentAlleFilter()
-
-        assertThat(alleFilter).hasSize(1)
+        assertThat(alleFilter).hasSize(2)
     }
 
     @Test
     fun `Hente filter for enhet`() {
-        val filter1 = FilterDto(
-            navn = "Simpelt filter",
-            beskrivelse = "Et enkelt filter for alle oppgave",
-            enheter = setOf("1234"),
-            opprettetAv = "test",
-            opprettetTidspunkt = LocalDateTime.now(),
-            type = FilterType.GENERELL,
-        )
-        val id1 = opprettEllerOppdaterFilter(
-            filter1
-        )!!.id
+        opprettFiltre()
+        val filtre = hentFilterForEnhet(listOf(ENHET_1))
 
-        val id2 = opprettEllerOppdaterFilter(
-            FilterDto(
-                navn = "Simpelt filter 2",
-                beskrivelse = "Et enkelt filter for alle oppgave",
-                enheter = setOf("6789"),
-                opprettetAv = "test",
-                opprettetTidspunkt = LocalDateTime.now(),
-                type = FilterType.GENERELL,
+        assertThat(filtre.size).isEqualTo(2)
+        assertThat(filtre.map { it.navn }).contains("Simpelt filter", "Filter med enhet")
+
+        val filtre2 = hentFilterForEnhet(listOf(ENHET_2))
+
+        assertThat(filtre2.size).isEqualTo(1)
+        assertThat(filtre2.map { it.navn }).contains("Simpelt filter")
+        assertThat(filtre2.map { it.navn }).doesNotContain("Filter med enhet")
+    }
+
+    private fun hentFilterForEnhet(enheter: List<String>): List<FilterResponse> {
+        return oboClient().get<List<FilterResponse>>(
+            URI.create("http://localhost:$port/filter/v2?enheter=${enheter.joinToString("&enheter=")}"),
+            GetRequest(currentToken = getOboToken())
+        )!!
+    }
+
+
+    private fun hentAlleFilter(): List<FilterResponse> {
+        return oboClient().get<List<FilterResponse>>(
+            URI.create("http://localhost:$port/filter/v2"),
+            GetRequest(currentToken = getOboToken())
+        )!!
+    }
+
+    private fun opprettFiltre() {
+        dataSource.transaction { connection ->
+            val filterRepo = FilterRepository(connection)
+            filterRepo.opprett(
+                OpprettFilter(
+                    navn = "Simpelt filter",
+                    beskrivelse = "Et enkelt filter for alle oppgave",
+                    opprettetAv = "test",
+                    opprettetTidspunkt = LocalDateTime.now(),
+                    type = FilterTypeDto.GENERELL,
+                )
             )
-        )!!.id
-
-        val filtre = hentFilter(listOf("1234", "1235"))
-
-        assertThat(filtre.size).isEqualTo(1)
-        assertThat(filtre.find { it.id == id1 }!!.navn).isEqualTo("Simpelt filter")
-        assertThat(filtre.find { it.id == id2 }).isNull()
+            filterRepo.opprett(
+                OpprettFilter(
+                    navn = "Filter med enhet",
+                    beskrivelse = "Et filter for en spesifikk enhet",
+                    opprettetAv = "test",
+                    opprettetTidspunkt = LocalDateTime.now(),
+                    enhetFilter = listOf(EnhetFilter(enhetNr = ENHET_1, filtermodus = Filtermodus.INKLUDER)),
+                    type = FilterTypeDto.GENERELL,
+                )
+            )
+        }
     }
-
-    private fun hentFilter(enheter: List<String>): List<FilterDto> {
-        return oboClient().get<List<FilterDto>>(
-            URI.create("http://localhost:$port/filter?enheter=${enheter.joinToString("&enheter=")}"),
-            GetRequest(currentToken = getOboToken())
-        )!!
-    }
-
-
-    private fun slettFilter(filterId: FilterId): Unit? {
-        return oboClient().post(
-            URI.create("http://localhost:$port/filter/${filterId.filterId}/slett"),
-            PostRequest(body = filterId, currentToken = getOboToken())
-        )
-    }
-
-    private fun opprettEllerOppdaterFilter(filter: FilterDto): FilterDto? {
-        return oboClient().post(
-            URI.create("http://localhost:$port/filter"),
-            PostRequest(body = filter, currentToken = getOboToken())
-        )
-    }
-
-    private fun hentAlleFilter(): List<FilterDto> {
-        return oboClient().get<List<FilterDto>>(
-            URI.create("http://localhost:$port/filter"),
-            GetRequest(currentToken = getOboToken())
-        )!!
-    }
-
 }

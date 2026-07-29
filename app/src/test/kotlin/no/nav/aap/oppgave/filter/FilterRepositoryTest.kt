@@ -105,9 +105,8 @@ internal class FilterRepositoryTest {
                 beskrivelse = "Filter for avklar sykdom oppgave",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
-                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode.name)
+                avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name)
             )
-            val antallFilterFørTest = filterRepo.hentAlle().size
             val opprettetFilterId = filterRepo.opprett(nyttFilter)
 
             val opprettetFilter = filterRepo.hent(opprettetFilterId)!!
@@ -151,7 +150,7 @@ internal class FilterRepositoryTest {
                 opprettetAv = "test1",
                 opprettetTidspunkt = LocalDateTime.now(),
                 behandlingstyper = setOf(Behandlingstype.FØRSTEGANGSBEHANDLING),
-                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
+                avklaringsbehovKoder = setOf(Definisjon.AVKLAR_SYKDOM.kode.name),
                 enhetFilter = listOf(EnhetFilter("4491", Filtermodus.INKLUDER))
             )
 
@@ -177,7 +176,7 @@ internal class FilterRepositoryTest {
                 navn = "Filter for avklar barnetillegg og revurdering",
                 beskrivelse = "Filter for avklar barnetillegg og revurdering",
                 behandlingstyper = setOf(Behandlingstype.REVURDERING),
-                avklaringsbehovtyper = setOf(Definisjon.AVKLAR_BARNETILLEGG.kode.name),
+                avklaringsbehovKoder = setOf(Definisjon.AVKLAR_BARNETILLEGG.kode.name),
                 enhetFilter = listOf(
                     EnhetFilter("ALLE", Filtermodus.INKLUDER),
                     EnhetFilter("4402", Filtermodus.EKSKLUDER),
@@ -189,7 +188,6 @@ internal class FilterRepositoryTest {
 
             alleFilter = filterRepo.hentAlle()
             assertThat(alleFilter).hasSize(1)
-            hentetFilter = alleFilter.first()
             assertThat(filterRepo.hentAlle()).hasSize(antallFilterFørTest + 1)
             hentetFilter = requireNotNull(filterRepo.hent(filterId))
             assertThat(hentetFilter.navn).isEqualTo("Filter for avklar barnetillegg og revurdering")
@@ -232,7 +230,7 @@ internal class FilterRepositoryTest {
                 beskrivelse = "Kvalitetssikringsfilter",
                 opprettetAv = "test",
                 opprettetTidspunkt = LocalDateTime.now(),
-                type = FilterType.KVALITETSSIKRING
+                type = FilterTypeDto.KVALITETSSIKRING
             )
             val filterId = filterRepo.opprett(nyttFilter)
 

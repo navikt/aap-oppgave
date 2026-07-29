@@ -2,60 +2,24 @@ package no.nav.aap.oppgave.filter
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
-import java.time.LocalDateTime
-
-data class OpprettFilter(
-    val navn: String,
-    val beskrivelse: String,
-    val avklaringsbehovtyper: Set<String> = emptySet(),
-    val behandlingstyper: Set<Behandlingstype> = emptySet(),
-    val opprettetAv: String,
-    val opprettetTidspunkt: LocalDateTime,
-    val enhetFilter: List<EnhetFilter>? = null,
-    val markeringer: List<MarkeringFilter> = emptyList(),
-    val type: FilterType = FilterType.GENERELL,
-)
-
-data class EnhetFilter(
-    val enhetNr: String,
-    val filtermodus: Filtermodus
-)
-
-data class MarkeringFilter(
-    val markeringType: MarkeringForBehandling,
-    val filtermodus: Filtermodus
-)
-
-data class OppdaterFilter(
-    val id: Long,
-    val navn: String,
-    val beskrivelse: String,
-    val avklaringsbehovtyper: Set<String> = emptySet(),
-    val behandlingstyper: Set<Behandlingstype> = emptySet(),
-    val markeringer: List<MarkeringFilter> = emptyList(),
-    val enhetFilter: List<EnhetFilter>? = null,
-    val endretAv: String? = null,
-    val endretTidspunkt: LocalDateTime? = null,
-)
 
 class FilterRepository(private val connection: DBConnection) {
 
-    fun hentAlle(): List<FilterDto> {
+    fun hentAlle(): List<Filter> {
         return hentFilter(null)
     }
 
-    fun hent(filterId: Long): FilterDto? {
+    fun hent(filterId: Long): Filter? {
         return hentFilter(filterId).firstOrNull()
     }
 
-    fun hentForEnheter(enheter: List<String>?): List<FilterDto> {
+    fun hentForEnheter(enheter: List<String>?): List<Filter> {
         return hentFilterForEnheter(enheter)
     }
 
     fun opprett(filter: OpprettFilter): Long {
         val filterId = opprettFilter(filter)
-        opprettFilterAvklaringsbehovtyper(filterId, filter.avklaringsbehovtyper)
+        opprettFilterAvklaringsbehovtyper(filterId, filter.avklaringsbehovKoder)
         opprettFilterBehandlingstyper(filterId, filter.behandlingstyper)
         opprettFilterEnheter(filterId, filter.enhetFilter)
         opprettFilterMarkeringer(filterId, filter.markeringer)
@@ -67,7 +31,7 @@ class FilterRepository(private val connection: DBConnection) {
         oppdaterFilter(filter)
         slettFilterParametre(filter.id)
         slettFilterEnheter(filter.id)
-        opprettFilterAvklaringsbehovtyper(filter.id, filter.avklaringsbehovtyper)
+        opprettFilterAvklaringsbehovtyper(filter.id, filter.avklaringsbehovKoder)
         opprettFilterBehandlingstyper(filter.id, filter.behandlingstyper)
         opprettFilterEnheter(filter.id, filter.enhetFilter)
         opprettFilterMarkeringer(filter.id, filter.markeringer)
@@ -225,7 +189,7 @@ class FilterRepository(private val connection: DBConnection) {
     }
 
 
-    private fun hentFilterForEnheter(enheter: List<String>?): List<FilterDto> {
+    private fun hentFilterForEnheter(enheter: List<String>?): List<Filter> {
         val enhetsfilter = if (!enheter.isNullOrEmpty())
             """AND ID IN (SELECT FILTER_ID FROM FILTER_ENHET WHERE FILTER_MODUS = 'INKLUDER' AND (ENHET = 'ALLE' OR ENHET = ANY(?::text[])))
                AND ID NOT IN (SELECT FILTER_ID FROM FILTER_ENHET WHERE FILTER_MODUS = 'EKSKLUDER' AND (ENHET = 'ALLE' OR ENHET = ANY(?::text[])))""".trimIndent()
@@ -249,7 +213,7 @@ class FilterRepository(private val connection: DBConnection) {
                 }
             }
             setRowMapper { row ->
-                FilterDto(
+                Filter(
                     id = row.getLong("ID"),
                     navn = row.getString("NAVN"),
                     beskrivelse = row.getString("BESKRIVELSE"),
@@ -283,7 +247,7 @@ class FilterRepository(private val connection: DBConnection) {
     }
 
 
-    private fun hentFilter(filterId: Long?): List<FilterDto> {
+    private fun hentFilter(filterId: Long?): List<Filter> {
         val filterIdClause = if (filterId != null) " AND ID = ?" else ""
         val query = """
             SELECT 
@@ -301,7 +265,7 @@ class FilterRepository(private val connection: DBConnection) {
                 }
             }
             setRowMapper { row ->
-                FilterDto(
+                Filter(
                     id = row.getLong("ID"),
                     navn = row.getString("NAVN"),
                     beskrivelse = row.getString("BESKRIVELSE"),
