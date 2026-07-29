@@ -47,7 +47,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
         respond(
             OppgavelisteRespons(
                 antallTotalt = mineOppgaver.size,
-                oppgaver = mineOppgaver.map { it.tilOppgaveDto() }
+                oppgaver = mineOppgaver.map { it.tilListeOppgaveResponse() }
             )
         )
     }

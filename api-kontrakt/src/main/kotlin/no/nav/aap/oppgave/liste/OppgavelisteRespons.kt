@@ -2,7 +2,6 @@ package no.nav.aap.oppgave.liste
 
 import no.nav.aap.oppgave.BehandlingskontekstResponse
 import no.nav.aap.oppgave.ForrigeKvalitetssikrerInfo
-import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.TilbakekrevingsVarsDto
 import no.nav.aap.oppgave.enhet.EnhetDto
@@ -15,7 +14,7 @@ import java.time.LocalDateTime
 
 data class OppgavelisteRespons(
     val antallTotalt: Int,
-    val oppgaver: List<OppgaveDto>,
+    val oppgaver: List<OppgaveMedKontekstResponse>,
     val antallGjenstaaende: Int? = null,
     val sattFilterBehandlingstyper: Set<Behandlingstype>? = emptySet(),
 )

@@ -1152,9 +1152,9 @@ class OppgaveApiTest {
         plukkOppgave(hentOppgaveViaAPI(behandlingref)!!.oppgaveId())
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
-        assertThat(mineOppgaver.oppgaver.first().markeringer).hasSize(1)
-        assertThat(mineOppgaver.oppgaver.first().markeringer.first().markeringType).isEqualTo(MarkeringForBehandling.HASTER)
-        assertThat(mineOppgaver.oppgaver.first().markeringer.first().begrunnelse).isEqualTo(markering.begrunnelse)
+        assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer).hasSize(1)
+        assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.first().markeringType).isEqualTo(MarkeringForBehandling.HASTER)
+        assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.first().begrunnelse).isEqualTo(markering.begrunnelse)
 
         // hent markering fra endepunkt
         val markeringer = hentGjeldendeMarkeringerForBehandling(behandlingref)
@@ -1203,7 +1203,7 @@ class OppgaveApiTest {
         opprettMarkeringHendelse(behandlingref, markeringFjernet)
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
-        assertThat(mineOppgaver.oppgaver.first().markeringer.any { it.markeringType == MarkeringForBehandling.HASTER && it.hendelseType == MarkeringHendelseType.FJERNET }).isTrue()
+        assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.any { it.markeringType == MarkeringForBehandling.HASTER && it.hendelseType == MarkeringHendelseType.FJERNET }).isTrue()
     }
 
     @Test
