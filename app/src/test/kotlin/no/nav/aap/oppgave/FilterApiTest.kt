@@ -12,8 +12,8 @@ import no.nav.aap.komponenter.httpklient.httpclient.request.GetRequest
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureOBOTokenProvider
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.filter.EnhetFilter
-import no.nav.aap.oppgave.filter.FilterResponse
 import no.nav.aap.oppgave.filter.FilterRepository
+import no.nav.aap.oppgave.filter.FilterResponse
 import no.nav.aap.oppgave.filter.FilterTypeDto
 import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.filter.OpprettFilter
@@ -35,6 +35,7 @@ import java.net.URI
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import javax.sql.DataSource
 
 @ExtendWith(Fakes::class)
 @Testcontainers
@@ -49,6 +50,11 @@ class FilterApiTest {
 
         // Starter server
         private lateinit var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
+
+        private lateinit var dataSource: DataSource
+
+        private val ENHET_1 = "1234"
+        private val ENHET_2 = "1235"
 
         private val dbConfig = {
             DbConfig(
@@ -71,6 +77,7 @@ class FilterApiTest {
         @JvmStatic
         fun beforeAll() {
             postgres.start()
+            dataSource = initDatasource(dbConfig(), prometheus)
             server = embeddedServer(Netty, port = 0) {
                 server(dbConfig = dbConfig(), prometheus = prometheus)
             }.start()
@@ -83,6 +90,7 @@ class FilterApiTest {
         @AfterAll
         fun afterAll() {
             server.stop(0, 0)
+            dataSource.connection.close()
             postgres.close()
         }
     }
@@ -94,7 +102,7 @@ class FilterApiTest {
 
     private fun resetDatabase() {
         @Suppress("SqlWithoutWhere")
-        initDatasource(dbConfig(), prometheus).transaction {
+        dataSource.transaction {
             it.execute("DELETE FROM OPPGAVE_HISTORIKK")
             it.execute("DELETE FROM OPPGAVE")
             it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
@@ -114,15 +122,16 @@ class FilterApiTest {
     @Test
     fun `Hente filter for enhet`() {
         opprettFiltre()
-        val filtre = hentFilterForEnhet(listOf("1234"))
+        val filtre = hentFilterForEnhet(listOf(ENHET_1))
 
         assertThat(filtre.size).isEqualTo(2)
-        assertThat(filtre.map { it.navn }).containsExactlyInAnyOrder("Simpelt filter", "Filter med enhet")
+        assertThat(filtre.map { it.navn }).contains("Simpelt filter", "Filter med enhet")
 
-        val filtre2 = hentFilterForEnhet(listOf("1235"))
+        val filtre2 = hentFilterForEnhet(listOf(ENHET_2))
 
         assertThat(filtre2.size).isEqualTo(1)
-        assertThat(filtre2.first().navn).isEqualTo("Simpelt filter")
+        assertThat(filtre2.map { it.navn }).contains("Simpelt filter")
+        assertThat(filtre2.map { it.navn }).doesNotContain("Filter med enhet")
     }
 
     private fun hentFilterForEnhet(enheter: List<String>): List<FilterResponse> {
@@ -141,7 +150,7 @@ class FilterApiTest {
     }
 
     private fun opprettFiltre() {
-        initDatasource(dbConfig(), prometheus).transaction { connection ->
+        dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
             filterRepo.opprett(
                 OpprettFilter(
@@ -158,7 +167,7 @@ class FilterApiTest {
                     beskrivelse = "Et filter for en spesifikk enhet",
                     opprettetAv = "test",
                     opprettetTidspunkt = LocalDateTime.now(),
-                    enhetFilter = listOf(EnhetFilter(enhetNr = "1234", filtermodus = Filtermodus.INKLUDER)),
+                    enhetFilter = listOf(EnhetFilter(enhetNr = ENHET_1, filtermodus = Filtermodus.INKLUDER)),
                     type = FilterTypeDto.GENERELL,
                 )
             )
