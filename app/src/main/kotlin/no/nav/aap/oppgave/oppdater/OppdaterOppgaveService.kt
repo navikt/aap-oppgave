@@ -43,7 +43,7 @@ import no.nav.aap.oppgave.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 class OppdaterOppgaveService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
@@ -565,7 +565,7 @@ class OppdaterOppgaveService(
     private fun AvklaringsbehovHendelse.sistEndret() = sisteEndring().tidsstempel
 
     private fun OppgaveOppdatering.opprettNyOppgave(
-        personIdent: String?,
+        personIdent: String,
         avklaringsbehovKode: AvklaringsbehovKode,
         behandlingstype: Behandlingstype,
         ident: String,
@@ -582,10 +582,9 @@ class OppdaterOppgaveService(
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean,
         returInformasjon: ReturInfo?,
-        utløptVentefrist: LocalDate? = null,
         saksnummer: String? = null,
-    ): Oppgave {
-        return Oppgave(
+    ): OpprettOppgave {
+        return OpprettOppgave(
             personIdent = personIdent,
             saksnummer = saksnummer,
             behandlingRef = this.referanse,
@@ -607,7 +606,6 @@ class OppdaterOppgaveService(
             harFortroligAdresse = harFortroligAdresse,
             erSkjermet = erSkjermet,
             returInformasjon = returInformasjon,
-            utløptVentefrist = utløptVentefrist,
             harUlesteDokumenter = harUlesteDokumenter
         )
     }

@@ -83,6 +83,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
+import javax.sql.DataSource
 import kotlin.test.AfterTest
 
 private const val TEST_IDENT = "01010012345"
@@ -364,7 +365,7 @@ class OppgaveApiTest {
 
 
 
-        initDatasource(dbConfig(), prometheus).transaction {
+        dataSource.transaction {
             val oppgaver = OppgaveRepository(it).hentAlleÅpneOppgaver()
             assertThat(oppgaver).hasSize(1)
             assertThat(oppgaver.first().saksnummer).isEqualTo(saksnummer.toString())
@@ -389,7 +390,7 @@ class OppgaveApiTest {
             )
         )
 
-        initDatasource(dbConfig(), prometheus).transaction {
+        dataSource.transaction {
             val oppgaver = OppgaveRepository(it).hentAlleÅpneOppgaver()
             assertThat(oppgaver).hasSize(0)
         }
@@ -1047,11 +1048,11 @@ class OppgaveApiTest {
     // TODO: Flytt denne i egen klasse når fakes er skrevet om
     @Test
     fun `Skal avreservere og flytte oppgaver til Vikafossen dersom person har fått strengt fortrolig adresse`() {
-        val oppgaveId1 = opprettOppgave(personIdent = STRENGT_FORTROLIG_IDENT)
-        val oppgaveId2 = opprettOppgave()
+        val oppgaveId1 = opprettOppgave(personIdent = STRENGT_FORTROLIG_IDENT, dataSource = dataSource)
+        val oppgaveId2 = opprettOppgave(dataSource = dataSource)
         val oppgave2Før = hentOppgaveViaRepository(oppgaveId2)
 
-        initDatasource(dbConfig(), prometheus).transaction {
+        dataSource.transaction {
             OppdaterOppgaveEnhetJobb(
                 OppgaveRepository(it),
                 FlytJobbRepositoryImpl(it),
@@ -1497,7 +1498,7 @@ class OppgaveApiTest {
 
         private fun resetDatabase() {
             @Suppress("SqlWithoutWhere")
-            initDatasource(dbConfig(), prometheus).transaction {
+            dataSource.transaction {
                 it.execute("DELETE FROM OPPGAVE_HISTORIKK")
                 it.execute("DELETE FROM OPPGAVE")
                 it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
@@ -1508,7 +1509,7 @@ class OppgaveApiTest {
         }
 
         private fun leggInnFilterForTest() {
-            initDatasource(dbConfig(), prometheus).transaction {
+            dataSource.transaction {
                 val filterId =
                     it.executeReturnKey("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
                 it.execute("INSERT INTO FILTER_ENHET (FILTER_ID, ENHET) VALUES (?, ?)") {
@@ -1521,19 +1522,19 @@ class OppgaveApiTest {
         }
 
         private fun hentOppgaveViaRepository(oppgaveId: OppgaveId): Oppgave {
-            return initDatasource(dbConfig(), prometheus).transaction { connection ->
+            return dataSource.transaction { connection ->
                 OppgaveRepository(connection).hentOppgave(oppgaveId.id)
             }
         }
 
         private fun reserverOppgave(oppgaveId: OppgaveId, ident: String, resevertAvIdent: String) {
-            return initDatasource(dbConfig(), prometheus).transaction { connection ->
+            return dataSource.transaction { connection ->
                 OppgaveRepository(connection).reserverOppgave(oppgaveId, ident, resevertAvIdent, null)
             }
         }
 
         private fun settFortroligAdresseForOppgave(oppgaveId: OppgaveId, skalHaFortroligAdresse: Boolean) {
-            return initDatasource(dbConfig(), prometheus).transaction { connection ->
+            return dataSource.transaction { connection ->
                 OppgaveRepository(connection).settFortroligAdresse(
                     oppgaveId = oppgaveId,
                     harFortroligAdresse = skalHaFortroligAdresse
@@ -1542,7 +1543,7 @@ class OppgaveApiTest {
         }
 
         private fun oppdaterOgHentOppgave(oppgave: Oppgave): Oppgave {
-            initDatasource(dbConfig(), prometheus).transaction { connection ->
+            dataSource.transaction { connection ->
                 OppgaveRepository(connection).oppdatereOppgave(
                     oppgaveId = oppgave.oppgaveId(),
                     endretAvIdent = "Kelvin",
@@ -1563,44 +1564,14 @@ class OppgaveApiTest {
             return hentOppgaveViaRepository(oppgave.oppgaveId())
         }
 
-        private fun opprettOppgave(
-            personIdent: String = "12345678901",
-            saksnummer: String = "123",
-            behandlingRef: UUID = UUID.randomUUID(),
-            status: no.nav.aap.oppgave.verdityper.Status = no.nav.aap.oppgave.verdityper.Status.OPPRETTET,
-            avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
-            behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
-            enhet: String = "0230",
-            oppfølgingsenhet: String? = null,
-            veilederArbeid: String? = null,
-            veilederSykdom: String? = null,
-        ): OppgaveId {
-            val oppgave = Oppgave(
-                personIdent = personIdent,
-                saksnummer = saksnummer,
-                behandlingRef = behandlingRef,
-                enhet = enhet,
-                oppfølgingsenhet = oppfølgingsenhet,
-                behandlingOpprettet = LocalDateTime.now().minusDays(3),
-                avklaringsbehovKode = avklaringsbehovKode.kode,
-                status = status,
-                behandlingstype = behandlingstype,
-                opprettetAv = "bruker1",
-                veilederArbeid = veilederArbeid,
-                veilederSykdom = veilederSykdom,
-                opprettetTidspunkt = LocalDateTime.now()
-            )
-            return initDatasource(dbConfig(), prometheus).transaction { connection ->
-                OppgaveRepository(connection).opprettOppgave(oppgave)
-            }
-        }
-
         var port: Int = 0
+        private lateinit var dataSource: DataSource
 
         @BeforeAll
         @JvmStatic
         fun beforeAll() {
             postgres.start()
+            dataSource = initDatasource(dbConfig(), prometheus)
             server = embeddedServer(Netty, port = 0) {
                 server(dbConfig = dbConfig(), prometheus = prometheus)
             }.start()
@@ -1612,6 +1583,7 @@ class OppgaveApiTest {
         @JvmStatic
         @AfterAll
         fun afterAll() {
+            dataSource.connection.close()
             server.stop()
             postgres.close()
         }
