@@ -19,13 +19,6 @@ data class OppgavelisteRespons(
     val sattFilterBehandlingstyper: Set<Behandlingstype>? = emptySet(),
 )
 
-data class OppgavelisteResponsV2(
-    val antallTotalt: Int,
-    val oppgaver: List<OppgaveMedKontekstResponse>,
-    val antallGjenstaaende: Int? = null,
-    val sattFilterBehandlingstyper: Set<Behandlingstype>? = emptySet(),
-)
-
 data class OppgaveMedKontekstResponse(
     val behandlingOpprettet: LocalDateTime,
     val avklaringsbehovKode: String,
