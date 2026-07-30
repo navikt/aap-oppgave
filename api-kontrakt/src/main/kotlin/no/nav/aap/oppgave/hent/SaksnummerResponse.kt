@@ -1,5 +1,5 @@
 package no.nav.aap.oppgave.hent
 
 class SaksnummerResponse(
-    saksnummer: String,
+    val saksnummer: String
 )
