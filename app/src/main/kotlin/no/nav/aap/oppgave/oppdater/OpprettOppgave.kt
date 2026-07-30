@@ -35,4 +35,12 @@ data class OpprettOppgave(
     val harFortroligAdresse: Boolean,
     val erSkjermet: Boolean = false,
     val harUlesteDokumenter: Boolean = false,
-)
+) {
+    init {
+        if (journalpostId == null) {
+            if (saksnummer == null) {
+                throw IllegalArgumentException("Saksnummer kan ikke være null dersom journalpostId er null")
+            }
+        }
+    }
+}

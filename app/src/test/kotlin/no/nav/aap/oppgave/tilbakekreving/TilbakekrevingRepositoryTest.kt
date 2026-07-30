@@ -25,16 +25,14 @@ class TilbakekrevingRepositoryTest {
 
     @Test
     fun `kan lagre og hente tilbakekrevings vars`() {
+        val oppgave =
+            opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, dataSource = dataSource)
+        val vars = TilbakekrevingVars(
+            oppgaveId = oppgave.id,
+            beløp = BigDecimal(1000.00),
+            url = "http://tilbakekreving.nav.no/oppgave/12345"
+        )
         dataSource.transaction { connection ->
-            val oppgave =
-                opprettOppgave(behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING, dataSource = dataSource)
-            val vars = TilbakekrevingVars(
-                oppgaveId = oppgave.id,
-                beløp = BigDecimal(1000.00),
-                url = "http://tilbakekreving.nav.no/oppgave/12345"
-            )
-
-
             val repository = TilbakekrevingRepository(connection)
 
             repository.lagre(vars)
