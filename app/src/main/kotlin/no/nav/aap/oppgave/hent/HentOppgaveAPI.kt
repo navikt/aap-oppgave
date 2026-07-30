@@ -61,6 +61,23 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
             )
         )
     }
+
+    route("/{referanse}/hent-saksnummer").get<BehandlingReferanse, SaksnummerResponse> { request ->
+        prometheus.httpCallCounter("/hent-saksnummer").increment()
+        val oppgave = dataSource.transaction(readOnly = true) { connection ->
+            OppgaveRepository(connection).hentAktivOppgave(request)
+        }
+
+        if (oppgave?.saksnummer != null) {
+            respond(
+                SaksnummerResponse(
+                    saksnummer = oppgave.saksnummer
+                )
+            )
+        } else {
+            respondWithStatus(HttpStatusCode.NoContent)
+        }
+    }
 }
 
 fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
