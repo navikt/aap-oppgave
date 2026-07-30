@@ -13,7 +13,6 @@ import no.nav.aap.oppgave.filter.FilterRepository
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
-import no.nav.aap.oppgave.liste.OppgavelisteResponsV2
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
@@ -71,51 +70,6 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
 
         respond(
             OppgavelisteRespons(
-                antallTotalt = data.antallTotalt,
-                oppgaver = data.oppgaver.hentPersonNavn().map { it.tilListeOppgaveResponse() },
-                antallGjenstaaende = data.antallGjenstaaende,
-                sattFilterBehandlingstyper = bruktBehanlingstyperIFilter
-            )
-        )
-    }
-
-    route("/oppgaveliste/v2").post<Unit, OppgavelisteResponsV2, OppgavelisteRequest> { _, request ->
-        prometheus.httpCallCounter("/oppgaveliste/v2").increment()
-        val (data, bruktBehanlingstyperIFilter) =
-            dataSource.transaction(readOnly = true) { connection ->
-                log.info("Henter filter med filterId ${request.filterId}")
-                val filter =
-                    requireNotNull(FilterRepository(connection).hent(request.filterId)) { "filter kan ikke være null. filterId: ${request.filterId}" }
-                val veilederIdent =
-                    if (request.veileder) {
-                        ident()
-                    } else {
-                        null
-                    }
-                Pair(
-                    OppgavelisteService(
-                        oppgaveRepository = OppgaveRepository(connection),
-                        markeringRepository = MarkeringRepository(connection),
-                        norgGateway = norgGateway,
-                        enhetService = enhetService,
-                    ).hentOppgaverMedTilgang(
-                        request.utvidetFilter,
-                        request.enheter,
-                        request.paging,
-                        request.kunLedigeOppgaver == true,
-                        filter,
-                        veilederIdent,
-                        token(),
-                        ident(),
-                        request.sortering?.sortBy,
-                        request.sortering?.sortOrder,
-                        request.hastemarkeringerFørst == true
-                    ), filter.behandlingstyper
-                )
-            }
-
-        respond(
-            OppgavelisteResponsV2(
                 antallTotalt = data.antallTotalt,
                 oppgaver = data.oppgaver.hentPersonNavn().map { it.tilListeOppgaveResponse() },
                 antallGjenstaaende = data.antallGjenstaaende,

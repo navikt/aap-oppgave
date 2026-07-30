@@ -11,7 +11,6 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.liste.MineOppgaverRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
-import no.nav.aap.oppgave.liste.OppgavelisteResponsV2
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
@@ -46,30 +45,6 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
             }
         respond(
             OppgavelisteRespons(
-                antallTotalt = mineOppgaver.size,
-                oppgaver = mineOppgaver.map { it.tilListeOppgaveResponse() }
-            )
-        )
-    }
-
-    route("/mine-oppgaver/v2").get<MineOppgaverRequest, OppgavelisteResponsV2> { req ->
-        prometheus.httpCallCounter("/mine-oppgaver").increment()
-        val mineOppgaver =
-            dataSource.transaction(readOnly = true) { connection ->
-                OppgavelisteService(
-                    OppgaveRepository(connection),
-                    MarkeringRepository(connection),
-                    enhetService,
-                    norgGateway
-                ).hentMineOppgaver(
-                    ident = ident(),
-                    kunPaaVent = req.kunPaaVent,
-                    sortBy = req.sortby,
-                    sortOrder = req.sortorder,
-                )
-            }
-        respond(
-            OppgavelisteResponsV2(
                 antallTotalt = mineOppgaver.size,
                 oppgaver = mineOppgaver.map { it.tilListeOppgaveResponse() }
             )
