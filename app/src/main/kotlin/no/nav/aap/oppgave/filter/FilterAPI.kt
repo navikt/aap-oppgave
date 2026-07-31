@@ -11,14 +11,13 @@ import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentFilterApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
 
-    route("/filter").get<FilterRequestDto, List<FilterDto>> { req ->
+    route("/filter").get<FilterRequestDto, List<FilterResponse>> { req ->
         prometheus.httpCallCounter("/filter").increment()
         val filterListe = dataSource.transaction(readOnly = true) { connection ->
             FilterRepository(connection).hentForEnheter(req.enheter)
-        }.map { it.tilDto() }
+        }.map { it.tilResponse() }
         respond(filterListe)
     }
-
     route("/filter/v2").get<FilterRequestDto, List<FilterResponse>> { req ->
         prometheus.httpCallCounter("/filter/v2").increment()
         val filterListe = dataSource.transaction(readOnly = true) { connection ->

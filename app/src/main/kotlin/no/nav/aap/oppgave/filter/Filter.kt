@@ -36,25 +36,6 @@ data class Filter(
             inneholderTilbakekreving = behandlingstyper.contains(Behandlingstype.TILBAKEKREVING)
         )
     }
-
-    fun tilDto(): FilterDto {
-        return FilterDto(
-            id = id,
-            navn = navn,
-            beskrivelse = beskrivelse,
-            avklaringsbehovKoder = avklaringsbehovKoder,
-            behandlingstyper = behandlingstyper,
-            enheter = enheter,
-            veileder = veileder,
-            inkluderteMarkeringer = inkluderteMarkeringer,
-            ekskluderteMarkeringer = ekskluderteMarkeringer,
-            opprettetAv = opprettetAv,
-            opprettetTidspunkt = opprettetTidspunkt,
-            endretAv = endretAv,
-            endretTidspunkt = endretTidspunkt,
-            type = type.tilDto()
-        )
-    }
 }
 
 data class OpprettFilter(
