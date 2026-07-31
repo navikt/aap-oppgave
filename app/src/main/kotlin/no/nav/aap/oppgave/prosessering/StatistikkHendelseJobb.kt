@@ -15,7 +15,6 @@ import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.statistikk.OppgaveHendelse
 import no.nav.aap.oppgave.statistikk.OppgaveTilStatistikkDto
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
-import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 
@@ -86,6 +85,13 @@ private fun fraOppgave(oppgave: Oppgave, markeringer: List<Markering>): OppgaveT
 /**
  * Planlegg jobb for å sende oppgaveoppdatering til statistikk. God ide å alltid legge et kall til denne
  * etter et write-kall til oppgave-repo.
+ *
+ * OBS: Hvis oppgaven kan bli oppdatert/reservert/avsluttet flere ganger for samme oppgave
+ * innenfor samme transaksjon (f.eks. både RESERVERT og OPPDATERT), send inn en
+ * [DedupliserendeFlytJobbRepository] (typisk via [bufretStatistikk]) som [repository] her,
+ * slik at det kun sendes én statistikk-hendelse - siste registrerte - per oppgave per
+ * transaksjon. Bruk et vanlig [FlytJobbRepository] kun når det er garantert maks ett kall
+ * til denne funksjonen per oppgave per transaksjon.
  */
 fun sendOppgaveStatusOppdatering(
     oppgaveId: OppgaveId, hendelseType: HendelseType, repository: FlytJobbRepository
