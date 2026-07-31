@@ -51,7 +51,6 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.plukk.AvreserverOppgaveDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveRequest
 import no.nav.aap.oppgave.plukk.PlukkOppgaveResponse
-import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
@@ -63,7 +62,6 @@ import no.nav.aap.oppgave.tildel.SaksbehandlerSøkRequest
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkResponse
 import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
 import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
-import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import no.nav.aap.oppgave.verdityper.ReturStatus
@@ -862,74 +860,6 @@ class OppgaveApiTest {
 
 
     @Test
-    fun `Hent antall oppgaver uten oppgitt behandlingstype`() {
-        val saksnummer = "100004"
-        val referanse = UUID.randomUUID()
-
-        oppdaterOppgaver(
-            opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_SYKDOM,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-                        )
-                    )
-                )
-            )
-        )
-
-        val antallOppgaver = hentAntallOppgaver()
-        assertThat(antallOppgaver.keys).hasSize(1)
-        assertThat(antallOppgaver[Definisjon.AVKLAR_SYKDOM.kode.name]).isEqualTo(1)
-    }
-
-    @Test
-    fun `Hent antall oppgaver kun for revurdering`() {
-        val saksnummer1 = "100005"
-        val referanse1 = UUID.randomUUID()
-
-        oppdaterOppgaver(
-            opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_SYKDOM,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-                        )
-                    )
-                )
-            )
-        )
-
-        val saksnummer2 = "100006"
-        val referanse2 = UUID.randomUUID()
-
-        oppdaterOppgaver(
-            opprettBehandlingshistorikk(
-                saksnummer = saksnummer2,
-                referanse = referanse2,
-                typeBehandling = TypeBehandling.Revurdering,
-                behandlingsbehov = listOf(
-                    Behandlingsbehov(
-                        definisjon = Definisjon.AVKLAR_STUDENT,
-                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
-                        endringer = listOf(
-                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
-                        )
-                    )
-                )
-            )
-        )
-
-        val antallOppgaver = hentAntallOppgaver(Behandlingstype.REVURDERING)
-        assertThat(antallOppgaver.keys).hasSize(1)
-        assertThat(antallOppgaver[Definisjon.AVKLAR_STUDENT.kode.name]).isEqualTo(1)
-    }
-
-    @Test
     fun `oppgaver skal merkes med returstatus`() {
         val saksnummer1 = "1023005"
         val referanse1 = UUID.randomUUID()
@@ -948,8 +878,6 @@ class OppgaveApiTest {
             )
         )
 
-        assertThat(hentAntallOppgaver().keys).hasSize(1)
-
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
                 saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
@@ -964,9 +892,6 @@ class OppgaveApiTest {
                 )
             )
         )
-
-        // Verifiser at oppgaven ble løst
-        assertThat(hentAntallOppgaver().keys).hasSize(0)
 
         // Den ble returnert fra kvalitetssikrer
         oppdaterOppgaver(
@@ -991,8 +916,6 @@ class OppgaveApiTest {
         )
 
         // Oppgaven er gjenopprettet
-        assertThat(hentAntallOppgaver().keys).hasSize(1)
-
         val oppgaven = hentOppgaveVisningsinfo(referanse1)!!
 
         assertThat(oppgaven).extracting(OppgaveVisningsinformasjonResponse::returInformasjon)
@@ -1034,13 +957,6 @@ class OppgaveApiTest {
         assertEquals(oppgave2Før, oppgave2Etter)
     }
 
-    private fun hentAntallOppgaver(behandlingstype: Behandlingstype? = null): Map<String, Int> {
-        return client.post(
-            URI.create("http://localhost:$port/produksjonsstyring/antall-oppgaver"),
-            PostRequest(body = AntallOppgaverDto(behandlingstype = behandlingstype))
-        )!!
-    }
-
     @Test
     fun `oppgaver skal opprettes også når behandlingen har status IVERKSETTES, men ikke når status er AVSLUTTET`() {
         val saksnummer1 = "1023005"
@@ -1060,9 +976,6 @@ class OppgaveApiTest {
                 behandlingStatus = Status.IVERKSETTES
             )
         )
-
-        assertThat(hentAntallOppgaver().keys).hasSize(1)
-
         // Behandlingen er AVSLUTTET, da skal åpne oppgaver lukkes
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
@@ -1078,8 +991,6 @@ class OppgaveApiTest {
                 behandlingStatus = Status.AVSLUTTET
             )
         )
-
-        assertThat(hentAntallOppgaver().keys).hasSize(0)
     }
 
     @Test

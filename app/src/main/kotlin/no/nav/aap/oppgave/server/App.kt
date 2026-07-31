@@ -56,7 +56,6 @@ import no.nav.aap.oppgave.hent.hentOppgaveVisningsinformasjonApi
 import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
-import no.nav.aap.oppgave.produksjonsstyring.hentAntallOppgaver
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
@@ -154,8 +153,6 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 sistEndretApi(dataSource)
                 // Filter
                 hentFilterApi(dataSource, prometheus)
-                // Produksjonsstyring
-                hentAntallOppgaver(dataSource, prometheus)
                 // Enheter
                 enhetStatus(dataSource)
                 hentEnhetApi(enhetService, norgGateway, prometheus)
