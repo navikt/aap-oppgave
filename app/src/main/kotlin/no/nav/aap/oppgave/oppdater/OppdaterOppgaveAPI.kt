@@ -8,7 +8,6 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
@@ -16,6 +15,7 @@ import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
+import no.nav.aap.oppgave.prosessering.bufretStatistikk
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
@@ -40,19 +40,21 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     prometheus.httpCallCounter("/oppdater-oppgaver").increment()
     MDC.putCloseable("saksnummer", request.saksnummer.toString()).use {
         dataSource.transaction { connection ->
-            OppdaterOppgaveService(
-                enhetService = enhetService,
-                oppgaveRepository = OppgaveRepository(connection),
-                flytJobbRepository = FlytJobbRepositoryImpl(connection),
-                mottattDokumentRepository = MottattDokumentRepository(connection),
-                tilbakekrevingRepository = TilbakekrevingRepository(connection),
-                ansattInfoGateway = ansattInfoGateway,
-                markeringService = MarkeringService(
-                    MarkeringRepository(connection),
-                ),
-            ).håndterNyOppgaveOppdatering(
-                request.tilOppgaveOppdatering()
-            )
+            bufretStatistikk(connection) { flytJobbRepository ->
+                OppdaterOppgaveService(
+                    enhetService = enhetService,
+                    oppgaveRepository = OppgaveRepository(connection),
+                    flytJobbRepository = flytJobbRepository,
+                    mottattDokumentRepository = MottattDokumentRepository(connection),
+                    tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                    ansattInfoGateway = ansattInfoGateway,
+                    markeringService = MarkeringService(
+                        MarkeringRepository(connection),
+                    ),
+                ).håndterNyOppgaveOppdatering(
+                    request.tilOppgaveOppdatering()
+                )
+            }
         }
     }
     respondWithStatus(HttpStatusCode.OK)
@@ -73,17 +75,19 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     prometheus.httpCallCounter("/oppdater-postmottak-oppgaver").increment()
     MDC.putCloseable("journalpostId", request.journalpostId.toString()).use {
         dataSource.transaction { connection ->
-            OppdaterOppgaveService(
-                enhetService = enhetService,
-                oppgaveRepository = OppgaveRepository(connection),
-                flytJobbRepository = FlytJobbRepositoryImpl(connection),
-                mottattDokumentRepository = MottattDokumentRepository(connection),
-                tilbakekrevingRepository = TilbakekrevingRepository(connection),
-                ansattInfoGateway = ansattInfoGateway,
-                markeringService = MarkeringService(
-                    MarkeringRepository(connection),
-                ),
-            ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+            bufretStatistikk(connection) { flytJobbRepository ->
+                OppdaterOppgaveService(
+                    enhetService = enhetService,
+                    oppgaveRepository = OppgaveRepository(connection),
+                    flytJobbRepository = flytJobbRepository,
+                    mottattDokumentRepository = MottattDokumentRepository(connection),
+                    tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                    ansattInfoGateway = ansattInfoGateway,
+                    markeringService = MarkeringService(
+                        MarkeringRepository(connection),
+                    ),
+                ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+            }
         }
     }
     respondWithStatus(HttpStatusCode.OK)
@@ -106,17 +110,19 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
         .info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
     MDC.putCloseable("saksnummer", request.saksnummer.toString()).use {
         dataSource.transaction { connection ->
-            OppdaterOppgaveService(
-                enhetService = enhetService,
-                oppgaveRepository = OppgaveRepository(connection),
-                flytJobbRepository = FlytJobbRepositoryImpl(connection),
-                mottattDokumentRepository = MottattDokumentRepository(connection),
-                tilbakekrevingRepository = TilbakekrevingRepository(connection),
-                ansattInfoGateway = ansattInfoGateway,
-                markeringService = MarkeringService(
-                    MarkeringRepository(connection),
-                ),
-            ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+            bufretStatistikk(connection) { flytJobbRepository ->
+                OppdaterOppgaveService(
+                    enhetService = enhetService,
+                    oppgaveRepository = OppgaveRepository(connection),
+                    flytJobbRepository = flytJobbRepository,
+                    mottattDokumentRepository = MottattDokumentRepository(connection),
+                    tilbakekrevingRepository = TilbakekrevingRepository(connection),
+                    ansattInfoGateway = ansattInfoGateway,
+                    markeringService = MarkeringService(
+                        MarkeringRepository(connection),
+                    ),
+                ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
+            }
         }
     }
     respondWithStatus(HttpStatusCode.OK)

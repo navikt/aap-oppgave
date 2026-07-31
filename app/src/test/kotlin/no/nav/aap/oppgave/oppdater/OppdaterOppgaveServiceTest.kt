@@ -19,6 +19,7 @@ import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
+import no.nav.aap.motor.JobbType
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.ENHET_NAV_LØRENSKOG
 import no.nav.aap.oppgave.Oppgave
@@ -38,6 +39,9 @@ import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.opprettOppgave
+import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
+import no.nav.aap.oppgave.prosessering.bufretStatistikk
+import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -72,6 +76,9 @@ class OppdaterOppgaveServiceTest {
                     enableAll()
                 })
             )
+            // Registrerer statistikk-jobbtypen slik at hentJobberForSak/hentJobberForBehandling
+            // klarer å parse jobb-rader tilbake i testene
+            JobbType.leggTil(StatistikkHendelseJobb)
         }
     }
 
@@ -496,6 +503,55 @@ class OppdaterOppgaveServiceTest {
         val oppgave = hentOppgave(oppgaveId)
         assertThat(oppgave.status).isEqualTo(Status.OPPRETTET)
         assertThat(oppgave.reservertAv).isEqualTo(beslutter)
+    }
+
+    @Test
+    fun `sender kun én statistikk-hendelse per oppgave selv om den både reserveres og oppdateres i samme transaksjon`() {
+        // Samme scenario som testen over: oppgaven blir både automatisk reservert til beslutter
+        // (RESERVERT) og oppdatert (OPPDATERT) i løpet av samme kall til håndterNyOppgaveOppdatering.
+        // Vi forventer at kun én JOBB-rad legges til for oppgaven, ikke én per hendelse.
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val oppgaveId = opprettOppgaveWrapper(
+            status = Status.OPPRETTET,
+            behandlingRef = behandlingsref.referanse,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
+        )
+
+        val nå = LocalDateTime.now()
+        val beslutter = "Beslutter"
+
+        val tilbakeTilBeslutter = behandlingFlytHendelse(
+            saksnummer = TEST_SAKSNUMMER,
+            referanse = behandlingsref
+        ) {
+            avklaringsbehov(Definisjon.AVKLAR_OPPHOLDSKRAV, AvklaringsbehovStatus.AVSLUTTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(3))
+                endring(AvklaringsbehovStatus.AVSLUTTET, "saksbehandler", nå.minusHours(2))
+                endring(
+                    AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER, beslutter, nå.minusHours(1),
+                    begrunnelse = "oppholdskrav ikke oppfylt 1",
+                    årsakTilRetur = listOf(ÅrsakTilRetur(ÅrsakTilReturKode.FEIL_LOVANVENDELSE))
+                )
+                endring(AvklaringsbehovStatus.AVSLUTTET, "Saksbehandler", nå.minusMinutes(10))
+            }
+            avklaringsbehov(Definisjon.FORESLÅ_VEDTAK, AvklaringsbehovStatus.AVSLUTTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(4))
+                endring(AvklaringsbehovStatus.AVSLUTTET, "Saksbehandler", nå.minusHours(3))
+            }
+            avklaringsbehov(Definisjon.FATTE_VEDTAK, AvklaringsbehovStatus.OPPRETTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusMinutes(30))
+                endring(AvklaringsbehovStatus.AVSLUTTET, beslutter, nå.minusMinutes(10))
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusMinutes(5))
+            }
+        }
+
+        sendBehandlingFlytStoppetHendelse(tilbakeTilBeslutter)
+
+        val jobber = dataSource.transaction { connection ->
+            FlytJobbRepository(connection).hentJobberForSak(oppgaveId.id)
+        }
+        assertThat(jobber).hasSize(1)
+        assertThat(jobber.first().parameter("hendelsesType")).isEqualTo(HendelseType.OPPDATERT.name)
     }
 
     @Test
@@ -1583,20 +1639,22 @@ class OppdaterOppgaveServiceTest {
             enableAll()
         })
         dataSource.transaction { connection ->
-            OppdaterOppgaveService(
-                unleash,
-                veilarbarboppfolgingGateway,
-                sykefravarsoppfolgingGateway,
-                enhetService,
-                OppgaveRepository(connection),
-                FlytJobbRepository(connection),
-                TilbakekrevingRepository(connection),
-                MottattDokumentRepository(connection),
-                MarkeringService(
-                    MarkeringRepository(connection)
-                ),
-                NomApiGateway.withClientCredentialsRestClient(),
-            ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+            bufretStatistikk(connection) { flytJobbRepository ->
+                OppdaterOppgaveService(
+                    unleash,
+                    veilarbarboppfolgingGateway,
+                    sykefravarsoppfolgingGateway,
+                    enhetService,
+                    OppgaveRepository(connection),
+                    flytJobbRepository,
+                    TilbakekrevingRepository(connection),
+                    MottattDokumentRepository(connection),
+                    MarkeringService(
+                        MarkeringRepository(connection)
+                    ),
+                    NomApiGateway.withClientCredentialsRestClient(),
+                ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+            }
         }
     }
 
@@ -1605,19 +1663,21 @@ class OppdaterOppgaveServiceTest {
             val unleash = UnleashService(FakeUnleash().apply {
                 enableAll()
             })
-            OppdaterOppgaveService(
-                unleash,
-                veilarbarboppfolgingGateway,
-                sykefravarsoppfolgingGateway,
-                enhetService,
-                OppgaveRepository(connection),
-                FlytJobbRepository(connection),
-                TilbakekrevingRepository(connection),
-                MottattDokumentRepository(connection),
-                MarkeringService(MarkeringRepository(connection)),
-                NomApiGateway.withClientCredentialsRestClient(),
+            bufretStatistikk(connection) { flytJobbRepository ->
+                OppdaterOppgaveService(
+                    unleash,
+                    veilarbarboppfolgingGateway,
+                    sykefravarsoppfolgingGateway,
+                    enhetService,
+                    OppgaveRepository(connection),
+                    flytJobbRepository,
+                    TilbakekrevingRepository(connection),
+                    MottattDokumentRepository(connection),
+                    MarkeringService(MarkeringRepository(connection)),
+                    NomApiGateway.withClientCredentialsRestClient(),
 
-                ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+                    ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+            }
         }
     }
 

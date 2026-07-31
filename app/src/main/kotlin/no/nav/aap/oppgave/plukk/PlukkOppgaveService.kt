@@ -5,7 +5,6 @@ import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
-import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.Oppgave
@@ -16,6 +15,7 @@ import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.klienter.behandlingsflyt.BehandlingsflytGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
+import no.nav.aap.oppgave.prosessering.bufretStatistikk
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -28,11 +28,22 @@ class PlukkOppgaveService(
     val flytJobbRepository: FlytJobbRepository,
     val reserverOppgaveService: ReserverOppgaveService,
 ) {
-    constructor(enhetService: IEnhetService, ansattInfoGateway: AnsattInfoGateway, connection: DBConnection) : this(
+    // flytJobbRepository deles med reserverOppgaveService slik at statistikk-hendelser for
+    // samme oppgave i én transaksjon (f.eks. AVRESERVERT + OPPDATERT) dedupliseres, se bufretStatistikk
+    constructor(
+        enhetService: IEnhetService,
+        ansattInfoGateway: AnsattInfoGateway,
+        connection: DBConnection,
+        flytJobbRepository: FlytJobbRepository,
+    ) : this(
         enhetService = enhetService,
         oppgaveRepository = OppgaveRepository(connection),
-        flytJobbRepository = FlytJobbRepositoryImpl(connection),
-        reserverOppgaveService = ReserverOppgaveService(connection, ansattInfoGateway)
+        flytJobbRepository = flytJobbRepository,
+        reserverOppgaveService = ReserverOppgaveService(
+            OppgaveRepository(connection),
+            flytJobbRepository,
+            ansattInfoGateway
+        )
     )
 
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -53,7 +64,8 @@ class PlukkOppgaveService(
         }
         val harFortroligAdresse = enhetService.skalHaFortroligAdresse(oppgave.personIdent, relevanteIdenter)
         val erSkjermet = enhetService.erSkjermet(ident)
-        val erOverstyrtTilLokalkontor = oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
+        val erOverstyrtTilLokalkontor =
+            oppgave.avklaringsbehovKode in AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER.map { it.kode } && oppgave.enhet !in NAY_ENHETER.map { it.kode }
         val erFørstegangsbehandling = oppgave.behandlingstype == Behandlingstype.FØRSTEGANGSBEHANDLING
 
         val nyEnhet =
@@ -114,16 +126,22 @@ class PlukkOppgaveService(
             val harTilgang = TilgangService.sjekkTilgang(oppgave.tilAvklaringsbehovReferanseDto(), token)
 
             if (!harTilgang) {
-                dataSource.transaction {
-                    PlukkOppgaveService(enhetService, ansattInfoGateway, it)
-                        .oppdaterOppgaveVedTilgangAvslått(oppgaveId = oppgave.oppgaveId(), ident = ident)
+                dataSource.transaction { connection ->
+                    bufretStatistikk(connection) { flytJobbRepository ->
+                        PlukkOppgaveService(enhetService, ansattInfoGateway, connection, flytJobbRepository)
+                            .oppdaterOppgaveVedTilgangAvslått(oppgaveId = oppgave.oppgaveId(), ident = ident)
+                    }
                 }
                 return null
             }
 
             if (oppgave.reservertAv != ident) {
                 dataSource.transaction { connection ->
-                    ReserverOppgaveService(connection, ansattInfoGateway).reserverOppgave(oppgave.oppgaveId(), ident, ident)
+                    ReserverOppgaveService(connection, ansattInfoGateway).reserverOppgave(
+                        oppgave.oppgaveId(),
+                        ident,
+                        ident
+                    )
                 }
             }
 
