@@ -4,6 +4,8 @@ import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.motor.FlytJobbRepositoryImpl
 import no.nav.aap.motor.JobbInput
+import no.nav.aap.oppgave.metrikker.prometheus
+import no.nav.aap.oppgave.metrikker.statistikkHendelseCounter
 import org.slf4j.LoggerFactory
 
 /**
@@ -22,6 +24,11 @@ import org.slf4j.LoggerFactory
  * sammen med resten av oppgave-endringene, og selve utsendingen til statistikk skjer først når
  * jobben plukkes opp og prosesseres i etterkant.
  *
+ * Hver gang en bufret hendelse blir overskrevet (dedup) telles dette i Prometheus-metrikken
+ * `statistikk_hendelse_totalt{resultat="dedup_forkastet"}`, tagget med hendelseType til den
+ * hendelsen som ble forkastet. Se [sendOppgaveStatusOppdatering] for tellingen av totalt antall
+ * forsøk (`resultat="forsøkt"`).
+ *
  * Andre typer jobber enn statistikk-hendelser sendes videre til delegatet uten bufring.
  */
 class DedupliserendeFlytJobbRepository(
@@ -36,7 +43,15 @@ class DedupliserendeFlytJobbRepository(
     override fun leggTil(jobbInput: JobbInput) {
         val oppgaveId = jobbInput.sakIdOrNull()
         if (jobbInput.type() == StatistikkHendelseJobb.type() && oppgaveId != null) {
-            bufredeStatistikkHendelser[oppgaveId] = jobbInput
+            // put() returnerer forrige verdi for nøkkelen, altså hendelsen som forkastes fordi
+            // den blir overskrevet av en nyere hendelse for samme oppgave i samme transaksjon
+            val forkastetHendelse = bufredeStatistikkHendelser.put(oppgaveId, jobbInput)
+            if (forkastetHendelse != null) {
+                prometheus.statistikkHendelseCounter(
+                    forkastetHendelse.parameter("hendelsesType"),
+                    "dedup_forkastet"
+                ).increment()
+            }
         } else {
             delegate.leggTil(jobbInput)
         }

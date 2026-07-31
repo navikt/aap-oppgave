@@ -11,6 +11,8 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.metrikker.prometheus
+import no.nav.aap.oppgave.metrikker.statistikkHendelseCounter
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.statistikk.OppgaveHendelse
 import no.nav.aap.oppgave.statistikk.OppgaveTilStatistikkDto
@@ -86,6 +88,11 @@ private fun fraOppgave(oppgave: Oppgave, markeringer: List<Markering>): OppgaveT
  * Planlegg jobb for å sende oppgaveoppdatering til statistikk. God ide å alltid legge et kall til denne
  * etter et write-kall til oppgave-repo.
  *
+ * Teller hvert kall i Prometheus-metrikken `statistikk_hendelse_totalt{resultat="forsøkt"}`
+ * (tagget med hendelseType). Se [DedupliserendeFlytJobbRepository] for tellingen av hvor mange
+ * av disse forsøkene som faktisk blir dedupliserte bort (`resultat="dedup_forkastet"`) før de
+ * når JOBB-tabellen.
+ *
  * OBS: Hvis oppgaven kan bli oppdatert/reservert/avsluttet flere ganger for samme oppgave
  * innenfor samme transaksjon (f.eks. både RESERVERT og OPPDATERT), send inn en
  * [DedupliserendeFlytJobbRepository] (typisk via [bufretStatistikk]) som [repository] her,
@@ -96,6 +103,7 @@ private fun fraOppgave(oppgave: Oppgave, markeringer: List<Markering>): OppgaveT
 fun sendOppgaveStatusOppdatering(
     oppgaveId: OppgaveId, hendelseType: HendelseType, repository: FlytJobbRepository
 ) {
+    prometheus.statistikkHendelseCounter(hendelseType.name, "forsøkt").increment()
     repository.leggTil(
         JobbInput(StatistikkHendelseJobb).medParameter("hendelsesType", hendelseType.name)
             .medPayload(DefaultJsonMapper.toJson(oppgaveId))

@@ -11,3 +11,8 @@ fun PrometheusMeterRegistry.httpCallCounter(path: String): Counter = this.counte
     "http_call",
     listOf(Tag.of("path", path))
 )
+
+fun PrometheusMeterRegistry.statistikkHendelseCounter(hendelseType: String, resultat: String): Counter = this.counter(
+    "statistikk_hendelse_totalt",
+    listOf(Tag.of("hendelseType", hendelseType), Tag.of("resultat", resultat))
+)
