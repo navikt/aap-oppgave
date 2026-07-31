@@ -88,6 +88,7 @@ fun NormalOpenAPIRoute.sistEndretApi(
 private fun harAdressebeskyttelse(oppgave: Oppgave): Boolean =
     oppgave.harStrengtFortroligAdresse ||
             erEgenAnsattEnhet(oppgave) ||
+            oppgave.erSkjermet == true ||
             oppgave.harFortroligAdresse == true
 
 private fun erEgenAnsattEnhet(oppgave: Oppgave): Boolean {

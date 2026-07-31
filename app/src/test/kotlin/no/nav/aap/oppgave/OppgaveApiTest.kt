@@ -41,9 +41,14 @@ import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.FakesConfig
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.hent.OppgaveVisningsinformasjonResponse
+import no.nav.aap.oppgave.hent.VenteInformasjonResponse
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
+import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
+import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.markering.MarkeringDto
+import no.nav.aap.oppgave.plukk.AvreserverOppgaveDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveRequest
 import no.nav.aap.oppgave.plukk.PlukkOppgaveResponse
 import no.nav.aap.oppgave.produksjonsstyring.AntallOppgaverDto
@@ -61,6 +66,8 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
+import no.nav.aap.oppgave.verdityper.ReturStatus
+import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.TilgangGateway
 import org.assertj.core.api.Assertions.assertThat
@@ -69,7 +76,6 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -87,6 +93,7 @@ import javax.sql.DataSource
 import kotlin.test.AfterTest
 
 private const val TEST_IDENT = "01010012345"
+private var testFilterId = 0L
 
 @ExtendWith(Fakes::class)
 @Testcontainers
@@ -97,20 +104,15 @@ class OppgaveApiTest {
         resetDatabase()
     }
 
-    @BeforeEach
-    fun setup() {
-        leggInnFilterForTest()
-    }
-
     @Test
     fun `Opprett og avslutt oppgave`() {
         val saksnummer = "123456"
-        val referanse = UUID.randomUUID()
+        val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
 
         // Opprett ny oppgave
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = behandlingsReferanse.referanse, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -123,19 +125,26 @@ class OppgaveApiTest {
         )
 
         // Hent oppgaven som ble opprettet
-        val oppgave = hentOppgaveViaAPI(referanse)
-        assertThat(oppgave).isNotNull
-        assertThat(oppgave!!.enhet).isEqualTo("superNav!")
+        val lokalkontorOppgaver = hentOppgaveliste(
+            request = OppgavelisteRequest(
+                filterId = testFilterId,
+                enheter = setOf("superNav!"),
+                paging = Paging()
+            )
+        )
+        assertThat(lokalkontorOppgaver).isNotNull
+        assertThat(lokalkontorOppgaver!!.oppgaver).hasSize(1)
+        assertThat(lokalkontorOppgaver.oppgaver.first().personOgEnhet.enhet).isEqualTo("superNav!")
 
         // Hent hele oppgaven
-        val oppgaven = hentOppgaveViaRepository(oppgave.oppgaveId())
-        assertThat(oppgaven.vurderingsbehov).containsExactly("SØKNAD")
+        val oppgaven = hentOppgaveGittBehandlingref(behandlingsReferanse)
+        assertThat(oppgaven!!.vurderingsbehov).containsExactly("SØKNAD")
 
 
         // Avslutt oppgave
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = behandlingsReferanse.referanse, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
@@ -149,8 +158,8 @@ class OppgaveApiTest {
         )
 
         // Sjekk at oppgaven er avsluttet
-        val avsluttetOppgave = hentOppgaveViaRepository(oppgave.oppgaveId())
-        assertThat(avsluttetOppgave.status).isEqualTo(no.nav.aap.oppgave.verdityper.Status.AVSLUTTET)
+        val avsluttetOppgave = hentOppgaveGittBehandlingref(behandlingsReferanse)
+        assertThat(avsluttetOppgave).isNull()
     }
 
     @Test
@@ -173,10 +182,11 @@ class OppgaveApiTest {
             )
         )
 
-        // Hent oppgaven som ble opprettet
-        val oppgave = hentOppgaveViaAPI(referanse)
+        val oppgave = hentOppgaveGittBehandlingref(BehandlingReferanse(referanse))
         assertThat(oppgave).isNotNull
         assertThat(oppgave!!.enhet).isEqualTo("4491")
+        assertThat(oppgave.behandlingRef).isEqualTo(referanse)
+
         assertThat(oppgave.vurderingsbehov).contains("SØKNAD")
         assertThat(oppgave.årsakTilOpprettelse).isEqualTo("SØKNAD")
 
@@ -198,7 +208,7 @@ class OppgaveApiTest {
         )
 
         // Sjekk at oppgave er avsluttet
-        val avsluttetOppgave = hentOppgaveViaRepository(oppgave.oppgaveId())
+        val avsluttetOppgave = hentOppgaveGittOppgaveId(oppgave.oppgaveId())
         assertThat(avsluttetOppgave.status).isEqualTo(no.nav.aap.oppgave.verdityper.Status.AVSLUTTET)
     }
 
@@ -235,14 +245,20 @@ class OppgaveApiTest {
             )
         )
 
-        val påVentOppgaver = hentOppgaveViaAPI(
+        val påVentOppgaver = hentOppgaveVisningsinfo(
             referanse = referanse
         )!!
         assertThat(påVentOppgaver)
-            .extracting(OppgaveDto::påVentÅrsak, OppgaveDto::venteBegrunnelse)
-            .containsExactly(ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name, "Bedre ting å gjøre")
+            .extracting(OppgaveVisningsinformasjonResponse::påVentInfo)
+            .isEqualTo(
+                VenteInformasjonResponse(
+                    påVentTil = LocalDate.now().plusWeeks(2),
+                    påVentÅrsak = ÅrsakTilSettPåVent.VENTER_PÅ_MEDISINSKE_OPPLYSNINGER.name,
+                    venteBegrunnelse = "Bedre ting å gjøre"
+                )
+            )
 
-        val uthentetPåVent = hentOppgaveViaRepository(
+        val uthentetPåVent = hentOppgaveGittOppgaveId(
             påVentOppgaver.oppgaveId()
         )
         assertThat(uthentetPåVent)
@@ -283,11 +299,11 @@ class OppgaveApiTest {
             )
         )
 
-        val uthentet = hentOppgaveViaAPI(referanse)
+        val uthentet = hentOppgaveVisningsinfo(referanse)
         assertThat(uthentet).isNotNull
         assertThat(uthentet!!)
-            .extracting(OppgaveDto::venteBegrunnelse, OppgaveDto::påVentTil, OppgaveDto::påVentÅrsak)
-            .containsOnlyNulls()
+            .extracting(OppgaveVisningsinformasjonResponse::påVentInfo)
+            .isNull()
 
         val påVentOppgaverEtterPå = hentMineOppgaver(kunPåVent = true)
         assertThat(påVentOppgaverEtterPå.oppgaver).isEmpty()
@@ -313,11 +329,11 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgave = hentOppgaveViaAPI(
+        val oppgave = hentOppgaveVisningsinfo(
             referanse = referanse
         )!!
 
-        assertThat(oppgave.reservertAv)
+        assertThat(oppgave.reservertAvIdent)
             .withFailMessage { "reserverTil skal implisere at oppgaven blir reservert til denne personen" }
             .isEqualTo("U12345")
     }
@@ -417,7 +433,7 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgave = hentOppgaveViaAPI(referanse)
+        val oppgave = hentOppgaveVisningsinfo(referanse)
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf()
         val nesteOppgave = plukkOppgave(oppgave!!.oppgaveId())
@@ -443,7 +459,7 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgave = hentOppgaveViaAPI(referanse)
+        val oppgave = hentOppgaveVisningsinfo(referanse)
 
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
         assertThrows<ManglerTilgangException> { plukkOppgave(oppgave!!.oppgaveId()) }
@@ -470,13 +486,12 @@ class OppgaveApiTest {
         )
 
         // reserverer oppgave
-        plukkOppgave(hentOppgaveViaAPI(referanse)!!.oppgaveId())
-        val reservertOppgaveMedTilgang = hentOppgaveViaAPI(
+        plukkOppgave(hentOppgaveVisningsinfo(referanse)!!.oppgaveId())
+        val reservertOppgaveMedTilgang = hentOppgaveVisningsinfo(
             referanse = referanse,
         )
         assertThat(reservertOppgaveMedTilgang).isNotNull()
-        assertThat(reservertOppgaveMedTilgang?.reservertAv).isNotNull()
-        assertThat(reservertOppgaveMedTilgang?.reservertTidspunkt).isNotNull()
+        assertThat(reservertOppgaveMedTilgang?.reservertAvIdent).isNotNull()
 
         // plukk uten tilgang
         fakesConfig.negativtSvarFraTilgangForBehandling = setOf(referanse)
@@ -489,7 +504,7 @@ class OppgaveApiTest {
 
         // sjekk at reservasjon er fjernet
         val oppgaveUtenReservasjon =
-            hentOppgaveViaRepository(reservertOppgaveMedTilgang!!.oppgaveId())
+            hentOppgaveGittOppgaveId(reservertOppgaveMedTilgang!!.oppgaveId())
         assertThat(oppgaveUtenReservasjon).isNotNull()
         assertThat(oppgaveUtenReservasjon.reservertAv).isNull()
         assertThat(oppgaveUtenReservasjon.reservertTidspunkt).isNull()
@@ -532,14 +547,14 @@ class OppgaveApiTest {
         )
 
         // reserverer begge oppgaver
-        val oppgave1 = hentOppgaveViaAPI(referanse1)
-        val oppgave2 = hentOppgaveViaAPI(referanse2)
+        val oppgave1 = hentOppgaveVisningsinfo(referanse1)
+        val oppgave2 = hentOppgaveVisningsinfo(referanse2)
         reserverOppgave(oppgave1!!.oppgaveId(), "saksbehandler1", "saksbehandler1")
         reserverOppgave(oppgave2!!.oppgaveId(), "saksbehandler2", "saksbehandler2")
 
         // kall endepunkt for avreservering
         val avreserverteOppgaveIds = avreserverOppgaver(listOf(oppgave1.id, oppgave2.id))
-        val avreserverteOppgaver = avreserverteOppgaveIds?.map { hentOppgaveViaRepository(it) }
+        val avreserverteOppgaver = avreserverteOppgaveIds?.map { hentOppgaveGittOppgaveId(it) }
 
         assertThat(avreserverteOppgaver).hasSize(2)
         assertThat(avreserverteOppgaver?.all { it.reservertAv == null && it.reservertTidspunkt == null }).isTrue()
@@ -566,7 +581,7 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgave = hentOppgaveViaAPI(referanse1)
+        val oppgave = hentOppgaveVisningsinfo(referanse1)
 
         // Søk på å tildele en 11-5-oppgave skal bare returnere veiledere med tilgang til enheten
         val lokalSaksbehandlere = søkEtterSaksbehandlere("Kontorsen", listOf(oppgave?.id!!))?.saksbehandlere
@@ -592,7 +607,7 @@ class OppgaveApiTest {
         )
 
 
-        val oppgave2 = hentOppgaveViaAPI(referanse2)
+        val oppgave2 = hentOppgaveVisningsinfo(referanse2)
 
         // Søk på å tildele en 11-19-oppgave skal bare returnere den NAY-saksbehandleren med enhetstilgang
         val naySaksbehandlere = søkEtterSaksbehandlere("Naysen", listOf(oppgave2?.id!!))?.saksbehandlere
@@ -655,21 +670,21 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgave1 = hentOppgaveViaAPI(referanse1)
-        val oppgave2 = hentOppgaveViaAPI(referanse2)
+        val oppgave1 = hentOppgaveVisningsinfo(referanse1)
+        val oppgave2 = hentOppgaveVisningsinfo(referanse2)
 
         tildelOppgaver(listOf(oppgave1?.id!!, oppgave2?.id!!), ident = "saksbehandler")
 
-        val oppgave1EtterReservering = hentOppgaveViaAPI(referanse1)
-        val oppgave2EtterReservering = hentOppgaveViaAPI(referanse2)
-        assertThat(oppgave1EtterReservering?.reservertAv).isEqualTo("saksbehandler")
-        assertThat(oppgave2EtterReservering?.reservertAv).isEqualTo("saksbehandler")
+        val oppgave1EtterReservering = hentOppgaveVisningsinfo(referanse1)
+        val oppgave2EtterReservering = hentOppgaveVisningsinfo(referanse2)
+        assertThat(oppgave1EtterReservering?.reservertAvIdent).isEqualTo("saksbehandler")
+        assertThat(oppgave2EtterReservering?.reservertAvIdent).isEqualTo("saksbehandler")
 
         // kan tildele oppgave på nytt, selv om den nå er reservert av noen
         tildelOppgaver(listOf(oppgave1EtterReservering?.id!!), ident = "saksbehandler2")
 
-        val oppgave1Igjen = hentOppgaveViaAPI(referanse1)
-        assertThat(oppgave1Igjen?.reservertAv).isEqualTo("saksbehandler2")
+        val oppgave1Igjen = hentOppgaveVisningsinfo(referanse1)
+        assertThat(oppgave1Igjen?.reservertAvIdent).isEqualTo("saksbehandler2")
 
     }
 
@@ -693,26 +708,14 @@ class OppgaveApiTest {
         )
 
 
-        val oppgaveMedGammelEnhet = hentOppgaveViaAPI(referanse)
+        val oppgaveMedGammelEnhet = hentOppgaveVisningsinfo(referanse)
         assertThat(oppgaveMedGammelEnhet).isNotNull()
 
         // oppdater enhet på oppgave
         val oppgaveMedNyEnhet = oppdaterOgHentOppgave(
-            Oppgave(
-                id = oppgaveMedGammelEnhet!!.id,
-                saksnummer = oppgaveMedGammelEnhet.saksnummer,
-                behandlingRef = oppgaveMedGammelEnhet.behandlingRef,
-                enhet = "nyEnhet",
-                oppfølgingsenhet = "nyOppfølgingsenhet",
-                veilederArbeid = oppgaveMedGammelEnhet.veilederArbeid,
-                behandlingOpprettet = oppgaveMedGammelEnhet.behandlingOpprettet,
-                avklaringsbehovKode = oppgaveMedGammelEnhet.avklaringsbehovKode,
-                status = oppgaveMedGammelEnhet.status,
-                behandlingstype = oppgaveMedGammelEnhet.behandlingstype,
-                opprettetAv = oppgaveMedGammelEnhet.opprettetAv,
-                opprettetTidspunkt = oppgaveMedGammelEnhet.opprettetTidspunkt,
-                versjon = oppgaveMedGammelEnhet.versjon,
-            )
+            oppgaveId = oppgaveMedGammelEnhet!!.oppgaveId(),
+            enhet = "nyEnhet",
+            oppfølgingsenhet = "nyOppfølgingsenhet",
         )
         assertThat(oppgaveMedNyEnhet.enhet).isEqualTo("nyEnhet")
         assertThat(oppgaveMedNyEnhet.oppfølgingsenhet).isEqualTo("nyOppfølgingsenhet")
@@ -725,10 +728,10 @@ class OppgaveApiTest {
         )
 
         // enhet skal ha blitt oppdatert etter mislykket plukk
-        val oppgaveEtterOppdatering = hentOppgaveViaRepository(oppgaveMedNyEnhet.oppgaveId())
+        val oppgaveEtterOppdatering = hentOppgaveGittBehandlingref(BehandlingReferanse(referanse))
         assertThat(oppgaveEtterOppdatering).isNotNull()
-        assertThat(oppgaveEtterOppdatering.enhet).isEqualTo("superNav!")
-        assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
+        assertThat(oppgaveEtterOppdatering!!.enhet).isEqualTo("superNav!")
+        assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isEqualTo("superNav!")
     }
 
     @Test
@@ -752,7 +755,7 @@ class OppgaveApiTest {
         )
 
 
-        val oppgaveMedGammelEnhet = hentOppgaveViaAPI(referanse)
+        val oppgaveMedGammelEnhet = hentOppgaveVisningsinfo(referanse)
         assertThat(oppgaveMedGammelEnhet).isNotNull()
 
         // plukk uten tilgang - det har kommet ny relatert ident på sak fra behandlingsflyt-pip
@@ -763,7 +766,7 @@ class OppgaveApiTest {
         )
 
         // enhet skal ha blitt oppdatert med hensyn til relatert ident etter mislykket plukk
-        val oppgaveEtterOppdatering = hentOppgaveViaRepository(oppgaveMedGammelEnhet!!.oppgaveId())
+        val oppgaveEtterOppdatering = hentOppgaveGittOppgaveId(oppgaveMedGammelEnhet!!.oppgaveId())
         assertThat(oppgaveEtterOppdatering).isNotNull()
         assertThat(oppgaveEtterOppdatering.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
         assertThat(oppgaveEtterOppdatering.oppfølgingsenhet).isNull()
@@ -788,28 +791,14 @@ class OppgaveApiTest {
             )
         )
 
-        val opprettetOppgave = hentOppgaveViaAPI(
+        val opprettetOppgave = hentOppgaveVisningsinfo(
             referanse = referanse1,
         )
 
         // sett strengt fortrolig adresse
         oppdaterOgHentOppgave(
-            Oppgave(
-                id = opprettetOppgave!!.id,
-                personIdent = "123",
-                saksnummer = opprettetOppgave.saksnummer,
-                behandlingRef = opprettetOppgave.behandlingRef,
-                enhet = Enhet.NAV_VIKAFOSSEN.kode,
-                oppfølgingsenhet = null,
-                veilederArbeid = opprettetOppgave.veilederArbeid,
-                behandlingOpprettet = opprettetOppgave.behandlingOpprettet,
-                avklaringsbehovKode = opprettetOppgave.avklaringsbehovKode,
-                status = opprettetOppgave.status,
-                behandlingstype = opprettetOppgave.behandlingstype,
-                opprettetAv = opprettetOppgave.opprettetAv,
-                opprettetTidspunkt = opprettetOppgave.opprettetTidspunkt,
-                versjon = opprettetOppgave.versjon,
-            )
+            oppgaveId = opprettetOppgave!!.oppgaveId(),
+            enhet = Enhet.NAV_VIKAFOSSEN.kode,
         )
 
         val søkResponseStrengtFortrolig = søkEtterOppgaver(SøkRequest(saksnummer1))
@@ -817,22 +806,9 @@ class OppgaveApiTest {
 
         // sett fortrolig adresse
         oppdaterOgHentOppgave(
-            Oppgave(
-                id = opprettetOppgave.id,
-                personIdent = "123",
-                saksnummer = opprettetOppgave.saksnummer,
-                behandlingRef = opprettetOppgave.behandlingRef,
-                enhet = Enhet.NAV_VIKAFOSSEN.kode,
-                oppfølgingsenhet = null,
-                veilederArbeid = opprettetOppgave.veilederArbeid,
-                behandlingOpprettet = opprettetOppgave.behandlingOpprettet,
-                avklaringsbehovKode = opprettetOppgave.avklaringsbehovKode,
-                status = opprettetOppgave.status,
-                behandlingstype = opprettetOppgave.behandlingstype,
-                opprettetAv = opprettetOppgave.opprettetAv,
-                opprettetTidspunkt = opprettetOppgave.opprettetTidspunkt,
-                versjon = opprettetOppgave.versjon + 1,
-            )
+            enhet = ENHET_NAV_LØRENSKOG,
+            oppgaveId = hentOppgaveVisningsinfo(referanse1)!!.oppgaveId(),
+            harFortroligAdresse = true
         )
 
         val søkResponseFortroligAdresse = søkEtterOppgaver(SøkRequest(saksnummer1))
@@ -840,23 +816,9 @@ class OppgaveApiTest {
 
         // sett egen ansatt
         oppdaterOgHentOppgave(
-            Oppgave(
-                id = opprettetOppgave.id,
-                personIdent = "123",
-                saksnummer = opprettetOppgave.saksnummer,
-                behandlingRef = opprettetOppgave.behandlingRef,
-                enhet = Enhet.NAY_EGNE_ANSATTE.kode,
-                erSkjermet = true,
-                oppfølgingsenhet = null,
-                veilederArbeid = opprettetOppgave.veilederArbeid,
-                behandlingOpprettet = opprettetOppgave.behandlingOpprettet,
-                avklaringsbehovKode = opprettetOppgave.avklaringsbehovKode,
-                status = opprettetOppgave.status,
-                behandlingstype = opprettetOppgave.behandlingstype,
-                opprettetAv = opprettetOppgave.opprettetAv,
-                opprettetTidspunkt = opprettetOppgave.opprettetTidspunkt,
-                versjon = opprettetOppgave.versjon + 2,
-            )
+            oppgaveId = hentOppgaveVisningsinfo(referanse1)!!.oppgaveId(),
+            harFortroligAdresse = false,
+            erSkjermet = true
         )
 
         val søkResponseEgenAnsatt = søkEtterOppgaver(SøkRequest(saksnummer1))
@@ -883,7 +845,7 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgaveUtenFortroligAdresse = hentOppgaveViaAPI(referanse1)
+        val oppgaveUtenFortroligAdresse = hentOppgaveVisningsinfo(referanse1)
         assertThat(oppgaveUtenFortroligAdresse).isNotNull()
 
         // sett fortrolig adresse
@@ -892,7 +854,7 @@ class OppgaveApiTest {
         )
 
         // hent på nytt
-        val oppgaveMedFortroligAdresse = hentOppgaveViaRepository(
+        val oppgaveMedFortroligAdresse = hentOppgaveGittOppgaveId(
             oppgaveUtenFortroligAdresse.oppgaveId()
         )
         assertThat(oppgaveMedFortroligAdresse.harFortroligAdresse).isTrue()
@@ -1031,12 +993,12 @@ class OppgaveApiTest {
         // Oppgaven er gjenopprettet
         assertThat(hentAntallOppgaver().keys).hasSize(1)
 
-        val oppgaven = hentOppgaveViaAPI(referanse1)!!
+        val oppgaven = hentOppgaveVisningsinfo(referanse1)!!
 
-        assertThat(oppgaven).extracting(OppgaveDto::returInformasjon)
+        assertThat(oppgaven).extracting(OppgaveVisningsinformasjonResponse::returInformasjon)
             .isNotNull
             .isEqualTo(
-                ReturInformasjon(
+                ReturInformasjonDto(
                     status = ReturStatus.RETUR_FRA_KVALITETSSIKRER,
                     årsaker = listOf(ÅrsakTilReturKode.FEIL_LOVANVENDELSE),
                     begrunnelse = "xxx",
@@ -1050,7 +1012,7 @@ class OppgaveApiTest {
     fun `Skal avreservere og flytte oppgaver til Vikafossen dersom person har fått strengt fortrolig adresse`() {
         val oppgaveId1 = opprettOppgave(personIdent = STRENGT_FORTROLIG_IDENT, dataSource = dataSource)
         val oppgaveId2 = opprettOppgave(dataSource = dataSource)
-        val oppgave2Før = hentOppgaveViaRepository(oppgaveId2)
+        val oppgave2Før = hentOppgaveGittOppgaveId(oppgaveId2)
 
         dataSource.transaction {
             OppdaterOppgaveEnhetJobb(
@@ -1064,11 +1026,11 @@ class OppgaveApiTest {
             )
         }
 
-        val oppgave1 = hentOppgaveViaRepository(oppgaveId1)
+        val oppgave1 = hentOppgaveGittOppgaveId(oppgaveId1)
         assertEquals(Enhet.NAV_VIKAFOSSEN.kode, oppgave1.enhet)
         assertNull(oppgave1.reservertAv)
         assertEquals("Kelvin", oppgave1.endretAv)
-        val oppgave2Etter = hentOppgaveViaRepository(oppgaveId2)
+        val oppgave2Etter = hentOppgaveGittOppgaveId(oppgaveId2)
         assertEquals(oppgave2Før, oppgave2Etter)
     }
 
@@ -1122,11 +1084,11 @@ class OppgaveApiTest {
 
     @Test
     fun `markeringer skal sendes med i oppgavelistene`() {
-        val behandlingref = UUID.randomUUID()
+        val behandlingref = BehandlingReferanse(UUID.randomUUID())
         val saksnummer = "1023005"
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = behandlingref, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = behandlingref.referanse, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1145,10 +1107,10 @@ class OppgaveApiTest {
             opprettetTidspunkt = LocalDateTime.now(),
             hendelseType = MarkeringHendelseType.OPPRETTET
         )
-        opprettMarkeringHendelse(behandlingref, markering)
+        opprettMarkeringHendelse(behandlingref.referanse, markering)
 
         // reserver og hent mine oppgaver
-        plukkOppgave(hentOppgaveViaAPI(behandlingref)!!.oppgaveId())
+        plukkOppgave(hentOppgaveGittBehandlingref(behandlingref)?.oppgaveId()!!)
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
         assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer).hasSize(1)
@@ -1158,7 +1120,7 @@ class OppgaveApiTest {
         assertThat(mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.first().begrunnelse).isEqualTo(markering.begrunnelse)
 
         // hent markering fra endepunkt
-        val markeringer = hentGjeldendeMarkeringerForBehandling(behandlingref)
+        val markeringer = hentGjeldendeMarkeringerForBehandling(behandlingref.referanse)
         assertThat(markeringer).hasSize(1)
         assertThat(markeringer?.first()?.markeringType).isEqualTo(MarkeringForBehandling.HASTER)
         assertThat(markeringer?.first()?.begrunnelse).isEqualTo(markering.begrunnelse)
@@ -1166,11 +1128,11 @@ class OppgaveApiTest {
 
     @Test
     fun `markeringer sendes ikke med i oppgavelistene etter at de er fjernet`() {
-        val behandlingref = UUID.randomUUID()
+        val behandlingref = BehandlingReferanse(UUID.randomUUID())
         val saksnummer = "1023005"
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = behandlingref, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = behandlingref.referanse, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1189,10 +1151,11 @@ class OppgaveApiTest {
             opprettetTidspunkt = LocalDateTime.now(),
             hendelseType = MarkeringHendelseType.OPPRETTET
         )
-        opprettMarkeringHendelse(behandlingref, markeringOpprettet)
+        opprettMarkeringHendelse(behandlingref.referanse, markeringOpprettet)
 
         // reserver
-        plukkOppgave(hentOppgaveViaAPI(behandlingref)!!.oppgaveId())
+        val hentetOppgave = hentOppgaveVisningsinfo(behandlingref.referanse)
+        plukkOppgave(OppgaveId(hentetOppgave?.id!!, hentetOppgave.versjon))
 
         // fjern markering
         val markeringFjernet = MarkeringDto(
@@ -1201,7 +1164,7 @@ class OppgaveApiTest {
             opprettetTidspunkt = LocalDateTime.now(),
             hendelseType = MarkeringHendelseType.FJERNET
         )
-        opprettMarkeringHendelse(behandlingref, markeringFjernet)
+        opprettMarkeringHendelse(behandlingref.referanse, markeringFjernet)
         val mineOppgaver = hentMineOppgaver()
         assertThat(mineOppgaver.oppgaver).hasSize(1)
         val gjeldendeHastemarkeringer =
@@ -1443,10 +1406,20 @@ class OppgaveApiTest {
         )
     }
 
-    private fun hentOppgaveViaAPI(referanse: UUID): OppgaveDto? {
+    private fun hentOppgaveVisningsinfo(referanse: UUID): OppgaveVisningsinformasjonResponse? {
         return oboClient.get(
-            URI.create("http://localhost:$port/${referanse}/hent-oppgave"),
+            URI.create("http://localhost:$port/${referanse}/hent-oppgave-visningsinformasjon"),
             GetRequest(
+                currentToken = getOboToken()
+            )
+        )
+    }
+
+    private fun hentOppgaveliste(request: OppgavelisteRequest): OppgavelisteRespons? {
+        return oboClient.post(
+            URI.create("http://localhost:$port/oppgaveliste"),
+            PostRequest(
+                body = request,
                 currentToken = getOboToken()
             )
         )
@@ -1466,6 +1439,8 @@ class OppgaveApiTest {
             PostRequest(body = søkRequest, currentToken = getOboToken())
         )
     }
+
+    private fun OppgaveVisningsinformasjonResponse.oppgaveId(): OppgaveId = OppgaveId(this.id, this.versjon)
 
     companion object {
         @JvmStatic
@@ -1501,10 +1476,6 @@ class OppgaveApiTest {
             dataSource.transaction {
                 it.execute("DELETE FROM OPPGAVE_HISTORIKK")
                 it.execute("DELETE FROM OPPGAVE")
-                it.execute("DELETE FROM FILTER_AVKLARINGSBEHOVTYPE")
-                it.execute("DELETE FROM FILTER_BEHANDLINGSTYPE")
-                it.execute("DELETE FROM FILTER_ENHET")
-                it.execute("DELETE FROM FILTER")
             }
         }
 
@@ -1512,18 +1483,19 @@ class OppgaveApiTest {
             dataSource.transaction {
                 val filterId =
                     it.executeReturnKey("INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT) VALUES ('Alle oppgaver', 'Alle oppgaver', 'test', current_timestamp)")
-                it.execute("INSERT INTO FILTER_ENHET (FILTER_ID, ENHET) VALUES (?, ?)") {
-                    setParams {
-                        setLong(1, filterId)
-                        setString(2, "ALLE")
-                    }
-                }
+                testFilterId = filterId
             }
         }
 
-        private fun hentOppgaveViaRepository(oppgaveId: OppgaveId): Oppgave {
+        private fun hentOppgaveGittOppgaveId(oppgaveId: OppgaveId): Oppgave {
             return dataSource.transaction { connection ->
                 OppgaveRepository(connection).hentOppgave(oppgaveId.id)
+            }
+        }
+
+        private fun hentOppgaveGittBehandlingref(behandlingRef: BehandlingReferanse): Oppgave? {
+            return dataSource.transaction { connection ->
+                OppgaveRepository(connection).hentAktivOppgave(behandlingRef)
             }
         }
 
@@ -1542,26 +1514,42 @@ class OppgaveApiTest {
             }
         }
 
-        private fun oppdaterOgHentOppgave(oppgave: Oppgave): Oppgave {
+        private fun oppdaterOgHentOppgave(
+            oppgaveId: OppgaveId,
+            personIdent: String = "123456721",
+            enhet: String = ENHET_NAV_LØRENSKOG,
+            påVentTil: LocalDate? = null,
+            påVentÅrsak: String? = null,
+            påVentBegrunnelse: String? = null,
+            oppfølgingsenhet: String? = null,
+            veilederArbeid: String? = null,
+            veilederSykdom: String? = null,
+            vurderingsbehov: List<String> = emptyList(),
+            erSkjermet: Boolean = false,
+            returInformasjon: ReturInfo? = null,
+            utløptVentefrist: LocalDate? = null,
+            harFortroligAdresse: Boolean = false,
+        ): Oppgave {
             dataSource.transaction { connection ->
                 OppgaveRepository(connection).oppdatereOppgave(
-                    oppgaveId = oppgave.oppgaveId(),
+                    oppgaveId = oppgaveId,
                     endretAvIdent = "Kelvin",
-                    personIdent = oppgave.personIdent,
-                    enhet = oppgave.enhet,
-                    påVentTil = oppgave.påVentTil,
-                    påVentÅrsak = oppgave.påVentÅrsak,
-                    påVentBegrunnelse = oppgave.venteBegrunnelse,
-                    oppfølgingsenhet = oppgave.oppfølgingsenhet,
-                    veilederArbeid = oppgave.veilederArbeid,
-                    veilederSykdom = oppgave.veilederSykdom,
-                    vurderingsbehov = oppgave.vurderingsbehov,
-                    erSkjermet = oppgave.erSkjermet == true,
-                    returInformasjon = oppgave.returInformasjon,
-                    utløptVentefrist = oppgave.utløptVentefrist
+                    personIdent = personIdent,
+                    enhet = enhet,
+                    påVentTil = påVentTil,
+                    påVentÅrsak = påVentÅrsak,
+                    påVentBegrunnelse = påVentBegrunnelse,
+                    oppfølgingsenhet = oppfølgingsenhet,
+                    veilederArbeid = veilederArbeid,
+                    veilederSykdom = veilederSykdom,
+                    vurderingsbehov = vurderingsbehov,
+                    erSkjermet = erSkjermet,
+                    returInformasjon = returInformasjon,
+                    utløptVentefrist = utløptVentefrist,
+                    harFortroligAdresse = harFortroligAdresse
                 )
             }
-            return hentOppgaveViaRepository(oppgave.oppgaveId())
+            return hentOppgaveGittOppgaveId(oppgaveId)
         }
 
         var port: Int = 0
@@ -1578,6 +1566,7 @@ class OppgaveApiTest {
 
             port = server.port()
             TilgangGateway.disableCaching()
+            leggInnFilterForTest()
         }
 
         @JvmStatic

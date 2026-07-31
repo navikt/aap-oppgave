@@ -3,9 +3,10 @@ package no.nav.aap.oppgave
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetInfo
 import no.nav.aap.oppgave.markering.Markering
-import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
+import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -17,13 +18,6 @@ data class ReturInfo(
     val begrunnelse: String,
     val endretAv: String,
 ) {
-    fun tilDto(): ReturInformasjon = ReturInformasjon(
-        status = status,
-        årsaker = årsaker,
-        begrunnelse = begrunnelse,
-        endretAv = endretAv
-    )
-
     fun tilReturInformasjonDto(): ReturInformasjonDto = ReturInformasjonDto(
         status = status,
         endretAv = endretAv,
@@ -46,12 +40,7 @@ data class TilbakekrevingsVars(
 data class ForrigeKvalitetssikrer(
     val forrigeKvalitetssikrerIdent: String,
     val forrigeKvalitetssikrerNavn: String? = null,
-) {
-    fun tilResponse(): ForrigeKvalitetssikrerInfo = ForrigeKvalitetssikrerInfo(
-        forrigeKvalitetssikrerIdent = forrigeKvalitetssikrerIdent,
-        forrigeKvalitetssikrerNavn = forrigeKvalitetssikrerNavn
-    )
-}
+)
 
 data class Oppgave(
     val id: Long? = null,
@@ -125,51 +114,6 @@ data class Oppgave(
             journalpostId = this.journalpostId,
             avklaringsbehovKode = this.avklaringsbehovKode,
             behandlingstype = this.behandlingstype
-        )
-    }
-
-    fun tilOppgaveDto(): OppgaveDto {
-        return OppgaveDto(
-            id = requireNotNull(id) { "Oppgave må ha ID" },
-            saksnummer = saksnummer,
-            journalpostId = journalpostId,
-            avklaringsbehovKode = avklaringsbehovKode,
-            behandlingOpprettet = behandlingOpprettet,
-            behandlingstype = behandlingstype,
-            status = status,
-            endretAv = endretAv,
-            endretTidspunkt = endretTidspunkt,
-            versjon = versjon,
-            harFortroligAdresse = harFortroligAdresse,
-            harUlesteDokumenter = harUlesteDokumenter,
-            vurderingsbehov = vurderingsbehov,
-            personIdent = requireNotNull(personIdent) {
-                "Personident kan ikke være null for OppgaveDto"
-            },
-            personNavn = personNavn,
-            behandlingRef = behandlingRef,
-            enhet = enhet,
-            enhetForrigeOppgave = enhetForrigeOppgave?.tilDto(),
-            oppfølgingsenhet = oppfølgingsenhet,
-            veilederArbeid = veilederArbeid,
-            veilederSykdom = veilederSykdom,
-            påVentTil = påVentTil,
-            påVentÅrsak = påVentÅrsak,
-            utløptVentefrist = utløptVentefrist,
-            venteBegrunnelse = venteBegrunnelse,
-            forrigePåVentÅrsak = forrigePåVentÅrsak,
-            forrigeVenteBegrunnelse = forrigeVenteBegrunnelse,
-            returInformasjon = returInformasjon?.tilDto(),
-            årsakTilOpprettelse = årsakTilOpprettelse,
-            reservertAv = reservertAv,
-            reservertAvNavn = reservertAvNavn,
-            reservertTidspunkt = reservertTidspunkt,
-            opprettetAv = opprettetAv,
-            opprettetTidspunkt = opprettetTidspunkt,
-            erSkjermet = erSkjermet,
-            markeringer = markeringer.tilDto(),
-            tilbakekrevingsVarsDto = tilbakekrevingsVars?.tilDto(),
-            forrigeKvalitetssikrerInfo = forrigeKvalitetssikrerInfo?.tilResponse(),
         )
     }
 }

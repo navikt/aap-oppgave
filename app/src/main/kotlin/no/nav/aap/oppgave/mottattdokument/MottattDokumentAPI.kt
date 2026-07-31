@@ -7,7 +7,6 @@ import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.*
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.oppgave.DokumenterLestDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident

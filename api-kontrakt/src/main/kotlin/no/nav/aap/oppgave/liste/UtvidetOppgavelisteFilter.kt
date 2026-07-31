@@ -1,7 +1,7 @@
 package no.nav.aap.oppgave.liste
 
-import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.ReturStatus
 import java.math.BigDecimal
 import java.time.LocalDate
 

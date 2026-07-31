@@ -1,7 +1,7 @@
 package no.nav.aap.oppgave.liste
 
 import no.nav.aap.oppgave.BehandlingskontekstResponse
-import no.nav.aap.oppgave.ForrigeKvalitetssikrerInfo
+import no.nav.aap.oppgave.ForrigeKvalitetssikrerDto
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.TilbakekrevingsVarsDto
 import no.nav.aap.oppgave.enhet.EnhetDto
@@ -57,5 +57,5 @@ data class OppgavelisteTagsResponse(
     val skjermingInfo: SkjermingInfoResponse,
     val harUlesteDokumenter: Boolean?,
     val markeringer: List<MarkeringDto>,
-    val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerInfo?,
+    val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerDto?,
 )

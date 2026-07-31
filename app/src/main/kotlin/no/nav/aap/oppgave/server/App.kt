@@ -144,7 +144,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 mottattDokumentApi(dataSource, prometheus)
                 tildelOppgaveApi(dataSource, enhetService, norgGateway, prometheus, nomApiGateway)
                 // Hent oppgave(r)
-                hentOppgaveApi(dataSource, enhetService, norgGateway, prometheus)
+                hentOppgaveApi(dataSource, prometheus)
                 hentOppgaveVisningsinformasjonApi(dataSource, enhetService, norgGateway, prometheus)
                 oppgavelisteApi(dataSource, enhetService, norgGateway, prometheus)
                 hentOppgaveEnhetApi(dataSource, enhetService, norgGateway, prometheus)
