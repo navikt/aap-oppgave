@@ -3,15 +3,15 @@ package no.nav.aap.oppgave.mottattdokument
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
-import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.oppdater.OpprettOppgave
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 class MottattDokumentServiceTest {
 
@@ -58,7 +58,8 @@ class MottattDokumentServiceTest {
             referanse = UUID.randomUUID().toString(),
         )
 
-    private fun oppgave(behandlingRef: UUID) = Oppgave(
+    private fun oppgave(behandlingRef: UUID) = OpprettOppgave(
+        personIdent = "1234",
         saksnummer = "1",
         behandlingRef = behandlingRef,
         behandlingOpprettet = LocalDateTime.now().minusDays(3),
@@ -68,6 +69,7 @@ class MottattDokumentServiceTest {
         enhet = "enhet",
         oppfølgingsenhet = "oppfølgingsenhet",
         avklaringsbehovKode = "1000",
-        harUlesteDokumenter = true
+        harUlesteDokumenter = true,
+        harFortroligAdresse = false
     )
 }

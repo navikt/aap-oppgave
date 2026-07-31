@@ -10,6 +10,7 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
+import no.nav.aap.oppgave.oppdater.OpprettOppgave
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -28,7 +29,7 @@ class FeilVersjonException(
 
 class OppgaveRepository(private val connection: DBConnection) {
 
-    fun opprettOppgave(oppgave: Oppgave): OppgaveId {
+    fun opprettOppgave(oppgave: OpprettOppgave): OppgaveId {
         val query = """
             INSERT INTO OPPGAVE (
                 SAKSNUMMER,

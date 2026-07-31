@@ -20,9 +20,11 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.ENHET_NAV_LØRENSKOG
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
@@ -36,10 +38,10 @@ import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
+import no.nav.aap.oppgave.opprettOppgave
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
-import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
@@ -74,6 +76,8 @@ class OppdaterOppgaveServiceTest {
     }
 
     private lateinit var dataSource: TestDataSource
+    private val TEST_SAKSNUMMER = Saksnummer("123456789")
+    private val TEST_BEHANDLINGREF = UUID.randomUUID().let(::BehandlingReferanse)
 
     @BeforeEach
     fun setup() {
@@ -83,22 +87,55 @@ class OppdaterOppgaveServiceTest {
     @AfterEach
     fun tearDown() = dataSource.close()
 
+    private fun opprettOppgaveWrapper(
+        personIdent: String = "12345678901",
+        saksnummer: String = TEST_SAKSNUMMER.toString(),
+        behandlingRef: UUID = TEST_BEHANDLINGREF.referanse,
+        status: Status = Status.OPPRETTET,
+        avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
+        enhet: String = ENHET_NAV_LØRENSKOG,
+        oppfølgingsenhet: String? = null,
+        veilederArbeid: String? = null,
+        veilederSykdom: String? = null,
+        behandlingOpprettet: LocalDateTime = LocalDateTime.now(),
+        harUlesteDokumenter: Boolean = false,
+        påVentTil: LocalDate? = null,
+        påVentÅrsak: String? = null,
+        venteBegrunnelse: String? = null,
+        returInformasjon: ReturInfo? = null,
+    ): OppgaveId = opprettOppgave(
+        personIdent = personIdent,
+        saksnummer = saksnummer,
+        behandlingRef = behandlingRef,
+        status = status,
+        avklaringsbehovKode = avklaringsbehovKode,
+        enhet = enhet,
+        oppfølgingsenhet = oppfølgingsenhet,
+        veilederArbeid = veilederArbeid,
+        veilederSykdom = veilederSykdom,
+        behandlingOpprettet = behandlingOpprettet,
+        harUlesteDokumenter = harUlesteDokumenter,
+        påVentTil = påVentTil,
+        påVentÅrsak = påVentÅrsak,
+        venteBegrunnelse = venteBegrunnelse,
+        returInformasjon = returInformasjon,
+        dataSource = dataSource,
+    )
+
     @Test
     fun `Ved flere åpne avklaringsbehov skal det opprettes oppgave på behovet som er tidligst i flyten`() {
-        val (sykdomOppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val sykdomOppgaveId = opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
-        val (fastsettBeregningstidspunktOppgaveId) = opprettOppgave(
+        val fastsettBeregningstidspunktOppgaveId = opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
-        val nyHendelse = behandlingFlytHendelse(saksnummer = saksnummer, referanse = behandlingsref) {
+        val nyHendelse = behandlingFlytHendelse(saksnummer = TEST_SAKSNUMMER, referanse = TEST_BEHANDLINGREF) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Saksbehandler", nå.minusHours(9))
@@ -139,14 +176,12 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `oppgaver fra postmottak lukkes etter at saksnummer er satt`() {
-        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
-
         val nå = LocalDateTime.now()
 
         val hendelse = DokumentflytStoppetHendelse(
             journalpostId = JournalpostId(123),
             ident = "personIdent",
-            referanse = behandlingsref.referanse,
+            referanse = TEST_BEHANDLINGREF.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
             avklaringsbehov = listOf(
@@ -167,7 +202,7 @@ class OppdaterOppgaveServiceTest {
         )
         sendDokumentFlytStoppetHendelse(hendelse)
 
-        val oppgaverPåBehandling = hentOppgaverForBehandling(behandlingsref = behandlingsref)
+        val oppgaverPåBehandling = hentOppgaverForBehandling(behandlingsref = TEST_BEHANDLINGREF)
         assertThat(oppgaverPåBehandling).hasSize(1)
         assertThat(oppgaverPåBehandling.first().status).isEqualTo(Status.OPPRETTET)
         assertThat(oppgaverPåBehandling.first().avklaringsbehovKode).isEqualTo("1340")
@@ -175,7 +210,7 @@ class OppdaterOppgaveServiceTest {
         val hendelse2 = DokumentflytStoppetHendelse(
             journalpostId = JournalpostId(123),
             ident = "personIdent",
-            referanse = behandlingsref.referanse,
+            referanse = TEST_BEHANDLINGREF.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.AVSLUTTET,
             avklaringsbehov = listOf(
@@ -196,7 +231,7 @@ class OppdaterOppgaveServiceTest {
         )
         sendDokumentFlytStoppetHendelse(hendelse2)
 
-        val oppgaverPåBehandling2 = hentOppgaverForBehandling(behandlingsref)
+        val oppgaverPåBehandling2 = hentOppgaverForBehandling(TEST_BEHANDLINGREF)
         assertThat(oppgaverPåBehandling2).hasSize(1)
         assertThat(oppgaverPåBehandling2.first().status).isEqualTo(Status.AVSLUTTET)
         assertThat(oppgaverPåBehandling2.first().avklaringsbehovKode).isEqualTo("1340")
@@ -288,16 +323,17 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Adressebeskyttelse utledes riktig fra relevante identer på en oppgaveoppdatering`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val behandlingsref = UUID.randomUUID()
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            behandlingRef = behandlingsref,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
         val nå = LocalDateTime.now()
 
         val hendelseMedKode6RelatertIdent = behandlingFlytHendelse(
-            saksnummer = saksnummer,
-            referanse = behandlingsref,
+            saksnummer = TEST_SAKSNUMMER,
+            referanse = BehandlingReferanse(behandlingsref),
             relevanteIdenterPåBehandling = listOf(STRENGT_FORTROLIG_IDENT)
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
@@ -320,15 +356,18 @@ class OppdaterOppgaveServiceTest {
         val oppgave = hentOppgave(oppgaveId)
         assertThat(oppgave.enhet).isEqualTo(Enhet.NAV_VIKAFOSSEN.kode)
 
-        val (oppgaveId2, saksnummer2, behandlingsref2) = opprettOppgave(
+        val behandlingsref2 = UUID.randomUUID()
+        val saksnummer2 = "saksnummer2"
+        val oppgaveId2 = opprettOppgaveWrapper(
+            saksnummer = saksnummer2,
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SAMORDNING_GRADERING.kode.name),
+            behandlingRef = behandlingsref2,
         )
 
         val hendelseMedKode7RelatertIdent = behandlingFlytHendelse(
-            saksnummer = saksnummer2,
-            referanse = behandlingsref2,
+            saksnummer = Saksnummer(saksnummer2),
+            referanse = BehandlingReferanse(behandlingsref2),
             relevanteIdenterPåBehandling = listOf(FORTROLIG_ADRESSE_IDENT)
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SAMORDNING_GRADERING, AvklaringsbehovStatus.OPPRETTET) {
@@ -417,17 +456,18 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgave skal reserveres til beslutter som sendte saken i retur når saksbehandler har rettet og sendt tilbake`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.OPPRETTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+            behandlingRef = behandlingsref.referanse,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
 
         val nå = LocalDateTime.now()
         val beslutter = "Beslutter"
 
         val tilbakeTilBeslutter = behandlingFlytHendelse(
-            saksnummer = saksnummer,
+            saksnummer = TEST_SAKSNUMMER,
             referanse = behandlingsref
         ) {
             avklaringsbehov(Definisjon.AVKLAR_OPPHOLDSKRAV, AvklaringsbehovStatus.AVSLUTTET) {
@@ -460,17 +500,18 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgave skal IKKE reserveres første gang sak sendes til beslutter`() {
-        val (_, saksnummer, behandlingsref) = opprettOppgave(
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FORESLÅ_VEDTAK.kode.name)
+            behandlingRef = behandlingsref.referanse,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FORESLÅ_VEDTAK.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
         // Ingen AVSLUTTET-endring på FATTE_VEDTAK → erReturTilToTrinn == false
         val førsteTilBeslutter = behandlingFlytHendelse(
-            saksnummer = saksnummer,
+            saksnummer = TEST_SAKSNUMMER,
             referanse = behandlingsref
         ) {
             avklaringsbehov(Definisjon.FORESLÅ_VEDTAK, AvklaringsbehovStatus.AVSLUTTET) {
@@ -490,10 +531,11 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgave reserveres til siste beslutter ved flere retur fra beslutter`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.OPPRETTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+            behandlingRef = behandlingsref.referanse,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
 
         val nå = LocalDateTime.now()
@@ -501,7 +543,7 @@ class OppdaterOppgaveServiceTest {
         val andreBeslutter = "AndreBeslutter"
 
         val tilbakeTilBeslutterAndreGang = behandlingFlytHendelse(
-            saksnummer = saksnummer,
+            saksnummer = TEST_SAKSNUMMER,
             referanse = behandlingsref
         ) {
             avklaringsbehov(Definisjon.AVKLAR_OPPHOLDSKRAV, AvklaringsbehovStatus.AVSLUTTET) {
@@ -537,16 +579,17 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgave skal ikke reserveres til Kelvin selv om Kelvin har SENDT_TILBAKE_FRA_BESLUTTER`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.OPPRETTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+            behandlingRef = behandlingsref.referanse,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
         val tilbakeTilBeslutter = behandlingFlytHendelse(
-            saksnummer = saksnummer,
+            saksnummer = TEST_SAKSNUMMER,
             referanse = behandlingsref
         ) {
             avklaringsbehov(Definisjon.AVKLAR_OPPHOLDSKRAV, AvklaringsbehovStatus.AVSLUTTET) {
@@ -577,17 +620,18 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgave skal ikke reserveres dersom ingen SENDT_TILBAKE_FRA_BESLUTTER finnes`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.OPPRETTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name)
+            behandlingRef = behandlingsref.referanse,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
         // FATTE_VEDTAK har AVSLUTTET (erReturTilToTrinn == true), men ingen SENDT_TILBAKE_FRA_BESLUTTER
         val hendelse = behandlingFlytHendelse(
-            saksnummer = saksnummer,
+            saksnummer = TEST_SAKSNUMMER,
             referanse = behandlingsref
         ) {
             avklaringsbehov(Definisjon.FATTE_VEDTAK, AvklaringsbehovStatus.OPPRETTET) {
@@ -630,16 +674,17 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Ved gjenåpning skal oppgaven bli reservert på personen som løste avklaringsbehovet`() {
-        val (_, saksnummer, behandlingsref) = opprettOppgave(
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            behandlingRef = behandlingsref.referanse,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
         val tilKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer,
+            TEST_SAKSNUMMER,
             behandlingsref
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
@@ -655,7 +700,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
 
         val returFraKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer, behandlingsref
+            TEST_SAKSNUMMER, behandlingsref
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -688,17 +733,16 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Skal kunne fange opp venteinformasjon også etter retur fra kvalitetssikrer`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
         val tilKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer,
-            behandlingsref
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -713,7 +757,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
 
         val returFraKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer, behandlingsref
+            TEST_SAKSNUMMER, TEST_BEHANDLINGREF
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -760,7 +804,7 @@ class OppdaterOppgaveServiceTest {
         val oppgave = hentOppgave(oppgaveId)
         assertThat(oppgave.reservertAv).isEqualTo("Veileder")
 
-        val åpneoppgaver = hentOppgaverForBehandling(behandlingsref).filter { it.status == Status.OPPRETTET }
+        val åpneoppgaver = hentOppgaverForBehandling(TEST_BEHANDLINGREF).filter { it.status == Status.OPPRETTET }
         assertThat(åpneoppgaver.size).isEqualTo(1)
         assertThat(åpneoppgaver.first().påVentTil).isEqualTo(nå.plusDays(8).toLocalDate())
         assertThat(åpneoppgaver.first().avklaringsbehovKode).isEqualTo("5003")
@@ -769,15 +813,14 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgaver skal ikke reserveres til Kelvin selv om Kelvin setter dem på vent`() {
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
-        val hendelse = behandlingFlytHendelse(saksnummer, behandlingsref) {
+        val hendelse = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Veileder", nå.minusHours(9))
@@ -788,7 +831,7 @@ class OppdaterOppgaveServiceTest {
         // ny hendelse gjenåpner oppgave og setter den på vent
         val hendelse2 =
             behandlingFlytHendelse(
-                saksnummer, behandlingsref, erPåVent = true
+                TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true
             ) {
                 avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                     endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -815,10 +858,9 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Oppgaver på vent skal ikke reserveres på nytt etter avreservering`() {
-        val (_, saksnummer, behandlingsref) = opprettOppgave(
+        opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
 
         val saksbehandler = "saksbehandlerident"
@@ -826,7 +868,7 @@ class OppdaterOppgaveServiceTest {
         val nå = LocalDateTime.now()
 
         // saksbehandler setter sak på vent i sykdomssteget
-        val hendelse = behandlingFlytHendelse(saksnummer, behandlingsref, erPåVent = true) {
+        val hendelse = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(
                     AvklaringsbehovStatus.OPPRETTET,
@@ -846,7 +888,7 @@ class OppdaterOppgaveServiceTest {
         }
         sendBehandlingFlytStoppetHendelse(hendelse)
 
-        val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first()
+        val oppgavePåVent = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first()
         assertThat(oppgavePåVent.reservertAv).isEqualTo(saksbehandler)
         assertThat(oppgavePåVent.påVentTil).isNotNull()
 
@@ -864,7 +906,7 @@ class OppdaterOppgaveServiceTest {
         )
         sendBehandlingFlytStoppetHendelse(nyttMottattDokument)
 
-        val oppgaveMedMottattDokument = hentOppgaverForBehandling(behandlingsref).first()
+        val oppgaveMedMottattDokument = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first()
         assertThat(oppgaveMedMottattDokument.harUlesteDokumenter).isTrue()
 
         // Oppgave skal ikke reserveres til saksbehandler igjen
@@ -877,16 +919,15 @@ class OppdaterOppgaveServiceTest {
     fun `Oppgaver skal markeres som retur fra veileder når kvalitetssikringsoppgave gjenåpnes`() {
         val nå = LocalDateTime.now()
 
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
 
         // Kvalitetssikrer til veileder til kvalitetssikrer
         val tilKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer,
-            behandlingsref
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -897,12 +938,12 @@ class OppdaterOppgaveServiceTest {
             }
         }
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
-        val kvalitetssikringsOppgave = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val kvalitetssikringsOppgave = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
 
 
         val returFraKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer, behandlingsref
+            TEST_SAKSNUMMER, TEST_BEHANDLINGREF
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -932,7 +973,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(returOppgave.returInformasjon?.endretAv).isEqualTo("Kvalitetssikrer")
 
         val returTilKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer, behandlingsref
+            TEST_SAKSNUMMER, TEST_BEHANDLINGREF
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -956,7 +997,7 @@ class OppdaterOppgaveServiceTest {
         }
         sendBehandlingFlytStoppetHendelse(returTilKvalitetssikrer)
 
-        val returTilToTrinn = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val returTilToTrinn = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(returTilToTrinn.returInformasjon?.status).isEqualTo(ReturStatus.RETUR_FRA_VEILEDER)
         assertThat(returTilToTrinn.returInformasjon?.endretAv).isEqualTo("Veileder")
         assertThat(returTilToTrinn.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
@@ -966,14 +1007,13 @@ class OppdaterOppgaveServiceTest {
     fun `Oppgaver skal markeres som retur fra saksbehandler når beslutteroppgave gjenåpnes`() {
         val nå = LocalDateTime.now()
 
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name),
         )
 
         // Beslutter til veileder til beslutter
-        val tilBeslutter = behandlingFlytHendelse(saksnummer, behandlingsref) {
+        val tilBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
             avklaringsbehov(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Saksbehandler", nå.minusHours(9))
@@ -983,11 +1023,11 @@ class OppdaterOppgaveServiceTest {
             }
         }
         sendBehandlingFlytStoppetHendelse(tilBeslutter)
-        val kvalitetssikringsOppgave = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val kvalitetssikringsOppgave = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.FATTE_VEDTAK.kode.name)
 
 
-        val returFraBeslutter = behandlingFlytHendelse(saksnummer, behandlingsref) {
+        val returFraBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
             avklaringsbehov(
                 Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
                 AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
@@ -1013,7 +1053,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(returOppgave.avklaringsbehovKode).isEqualTo(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
         assertThat(returOppgave.returInformasjon?.endretAv).isEqualTo("Beslutter")
 
-        val returTilBeslutter = behandlingFlytHendelse(saksnummer, behandlingsref) {
+        val returTilBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
             avklaringsbehov(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Veileder", nå.minusHours(9))
@@ -1032,7 +1072,7 @@ class OppdaterOppgaveServiceTest {
         }
         sendBehandlingFlytStoppetHendelse(returTilBeslutter)
 
-        val returTilToTrinn = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val returTilToTrinn = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(returTilToTrinn.returInformasjon?.status).isEqualTo(ReturStatus.RETUR_FRA_SAKSBEHANDLER)
         assertThat(returTilToTrinn.returInformasjon?.endretAv).isEqualTo("Saksbehandler")
         assertThat(returTilToTrinn.avklaringsbehovKode).isEqualTo(Definisjon.FATTE_VEDTAK.kode.name)
@@ -1040,15 +1080,14 @@ class OppdaterOppgaveServiceTest {
 
     @Test
     fun `Lagrer utløpt ventefrist på oppgave når behandling tas av vent`() {
-        val (_, saksnummer, behandlingsref) = opprettOppgave(
+        opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
-        val hendelsePåVent = behandlingFlytHendelse(saksnummer, behandlingsref, erPåVent = true) {
+        val hendelsePåVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1059,11 +1098,11 @@ class OppdaterOppgaveServiceTest {
 
         sendBehandlingFlytStoppetHendelse(hendelsePåVent)
 
-        val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val oppgavePåVent = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(oppgavePåVent.erPåVent).isTrue()
         assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
 
-        val hendelseTattAvVent = behandlingFlytHendelse(saksnummer, behandlingsref) {
+        val hendelseTattAvVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1075,14 +1114,14 @@ class OppdaterOppgaveServiceTest {
 
         sendBehandlingFlytStoppetHendelse(hendelseTattAvVent)
 
-        val oppgaveTattAvVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val oppgaveTattAvVent = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(oppgaveTattAvVent.erPåVent).isFalse
         assertThat(oppgaveTattAvVent.påVentTil).isNull()
         assertThat(oppgaveTattAvVent.utløptVentefrist).isEqualTo(LocalDate.now())
 
         // sender oppdatering på oppgave, tidligere utløptVentefrist skal videreføres
 
-        val hendelseOppdatering = behandlingFlytHendelse(saksnummer, behandlingsref) {
+        val hendelseOppdatering = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1093,11 +1132,11 @@ class OppdaterOppgaveServiceTest {
         }
 
         sendBehandlingFlytStoppetHendelse(hendelseOppdatering)
-        val oppgaveEtterOppdatering = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val oppgaveEtterOppdatering = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(oppgaveEtterOppdatering.utløptVentefrist).isEqualTo(LocalDate.now())
 
         // setter på vent på nytt, utløptVentefrist skal da bli borte
-        val hendelseSettPåVentIgjen = behandlingFlytHendelse(saksnummer, behandlingsref, erPåVent = true) {
+        val hendelseSettPåVentIgjen = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1109,22 +1148,21 @@ class OppdaterOppgaveServiceTest {
         }
 
         sendBehandlingFlytStoppetHendelse(hendelseSettPåVentIgjen)
-        val settPåVentIgjen = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val settPåVentIgjen = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(settPåVentIgjen.utløptVentefrist).isNull()
 
     }
 
     @Test
     fun `Lagrer ikke utløpt ventefrist hvis saksbehandler tok behandling av vent`() {
-        val (_, saksnummer, behandlingsref) = opprettOppgave(
+        opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
 
         val nå = LocalDateTime.now()
 
-        val hendelsePåVent = behandlingFlytHendelse(saksnummer, behandlingsref, erPåVent = true) {
+        val hendelsePåVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1135,11 +1173,11 @@ class OppdaterOppgaveServiceTest {
 
         sendBehandlingFlytStoppetHendelse(hendelsePåVent)
 
-        val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val oppgavePåVent = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(oppgavePåVent.erPåVent).isTrue()
         assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
 
-        val hendelseTattAvVent = behandlingFlytHendelse(saksnummer, behandlingsref) {
+        val hendelseTattAvVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1154,25 +1192,24 @@ class OppdaterOppgaveServiceTest {
 
         sendBehandlingFlytStoppetHendelse(hendelseTattAvVent)
 
-        val oppgaveTattAvVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
-        assertThat(oppgaveTattAvVent.erPåVent).isFalse
+        val oppgaveTattAvVent = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
+        assertThat(oppgaveTattAvVent.erPåVent).isFalse()
         assertThat(oppgaveTattAvVent.påVentTil).isNull()
         assertThat(oppgaveTattAvVent.utløptVentefrist).isNull()
     }
 
     @Test
     fun `Lagrer utløpt ventefrist på postmottak-oppgaver`() {
-        val (_, _, behandlingsref) = opprettOppgave(
+        opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name),
         )
 
         val nå = LocalDateTime.now()
         val settPåVentHendelse = DokumentflytStoppetHendelse(
             journalpostId = JournalpostId(123L),
             ident = "1234",
-            referanse = behandlingsref.referanse,
+            referanse = TEST_BEHANDLINGREF.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
             avklaringsbehov = listOf(
@@ -1205,7 +1242,7 @@ class OppdaterOppgaveServiceTest {
 
         sendDokumentFlytStoppetHendelse(settPåVentHendelse)
 
-        val oppgavePåVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        val oppgavePåVent = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(oppgavePåVent.erPåVent).isTrue()
         assertThat(oppgavePåVent.avklaringsbehovKode).isEqualTo(no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK.kode.name)
         assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
@@ -1213,7 +1250,7 @@ class OppdaterOppgaveServiceTest {
         val hendelseTattAvVent = DokumentflytStoppetHendelse(
             journalpostId = JournalpostId(123L),
             ident = "1234",
-            referanse = behandlingsref.referanse,
+            referanse = TEST_BEHANDLINGREF.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
             avklaringsbehov = listOf(
@@ -1251,35 +1288,34 @@ class OppdaterOppgaveServiceTest {
         )
         sendDokumentFlytStoppetHendelse(hendelseTattAvVent)
 
-        val oppgaveTattAvVent = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
-        assertThat(oppgaveTattAvVent.erPåVent).isFalse
+        val oppgaveTattAvVent = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
+        assertThat(oppgaveTattAvVent.erPåVent).isFalse()
         assertThat(oppgaveTattAvVent.påVentTil).isNull()
         assertThat(oppgaveTattAvVent.utløptVentefrist).isEqualTo(LocalDate.now())
     }
 
     @Test
     fun `Trekk søknad-oppgaver rutes til Nav-kontor dersom de lå hos Nav-kontor fra før av`() {
-        val (_, saksnummer, behandlingsref) = opprettOppgave(
+        opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
         val nå = LocalDateTime.now()
 
         // sak på sykdomssteget
-        val tilSykdom = behandlingFlytHendelse(saksnummer, behandlingsref) {
+        val tilSykdom = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
         }
         sendBehandlingFlytStoppetHendelse(tilSykdom)
 
-        val oppgaveSykdom = hentOppgaverForBehandling(behandlingsref).first()
+        val oppgaveSykdom = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first()
         assertThat(oppgaveSykdom.avklaringsbehovKode).isEqualTo(Definisjon.AVKLAR_SYKDOM.kode.name)
 
         // søknad trekkes fra sykdomssteget
         val trekkSøknad = behandlingFlytHendelse(
-            saksnummer, behandlingsref,
+            TEST_SAKSNUMMER, TEST_BEHANDLINGREF,
             vurderingsbehov = listOf("SØKNAD", "SØKNAD_TRUKKET")
         ) {
             avklaringsbehov(Definisjon.VURDER_TREKK_AV_SØKNAD, AvklaringsbehovStatus.OPPRETTET) {
@@ -1291,7 +1327,7 @@ class OppdaterOppgaveServiceTest {
         }
         sendBehandlingFlytStoppetHendelse(trekkSøknad)
 
-        val oppgaveSøknadTrukket = hentOppgaverForBehandling(behandlingsref).first { it.status != Status.AVSLUTTET }
+        val oppgaveSøknadTrukket = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status != Status.AVSLUTTET }
         assertThat(oppgaveSøknadTrukket.avklaringsbehovKode).isEqualTo(Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name)
         assertThat(oppgaveSøknadTrukket.enhet).isEqualTo(ENHET_NAV_ASKER)
     }
@@ -1451,15 +1487,16 @@ class OppdaterOppgaveServiceTest {
     fun `Skal lagre ned hvem som gjorde forrige kvalitetssikring når KS-oppgave gjenåpnes`() {
         val nå = LocalDateTime.now()
 
-        val (oppgaveId, saksnummer, behandlingsref) = opprettOppgave(
+        val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
+        val oppgaveId = opprettOppgaveWrapper(
             status = Status.AVSLUTTET,
-            enhet = ENHET_NAV_LØRENSKOG,
-            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name)
+            behandlingRef = behandlingsref.referanse,
+            avklaringsbehovKode = AvklaringsbehovKode(Definisjon.AVKLAR_SYKDOM.kode.name),
         )
 
         // Kvalitetssikrer til veileder til kvalitetssikrer
         val tilKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer,
+            TEST_SAKSNUMMER,
             behandlingsref
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
@@ -1478,7 +1515,7 @@ class OppdaterOppgaveServiceTest {
 
 
         val returFraKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer, behandlingsref
+            TEST_SAKSNUMMER, behandlingsref
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -1508,7 +1545,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(returOppgave.forrigeKvalitetssikrerInfo?.forrigeKvalitetssikrerIdent).isNull()
 
         val returTilKvalitetssikrer = behandlingFlytHendelse(
-            saksnummer, behandlingsref
+            TEST_SAKSNUMMER, behandlingsref
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -1582,40 +1619,6 @@ class OppdaterOppgaveServiceTest {
 
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
         }
-    }
-
-    private val ENHET_NAV_LØRENSKOG = "0230"
-    private fun opprettOppgave(
-        saksnummer: String = "123",
-        behandlingRef: UUID = UUID.randomUUID(),
-        status: Status = Status.OPPRETTET,
-        avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
-        behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
-        enhet: String = ENHET_NAV_LØRENSKOG,
-        oppfølgingsenhet: String? = null,
-        veilederArbeid: String? = null,
-        veilederSykdom: String? = null,
-        utløptVentefrist: LocalDate? = null
-    ): Triple<OppgaveId, Saksnummer, BehandlingReferanse> {
-        val oppgave = Oppgave(
-            saksnummer = saksnummer,
-            behandlingRef = behandlingRef,
-            enhet = enhet,
-            oppfølgingsenhet = oppfølgingsenhet,
-            behandlingOpprettet = LocalDateTime.now().minusDays(3),
-            avklaringsbehovKode = avklaringsbehovKode.kode,
-            status = status,
-            behandlingstype = behandlingstype,
-            opprettetAv = "Kelvin",
-            veilederArbeid = veilederArbeid,
-            veilederSykdom = veilederSykdom,
-            opprettetTidspunkt = LocalDateTime.now(),
-            utløptVentefrist = utløptVentefrist
-        )
-        val oppgaveId = dataSource.transaction { connection ->
-            OppgaveRepository(connection).opprettOppgave(oppgave)
-        }
-        return Triple(oppgaveId, Saksnummer(saksnummer), BehandlingReferanse(behandlingRef))
     }
 
     private fun hentOppgave(oppgaveId: OppgaveId): Oppgave {

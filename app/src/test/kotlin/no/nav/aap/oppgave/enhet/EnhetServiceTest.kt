@@ -2,15 +2,10 @@ package no.nav.aap.oppgave.enhet
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.VURDER_KLAGE_KONTOR_KODE
-import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.komponenter.httpklient.httpclient.error.InternalServerErrorHttpResponsException
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.Oppgave
-import no.nav.aap.oppgave.OppgaveId
-import no.nav.aap.oppgave.OppgaveRepository
-import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.enhet.oppfølgingsenhet.OppfølgingsenhetService
 import no.nav.aap.oppgave.fakes.AzureTokenGen
 import no.nav.aap.oppgave.klienter.arena.IVeilarbarenaGateway
@@ -31,14 +26,11 @@ import no.nav.aap.oppgave.klienter.pdl.HentPersonResult
 import no.nav.aap.oppgave.klienter.pdl.IPdlGateway
 import no.nav.aap.oppgave.klienter.pdl.PdlData
 import no.nav.aap.oppgave.klienter.pdl.PdlPerson
-import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.oppgave.verdityper.Status
+import no.nav.aap.oppgave.opprettOppgave
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.UUID
 
 private val IDENT_MED_SKJERMING = "12312312312"
@@ -743,7 +735,8 @@ class EnhetServiceTest {
         // oppretter oppgave med oppfølgingsenhet satt
         opprettOppgave(
             personIdent = personIdent,
-            oppfølgingsenhet = "0220"
+            oppfølgingsenhet = "0220",
+            dataSource = dataSource
         )
 
         val service = EnhetService(
@@ -753,56 +746,16 @@ class EnhetServiceTest {
             ), NorgGatewayMock.medRespons("0230")
         )
 
-        val utledetEnhet = service.utledEnhetForOppgave(AvklaringsbehovKode(Definisjon.AVKLAR_BISTANDSBEHOV.kode.name), personIdent, emptyList(), erFørstegangsbehandling = true)
+        val utledetEnhet = service.utledEnhetForOppgave(
+            AvklaringsbehovKode(Definisjon.AVKLAR_BISTANDSBEHOV.kode.name),
+            personIdent,
+            emptyList(),
+            erFørstegangsbehandling = true
+        )
         assertThat(utledetEnhet).isNotNull()
         assertThat(utledetEnhet.enhet).isEqualTo(ENHET_NAV_LØRENSKOG)
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo("0220")
 
-    }
-
-    private fun opprettOppgave(
-        personIdent: String,
-        saksnummer: String = "123",
-        behandlingRef: UUID = UUID.randomUUID(),
-        status: Status = Status.OPPRETTET,
-        avklaringsbehovKode: AvklaringsbehovKode = AvklaringsbehovKode("1000"),
-        behandlingstype: Behandlingstype = Behandlingstype.FØRSTEGANGSBEHANDLING,
-        enhet: String = ENHET_NAV_LØRENSKOG,
-        oppfølgingsenhet: String? = null,
-        veilederArbeid: String? = null,
-        veilederSykdom: String? = null,
-        påVentTil: LocalDate? = null,
-        påVentÅrsak: String? = null,
-        venteBegrunnelse: String? = null,
-        harUlesteDokumenter: Boolean = false,
-        returInformasjon: ReturInfo? = null,
-        årsakTilOpprettelse: String? = "SØKNAD",
-        behandlingOpprettet: LocalDateTime = LocalDateTime.now().minusDays(3)
-    ): OppgaveId {
-        val oppgave = Oppgave(
-            personIdent = personIdent,
-            saksnummer = saksnummer,
-            behandlingRef = behandlingRef,
-            enhet = enhet,
-            oppfølgingsenhet = oppfølgingsenhet,
-            behandlingOpprettet = behandlingOpprettet,
-            avklaringsbehovKode = avklaringsbehovKode.kode,
-            status = status,
-            behandlingstype = behandlingstype,
-            opprettetAv = "bruker1",
-            påVentTil = påVentTil,
-            påVentÅrsak = påVentÅrsak,
-            venteBegrunnelse = venteBegrunnelse,
-            veilederArbeid = veilederArbeid,
-            veilederSykdom = veilederSykdom,
-            opprettetTidspunkt = LocalDateTime.now(),
-            harUlesteDokumenter = harUlesteDokumenter,
-            returInformasjon = returInformasjon,
-            årsakTilOpprettelse = årsakTilOpprettelse
-        )
-        return dataSource.transaction { connection ->
-            OppgaveRepository(connection).opprettOppgave(oppgave)
-        }
     }
 
     companion object {
