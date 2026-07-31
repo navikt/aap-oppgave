@@ -25,7 +25,6 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
-import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
@@ -43,6 +42,7 @@ import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.postmottak.kontrakt.journalpost.JournalpostId

@@ -3,7 +3,7 @@ package no.nav.aap.oppgave.oppgaveliste
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics
 import no.nav.aap.oppgave.BehandlingskontekstResponse
-import no.nav.aap.oppgave.ForrigeKvalitetssikrerInfo
+import no.nav.aap.oppgave.ForrigeKvalitetssikrerDto
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.hent.SkjermingInfoResponse
@@ -147,7 +147,7 @@ object OppgavelisteUtils {
                 harUlesteDokumenter = harUlesteDokumenter == true,
                 markeringer = markeringer.tilDto(),
                 forrigeKvalitetssikrerInfo = forrigeKvalitetssikrerInfo?.let {
-                    ForrigeKvalitetssikrerInfo(
+                    ForrigeKvalitetssikrerDto(
                         forrigeKvalitetssikrerIdent = it.forrigeKvalitetssikrerIdent,
                         forrigeKvalitetssikrerNavn = it.forrigeKvalitetssikrerNavn
                     )

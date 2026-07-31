@@ -12,6 +12,7 @@ import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.verdityper.Status
 import javax.sql.DataSource
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
+import no.nav.aap.oppgave.plukk.AvreserverOppgaveDto
 
 fun NormalOpenAPIRoute.avreserverOppgave(
     dataSource: DataSource,

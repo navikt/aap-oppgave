@@ -19,6 +19,7 @@ import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
+import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach

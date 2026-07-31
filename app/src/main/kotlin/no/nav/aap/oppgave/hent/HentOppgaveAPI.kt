@@ -10,7 +10,6 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.Oppgave
-import no.nav.aap.oppgave.OppgaveDto
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SaksnummerPathParam
 import no.nav.aap.oppgave.enhet.EnhetService
@@ -19,36 +18,12 @@ import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
-import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import javax.sql.DataSource
 
-/**
- * Henter nyeste oppgave med status "OPPRETTET" gitt en behandlingsreferanse.
- */
 fun NormalOpenAPIRoute.hentOppgaveApi(
     dataSource: DataSource,
-    enhetService: EnhetService,
-    norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
 ) {
-    route("/{referanse}/hent-oppgave").get<BehandlingReferanse, OppgaveDto> { request ->
-        prometheus.httpCallCounter("/hent-oppgave").increment()
-        val oppgave = dataSource.transaction(readOnly = true) { connection ->
-            OppgavelisteService(
-                OppgaveRepository(connection),
-                MarkeringRepository(connection),
-                enhetService,
-                norgGateway
-            ).hentAktivOppgave(request)
-        }
-
-        if (oppgave != null) {
-            respond(oppgave.hentPersonNavn().tilOppgaveDto())
-        } else {
-            respondWithStatus(HttpStatusCode.NoContent)
-        }
-    }
-
     route("/{saksnummer}/hent-oppgaver-paa-sak").get<SaksnummerPathParam, OppgaverPåSakResponse> { request ->
         prometheus.httpCallCounter("/hent-oppgaver-paa-sak").increment()
         val oppgaver = dataSource.transaction(readOnly = true) { connection ->
@@ -103,8 +78,6 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
             respondWithStatus(HttpStatusCode.NoContent)
         }
     }
-
-private fun Oppgave.hentPersonNavn() = listOf(this).hentPersonNavn().first()
 
 private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinformasjonResponse(
     id = requireNotNull(id) { "Oppgave må ha ID" },

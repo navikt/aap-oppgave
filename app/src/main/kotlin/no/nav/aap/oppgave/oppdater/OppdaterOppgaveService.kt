@@ -13,7 +13,6 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
-import no.nav.aap.oppgave.ReturStatus
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
@@ -38,8 +37,9 @@ import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
-import no.nav.aap.oppgave.ÅrsakTilReturKode
+import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
