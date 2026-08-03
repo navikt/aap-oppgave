@@ -641,6 +641,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
+                STATUS != 'AVSLUTTET' AND
                 VERSJON = ?
         """.trimIndent()
 
