@@ -62,7 +62,7 @@ fun NormalOpenAPIRoute.plukkOppgaveApi(
             )
             IngenTilgang -> {
                 log.info("Bruker kunne ikke plukke oppgave grunnet manglende tilgang")
-                respondWithStatus(HttpStatusCode.Unauthorized)
+                respondWithStatus(HttpStatusCode.Forbidden)
             }
 
             AlleredeTildelt -> throw ApiException(
