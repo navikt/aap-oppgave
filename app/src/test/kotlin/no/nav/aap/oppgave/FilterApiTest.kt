@@ -136,7 +136,7 @@ class FilterApiTest {
 
     private fun hentFilterForEnhet(enheter: List<String>): List<FilterResponse> {
         return oboClient().get<List<FilterResponse>>(
-            URI.create("http://localhost:$port/filter/v2?enheter=${enheter.joinToString("&enheter=")}"),
+            URI.create("http://localhost:$port/filter?enheter=${enheter.joinToString("&enheter=")}"),
             GetRequest(currentToken = getOboToken())
         )!!
     }
@@ -144,7 +144,7 @@ class FilterApiTest {
 
     private fun hentAlleFilter(): List<FilterResponse> {
         return oboClient().get<List<FilterResponse>>(
-            URI.create("http://localhost:$port/filter/v2"),
+            URI.create("http://localhost:$port/filter"),
             GetRequest(currentToken = getOboToken())
         )!!
     }
