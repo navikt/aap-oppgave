@@ -64,7 +64,7 @@ object StatusPagesConfigHelper {
                 }
 
                 is SQLException -> {
-                    logger.error("SQL-feil av type '${cause.javaClass.name}'. Se sikker logs for flere detaljer.")
+                    logger.error("SQL-feil av type '${cause.javaClass.name}'. Se team-logs for flere detaljer.")
                     secureLogger.error("SQL-feil: ", cause)
 
                     call.respondWithError(InternfeilException("En feil oppsto. Prøv igjen om litt."))
