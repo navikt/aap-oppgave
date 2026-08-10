@@ -28,7 +28,7 @@ jobs:
     secrets: inherit
     with:
       publish-typescript: true
-      typescript-enums: true
+      typescript-enums: false
       app-navn: oppgave
       generate-openapi-command: ./gradlew genererOpenApiJson
 

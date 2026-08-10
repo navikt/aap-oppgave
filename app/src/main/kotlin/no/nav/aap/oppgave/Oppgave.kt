@@ -85,6 +85,7 @@ data class Oppgave(
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.
      * Brukes for å sikre at oppgaver havner i riktig kø i oppgavelisten.
+     * 
      **/
     val enhetForKø: String = oppfølgingsenhet ?: enhet
 
