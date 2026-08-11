@@ -761,7 +761,10 @@ class EnhetServiceTest {
     @Test
     fun `Skal overstyre enhetsnavn for NAY Romerike`() {
         val norgGateway = NorgGatewayMock.medRespons(
-            enhetsNavnRespons = mapOf("4402" to "Nav arbeid og ytelser Romerike")
+            enhetsNavnRespons = mapOf(
+                "4402" to "Nav arbeid og ytelser Romerike",
+                "4491" to "Nav arbeid og ytelser"
+            )
         )
         val service = EnhetService(
             graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
@@ -771,9 +774,14 @@ class EnhetServiceTest {
         )
 
         val utledetEnhet = service.hentEnheterMedNavn()
-        
+
         assertThat(utledetEnhet[Enhet.NAY_UTLAND.kode]).isNotNull()
         assertThat(utledetEnhet[Enhet.NAY_UTLAND.kode]).isEqualTo("Nav arbeid og ytelser Utland")
+
+        assertThat(utledetEnhet[Enhet.NAY.kode]).isNotNull()
+        assertThat(utledetEnhet[Enhet.NAY.kode])
+            .describedAs("Skal bruke norg-navn dersom ingen overstyring")
+            .isEqualTo("Nav arbeid og ytelser")
     }
 
     companion object {
