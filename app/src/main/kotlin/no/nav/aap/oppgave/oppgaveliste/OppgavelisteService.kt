@@ -10,7 +10,6 @@ import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.Filter
-import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -30,7 +29,6 @@ class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
     private val enhetService: EnhetService,
-    private val norgGateway: INorgGateway,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
     fun søkEtterOppgaver(søketekst: String): List<Oppgave> {
@@ -65,7 +63,7 @@ class OppgavelisteService(
             )
         }
     }
-
+    
     fun hentOppgaverMedTilgang(
         utvidetFilter: UtvidetOppgavelisteFilter?,
         enheter: Set<String>,
@@ -111,7 +109,7 @@ class OppgavelisteService(
             kunLedigeOppgaver = kunLedigeOppgaver,
             utvidetFilter = utvidetFilter,
             sortBy = aktivSortering,
-            enheterMedNavn = norgGateway.hentEnheter().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty(),
+            enheterMedNavn = enhetService.hentEnheterMedNavn().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty(),
             hastemarkeringerFørst = hastemarkeringerFørst
         )
 
@@ -189,7 +187,7 @@ class OppgavelisteService(
         ident: String
     ): List<Oppgave> {
         val oppgaverFiltrertForKode7 = sjekkTilgangTilFortroligAdresse(enhetService, ident, token, this)
-        val enhetsGrupper = enhetService.hentEnheter(ident, token)
+        val enhetsGrupper = enhetService.hentEnheterForIdent(ident, token)
         return oppgaverFiltrertForKode7
             .asSequence()
             .filter { it.enhetForKø in enhetsGrupper }

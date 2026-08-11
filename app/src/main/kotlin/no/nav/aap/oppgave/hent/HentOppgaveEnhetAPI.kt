@@ -34,7 +34,6 @@ fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
             OppgaveRepository(connection),
             MarkeringRepository(connection),
             enhetService,
-            norgGateway,
         ).hentOppgaveEnhetListe(behandlingReferanse)
     }
 

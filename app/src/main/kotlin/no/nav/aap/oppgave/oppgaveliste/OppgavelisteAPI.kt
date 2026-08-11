@@ -50,7 +50,6 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     OppgavelisteService(
                         oppgaveRepository = OppgaveRepository(connection),
                         markeringRepository = MarkeringRepository(connection),
-                        norgGateway = norgGateway,
                         enhetService = enhetService,
                     ).hentOppgaverMedTilgang(
                         request.utvidetFilter,

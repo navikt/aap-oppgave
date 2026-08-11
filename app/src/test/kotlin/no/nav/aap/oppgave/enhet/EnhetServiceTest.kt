@@ -62,7 +62,7 @@ class EnhetServiceTest {
             ), NorgGatewayMock()
         )
 
-        val res = service.hentEnheter(
+        val res = service.hentEnheterForIdent(
             "xxx",
             OidcToken(AzureTokenGen("behandlingsflyt", "behandlingsflyt").generate(false, emptyList()))
         )
@@ -756,6 +756,32 @@ class EnhetServiceTest {
         assertThat(utledetEnhet.enhet).isEqualTo(ENHET_NAV_LØRENSKOG)
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo("0220")
 
+    }
+
+    @Test
+    fun `Skal overstyre enhetsnavn for NAY Romerike`() {
+        val norgGateway = NorgGatewayMock.medRespons(
+            enhetsNavnRespons = mapOf(
+                "4402" to "Nav arbeid og ytelser Romerike",
+                "4491" to "Nav arbeid og ytelser"
+            )
+        )
+        val service = EnhetService(
+            graphGateway, pdlGateway, nomGateway, OppfølgingsenhetService(
+                dataSource,
+                VeilarbarenaGatewayMock()
+            ), norgGateway
+        )
+
+        val utledetEnhet = service.hentEnheterMedNavn()
+
+        assertThat(utledetEnhet[Enhet.NAY_UTLAND.kode]).isNotNull()
+        assertThat(utledetEnhet[Enhet.NAY_UTLAND.kode]).isEqualTo("Nav arbeid og ytelser Utland")
+
+        assertThat(utledetEnhet[Enhet.NAY.kode]).isNotNull()
+        assertThat(utledetEnhet[Enhet.NAY.kode])
+            .describedAs("Skal bruke norg-navn dersom ingen overstyring")
+            .isEqualTo("Nav arbeid og ytelser")
     }
 
     companion object {

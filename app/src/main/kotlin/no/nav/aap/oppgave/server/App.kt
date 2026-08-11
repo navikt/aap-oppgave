@@ -155,7 +155,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 hentFilterApi(dataSource, prometheus)
                 // Enheter
                 enhetStatus(dataSource)
-                hentEnhetApi(enhetService, norgGateway, prometheus)
+                hentEnhetApi(enhetService, prometheus)
                 nayEnhetForPerson(enhetService, prometheus)
                 synkroniserEnhetPåOppgaveApi(dataSource, enhetService, prometheus)
                 // Motor-API

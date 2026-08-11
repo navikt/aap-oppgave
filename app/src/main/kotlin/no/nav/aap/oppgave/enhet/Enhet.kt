@@ -1,11 +1,11 @@
 package no.nav.aap.oppgave.enhet
 
-enum class Enhet(val kode: String) {
+enum class Enhet(val kode: String, val visningsnavn: String? = null) {
     NAV_VIKAFOSSEN("2103"),
     NAY("4491"),
     NAY_EGNE_ANSATTE("4483"),
     NAV_UTLAND("0393"),
-    NAY_UTLAND("4402"),
+    NAY_UTLAND("4402", "Nav arbeid og ytelser Utland"),
     NASJONAL_OPPFØLGINGSENHET("4154"),
     NAV_REGION_SUNNFJORD("1476"),
     NAV_KINN("1401"),

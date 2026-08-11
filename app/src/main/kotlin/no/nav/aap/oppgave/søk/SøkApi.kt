@@ -45,7 +45,6 @@ fun NormalOpenAPIRoute.søkApi(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
                     enhetService,
-                    norgGateway
                 ).søkEtterOppgaver(søketekst)
             }
 

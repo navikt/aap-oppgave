@@ -1706,7 +1706,7 @@ class OppdaterOppgaveServiceTest {
     private val ENHET_NAV_ASKER = "0220"
     val enhetService = object : IEnhetService {
 
-        override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
+        override fun hentEnheterForIdent(ident: String, currentToken: OidcToken): List<String> {
             TODO("Not yet implemented")
         }
 
