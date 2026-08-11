@@ -40,7 +40,7 @@ enum class FylkesenheterSomSkalBehandleKlager(val enhetsnummer: String) {
 }
 
 interface IEnhetService {
-    fun hentEnheter(ident: String, currentToken: OidcToken): List<String>
+    fun hentEnheterForIdent(ident: String, currentToken: OidcToken): List<String>
     fun utledEnhetForOppgave(
         avklaringsbehovKode: AvklaringsbehovKode,
         ident: String?,
@@ -68,7 +68,7 @@ class EnhetService(
 ) : IEnhetService {
     private val log = LoggerFactory.getLogger(this::class.java)
 
-    override fun hentEnheter(ident: String, currentToken: OidcToken): List<String> {
+    override fun hentEnheterForIdent(ident: String, currentToken: OidcToken): List<String> {
         return msGraphClient.hentEnhetsgrupper(ident, currentToken).groups
             .map { it.name.removePrefix(ENHET_GROUP_PREFIX) }
     }
@@ -106,6 +106,12 @@ class EnhetService(
                     finnEnhetstilknytningForPerson(ident, relevanteIdenter, saksnummer, erFørstegangsbehandling)
                 }
             }
+        }
+    }
+
+    fun hentEnheterMedNavn(): Map<String, String> {
+        return norgKlient.hentEnheter().entries.associate { (kode, norgNavn) ->
+            kode to (Enhet.entries.find { it.kode == kode }?.visningsnavn ?: norgNavn)
         }
     }
 

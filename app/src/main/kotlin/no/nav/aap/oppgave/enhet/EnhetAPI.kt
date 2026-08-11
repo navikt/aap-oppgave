@@ -34,14 +34,13 @@ import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentEnhetApi(
     enhetService: EnhetService,
-    norgGateway: NorgGateway,
     prometheus: PrometheusMeterRegistry
 ) {
     route("/enheter").get<Unit, List<EnhetDto>> {
         prometheus.httpCallCounter("/enheter").increment()
 
-        val enheter = enhetService.hentEnheter(ident(), token())
-        val enhetNrTilNavn = norgGateway.hentEnheter()
+        val enheter = enhetService.hentEnheterForIdent(ident(), token())
+        val enhetNrTilNavn = enhetService.hentEnheterMedNavn()
         val enheterMedNavn = enheter.map { EnhetDto(it, enhetNrTilNavn[it] ?: "") }
 
         respond(enheterMedNavn)

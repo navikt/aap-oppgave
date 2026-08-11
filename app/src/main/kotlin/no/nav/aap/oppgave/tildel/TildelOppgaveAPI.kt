@@ -85,7 +85,6 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
                 enhetService,
-                norgGateway
             ).hentAktivOppgave(request)
         }
 

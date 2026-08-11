@@ -35,7 +35,6 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
                     enhetService,
-                    norgGateway
                 ).hentMineOppgaver(
                     ident = ident(),
                     kunPaaVent = req.kunPaaVent,

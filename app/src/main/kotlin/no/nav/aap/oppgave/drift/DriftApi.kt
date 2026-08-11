@@ -51,7 +51,6 @@ fun NormalOpenAPIRoute.driftApi(
                         OppgaveRepository(connection),
                         MarkeringRepository(connection),
                         enhetService,
-                        norgGateway
                     )
                         .hentOppgaverForBehandling(params.referanse)
                         .map { it.mapTilOppgaveDriftsinfo(historikkRepository.hentHistorikkForOppgave(it.id!!)) }

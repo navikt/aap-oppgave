@@ -68,7 +68,6 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
                 enhetService,
-                norgGateway
             ).hentAktivOppgave(request)
         }
 
