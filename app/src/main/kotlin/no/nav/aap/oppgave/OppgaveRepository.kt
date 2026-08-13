@@ -779,6 +779,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 FROM oppgave o
                     INNER JOIN oppgave_historikk oh ON o.id = oh.oppgave_id
                 WHERE oh.endret_av = ?
+                    AND saksnummer IS NOT NULL
                 ORDER BY o.saksnummer, oh.endret_tidspunkt DESC
             ) historikk
             ORDER BY endret_tidspunkt DESC
