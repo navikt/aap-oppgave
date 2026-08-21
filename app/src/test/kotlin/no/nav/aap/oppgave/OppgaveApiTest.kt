@@ -1218,6 +1218,7 @@ class OppgaveApiTest {
             årsakerTilBehandling = listOf("SØKNAD"),
             relevanteIdenterPåBehandling = relaterteIdenter,
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
+            uføreVedtak = null,
             mottattDokumenter = listOf(),
             reserverTil = reserverTil,
             vurderingsbehov = listOf("SØKNAD"),

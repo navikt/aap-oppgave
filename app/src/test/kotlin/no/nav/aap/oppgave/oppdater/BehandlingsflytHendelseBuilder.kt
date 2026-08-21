@@ -52,6 +52,7 @@ fun behandlingFlytHendelse(
         avklaringsbehov = builder.avklaringsbehov,
         vurderingsbehov = vurderingsbehov,
         årsakTilOpprettelse = årsakTilOpprettelse,
+        uføreVedtak = null,
         relevanteIdenterPåBehandling = relevanteIdenterPåBehandling,
         behandlingMetadata = behandlingMetadata
     )
