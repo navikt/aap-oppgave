@@ -16,3 +16,8 @@ fun PrometheusMeterRegistry.statistikkHendelseCounter(hendelseType: String, resu
     "statistikk_hendelse_totalt",
     listOf(Tag.of("hendelseType", hendelseType), Tag.of("resultat", resultat))
 )
+
+fun PrometheusMeterRegistry.timeoutCounter(rutemønster: String): Counter = this.counter(
+    "timeout",
+    listOf(Tag.of("rute", rutemønster))
+)

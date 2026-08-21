@@ -7,24 +7,31 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.log
 import io.ktor.server.plugins.statuspages.StatusPagesConfig
 import io.ktor.server.response.respond
+import io.ktor.server.routing.RoutingCall
 import java.net.http.HttpTimeoutException
 import java.sql.SQLException
 import no.nav.aap.komponenter.httpklient.exception.ApiErrorCode
 import no.nav.aap.komponenter.httpklient.exception.ApiException
 import no.nav.aap.komponenter.httpklient.exception.InternfeilException
 import no.nav.aap.oppgave.FeilVersjonException
+import no.nav.aap.oppgave.metrikker.prometheus
+import no.nav.aap.oppgave.metrikker.timeoutCounter
 import org.slf4j.LoggerFactory
 
 object StatusPagesConfigHelper {
     fun setup(): StatusPagesConfig.() -> Unit = {
         exception<Throwable> { call, cause ->
             val uri = call.request.local.uri
+            // Bruker rute-mønsteret (ikke faktisk URI) som metrikk-tag for å unngå høy kardinalitet,
+            // siden faktisk URI inneholder unike verdier som saksnummer/referanse
+            val rutemønster = (call as? RoutingCall)?.route?.toString() ?: uri
             val logger = LoggerFactory.getLogger(javaClass)
 
             when (cause) {
                 is ClientRequestException -> {
                     if (cause.response.status == HttpStatusCode.RequestTimeout) {
                         logger.warn("Timeout ved kall til '$uri'", cause)
+                        prometheus.timeoutCounter(rutemønster).increment()
                         call.respondWithError(
                             ApiException(
                                 status = HttpStatusCode.RequestTimeout,
@@ -45,6 +52,7 @@ object StatusPagesConfigHelper {
                 is HttpRequestTimeoutException,
                 is HttpTimeoutException -> {
                     logger.warn("Timeout mot $uri: ", cause)
+                    prometheus.timeoutCounter(rutemønster).increment()
                     call.respondWithError(
                         ApiException(
                             status = HttpStatusCode.RequestTimeout,
