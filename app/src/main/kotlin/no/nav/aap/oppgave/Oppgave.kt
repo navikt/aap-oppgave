@@ -43,8 +43,8 @@ data class ForrigeKvalitetssikrer(
 )
 
 data class Oppgave(
-    val id: Long? = null,
-    val personIdent: String? = null,
+    val id: Long,
+    val personIdent: String,
     val personNavn: String? = null,
     val saksnummer: String? = null,
     val behandlingRef: UUID,
@@ -104,7 +104,7 @@ data class Oppgave(
     }
 
     fun oppgaveId() = OppgaveId(
-        requireNotNull(id) { "Oppgave har ingen id" },
+        id,
         versjon,
     )
 
