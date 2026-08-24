@@ -53,7 +53,7 @@ fun NormalOpenAPIRoute.driftApi(
                         enhetService,
                     )
                         .hentOppgaverForBehandling(params.referanse)
-                        .map { it.mapTilOppgaveDriftsinfo(historikkRepository.hentHistorikkForOppgave(it.id!!)) }
+                        .map { it.mapTilOppgaveDriftsinfo(historikkRepository.hentHistorikkForOppgave(it.id)) }
                         .sortedByDescending { it.opprettetTidspunkt }
                 }
 
@@ -183,7 +183,7 @@ private fun Filter.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilter>>
 )
 
 private fun Oppgave.mapTilOppgaveDriftsinfo(historikk: List<OppgaveHistorikk>) = OppgaveDriftsinfoDTO(
-    oppgaveId = id!!,
+    oppgaveId = id,
     behandlingRef = behandlingRef,
     status = status,
     enhet = enhet,

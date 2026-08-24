@@ -39,9 +39,9 @@ class TilbakekrevingMappingTest {
 
         assertThat(oppdatering.venteInformasjon).isNotNull()
         assertThat(oppdatering.venteInformasjon!!.frist).isEqualTo(gjenopptas)
-        assertThat(oppdatering.venteInformasjon!!.årsakTilSattPåVent).isEqualTo("AVVENTER_BRUKERUTTALELSE")
-        assertThat(oppdatering.venteInformasjon!!.sattPåVentAv).isEqualTo(TILBAKEKREVING)
-        assertThat(oppdatering.venteInformasjon!!.begrunnelse).isNull()
+        assertThat(oppdatering.venteInformasjon.årsakTilSattPåVent).isEqualTo("AVVENTER_BRUKERUTTALELSE")
+        assertThat(oppdatering.venteInformasjon.sattPåVentAv).isEqualTo(TILBAKEKREVING)
+        assertThat(oppdatering.venteInformasjon.begrunnelse).isNull()
     }
 
     @Test

@@ -383,7 +383,7 @@ class OppgaveApiTest {
             val oppgaver = OppgaveRepository(it).hentAlleÅpneOppgaver()
             assertThat(oppgaver).hasSize(1)
             assertThat(oppgaver.first().saksnummer).isEqualTo(saksnummer.toString())
-            val tilbakekrevingsVars = TilbakekrevingRepository(it).hent(oppgaver.first().id!!)
+            val tilbakekrevingsVars = TilbakekrevingRepository(it).hent(oppgaver.first().id)
             assertThat(tilbakekrevingsVars).isNotNull
 
             assertThat(oppgaver.first().id).isEqualTo(oppgaver.first().id)
