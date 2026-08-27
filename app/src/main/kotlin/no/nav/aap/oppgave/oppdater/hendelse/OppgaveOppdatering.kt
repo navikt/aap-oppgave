@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
+import no.nav.aap.oppgave.Uførevedtakinfo
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -29,6 +30,7 @@ data class OppgaveOppdatering(
     val vurderingsbehov: List<String>,
     val årsakTilOpprettelse: String?,
     val mottattDokumenter: List<MottattDokument>,
+    val uføreVedtak: Uførevedtakinfo? = null,
     val tattAvVentAutomatisk: Boolean = false,
     val reserverTil: String? = null,
     val relevanteIdenter: List<String> = emptyList(),

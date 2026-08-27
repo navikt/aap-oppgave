@@ -81,6 +81,7 @@ data class Oppgave(
     val markeringer: List<Markering> = emptyList(),
     val tilbakekrevingsVars: TilbakekrevingsVars? = null,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrer? = null,
+    val uføreVedtak: Uførevedtakinfo? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.

@@ -4,6 +4,7 @@ import no.nav.aap.oppgave.BehandlingskontekstResponse
 import no.nav.aap.oppgave.ForrigeKvalitetssikrerDto
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.TilbakekrevingsVarsDto
+import no.nav.aap.oppgave.Uførevedtakinfo
 import no.nav.aap.oppgave.enhet.EnhetDto
 import no.nav.aap.oppgave.hent.SkjermingInfoResponse
 import no.nav.aap.oppgave.hent.VenteInformasjonResponse
@@ -58,4 +59,5 @@ data class OppgavelisteTagsResponse(
     val harUlesteDokumenter: Boolean?,
     val markeringer: List<MarkeringDto>,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerDto?,
+    val uføreVedtak: Uførevedtakinfo?,
 )

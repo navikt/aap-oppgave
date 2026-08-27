@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.oppdater
 
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
 import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
@@ -23,6 +24,7 @@ data class OpprettOppgave(
     val behandlingstype: Behandlingstype,
     val påVentTil: LocalDate? = null,
     val påVentÅrsak: String? = null,
+    val uføreVedtak: UførevedtakDto? = null,
     val venteBegrunnelse: String? = null,
     val returInformasjon: ReturInfo? = null,
     val vurderingsbehov: List<String> = emptyList(),

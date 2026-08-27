@@ -7,9 +7,11 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.Uførevedtakinfo
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -49,6 +51,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         tattAvVentAutomatisk = !this.erPåVent && this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
+        uføreVedtak = this.uføreVedtak?.tilUførevedtakInfo()
     )
 }
 
@@ -82,6 +85,13 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
             referanse = it.referanse.verdi,
         )
     }
+}
+
+private fun UførevedtakDto.tilUførevedtakInfo() : Uførevedtakinfo {
+    return Uførevedtakinfo(
+        virkningsdato = this.virkningsdato,
+        resultat = this.resultat.name,
+    )
 }
 
 private fun TypeBehandling.tilBehandlingstype() =

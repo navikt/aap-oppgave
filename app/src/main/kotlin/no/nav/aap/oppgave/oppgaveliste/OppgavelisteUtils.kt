@@ -151,7 +151,8 @@ object OppgavelisteUtils {
                         forrigeKvalitetssikrerIdent = it.forrigeKvalitetssikrerIdent,
                         forrigeKvalitetssikrerNavn = it.forrigeKvalitetssikrerNavn
                     )
-                }
+                },
+                uføreVedtak = uføreVedtak
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
