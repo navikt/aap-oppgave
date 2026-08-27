@@ -64,8 +64,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 retur_returnert_av,
                 aarsak_til_opprettelse,
                 er_skjermet,
-                ufore_vedtak_status,
-                ufore_vedtak_dato
+                UFORE_VEDTAK_STATUS,
+                UFORE_VEDTAK_DATO
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?
             )
