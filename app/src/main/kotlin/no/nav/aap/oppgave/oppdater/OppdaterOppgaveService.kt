@@ -240,14 +240,17 @@ class OppdaterOppgaveService(
 
     private fun håndterReservasjonFraBehandlingsflyt(
         oppgaveOppdatering: OppgaveOppdatering,
-        oppgaveId: OppgaveId
+        oppgaveId: OppgaveId,
+        avklaringsbehov: AvklaringsbehovHendelse
     ) {
-        if (oppgaveOppdatering.reserverTil != null) {
+        val reservasjonForAvklaringsbehov =
+            oppgaveOppdatering.reserverTilPerAvklaringsbehov[avklaringsbehov.avklaringsbehovKode.kode]
+        if (reservasjonForAvklaringsbehov != null) {
             reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                 oppgaveOppdatering.referanse,
-                oppgaveOppdatering.reserverTil
+                reservasjonForAvklaringsbehov
             )
-            log.info("Oppgave $oppgaveId automatisk reservert ${oppgaveOppdatering.reserverTil}.")
+            log.info("Oppgave $oppgaveId automatisk reservert $reservasjonForAvklaringsbehov pga reservasjon fra behandlingsflyt.")
         }
     }
 
@@ -390,7 +393,8 @@ class OppdaterOppgaveService(
 
         håndterReservasjonFraBehandlingsflyt(
             oppgaveOppdatering,
-            eksisterendeOppgave.oppgaveId()
+            eksisterendeOppgave.oppgaveId(),
+            avklaringsbehov
         )
 
     }
@@ -479,7 +483,7 @@ class OppdaterOppgaveService(
         log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}.")
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
         prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(oppgaveOppdatering, oppgaveId, avklaringsbehovHendelse)
-        håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, oppgaveId)
+        håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, oppgaveId, avklaringsbehovHendelse)
     }
 
     private fun hentVeilederSykefraværoppfølging(personIdent: String): String? =
