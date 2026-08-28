@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.liste.PersonOgEnhetResponse
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.flywaydb.core.api.logging.LogFactory
+import uføreVedtak.tilUføreVedtakRepsons
 import java.time.Duration
 import kotlin.time.measureTimedValue
 
@@ -152,7 +153,7 @@ object OppgavelisteUtils {
                         forrigeKvalitetssikrerNavn = it.forrigeKvalitetssikrerNavn
                     )
                 },
-                uføreVedtak = uføreVedtak
+                uføreVedtak = uføreVedtak?.tilUføreVedtakRepsons()
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,

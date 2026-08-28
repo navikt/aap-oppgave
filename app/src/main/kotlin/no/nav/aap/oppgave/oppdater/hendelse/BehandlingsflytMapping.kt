@@ -93,7 +93,7 @@ private fun UførevedtakDto.tilUførevedtak() : UføreVedtak {
     return UføreVedtak(
         virkningsdato = this.virkningsdato,
         status = when (this.resultat) {
-            UførevedtakResultatDto.OPPHØR -> UføreVedtakStatus.OPPHOR
+            UførevedtakResultatDto.OPPHØR -> UføreVedtakStatus.OPPHØR
             UførevedtakResultatDto.AVSLAG -> UføreVedtakStatus.AVSLAG
             UførevedtakResultatDto.ENDRET -> UføreVedtakStatus.ENDRET
             UførevedtakResultatDto.INNVILGELSE -> UføreVedtakStatus.INNVILGELSE

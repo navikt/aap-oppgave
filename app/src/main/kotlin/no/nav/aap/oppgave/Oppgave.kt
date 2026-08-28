@@ -7,6 +7,7 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
+import uføreVedtak.UføreVedtak
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -81,7 +82,7 @@ data class Oppgave(
     val markeringer: List<Markering> = emptyList(),
     val tilbakekrevingsVars: TilbakekrevingsVars? = null,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrer? = null,
-    val uføreVedtak: UførevedtakRespons? = null,
+    val uføreVedtak: UføreVedtak? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.

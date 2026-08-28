@@ -192,8 +192,8 @@ class OppgavelisteService(
     private fun Oppgave.leggPåMarkeringer(markeringer: List<Markering>): Oppgave =
         this.copy(markeringer = markeringer)
 
-    private fun Oppgave.leggPåUføreVedtak(uførevedtak: UføreVedtak): Oppgave =
-        this.copy(uføreVedtak = uføreVedtak)
+    private fun Oppgave.leggPåUføreVedtak(uførevedtak: UføreVedtak?): Oppgave =
+        this.copy(uføreVedtak = uførevedtak)
 
     private fun List<Oppgave>.filtrerPåTilgang(
         token: OidcToken,

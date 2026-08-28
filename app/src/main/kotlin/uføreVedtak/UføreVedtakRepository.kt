@@ -26,7 +26,7 @@ class UføreVedtakRepository (
         }
     }
 
-    fun hentUføreVedtakForBehandling(referanse: UUID): UføreVedtak {
+    fun hentUføreVedtakForBehandling(referanse: UUID): UføreVedtak? {
         val query =
             """
             SELECT * FROM UFORE_VEDTAK
@@ -34,16 +34,14 @@ class UføreVedtakRepository (
             ORDER BY virkningsdato DESC
             """.trimIndent()
 
-        val uførevedtakListe = connection.queryList(query) {
+       return connection.queryList(query) {
             setParams {
                 setUUID(1, referanse)
             }
             setRowMapper {
                 uføreVedtakMapper(it)
             }
-        }
-
-        return uførevedtakListe.get(-1)
+        }.firstOrNull()
     }
 
     private fun uføreVedtakMapper(row: Row) : UføreVedtak =
