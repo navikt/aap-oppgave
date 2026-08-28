@@ -1,7 +1,6 @@
 package no.nav.aap.oppgave
 
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakResultatDto
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
@@ -63,11 +62,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 retur_aarsaker,
                 retur_returnert_av,
                 aarsak_til_opprettelse,
-                er_skjermet,
-                UFORE_VEDTAK_STATUS,
-                UFORE_VEDTAK_DATO
+                er_skjermet
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -101,8 +98,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(26, oppgave.returInformasjon?.endretAv)
                 setString(27, oppgave.årsakTilOpprettelse)
                 setBoolean(28, oppgave.erSkjermet)
-                setEnumName(29, oppgave.uføreVedtak?.resultat)
-                setLocalDate(30, oppgave.uføreVedtak?.virkningsdato)
             }
         }
         return OppgaveId(id, 0L)
@@ -235,7 +230,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         utløptVentefrist: LocalDate? = null,
         forrigeKvalitetssikrerIdent: String? = null,
         forrigeKvalitetssikrerNavn: String? = null,
-        uførevedtak: UførevedtakDto? = null,
     ) {
         val query = """
             UPDATE 
@@ -265,8 +259,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                 UTLOEPT_VENTEFRIST = ?,
                 FORRIGE_KVALITETSSIKRER_IDENT = ?,
                 FORRIGE_KVALITETSSIKRER_NAVN = ?,
-                ufore_vedtak_status = ?,
-                ufore_vedtak_dato = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -297,10 +289,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDate(20, utløptVentefrist)
                 setString(21, forrigeKvalitetssikrerIdent)
                 setString(22, forrigeKvalitetssikrerNavn)
-                setEnumName(23, uførevedtak?.resultat)
-                setLocalDate(24, uførevedtak?.virkningsdato)
-                setLong(25, oppgaveId.id)
-                setLong(26, oppgaveId.versjon)
+                setLong(23, oppgaveId.id)
+                setLong(24, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -915,16 +905,6 @@ class OppgaveRepository(private val connection: DBConnection) {
                     forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
                 )
             },
-            uføreVedtak = row.getEnumOrNull<UførevedtakResultatDto>("UFORE_VEDTAK_STATUS")?.let { resultat ->
-                val virkningsdato = row.getLocalDateOrNull("UFORE_VEDTAK_DATO")
-                    ?: error("Uførevedtak har status, men mangler virkningsdato")
-
-                Uførevedtakinfo(
-                    virkningsdato = virkningsdato,
-                    resultat = resultat.name
-                )
-            },
-
         )
 
         val behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
@@ -1056,9 +1036,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPGAVE.AARSAK_TIL_OPPRETTELSE,
             OPPGAVE.UTLOEPT_VENTEFRIST,
             OPPGAVE.FORRIGE_KVALITETSSIKRER_IDENT,
-            OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN,
-            OPPGAVE.UFORE_VEDTAK_STATUS,
-            OPPGAVE.UFORE_VEDTAK_DATO
+            OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN
         """.trimIndent()
 
     }

@@ -23,6 +23,7 @@ import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import uføreVedtak.UføreVedtakRepository
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
@@ -51,6 +52,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
                     markeringService = MarkeringService(
                         MarkeringRepository(connection),
                     ),
+                    uføreVedtakRepository = UføreVedtakRepository(connection),
                 ).håndterNyOppgaveOppdatering(
                     request.tilOppgaveOppdatering()
                 )
@@ -86,6 +88,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
                     markeringService = MarkeringService(
                         MarkeringRepository(connection),
                     ),
+                    uføreVedtakRepository = UføreVedtakRepository(connection),
                 ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
             }
         }
@@ -121,6 +124,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
                     markeringService = MarkeringService(
                         MarkeringRepository(connection),
                     ),
+                    uføreVedtakRepository = UføreVedtakRepository(connection),
                 ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
             }
         }

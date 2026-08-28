@@ -41,6 +41,7 @@ import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
+import uføreVedtak.UføreVedtakRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -55,6 +56,7 @@ class OppdaterOppgaveService(
     private val tilbakekrevingRepository: TilbakekrevingRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
     private val markeringService: MarkeringService,
+    private val uføreVedtakRepository: UføreVedtakRepository,
     private val ansattInfoGateway: AnsattInfoGateway,
 ) {
 
@@ -78,6 +80,8 @@ class OppdaterOppgaveService(
         markeringService.opprettMarkeringHendelser(oppgaveOppdatering).let { endringer ->
             if (endringer.any { it.erEndret() }) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
         }
+
+        if (oppgaveOppdatering.uføreVedtak != null) uføreVedtakRepository.lagreUføreVedtak(oppgaveOppdatering.referanse, oppgaveOppdatering.uføreVedtak)
 
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
     }
@@ -606,7 +610,7 @@ class OppdaterOppgaveService(
             harFortroligAdresse = harFortroligAdresse,
             erSkjermet = erSkjermet,
             returInformasjon = returInformasjon,
-            harUlesteDokumenter = harUlesteDokumenter
+            harUlesteDokumenter = harUlesteDokumenter,
         )
     }
 

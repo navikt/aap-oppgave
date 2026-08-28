@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
+import uføreVedtak.UføreVedtakRepository
 import javax.sql.DataSource
 
 
@@ -34,6 +35,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
                 OppgavelisteService(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
+                    UføreVedtakRepository(connection),
                     enhetService,
                 ).hentMineOppgaver(
                     ident = ident(),

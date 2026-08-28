@@ -56,6 +56,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import uføreVedtak.UføreVedtakRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -1652,6 +1653,7 @@ class OppdaterOppgaveServiceTest {
                     MarkeringService(
                         MarkeringRepository(connection)
                     ),
+                    UføreVedtakRepository(connection),
                     NomApiGateway.withClientCredentialsRestClient(),
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
             }
@@ -1674,6 +1676,7 @@ class OppdaterOppgaveServiceTest {
                     TilbakekrevingRepository(connection),
                     MottattDokumentRepository(connection),
                     MarkeringService(MarkeringRepository(connection)),
+                    UføreVedtakRepository(connection),
                     NomApiGateway.withClientCredentialsRestClient(),
 
                     ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())

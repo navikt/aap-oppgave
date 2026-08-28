@@ -21,6 +21,8 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
+import uføreVedtak.UføreVedtak
+import uføreVedtak.UføreVedtakRepository
 import java.util.UUID
 
 const val maksOppgaver = 50
@@ -28,6 +30,7 @@ const val maksOppgaver = 50
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
+    private val uføreVedtakRepository: UføreVedtakRepository,
     private val enhetService: EnhetService,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
@@ -41,6 +44,8 @@ class OppgavelisteService(
         return oppgaver.map { oppgave ->
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
             oppgave.leggPåMarkeringer(markeringer)
+            val uførevedtak = uføreVedtakRepository.hentUføreVedtakForBehandling(oppgave.behandlingRef)
+            oppgave.leggPåUføreVedtak(uførevedtak)
         }
     }
 
@@ -118,6 +123,8 @@ class OppgavelisteService(
                 val behandlingRef = oppgave.behandlingRef
                 val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
                 oppgave.leggPåMarkeringer(markeringer)
+                val uføreVedtak = uføreVedtakRepository.hentUføreVedtakForBehandling(behandlingRef)
+                oppgave.leggPåUføreVedtak(uføreVedtak)
             }
 
         return FinnOppgaverDto(
@@ -144,6 +151,9 @@ class OppgavelisteService(
         ).map {
             it.leggPåMarkeringer(
                 markeringRepository.hentGjeldendeMarkeringerForBehandling(it.behandlingRef)
+            )
+            it.leggPåUføreVedtak(
+                uføreVedtakRepository.hentUføreVedtakForBehandling(it.behandlingRef)
             )
         }.hentPersonNavn()
 
@@ -181,6 +191,9 @@ class OppgavelisteService(
 
     private fun Oppgave.leggPåMarkeringer(markeringer: List<Markering>): Oppgave =
         this.copy(markeringer = markeringer)
+
+    private fun Oppgave.leggPåUføreVedtak(uførevedtak: UføreVedtak): Oppgave =
+        this.copy(uføreVedtak = uføreVedtak)
 
     private fun List<Oppgave>.filtrerPåTilgang(
         token: OidcToken,

@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.tilgang.AuthorizationParamPathConfig
 import no.nav.aap.tilgang.authorizedGet
+import uføreVedtak.UføreVedtakRepository
 
 fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
     dataSource: DataSource,
@@ -33,6 +34,7 @@ fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
         OppgavelisteService(
             OppgaveRepository(connection),
             MarkeringRepository(connection),
+            UføreVedtakRepository(connection),
             enhetService,
         ).hentOppgaveEnhetListe(behandlingReferanse)
     }

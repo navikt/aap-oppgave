@@ -18,6 +18,7 @@ import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
+import uføreVedtak.UføreVedtakRepository
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentOppgaveApi(
@@ -67,6 +68,7 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
             OppgavelisteService(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
+                UføreVedtakRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)
         }
@@ -86,6 +88,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
     reservertAvIdent = reservertAv,
     returInformasjon = returInformasjon?.tilReturInformasjonDto(),
     markeringer = markeringer.tilDto(),
+    uførevedtakinfo = uføreVedtak,
     påVentInfo = påVentTil?.let {
         VenteInformasjonResponse(
             påVentTil = it,
