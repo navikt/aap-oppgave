@@ -43,9 +43,8 @@ class OppgavelisteService(
 
         return oppgaver.map { oppgave ->
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
-            oppgave.leggPåMarkeringer(markeringer)
             val uførevedtak = uføreVedtakRepository.hentUføreVedtakForBehandling(oppgave.behandlingRef)
-            oppgave.leggPåUføreVedtak(uførevedtak)
+            oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uførevedtak)
         }
     }
 
@@ -53,7 +52,8 @@ class OppgavelisteService(
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null) {
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
-            return oppgave.leggPåMarkeringer(markeringer)
+            val uførevedtak = uføreVedtakRepository.hentUføreVedtakForBehandling(behandlingReferanse.referanse)
+            return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer)
         }
         return oppgave
     }
@@ -122,9 +122,8 @@ class OppgavelisteService(
             finnOppgaverDto.oppgaver.map { oppgave ->
                 val behandlingRef = oppgave.behandlingRef
                 val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
-                oppgave.leggPåMarkeringer(markeringer)
                 val uføreVedtak = uføreVedtakRepository.hentUføreVedtakForBehandling(behandlingRef)
-                oppgave.leggPåUføreVedtak(uføreVedtak)
+                oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uføreVedtak)
             }
 
         return FinnOppgaverDto(
@@ -151,10 +150,10 @@ class OppgavelisteService(
         ).map {
             it.leggPåMarkeringer(
                 markeringRepository.hentGjeldendeMarkeringerForBehandling(it.behandlingRef)
-            )
-            it.leggPåUføreVedtak(
+            ).leggPåUføreVedtak(
                 uføreVedtakRepository.hentUføreVedtakForBehandling(it.behandlingRef)
             )
+
         }.hentPersonNavn()
 
         val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
