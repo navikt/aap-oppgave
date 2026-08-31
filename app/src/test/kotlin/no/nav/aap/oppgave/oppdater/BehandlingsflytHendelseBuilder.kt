@@ -3,7 +3,6 @@ package no.nav.aap.oppgave.oppdater
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
-import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.ÅrsakTilOpprettelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
@@ -17,6 +16,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
+import no.nav.aap.behandlingsflyt.kontrakt.behandling.Status as BehandlingStatus
 
 
 fun behandlingFlytHendelse(
@@ -32,6 +32,7 @@ fun behandlingFlytHendelse(
     årsakTilOpprettelse: ÅrsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
     relevanteIdenterPåBehandling: List<String> = emptyList(),
     vurderingsbehov: List<String> = listOf("SØKNAD"),
+    reserverTilPerAvklaringsbehov: Map<String, String>? = null,
     behandlingMetadata: BehandlingMetadata? = null,
     block: BehandlingFlytHendelseBuilder.() -> Unit = {}
 ): BehandlingFlytStoppetHendelse {
@@ -54,7 +55,8 @@ fun behandlingFlytHendelse(
         årsakTilOpprettelse = årsakTilOpprettelse,
         uføreVedtak = null,
         relevanteIdenterPåBehandling = relevanteIdenterPåBehandling,
-        behandlingMetadata = behandlingMetadata
+        behandlingMetadata = behandlingMetadata,
+        reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov ?: emptyMap()
     )
 }
 
