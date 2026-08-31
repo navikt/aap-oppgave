@@ -9,6 +9,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
@@ -51,6 +52,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
                     markeringService = MarkeringService(
                         MarkeringRepository(connection),
                     ),
+                    dialogMedBehandlerRepository = DialogMedBehandlerRepository(connection),
                 ).håndterNyOppgaveOppdatering(
                     request.tilOppgaveOppdatering()
                 )
@@ -86,6 +88,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
                     markeringService = MarkeringService(
                         MarkeringRepository(connection),
                     ),
+                    dialogMedBehandlerRepository = DialogMedBehandlerRepository(connection),
                 ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
             }
         }
@@ -121,6 +124,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
                     markeringService = MarkeringService(
                         MarkeringRepository(connection),
                     ),
+                    dialogMedBehandlerRepository = DialogMedBehandlerRepository(connection),
                 ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
             }
         }

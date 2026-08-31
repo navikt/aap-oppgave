@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.enhet.OppgaveEnhetResponse
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.tilgang.AuthorizationParamPathConfig
 import no.nav.aap.tilgang.authorizedGet
@@ -33,6 +34,7 @@ fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
         OppgavelisteService(
             OppgaveRepository(connection),
             MarkeringRepository(connection),
+            DialogMedBehandlerRepository(connection),
             enhetService,
         ).hentOppgaveEnhetListe(behandlingReferanse)
     }

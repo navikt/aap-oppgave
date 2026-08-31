@@ -25,6 +25,8 @@ data class OppgaveOppdatering(
     val behandlingstype: Behandlingstype,
     val opprettetTidspunkt: LocalDateTime,
     val avklaringsbehov: List<AvklaringsbehovHendelse>,
+    val harÅpenForespørselTilBehandler: Boolean = false,
+    val harAvsluttetForespørselTilBehandler: Boolean = false,
     val venteInformasjon: VenteInformasjon? = null,
     val vurderingsbehov: List<String>,
     val årsakTilOpprettelse: String?,

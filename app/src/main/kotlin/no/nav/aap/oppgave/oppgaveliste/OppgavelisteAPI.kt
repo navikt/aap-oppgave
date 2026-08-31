@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
@@ -50,6 +51,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                     OppgavelisteService(
                         oppgaveRepository = OppgaveRepository(connection),
                         markeringRepository = MarkeringRepository(connection),
+                        dialogMedBehandlerRepository = DialogMedBehandlerRepository(connection),
                         enhetService = enhetService,
                     ).hentOppgaverMedTilgang(
                         request.utvidetFilter,

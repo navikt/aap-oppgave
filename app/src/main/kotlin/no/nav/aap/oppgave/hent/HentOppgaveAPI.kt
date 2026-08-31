@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import javax.sql.DataSource
 
@@ -65,6 +66,7 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
             OppgavelisteService(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
+                DialogMedBehandlerRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)
         }
