@@ -995,7 +995,8 @@ class OppdaterOppgaveServiceTest {
             }
         }
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
-        val kvalitetssikringsOppgave = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
+        val kvalitetssikringsOppgave =
+            hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
 
 
@@ -1080,7 +1081,8 @@ class OppdaterOppgaveServiceTest {
             }
         }
         sendBehandlingFlytStoppetHendelse(tilBeslutter)
-        val kvalitetssikringsOppgave = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
+        val kvalitetssikringsOppgave =
+            hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.FATTE_VEDTAK.kode.name)
 
 
@@ -1189,7 +1191,8 @@ class OppdaterOppgaveServiceTest {
         }
 
         sendBehandlingFlytStoppetHendelse(hendelseOppdatering)
-        val oppgaveEtterOppdatering = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
+        val oppgaveEtterOppdatering =
+            hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(oppgaveEtterOppdatering.utløptVentefrist).isEqualTo(LocalDate.now())
 
         // setter på vent på nytt, utløptVentefrist skal da bli borte
@@ -1631,6 +1634,54 @@ class OppdaterOppgaveServiceTest {
         assertThat(returTilToTrinn.returInformasjon?.endretAv).isEqualTo("Veileder")
         assertThat(returTilToTrinn.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
         assertThat(returTilToTrinn.forrigeKvalitetssikrerInfo?.forrigeKvalitetssikrerIdent).isEqualTo("Kvalitetssikrer")
+    }
+
+    @Test
+    fun `Ved reservasjon fra behandlingsflyt skal bare riktig oppgave reserveres`() {
+        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
+        val saksnummer = Saksnummer("123")
+        val nå = LocalDateTime.now()
+
+        val hendelseTrekkSøknad = behandlingFlytHendelse(
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            reserverTilPerAvklaringsbehov = mapOf(Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name to "Veileder1")
+        ) {
+            avklaringsbehov(Definisjon.VURDER_TREKK_AV_SØKNAD, AvklaringsbehovStatus.OPPRETTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Veileder1", nå.minusHours(9))
+            }
+            avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
+            }
+        }
+
+        sendBehandlingFlytStoppetHendelse(hendelseTrekkSøknad)
+        val trukketSøknadOppgave =
+            hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(trukketSøknadOppgave.status).isEqualTo(Status.OPPRETTET)
+        assertThat(trukketSøknadOppgave.reservertAv).isEqualTo("Veileder1")
+
+        val hendelseSykdom = behandlingFlytHendelse(
+            saksnummer = saksnummer,
+            referanse = behandlingsref,
+            reserverTilPerAvklaringsbehov = mapOf(Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name to "Veileder1")
+        ) {
+            avklaringsbehov(Definisjon.VURDER_TREKK_AV_SØKNAD, AvklaringsbehovStatus.AVSLUTTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Veileder1", nå.minusHours(9))
+                endring(AvklaringsbehovStatus.AVSLUTTET, "Veileder1", nå.minusHours(8))
+            }
+            avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
+                endring(AvklaringsbehovStatus.AVSLUTTET, endretAv = "Veileder2", nå.minusHours(7))
+            }
+            avklaringsbehov(Definisjon.AVKLAR_BISTANDSBEHOV, AvklaringsbehovStatus.OPPRETTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(7))
+            }
+        }
+        sendBehandlingFlytStoppetHendelse(hendelseSykdom)
+        val bistandOppgave = hentOppgaverForBehandling(behandlingsref).first { it.status == Status.OPPRETTET }
+        assertThat(bistandOppgave.avklaringsbehovKode).isEqualTo(Definisjon.AVKLAR_BISTANDSBEHOV.kode.name)
+        assertThat(bistandOppgave.reservertAv).isEqualTo("Veileder2")
     }
 
     private fun sendBehandlingFlytStoppetHendelse(

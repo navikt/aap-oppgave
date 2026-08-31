@@ -4,7 +4,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
@@ -19,6 +18,7 @@ import no.nav.aap.oppgave.verdityper.UføreVedtakStatus
 import org.slf4j.LoggerFactory
 import uføreVedtak.UføreVedtak
 import java.util.UUID
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 
 private val logger = LoggerFactory.getLogger(OppgaveOppdatering::class.java)
 
@@ -37,15 +37,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
             this.saksnummer,
             this.behandlingType.tilBehandlingstype()
         ),
-        reserverTil = when (this.reserverTil) {
-            KELVIN -> {
-                logger.warn("behandlingsflyt foreslår at vi reserverer oppgave til KELVIN i behandling ${referanse.referanse}, ignorerer anbefaling")
-                null
-            }
-
-            else ->
-                this.reserverTil
-        },
+        reserverTilPerAvklaringsbehov = this.reserverTilPerAvklaringsbehov?.filterValues { it != KELVIN }
+            ?: emptyMap(),
         relevanteIdenter = this.relevanteIdenterPåBehandling ?: emptyList(),
         venteInformasjon = if (this.erPåVent) {
             this.utledVenteInformasjon()

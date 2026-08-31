@@ -323,7 +323,7 @@ class OppgaveApiTest {
                         )
                     )
                 ),
-                reserverTil = "U12345"
+                reserverTilPerAvklaringsbehov = mapOf(Definisjon.AVKLAR_SYKDOM.kode.name to "U12345")
             )
         )
 
@@ -332,7 +332,7 @@ class OppgaveApiTest {
         )!!
 
         assertThat(oppgave.reservertAvIdent)
-            .withFailMessage { "reserverTil skal implisere at oppgaven blir reservert til denne personen" }
+            .withFailMessage { "reserverTilPerAvklaringsbehov skal implisere at oppgaven blir reservert til denne personen" }
             .isEqualTo("U12345")
     }
 
@@ -1177,7 +1177,7 @@ class OppgaveApiTest {
         behandlingStatus: Status = Status.OPPRETTET,
         behandlingsbehov: List<Behandlingsbehov>,
         typeBehandling: TypeBehandling = TypeBehandling.Førstegangsbehandling,
-        reserverTil: String? = null,
+        reserverTilPerAvklaringsbehov: Map<String, String> = emptyMap(),
         relaterteIdenter: List<String>? = emptyList()
     ): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
@@ -1220,9 +1220,9 @@ class OppgaveApiTest {
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
             uføreVedtak = null,
             mottattDokumenter = listOf(),
-            reserverTil = reserverTil,
+            reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov,
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
         )
     }
 
