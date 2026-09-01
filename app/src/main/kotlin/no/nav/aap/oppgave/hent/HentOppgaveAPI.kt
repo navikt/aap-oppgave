@@ -13,7 +13,6 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SaksnummerPathParam
 import no.nav.aap.oppgave.enhet.EnhetService
-import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
@@ -58,7 +57,6 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
 fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
     dataSource: DataSource,
     enhetService: EnhetService,
-    norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
 ) =
     route("/{referanse}/hent-oppgave-visningsinformasjon").get<BehandlingReferanse, OppgaveVisningsinformasjonResponse> { request ->
@@ -79,7 +77,7 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
     }
 
 private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinformasjonResponse(
-    id = requireNotNull(id) { "Oppgave må ha ID" },
+    id = id,
     versjon = versjon,
     saksnummer = saksnummer,
     reservertAvNavn = reservertAvNavn,
@@ -110,7 +108,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
 
 private fun Oppgave.tilOppgavePåBehandlingResponse(): OppgavePåBehandlingResponse {
     return OppgavePåBehandlingResponse(
-        id = requireNotNull(id) { "Oppgave må ha ID" },
+        id = id,
         versjon = versjon,
         behandlingsreferanse = behandlingRef,
         reservertAvIdent = reservertAv,
