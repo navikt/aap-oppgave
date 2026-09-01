@@ -18,8 +18,6 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.routing
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
-import javax.sql.DataSource
-import kotlin.time.Duration.Companion.seconds
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbmigrering.Migrering
 import no.nav.aap.komponenter.miljo.Miljø
@@ -39,6 +37,9 @@ import no.nav.aap.oppgave.enhet.nayEnhetForPerson
 import no.nav.aap.oppgave.enhet.oppfølgingsenhet.OppfølgingsenhetService
 import no.nav.aap.oppgave.enhet.synkroniserEnhetPåOppgaveApi
 import no.nav.aap.oppgave.filter.hentFilterApi
+import no.nav.aap.oppgave.hent.hentOppgaveApi
+import no.nav.aap.oppgave.hent.hentOppgaveEnhetApi
+import no.nav.aap.oppgave.hent.hentOppgaveVisningsinformasjonApi
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
@@ -50,9 +51,6 @@ import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterTilbakekrevingOppgaverApi
-import no.nav.aap.oppgave.hent.hentOppgaveApi
-import no.nav.aap.oppgave.hent.hentOppgaveEnhetApi
-import no.nav.aap.oppgave.hent.hentOppgaveVisningsinformasjonApi
 import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
@@ -66,6 +64,8 @@ import no.nav.aap.tilgang.TeamAap
 import no.nav.aap.tilgang.TilgangGateway
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.sql.DataSource
+import kotlin.time.Duration.Companion.seconds
 
 val secureLogger: Logger = LoggerFactory.getLogger("team-logs")
 private const val ANTALL_WORKERS = 5
@@ -144,7 +144,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 tildelOppgaveApi(dataSource, enhetService, norgGateway, prometheus, nomApiGateway)
                 // Hent oppgave(r)
                 hentOppgaveApi(dataSource, prometheus)
-                hentOppgaveVisningsinformasjonApi(dataSource, enhetService, norgGateway, prometheus)
+                hentOppgaveVisningsinformasjonApi(dataSource, enhetService, prometheus)
                 oppgavelisteApi(dataSource, enhetService, norgGateway, prometheus)
                 hentOppgaveEnhetApi(dataSource, enhetService, norgGateway, prometheus)
                 mineOppgaverApi(dataSource, enhetService, norgGateway, prometheus)

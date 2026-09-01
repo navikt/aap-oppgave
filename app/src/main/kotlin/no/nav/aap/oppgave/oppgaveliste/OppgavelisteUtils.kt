@@ -97,7 +97,7 @@ object OppgavelisteUtils {
             vurderingsbehov = vurderingsbehov,
             årsakTilOpprettelse = årsakTilOpprettelse,
             oppgaveMetadata = OppgaveMetadataResponse(
-                id = requireNotNull(id) { "Oppgave må ha ID" },
+                id = id,
                 versjon = versjon,
                 status = status,
                 opprettetTidspunkt = opprettetTidspunkt
@@ -110,7 +110,7 @@ object OppgavelisteUtils {
                 tilbakekrevingUrl = tilbakekrevingsVars?.tilbakekrevings_URL
             ),
             personOgEnhet = PersonOgEnhetResponse(
-                personIdent = requireNotNull(personIdent) { "Oppgave må ha personIdent" },
+                personIdent = personIdent,
                 personNavn = personNavn,
                 enhet = enhet,
                 oppfølgingsenhet = oppfølgingsenhet,

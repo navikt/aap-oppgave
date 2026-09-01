@@ -772,7 +772,7 @@ class OppgaveApiTest {
 
     @Test
     fun `Utleder adressebeskyttelse riktig i søk`() {
-        val saksnummer1 = "100002"
+        val saksnummer1 = "100002abc"
         val referanse1 = UUID.randomUUID()
 
         oppdaterOppgaver(

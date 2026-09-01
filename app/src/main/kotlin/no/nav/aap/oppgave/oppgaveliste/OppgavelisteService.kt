@@ -32,7 +32,7 @@ class OppgavelisteService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
     fun søkEtterOppgaver(søketekst: String): List<Oppgave> {
-        val oppgaver = if (søketekst.length >= 11) {
+        val oppgaver = if (søketekst.all { it.isDigit() }) {
             oppgaveRepository.finnÅpneOppgaverGittPersonident(søketekst)
         } else {
             oppgaveRepository.finnOppgaverGittSaksnummer(søketekst)
