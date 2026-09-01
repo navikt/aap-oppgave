@@ -16,7 +16,7 @@ import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.UføreVedtakStatus
 import org.slf4j.LoggerFactory
-import uføreVedtak.UføreVedtak
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 

@@ -19,7 +19,7 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
-import uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("oppgavelisteApi")

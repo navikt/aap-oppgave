@@ -1,4 +1,4 @@
-package uføreVedtak
+package no.nav.aap.oppgave.uføreVedtak
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
@@ -15,6 +15,7 @@ class UføreVedtakRepository (
             """
             INSERT INTO UFORE_VEDTAK(behandling_ref, virkningsdato, status)
             VALUES (?, ?, ?)
+            ON CONFLICT (behandling_ref, virkningsdato, status) DO NOTHING;
             """.trimIndent()
 
         connection.execute(query) {
@@ -26,11 +27,26 @@ class UføreVedtakRepository (
         }
     }
 
-    fun hentUføreVedtakForBehandling(referanse: UUID): UføreVedtak? {
+    fun fjernUføreVedtakTag(behandlingsref: UUID, fjernetAv: String){
+        val sql = """
+            UPDATE UFORE_VEDTAK SET VEDTAK_FJERNET_AV = ?, VEDTAK_FJERNET_TIDSPUNKT = current_timestamp
+            WHERE behandling_ref = ?
+        """.trimIndent()
+
+        connection.execute(sql) {
+            setParams {
+                setString(1, fjernetAv)
+                setUUID(2, behandlingsref)
+
+            }
+        }
+    }
+
+    fun hentAktiveUføreVedtakForBehandling(referanse: UUID): UføreVedtak? {
         val query =
             """
             SELECT * FROM UFORE_VEDTAK
-            WHERE behandling_ref = ?
+            WHERE behandling_ref = ? AND VEDTAK_FJERNET_AV IS NULL
             ORDER BY virkningsdato DESC
             """.trimIndent()
 

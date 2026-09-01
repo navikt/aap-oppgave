@@ -35,7 +35,7 @@ import no.nav.aap.tilgang.Drift
 import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
-import uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 
 fun NormalOpenAPIRoute.driftApi(
     dataSource: DataSource,

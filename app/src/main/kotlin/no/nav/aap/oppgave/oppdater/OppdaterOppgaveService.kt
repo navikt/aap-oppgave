@@ -41,7 +41,7 @@ import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
-import uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID

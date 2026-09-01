@@ -21,8 +21,8 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
-import uføreVedtak.UføreVedtak
-import uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import java.util.UUID
 
 const val maksOppgaver = 50
@@ -43,7 +43,7 @@ class OppgavelisteService(
 
         return oppgaver.map { oppgave ->
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
-            val uførevedtak = uføreVedtakRepository.hentUføreVedtakForBehandling(oppgave.behandlingRef)
+            val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(oppgave.behandlingRef)
             oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uførevedtak)
         }
     }
@@ -52,7 +52,7 @@ class OppgavelisteService(
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null) {
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
-            val uførevedtak = uføreVedtakRepository.hentUføreVedtakForBehandling(behandlingReferanse.referanse)
+            val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingReferanse.referanse)
             return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer)
         }
         return oppgave
@@ -122,7 +122,7 @@ class OppgavelisteService(
             finnOppgaverDto.oppgaver.map { oppgave ->
                 val behandlingRef = oppgave.behandlingRef
                 val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
-                val uføreVedtak = uføreVedtakRepository.hentUføreVedtakForBehandling(behandlingRef)
+                val uføreVedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingRef)
                 oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uføreVedtak)
             }
 
@@ -151,7 +151,7 @@ class OppgavelisteService(
             it.leggPåMarkeringer(
                 markeringRepository.hentGjeldendeMarkeringerForBehandling(it.behandlingRef)
             ).leggPåUføreVedtak(
-                uføreVedtakRepository.hentUføreVedtakForBehandling(it.behandlingRef)
+                uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(it.behandlingRef)
             )
 
         }.hentPersonNavn()

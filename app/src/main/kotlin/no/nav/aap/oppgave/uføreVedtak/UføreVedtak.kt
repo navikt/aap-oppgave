@@ -1,4 +1,4 @@
-package uføreVedtak
+package no.nav.aap.oppgave.uføreVedtak
 
 import no.nav.aap.oppgave.UførevedtakRespons
 import no.nav.aap.oppgave.verdityper.UføreVedtakStatus
@@ -9,7 +9,7 @@ class UføreVedtak (
     val status: UføreVedtakStatus
 )
 
-fun UføreVedtak.tilUføreVedtakRepsons() : UførevedtakRespons {
+fun UføreVedtak.tilUføreVedtakRespsons() : UførevedtakRespons {
     return UførevedtakRespons(
         virkningsdato = virkningsdato,
         resultat = status

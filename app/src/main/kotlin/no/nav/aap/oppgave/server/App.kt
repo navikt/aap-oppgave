@@ -62,6 +62,7 @@ import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
 import no.nav.aap.oppgave.søk.sistEndretApi
 import no.nav.aap.oppgave.søk.søkApi
 import no.nav.aap.oppgave.tildel.tildelOppgaveApi
+import no.nav.aap.oppgave.uføreVedtak.uføreVedtakApi
 import no.nav.aap.tilgang.TeamAap
 import no.nav.aap.tilgang.TilgangGateway
 import org.slf4j.Logger
@@ -150,6 +151,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 mineOppgaverApi(dataSource, enhetService, norgGateway, prometheus)
                 søkApi(dataSource, enhetService, norgGateway, prometheus)
                 markeringApi(dataSource, prometheus, nomApiGateway)
+                uføreVedtakApi(dataSource, prometheus)
                 sistEndretApi(dataSource)
                 // Filter
                 hentFilterApi(dataSource, prometheus)

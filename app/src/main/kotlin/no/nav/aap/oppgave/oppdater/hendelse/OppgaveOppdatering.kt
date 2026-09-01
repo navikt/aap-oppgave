@@ -3,7 +3,7 @@ package no.nav.aap.oppgave.oppdater.hendelse
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
-import uføreVedtak.UføreVedtak
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime

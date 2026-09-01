@@ -7,7 +7,7 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
-import uføreVedtak.UføreVedtak
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
