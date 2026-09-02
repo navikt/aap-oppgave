@@ -9,14 +9,13 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.server.authenticate.ident
-import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.uføreVedtakApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry
 ) {
-    route("/fjern-uførevedtak-ikon").post<BehandlingReferanse, BehandlingReferanse, Unit> { request, _ ->
+    route("/fjern-uførevedtak-ikon").post<Unit, Unit, UføreVedtak> { _, dto ->
         prometheus.httpCallCounter("/fjern-uførevedtak-ikon").increment()
 
         dataSource.transaction { connection ->
@@ -25,7 +24,7 @@ fun NormalOpenAPIRoute.uføreVedtakApi(
             )
 
             uføreVedtakService.fjernUføreVedtakPåBehandling(
-                behandlingId = request.referanse,
+                behandlingRef = dto.referanse,
                 ident = ident()
             )
         }

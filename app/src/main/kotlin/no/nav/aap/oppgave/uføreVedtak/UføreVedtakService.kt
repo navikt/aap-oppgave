@@ -10,8 +10,8 @@ private val log = LoggerFactory.getLogger(MottattDokumentService::class.java)
 class UføreVedtakService (
     private val uføreVedtakRepository: UføreVedtakRepository,
 ) {
-    fun fjernUføreVedtakPåBehandling(behandlingId: UUID, ident: String) {
-        uføreVedtakRepository.fjernUføreVedtakTag(behandlingId, ident)
-        log.info("$ident fjernet uførevedtak for behandling $behandlingId")
+    fun fjernUføreVedtakPåBehandling(behandlingRef: UUID, ident: String) {
+        uføreVedtakRepository.fjernUføreVedtakTag(behandlingRef, ident)
+        log.info("$ident fjernet uførevedtak for behandling $behandlingRef")
     }
 }

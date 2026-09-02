@@ -62,6 +62,7 @@ class UføreVedtakRepository (
 
     private fun uføreVedtakMapper(row: Row) : UføreVedtak =
         UføreVedtak(
+            referanse = row.getUUID("behandling_ref"),
             virkningsdato = row.getLocalDate("virkningsdato"),
             status = row.getEnum("status"),
         )

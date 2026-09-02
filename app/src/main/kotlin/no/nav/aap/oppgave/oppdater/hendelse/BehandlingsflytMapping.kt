@@ -46,7 +46,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         tattAvVentAutomatisk = !this.erPåVent && this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
-        uføreVedtak = this.uføreVedtak?.tilUførevedtak()
+        uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse)
     )
 }
 
@@ -82,8 +82,9 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
     }
 }
 
-private fun UførevedtakDto.tilUførevedtak() : UføreVedtak {
+private fun UførevedtakDto.tilUførevedtak(behandlingRef: UUID) : UføreVedtak {
     return UføreVedtak(
+        referanse = behandlingRef,
         virkningsdato = this.virkningsdato,
         status = when (this.resultat) {
             UførevedtakResultatDto.OPPHØR -> UføreVedtakStatus.OPPHØR
