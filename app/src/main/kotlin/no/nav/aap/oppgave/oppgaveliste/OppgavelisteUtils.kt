@@ -6,6 +6,7 @@ import no.nav.aap.oppgave.BehandlingskontekstResponse
 import no.nav.aap.oppgave.ForrigeKvalitetssikrerDto
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.ReturInformasjonDto
+import no.nav.aap.oppgave.forespørsel.tilDto
 import no.nav.aap.oppgave.hent.SkjermingInfoResponse
 import no.nav.aap.oppgave.hent.VenteInformasjonResponse
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
@@ -151,7 +152,8 @@ object OppgavelisteUtils {
                         forrigeKvalitetssikrerIdent = it.forrigeKvalitetssikrerIdent,
                         forrigeKvalitetssikrerNavn = it.forrigeKvalitetssikrerNavn
                     )
-                }
+                },
+                forespørselTilBehandler = forespørselTilBehandler?.tilDto(),
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,

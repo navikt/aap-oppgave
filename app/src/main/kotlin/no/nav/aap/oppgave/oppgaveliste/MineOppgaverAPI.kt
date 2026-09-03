@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.liste.MineOppgaverRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
 import javax.sql.DataSource
@@ -34,6 +35,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
                 OppgavelisteService(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
+                    DialogMedBehandlerRepository(connection),
                     enhetService,
                 ).hentMineOppgaver(
                     ident = ident(),

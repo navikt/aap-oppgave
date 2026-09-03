@@ -2,6 +2,7 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetInfo
+import no.nav.aap.oppgave.forespørsel.ForespørselHendelse
 import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.ReturStatus
@@ -81,6 +82,7 @@ data class Oppgave(
     val markeringer: List<Markering> = emptyList(),
     val tilbakekrevingsVars: TilbakekrevingsVars? = null,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrer? = null,
+    val forespørselTilBehandler: ForespørselHendelse? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.

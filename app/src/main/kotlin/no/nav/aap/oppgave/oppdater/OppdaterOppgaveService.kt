@@ -14,17 +14,21 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.enhet.IEnhetService
+import no.nav.aap.oppgave.forespørsel.ForespørselHendelse
+import no.nav.aap.oppgave.forespørsel.ForespørselHendelseType
+import no.nav.aap.oppgave.forespørsel.OpprettForespørselHendelse
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingGateway
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.AVSLUTTEDE_STATUSER
 import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
 import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
-import no.nav.aap.oppgave.oppdater.hendelse.Endring
+import no.nav.aap.oppgave.oppdater.hendelse.Endring as EndringHendelse
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.TILBAKEKREVING
@@ -56,6 +60,7 @@ class OppdaterOppgaveService(
     private val mottattDokumentRepository: MottattDokumentRepository,
     private val markeringService: MarkeringService,
     private val ansattInfoGateway: AnsattInfoGateway,
+    private val dialogMedBehandlerRepository: DialogMedBehandlerRepository,
 ) {
 
     private val log = LoggerFactory.getLogger(OppdaterOppgaveService::class.java)
@@ -79,7 +84,29 @@ class OppdaterOppgaveService(
             if (endringer.any { it.erEndret() }) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
         }
 
+        oppdaterForespørselTilBehandler(oppgaveOppdatering).let { nyForespørselHendelse ->
+            if (nyForespørselHendelse) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
+        }
+
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
+    }
+
+    private fun oppdaterForespørselTilBehandler(oppgaveOppdatering: OppgaveOppdatering): Boolean {
+        val referanse = oppgaveOppdatering.referanse
+
+        if (oppgaveOppdatering.harÅpenForespørselTilBehandler) {
+            val forespørselHendelse = OpprettForespørselHendelse(referanse, ForespørselHendelseType.FORESPØRSEL_OPPRETTET)
+            dialogMedBehandlerRepository.lagreForespørselHendelse(forespørselHendelse)
+            return true
+        }
+
+        if (oppgaveOppdatering.harAvsluttetForespørselTilBehandler) {
+            val forespørselHendelse = OpprettForespørselHendelse(referanse, ForespørselHendelseType.FORESPØRSEL_AVSLUTTET)
+            dialogMedBehandlerRepository.lagreForespørselHendelse(forespørselHendelse)
+            return true
+        }
+
+        return false
     }
 
 
@@ -550,7 +577,7 @@ class OppdaterOppgaveService(
         return Pair(sisteAvsluttetAvklaringsbehov.avklaringsbehovKode, sisteAvsluttetAvklaringsbehov.sistEndretAv())
     }
 
-    private fun AvklaringsbehovHendelse.sisteEndring(status: AvklaringsbehovStatus = this.status): Endring {
+    private fun AvklaringsbehovHendelse.sisteEndring(status: AvklaringsbehovStatus = this.status): EndringHendelse {
         return try {
             endringer
                 .sortedBy { it.tidsstempel }

@@ -62,6 +62,7 @@ import no.nav.aap.oppgave.tildel.SaksbehandlerSøkRequest
 import no.nav.aap.oppgave.tildel.SaksbehandlerSøkResponse
 import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
 import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
+import no.nav.aap.oppgave.verdityper.ForespørselHendelseTypeDto
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
 import no.nav.aap.oppgave.verdityper.ReturStatus
@@ -1081,6 +1082,40 @@ class OppgaveApiTest {
         val gjeldendeHastemarkeringer =
             mineOppgaver.oppgaver.first().oppgavelisteTags.markeringer.filter { it.markeringType == MarkeringForBehandling.HASTER }
         assertThat(gjeldendeHastemarkeringer).isEmpty()
+    }
+
+    @Test
+    fun `Oppgave skal inneholde forespørsel til behandler`() {
+        val behandlingref = BehandlingReferanse(UUID.randomUUID())
+        val saksnummer = "1023005"
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer, referanse = behandlingref.referanse, behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET),
+                        )
+                    )
+                )
+            )
+        )
+
+        // reserver og hent mine oppgaver
+        plukkOppgave(hentOppgaveGittBehandlingref(behandlingref)?.oppgaveId()!!)
+        val mineOppgaver = hentMineOppgaver()
+        assertThat(mineOppgaver.oppgaver).hasSize(1)
+        val forespørselTilBehandler = mineOppgaver.oppgaver.first().oppgavelisteTags.forespørselTilBehandler
+        assertThat(forespørselTilBehandler).isNotNull
+        assertThat(forespørselTilBehandler?.type).isEqualTo(ForespørselHendelseTypeDto.FORESPØRSEL_OPPRETTET)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
@@ -42,7 +43,19 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         tattAvVentAutomatisk = !this.erPåVent && this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
+        harÅpenForespørselTilBehandler = this.avklaringsbehov.harBestillLegeerklæringMedStatus(
+            Status.OPPRETTET
+        ),
+        harAvsluttetForespørselTilBehandler = this.avklaringsbehov.harBestillLegeerklæringMedStatus(
+            Status.AVSLUTTET
+        ),
     )
+}
+
+private fun List<AvklaringsbehovHendelseDto>.harBestillLegeerklæringMedStatus(
+    status: Status
+): Boolean = this.any {
+    it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING && it.status == status
 }
 
 private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformasjon? {

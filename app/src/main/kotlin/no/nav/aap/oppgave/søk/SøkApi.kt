@@ -18,6 +18,7 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.plukk.TilgangService
@@ -44,6 +45,7 @@ fun NormalOpenAPIRoute.søkApi(
                 OppgavelisteService(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
+                    DialogMedBehandlerRepository(connection),
                     enhetService,
                 ).søkEtterOppgaver(søketekst)
             }

@@ -27,6 +27,7 @@ import no.nav.aap.oppgave.historikk.OppgaveHistorikk
 import no.nav.aap.oppgave.historikk.OppgaveHistorikkRepository
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.tilbakekreving.TilbakeKrevingAvklaringsbehovKoder
@@ -50,6 +51,7 @@ fun NormalOpenAPIRoute.driftApi(
                     OppgavelisteService(
                         OppgaveRepository(connection),
                         MarkeringRepository(connection),
+                        DialogMedBehandlerRepository(connection),
                         enhetService,
                     )
                         .hentOppgaverForBehandling(params.referanse)

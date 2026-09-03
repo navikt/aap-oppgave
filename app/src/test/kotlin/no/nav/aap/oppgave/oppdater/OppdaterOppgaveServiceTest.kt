@@ -31,9 +31,12 @@ import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.forespørsel.ForespørselHendelse
+import no.nav.aap.oppgave.forespørsel.ForespørselHendelseType
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
+import no.nav.aap.oppgave.dialogmedbehandler.DialogMedBehandlerRepository
 import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
@@ -994,8 +997,7 @@ class OppdaterOppgaveServiceTest {
             }
         }
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
-        val kvalitetssikringsOppgave =
-            hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
+        val kvalitetssikringsOppgave = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
 
 
@@ -1080,8 +1082,7 @@ class OppdaterOppgaveServiceTest {
             }
         }
         sendBehandlingFlytStoppetHendelse(tilBeslutter)
-        val kvalitetssikringsOppgave =
-            hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
+        val kvalitetssikringsOppgave = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.FATTE_VEDTAK.kode.name)
 
 
@@ -1190,8 +1191,7 @@ class OppdaterOppgaveServiceTest {
         }
 
         sendBehandlingFlytStoppetHendelse(hendelseOppdatering)
-        val oppgaveEtterOppdatering =
-            hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
+        val oppgaveEtterOppdatering = hentOppgaverForBehandling(TEST_BEHANDLINGREF).first { it.status == Status.OPPRETTET }
         assertThat(oppgaveEtterOppdatering.utløptVentefrist).isEqualTo(LocalDate.now())
 
         // setter på vent på nytt, utløptVentefrist skal da bli borte
@@ -1634,7 +1634,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(returTilToTrinn.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
         assertThat(returTilToTrinn.forrigeKvalitetssikrerInfo?.forrigeKvalitetssikrerIdent).isEqualTo("Kvalitetssikrer")
     }
-
+    
     @Test
     fun `Ved reservasjon fra behandlingsflyt skal bare riktig oppgave reserveres`() {
         val behandlingsref = BehandlingReferanse(UUID.randomUUID())
@@ -1704,6 +1704,7 @@ class OppdaterOppgaveServiceTest {
                         MarkeringRepository(connection)
                     ),
                     NomApiGateway.withClientCredentialsRestClient(),
+                    DialogMedBehandlerRepository(connection),
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
             }
         }
@@ -1726,7 +1727,7 @@ class OppdaterOppgaveServiceTest {
                     MottattDokumentRepository(connection),
                     MarkeringService(MarkeringRepository(connection)),
                     NomApiGateway.withClientCredentialsRestClient(),
-
+                    DialogMedBehandlerRepository(connection),
                     ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
             }
         }
@@ -1741,6 +1742,15 @@ class OppdaterOppgaveServiceTest {
     private fun hentGjeldendeMarkeringerForBehandling(behandlingsref: BehandlingReferanse): List<Markering> {
         return dataSource.transaction { connection ->
             MarkeringRepository(connection).hentGjeldendeMarkeringerForBehandling(behandlingsref.referanse)
+        }
+    }
+
+    private fun hentSisteForespørselTilBehandler(
+        behandlingsref: BehandlingReferanse
+    ): ForespørselHendelse? {
+        return dataSource.transaction { connection ->
+            DialogMedBehandlerRepository(connection)
+                .hentSisteForespørselHendelseForBehandlinger(listOf(behandlingsref.referanse))[behandlingsref.referanse]
         }
     }
 
