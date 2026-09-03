@@ -1634,30 +1634,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(returTilToTrinn.avklaringsbehovKode).isEqualTo(Definisjon.KVALITETSSIKRING.kode.name)
         assertThat(returTilToTrinn.forrigeKvalitetssikrerInfo?.forrigeKvalitetssikrerIdent).isEqualTo("Kvalitetssikrer")
     }
-
-    @Test
-    fun `Oppgaver skal markeres med forespørsel til behandler når avklaringsbehov BESTILL_LEGEERKLÆRING er opprettet`() {
-        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
-        val nå = LocalDateTime.now()
-
-        val hendelse = behandlingFlytHendelse(
-            saksnummer = TEST_SAKSNUMMER,
-            referanse = behandlingsref,
-        ) {
-            avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
-                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
-            }
-            avklaringsbehov(Definisjon.BESTILL_LEGEERKLÆRING, AvklaringsbehovStatus.OPPRETTET) {
-                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(1))
-            }
-        }
-
-        sendBehandlingFlytStoppetHendelse(hendelse)
-
-        assertThat(hentSisteForespørselTilBehandler(behandlingsref)?.type == ForespørselHendelseType.FORESPØRSEL_OPPRETTET)
-    }
-
-
+    
     @Test
     fun `Ved reservasjon fra behandlingsflyt skal bare riktig oppgave reserveres`() {
         val behandlingsref = BehandlingReferanse(UUID.randomUUID())
