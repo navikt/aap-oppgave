@@ -84,14 +84,14 @@ class OppdaterOppgaveService(
             if (endringer.any { it.erEndret() }) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
         }
 
-        oppdaterUtgåendeForespørselTilBehandler(oppgaveOppdatering).let { opprettetUtgåendeForespørsel ->
-            if (opprettetUtgåendeForespørsel) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
+        oppdaterForespørselTilBehandler(oppgaveOppdatering).let { nyForespørselHendelse ->
+            if (nyForespørselHendelse) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
         }
 
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
     }
 
-    private fun oppdaterUtgåendeForespørselTilBehandler(oppgaveOppdatering: OppgaveOppdatering): Boolean {
+    private fun oppdaterForespørselTilBehandler(oppgaveOppdatering: OppgaveOppdatering): Boolean {
         val referanse = oppgaveOppdatering.referanse
 
         if (oppgaveOppdatering.harÅpenForespørselTilBehandler) {
