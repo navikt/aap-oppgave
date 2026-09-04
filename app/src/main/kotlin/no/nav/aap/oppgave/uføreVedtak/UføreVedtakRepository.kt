@@ -30,13 +30,17 @@ class UføreVedtakRepository (
     fun fjernUføreVedtakTag(behandlingsref: UUID, fjernetAv: String){
         val sql = """
             UPDATE UFORE_VEDTAK SET VEDTAK_FJERNET_AV = ?, VEDTAK_FJERNET_TIDSPUNKT = current_timestamp
-            WHERE behandling_ref = ?
+            WHERE behandling_ref = ? AND VIRKNINGSDATO = (
+              SELECT MAX(VIRKNINGSDATO)
+              FROM UFORE_VEDTAK
+              WHERE behandling_ref = ?);
         """.trimIndent()
 
         connection.execute(sql) {
             setParams {
                 setString(1, fjernetAv)
                 setUUID(2, behandlingsref)
+                setUUID(3, behandlingsref)
 
             }
         }
