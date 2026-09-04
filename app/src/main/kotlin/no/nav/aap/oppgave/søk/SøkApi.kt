@@ -23,6 +23,7 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.plukk.TilgangService
 import no.nav.aap.tilgang.Operasjon
 import org.slf4j.LoggerFactory
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import javax.sql.DataSource
 
 /**
@@ -44,6 +45,7 @@ fun NormalOpenAPIRoute.søkApi(
                 OppgavelisteService(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
+                    UføreVedtakRepository(connection),
                     enhetService,
                 ).søkEtterOppgaver(søketekst)
             }
