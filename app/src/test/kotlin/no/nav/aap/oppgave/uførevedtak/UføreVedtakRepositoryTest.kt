@@ -25,14 +25,19 @@ class UføreVedtakRepositoryTest {
     private val behandlingRef = UUID.randomUUID()
 
     @Test
-    fun `skal fjerne tag på nyeste uførevedtak for behandling`() {
+    fun `skal markere alle uførevedtak som ikke allerede er fjernet`() {
 
         dataSource.transaction { connection ->
             val repository = UføreVedtakRepository(connection)
 
-            val eldreVedtak = UføreVedtak(
+            val vedtakSomIkkeErFjernet = UføreVedtak(
                 referanse = behandlingRef,
                 virkningsdato = LocalDate.of(2026, 1, 1),
+                status = UføreVedtakStatus.INNVILGELSE
+            )
+            val vedtakSomAlleredeErFjernet = UføreVedtak(
+                referanse = behandlingRef,
+                virkningsdato = LocalDate.of(2026, 2, 1),
                 status = UføreVedtakStatus.INNVILGELSE
             )
             val nyesteVedtak = UføreVedtak(
@@ -41,14 +46,26 @@ class UføreVedtakRepositoryTest {
                 status = UføreVedtakStatus.ENDRET
             )
 
-            repository.lagreUføreVedtak(behandlingRef, eldreVedtak)
+            repository.lagreUføreVedtak(behandlingRef, vedtakSomAlleredeErFjernet)
+            repository.fjernUføreVedtakTag(behandlingRef, "bruker1")
+
+            repository.lagreUføreVedtak(behandlingRef, vedtakSomIkkeErFjernet)
             repository.lagreUføreVedtak(behandlingRef, nyesteVedtak)
 
-            repository.fjernUføreVedtakTag(behandlingRef, "test_bruker")
+            repository.fjernUføreVedtakTag(behandlingRef, "bruker2")
 
-            val vedtak = repository.hentAktiveUføreVedtakForBehandling(behandlingRef)
-            assertEquals(eldreVedtak.status, vedtak?.status);
-            assertEquals(eldreVedtak.virkningsdato, vedtak?.virkningsdato);
+            val antallVedtakFjernetAvBruker2 = connection.queryList("""
+                SELECT vedtak_fjernet_av FROM ufore_vedtak WHERE behandling_ref = ? AND vedtak_fjernet_av = 'bruker2'
+            """.trimIndent()) {
+                setParams {
+                    setUUID(1, behandlingRef)
+                }
+                setRowMapper {
+                    it.getString("vedtak_fjernet_av")
+                }
+            }.size
+
+            assertEquals(2, antallVedtakFjernetAvBruker2);
 
         }
     }
