@@ -3,6 +3,7 @@ package no.nav.aap.oppgave.oppdater.hendelse
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -29,6 +30,7 @@ data class OppgaveOppdatering(
     val vurderingsbehov: List<String>,
     val årsakTilOpprettelse: String?,
     val mottattDokumenter: List<MottattDokument>,
+    val uføreVedtak: UføreVedtak? = null,
     val tattAvVentAutomatisk: Boolean = false,
     val reserverTilPerAvklaringsbehov: Map<String, String> = emptyMap(),
     val relevanteIdenter: List<String> = emptyList(),

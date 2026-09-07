@@ -6,13 +6,17 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakResultatDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
+import no.nav.aap.oppgave.verdityper.UføreVedtakStatus
 import org.slf4j.LoggerFactory
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 
@@ -42,6 +46,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         tattAvVentAutomatisk = !this.erPåVent && this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
+        uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse)
     )
 }
 
@@ -75,6 +80,19 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
             referanse = it.referanse.verdi,
         )
     }
+}
+
+private fun UførevedtakDto.tilUførevedtak(behandlingRef: UUID) : UføreVedtak {
+    return UføreVedtak(
+        referanse = behandlingRef,
+        virkningsdato = this.virkningsdato,
+        status = when (this.resultat) {
+            UførevedtakResultatDto.OPPHØR -> UføreVedtakStatus.OPPHØR
+            UførevedtakResultatDto.AVSLAG -> UføreVedtakStatus.AVSLAG
+            UførevedtakResultatDto.ENDRET -> UføreVedtakStatus.ENDRET
+            UførevedtakResultatDto.INNVILGELSE -> UføreVedtakStatus.INNVILGELSE
+        },
+    )
 }
 
 private fun TypeBehandling.tilBehandlingstype() =

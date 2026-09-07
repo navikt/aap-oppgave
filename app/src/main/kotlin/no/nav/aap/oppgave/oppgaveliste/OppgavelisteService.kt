@@ -21,6 +21,8 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import java.util.UUID
 
 const val maksOppgaver = 50
@@ -28,6 +30,7 @@ const val maksOppgaver = 50
 class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
+    private val uføreVedtakRepository: UføreVedtakRepository,
     private val enhetService: EnhetService,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
@@ -40,7 +43,8 @@ class OppgavelisteService(
 
         return oppgaver.map { oppgave ->
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
-            oppgave.leggPåMarkeringer(markeringer)
+            val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(oppgave.behandlingRef)
+            oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uførevedtak)
         }
     }
 
@@ -48,7 +52,8 @@ class OppgavelisteService(
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null) {
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
-            return oppgave.leggPåMarkeringer(markeringer)
+            val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingReferanse.referanse)
+            return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer)
         }
         return oppgave
     }
@@ -117,7 +122,8 @@ class OppgavelisteService(
             finnOppgaverDto.oppgaver.map { oppgave ->
                 val behandlingRef = oppgave.behandlingRef
                 val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
-                oppgave.leggPåMarkeringer(markeringer)
+                val uføreVedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingRef)
+                oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uføreVedtak)
             }
 
         return FinnOppgaverDto(
@@ -144,7 +150,10 @@ class OppgavelisteService(
         ).map {
             it.leggPåMarkeringer(
                 markeringRepository.hentGjeldendeMarkeringerForBehandling(it.behandlingRef)
+            ).leggPåUføreVedtak(
+                uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(it.behandlingRef)
             )
+
         }.hentPersonNavn()
 
         val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
@@ -181,6 +190,9 @@ class OppgavelisteService(
 
     private fun Oppgave.leggPåMarkeringer(markeringer: List<Markering>): Oppgave =
         this.copy(markeringer = markeringer)
+
+    private fun Oppgave.leggPåUføreVedtak(uførevedtak: UføreVedtak?): Oppgave =
+        this.copy(uføreVedtak = uførevedtak)
 
     private fun List<Oppgave>.filtrerPåTilgang(
         token: OidcToken,
