@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SaksnummerPathParam
 import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.enhet.UTLAND_ENHETER
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
@@ -105,7 +106,8 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
         harFortroligAdresse = harFortroligAdresse == true,
         erSkjermet = erSkjermet == true
     ),
-    harUlesteDokumenter = harUlesteDokumenter == true
+    harUlesteDokumenter = harUlesteDokumenter == true,
+    tilhørerUtlandEnhet = enhetForKø in UTLAND_ENHETER
 )
 
 private fun Oppgave.tilOppgavePåBehandlingResponse(): OppgavePåBehandlingResponse {
