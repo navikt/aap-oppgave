@@ -110,12 +110,12 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
         erSkjermet = erSkjermet == true
     ),
     harUlesteDokumenter = harUlesteDokumenter == true,
-    tilhørerUtlandEnhet = enhetForKø in UTLAND_ENHETER
+    tilhørerUtlandEnhet = enhetForKø in UTLAND_ENHETER.map { it.kode }
 )
 
 private fun Oppgave.tilOppgavePåBehandlingResponse(): OppgavePåBehandlingResponse {
     return OppgavePåBehandlingResponse(
-        id = id,
+        id = requireNotNull(id) { "Oppgave må ha ID" },
         versjon = versjon,
         behandlingsreferanse = behandlingRef,
         reservertAvIdent = reservertAv,
