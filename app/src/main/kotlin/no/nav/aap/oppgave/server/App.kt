@@ -147,7 +147,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 hentOppgaveApi(dataSource, prometheus)
                 hentOppgaveVisningsinformasjonApi(dataSource, enhetService, prometheus)
                 oppgavelisteApi(dataSource, enhetService, norgGateway, prometheus)
-                hentOppgaveEnhetApi(dataSource, enhetService, norgGateway, prometheus)
+                hentOppgaveEnhetApi(dataSource, enhetService, prometheus)
                 mineOppgaverApi(dataSource, enhetService, norgGateway, prometheus)
                 søkApi(dataSource, enhetService, norgGateway, prometheus)
                 markeringApi(dataSource, prometheus, nomApiGateway)
