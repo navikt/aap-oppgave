@@ -18,6 +18,7 @@ data class OppgaveVisningsinformasjonResponse(
     val utløptVenteInfo: VenteInformasjonResponse?,
     val skjermingInfo: SkjermingInfoResponse,
     val harUlesteDokumenter: Boolean,
+    val tilhørerUtlandEnhet: Boolean,
 )
 
 data class VenteInformasjonResponse(

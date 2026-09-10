@@ -16,4 +16,6 @@ enum class Enhet(val kode: String, val visningsnavn: String? = null) {
 
 val NAY_ENHETER = listOf(Enhet.NAY_UTLAND, Enhet.NAY_EGNE_ANSATTE, Enhet.NAY)
 
+val UTLAND_ENHETER = listOf(Enhet.NAV_UTLAND, Enhet.NAY_UTLAND)
+
 val ENHETER_REGION_SUNNFJORD = listOf(Enhet.NAV_KINN, Enhet.NAV_ASKVOLL, Enhet.NAV_SUNNFJORD_YTRE_SOGN)
