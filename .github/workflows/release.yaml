@@ -27,10 +27,7 @@ jobs:
     uses: navikt/aap-workflows/.github/workflows/gradle-build.yml@main
     secrets: inherit
     with:
-      publish-typescript: true
-      typescript-enums: false
       app-navn: oppgave
-      generate-openapi-command: ./gradlew genererOpenApiJson
 
   publiser-kontrakt:
     name: Publiser kontrakt
@@ -48,7 +45,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           java-version: 21
           distribution: 'temurin'

@@ -41,6 +41,7 @@ import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -55,6 +56,7 @@ class OppdaterOppgaveService(
     private val tilbakekrevingRepository: TilbakekrevingRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
     private val markeringService: MarkeringService,
+    private val uføreVedtakRepository: UføreVedtakRepository,
     private val ansattInfoGateway: AnsattInfoGateway,
 ) {
 
@@ -78,6 +80,8 @@ class OppdaterOppgaveService(
         markeringService.opprettMarkeringHendelser(oppgaveOppdatering).let { endringer ->
             if (endringer.any { it.erEndret() }) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
         }
+
+        if (oppgaveOppdatering.uføreVedtak != null) uføreVedtakRepository.lagreUføreVedtak(oppgaveOppdatering.referanse, oppgaveOppdatering.uføreVedtak)
 
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
     }
@@ -240,14 +244,17 @@ class OppdaterOppgaveService(
 
     private fun håndterReservasjonFraBehandlingsflyt(
         oppgaveOppdatering: OppgaveOppdatering,
-        oppgaveId: OppgaveId
+        oppgaveId: OppgaveId,
+        avklaringsbehov: AvklaringsbehovHendelse
     ) {
-        if (oppgaveOppdatering.reserverTil != null) {
+        val reservasjonForAvklaringsbehov =
+            oppgaveOppdatering.reserverTilPerAvklaringsbehov[avklaringsbehov.avklaringsbehovKode.kode]
+        if (reservasjonForAvklaringsbehov != null) {
             reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                 oppgaveOppdatering.referanse,
-                oppgaveOppdatering.reserverTil
+                reservasjonForAvklaringsbehov
             )
-            log.info("Oppgave $oppgaveId automatisk reservert ${oppgaveOppdatering.reserverTil}.")
+            log.info("Oppgave $oppgaveId automatisk reservert $reservasjonForAvklaringsbehov pga reservasjon fra behandlingsflyt.")
         }
     }
 
@@ -390,7 +397,8 @@ class OppdaterOppgaveService(
 
         håndterReservasjonFraBehandlingsflyt(
             oppgaveOppdatering,
-            eksisterendeOppgave.oppgaveId()
+            eksisterendeOppgave.oppgaveId(),
+            avklaringsbehov
         )
 
     }
@@ -479,7 +487,7 @@ class OppdaterOppgaveService(
         log.info("Ny oppgave(id=${oppgaveId.id}) ble opprettet med status ${avklaringsbehovHendelse.status} for avklaringsbehov ${avklaringsbehovHendelse.avklaringsbehovKode}.")
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
         prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(oppgaveOppdatering, oppgaveId, avklaringsbehovHendelse)
-        håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, oppgaveId)
+        håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, oppgaveId, avklaringsbehovHendelse)
     }
 
     private fun hentVeilederSykefraværoppfølging(personIdent: String): String? =
@@ -606,7 +614,7 @@ class OppdaterOppgaveService(
             harFortroligAdresse = harFortroligAdresse,
             erSkjermet = erSkjermet,
             returInformasjon = returInformasjon,
-            harUlesteDokumenter = harUlesteDokumenter
+            harUlesteDokumenter = harUlesteDokumenter,
         )
     }
 

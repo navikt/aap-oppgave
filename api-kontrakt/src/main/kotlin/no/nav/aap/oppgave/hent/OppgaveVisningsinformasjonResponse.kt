@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.hent
 
 import no.nav.aap.oppgave.ReturInformasjonDto
+import no.nav.aap.oppgave.UførevedtakRespons
 import no.nav.aap.oppgave.markering.MarkeringDto
 import java.time.LocalDate
 
@@ -12,6 +13,7 @@ data class OppgaveVisningsinformasjonResponse(
     val reservertAvIdent: String?,
     val returInformasjon: ReturInformasjonDto?,
     val markeringer: List<MarkeringDto>,
+    val uførevedtakinfo: UførevedtakRespons?,
     val påVentInfo: VenteInformasjonResponse?,
     val utløptVenteInfo: VenteInformasjonResponse?,
     val skjermingInfo: SkjermingInfoResponse,

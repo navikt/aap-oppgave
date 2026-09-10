@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.liste.PersonOgEnhetResponse
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.prometheus
 import org.flywaydb.core.api.logging.LogFactory
+import no.nav.aap.oppgave.uføreVedtak.tilUføreVedtakRespsons
 import java.time.Duration
 import kotlin.time.measureTimedValue
 
@@ -97,7 +98,7 @@ object OppgavelisteUtils {
             vurderingsbehov = vurderingsbehov,
             årsakTilOpprettelse = årsakTilOpprettelse,
             oppgaveMetadata = OppgaveMetadataResponse(
-                id = requireNotNull(id) { "Oppgave må ha ID" },
+                id = id,
                 versjon = versjon,
                 status = status,
                 opprettetTidspunkt = opprettetTidspunkt
@@ -110,7 +111,7 @@ object OppgavelisteUtils {
                 tilbakekrevingUrl = tilbakekrevingsVars?.tilbakekrevings_URL
             ),
             personOgEnhet = PersonOgEnhetResponse(
-                personIdent = requireNotNull(personIdent) { "Oppgave må ha personIdent" },
+                personIdent = personIdent,
                 personNavn = personNavn,
                 enhet = enhet,
                 oppfølgingsenhet = oppfølgingsenhet,
@@ -151,7 +152,8 @@ object OppgavelisteUtils {
                         forrigeKvalitetssikrerIdent = it.forrigeKvalitetssikrerIdent,
                         forrigeKvalitetssikrerNavn = it.forrigeKvalitetssikrerNavn
                     )
-                }
+                },
+                uføreVedtak = uføreVedtak?.tilUføreVedtakRespsons()
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,

@@ -7,6 +7,7 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -43,8 +44,8 @@ data class ForrigeKvalitetssikrer(
 )
 
 data class Oppgave(
-    val id: Long? = null,
-    val personIdent: String? = null,
+    val id: Long,
+    val personIdent: String,
     val personNavn: String? = null,
     val saksnummer: String? = null,
     val behandlingRef: UUID,
@@ -81,6 +82,7 @@ data class Oppgave(
     val markeringer: List<Markering> = emptyList(),
     val tilbakekrevingsVars: TilbakekrevingsVars? = null,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrer? = null,
+    val uføreVedtak: UføreVedtak? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.
@@ -104,7 +106,7 @@ data class Oppgave(
     }
 
     fun oppgaveId() = OppgaveId(
-        requireNotNull(id) { "Oppgave har ingen id" },
+        id,
         versjon,
     )
 

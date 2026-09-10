@@ -35,6 +35,7 @@ import no.nav.aap.tilgang.Drift
 import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 
 fun NormalOpenAPIRoute.driftApi(
     dataSource: DataSource,
@@ -50,10 +51,11 @@ fun NormalOpenAPIRoute.driftApi(
                     OppgavelisteService(
                         OppgaveRepository(connection),
                         MarkeringRepository(connection),
+                        UføreVedtakRepository(connection),
                         enhetService,
                     )
                         .hentOppgaverForBehandling(params.referanse)
-                        .map { it.mapTilOppgaveDriftsinfo(historikkRepository.hentHistorikkForOppgave(it.id!!)) }
+                        .map { it.mapTilOppgaveDriftsinfo(historikkRepository.hentHistorikkForOppgave(it.id)) }
                         .sortedByDescending { it.opprettetTidspunkt }
                 }
 
@@ -183,7 +185,7 @@ private fun Filter.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilter>>
 )
 
 private fun Oppgave.mapTilOppgaveDriftsinfo(historikk: List<OppgaveHistorikk>) = OppgaveDriftsinfoDTO(
-    oppgaveId = id!!,
+    oppgaveId = id,
     behandlingRef = behandlingRef,
     status = status,
     enhet = enhet,

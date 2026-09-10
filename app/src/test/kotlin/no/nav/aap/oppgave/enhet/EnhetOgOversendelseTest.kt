@@ -90,6 +90,8 @@ class EnhetOgOversendelseTest {
     private val tid = generateSequence(LocalDateTime.of(2022, 1, 1, 12, 0)) { it.plusDays(1) }.iterator()
 
     fun oppgave(avklaringsbehov: Definisjon = Definisjon.AVKLAR_SYKDOM, enhet: String = "1234") = Oppgave(
+        id = 1L,
+        personIdent = "1234",
         enhet = enhet,
         saksnummer = "SAK",
         behandlingRef = behandlingRef,

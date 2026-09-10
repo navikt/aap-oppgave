@@ -856,7 +856,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         val standardOppgave = Oppgave(
             id = row.getLong("ID"),
-            personIdent = row.getStringOrNull("PERSON_IDENT"),
+            personIdent = row.getString("PERSON_IDENT"),
             saksnummer = row.getStringOrNull("SAKSNUMMER"),
             behandlingRef = row.getUUID("BEHANDLING_REF"),
             journalpostId = row.getLongOrNull("JOURNALPOST_ID"),

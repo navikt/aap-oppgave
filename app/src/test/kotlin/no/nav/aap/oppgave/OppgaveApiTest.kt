@@ -15,6 +15,8 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakResultatDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.dokumenter.TilbakekrevingBehandlingsstatus
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilRetur
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
@@ -323,7 +325,7 @@ class OppgaveApiTest {
                         )
                     )
                 ),
-                reserverTil = "U12345"
+                reserverTilPerAvklaringsbehov = mapOf(Definisjon.AVKLAR_SYKDOM.kode.name to "U12345")
             )
         )
 
@@ -332,7 +334,7 @@ class OppgaveApiTest {
         )!!
 
         assertThat(oppgave.reservertAvIdent)
-            .withFailMessage { "reserverTil skal implisere at oppgaven blir reservert til denne personen" }
+            .withFailMessage { "reserverTilPerAvklaringsbehov skal implisere at oppgaven blir reservert til denne personen" }
             .isEqualTo("U12345")
     }
 
@@ -383,7 +385,7 @@ class OppgaveApiTest {
             val oppgaver = OppgaveRepository(it).hentAlleÅpneOppgaver()
             assertThat(oppgaver).hasSize(1)
             assertThat(oppgaver.first().saksnummer).isEqualTo(saksnummer.toString())
-            val tilbakekrevingsVars = TilbakekrevingRepository(it).hent(oppgaver.first().id!!)
+            val tilbakekrevingsVars = TilbakekrevingRepository(it).hent(oppgaver.first().id)
             assertThat(tilbakekrevingsVars).isNotNull
 
             assertThat(oppgaver.first().id).isEqualTo(oppgaver.first().id)
@@ -557,6 +559,41 @@ class OppgaveApiTest {
         assertThat(avreserverteOppgaver).hasSize(2)
         assertThat(avreserverteOppgaver?.all { it.reservertAv == null && it.reservertTidspunkt == null }).isTrue()
 
+    }
+
+    @Test
+    fun `uførevedtak skal sendes med som tag i oppgavelisten`() {
+        val behandlingRef = BehandlingReferanse(UUID.randomUUID())
+        val saksnummer = "123456"
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer,
+                referanse = behandlingRef.referanse,
+                behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    )
+                ),
+                uførevedtak = UførevedtakDto(
+                    resultat = UførevedtakResultatDto.INNVILGELSE,
+                    virkningsdato = LocalDate.now()
+                )
+            )
+        )
+
+        val oppgave = hentOppgaveVisningsinfo(behandlingRef.referanse)
+        plukkOppgave(oppgave!!.oppgaveId())
+
+        val mineOppgaver = hentMineOppgaver()
+        assertThat(mineOppgaver.oppgaver).hasSize(1)
+
+        val tags = mineOppgaver.oppgaver.first().oppgavelisteTags
+        assertThat(tags.uføreVedtak).isNotNull()
     }
 
     @Test
@@ -772,7 +809,7 @@ class OppgaveApiTest {
 
     @Test
     fun `Utleder adressebeskyttelse riktig i søk`() {
-        val saksnummer1 = "100002"
+        val saksnummer1 = "100002abc"
         val referanse1 = UUID.randomUUID()
 
         oppdaterOppgaver(
@@ -1177,8 +1214,9 @@ class OppgaveApiTest {
         behandlingStatus: Status = Status.OPPRETTET,
         behandlingsbehov: List<Behandlingsbehov>,
         typeBehandling: TypeBehandling = TypeBehandling.Førstegangsbehandling,
-        reserverTil: String? = null,
-        relaterteIdenter: List<String>? = emptyList()
+        reserverTilPerAvklaringsbehov: Map<String, String> = emptyMap(),
+        relaterteIdenter: List<String>? = emptyList(),
+        uførevedtak: UførevedtakDto? = null
     ): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
         val avklaringsbehovHendelseDtoListe = behandlingsbehov.map { avklaringsbehovHendelse ->
@@ -1218,10 +1256,11 @@ class OppgaveApiTest {
             årsakerTilBehandling = listOf("SØKNAD"),
             relevanteIdenterPåBehandling = relaterteIdenter,
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
+            uføreVedtak = uførevedtak,
             mottattDokumenter = listOf(),
-            reserverTil = reserverTil,
+            reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov,
             vurderingsbehov = listOf("SØKNAD"),
-            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD
+            årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
         )
     }
 

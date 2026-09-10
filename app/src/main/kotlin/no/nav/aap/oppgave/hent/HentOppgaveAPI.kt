@@ -19,6 +19,8 @@ import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.uføreVedtak.tilUføreVedtakRespsons
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentOppgaveApi(
@@ -59,7 +61,6 @@ fun NormalOpenAPIRoute.hentOppgaveApi(
 fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
     dataSource: DataSource,
     enhetService: EnhetService,
-    norgGateway: INorgGateway,
     prometheus: PrometheusMeterRegistry
 ) =
     route("/{referanse}/hent-oppgave-visningsinformasjon").get<BehandlingReferanse, OppgaveVisningsinformasjonResponse> { request ->
@@ -68,6 +69,7 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
             OppgavelisteService(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
+                UføreVedtakRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)
         }
@@ -80,13 +82,14 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
     }
 
 private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinformasjonResponse(
-    id = requireNotNull(id) { "Oppgave må ha ID" },
+    id = id,
     versjon = versjon,
     saksnummer = saksnummer,
     reservertAvNavn = reservertAvNavn,
     reservertAvIdent = reservertAv,
     returInformasjon = returInformasjon?.tilReturInformasjonDto(),
     markeringer = markeringer.tilDto(),
+    uførevedtakinfo = uføreVedtak?.tilUføreVedtakRespsons(),
     påVentInfo = påVentTil?.let {
         VenteInformasjonResponse(
             påVentTil = it,
@@ -112,7 +115,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
 
 private fun Oppgave.tilOppgavePåBehandlingResponse(): OppgavePåBehandlingResponse {
     return OppgavePåBehandlingResponse(
-        id = requireNotNull(id) { "Oppgave må ha ID" },
+        id = id,
         versjon = versjon,
         behandlingsreferanse = behandlingRef,
         reservertAvIdent = reservertAv,
