@@ -115,7 +115,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
 
 private fun Oppgave.tilOppgavePåBehandlingResponse(): OppgavePåBehandlingResponse {
     return OppgavePåBehandlingResponse(
-        id = id,
+        id = requireNotNull(id) { "Oppgave må ha ID" },
         versjon = versjon,
         behandlingsreferanse = behandlingRef,
         reservertAvIdent = reservertAv,
