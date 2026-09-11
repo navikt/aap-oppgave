@@ -35,6 +35,7 @@ data class OpprettOppgave(
     val harFortroligAdresse: Boolean,
     val erSkjermet: Boolean = false,
     val harUlesteDokumenter: Boolean = false,
+    val forespørselSendtTilBehandler: Boolean = false,
 ) {
     init {
         if (journalpostId == null) {

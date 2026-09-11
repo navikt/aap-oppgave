@@ -34,6 +34,7 @@ import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -41,10 +42,9 @@ import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
-import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 class OppdaterOppgaveService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
@@ -85,7 +85,6 @@ class OppdaterOppgaveService(
 
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
     }
-
 
     private fun oppdaterOppgaver(
         oppgaveOppdatering: OppgaveOppdatering,
@@ -184,7 +183,8 @@ class OppdaterOppgaveService(
                 ansattInfoGateway.hentAnsattNavnHvisFinnes(
                     forrigeKvalitetssikrer
                 )
-            }
+            },
+            forespørselSendtTilBehandler = oppgaveOppdatering.forespørselSendtTilBehandler
         )
 
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
@@ -475,6 +475,7 @@ class OppdaterOppgaveService(
             harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
             returInformasjon = utledReturFraToTrinn(avklaringsbehovHendelse),
             saksnummer = oppgaveOppdatering.saksnummer ?: utledSaksnummerFraIdent(oppgaveOppdatering.personIdent),
+            forespørselSendtTilBehandler = oppgaveOppdatering.forespørselSendtTilBehandler,
         )
         val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
@@ -590,6 +591,7 @@ class OppdaterOppgaveService(
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean,
         returInformasjon: ReturInfo?,
+        forespørselSendtTilBehandler: Boolean,
         saksnummer: String? = null,
     ): OpprettOppgave {
         return OpprettOppgave(
@@ -615,6 +617,7 @@ class OppdaterOppgaveService(
             erSkjermet = erSkjermet,
             returInformasjon = returInformasjon,
             harUlesteDokumenter = harUlesteDokumenter,
+            forespørselSendtTilBehandler = forespørselSendtTilBehandler,
         )
     }
 

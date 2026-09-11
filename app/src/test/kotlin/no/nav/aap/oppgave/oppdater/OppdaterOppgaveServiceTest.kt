@@ -958,6 +958,7 @@ class OppdaterOppgaveServiceTest {
                 MottattDokumentDto(
                     type = InnsendingType.LEGEERKLÆRING,
                     referanse = InnsendingReferanse(id = InnsendingId(UUID.randomUUID())),
+                    mottattTidspunkt = LocalDateTime.now(),
                 )
             )
         )
