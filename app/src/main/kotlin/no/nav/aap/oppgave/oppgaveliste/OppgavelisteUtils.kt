@@ -153,7 +153,8 @@ object OppgavelisteUtils {
                         forrigeKvalitetssikrerNavn = it.forrigeKvalitetssikrerNavn
                     )
                 },
-                uføreVedtak = uføreVedtak?.tilUføreVedtakRespsons()
+                uføreVedtak = uføreVedtak?.tilUføreVedtakRespsons(),
+                forespørselSendtTilBehandler = forespørselSendtTilBehandler == true
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,

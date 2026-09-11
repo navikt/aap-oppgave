@@ -1,9 +1,9 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -37,6 +37,7 @@ data class OppgaveOppdatering(
     val totaltFeilutbetaltBeløp: BigDecimal? = null,
     val tilbakekrevingsUrl: String? = null,
     val behandlingMetadata: BehandlingMetadata? = null,
+    val forespørselSendtTilBehandler: Boolean = false,
 ) {
     init {
         require(reserverTilPerAvklaringsbehov.values.none { it == KELVIN }) { "kan ikke reservere oppgave til KELVIN" }

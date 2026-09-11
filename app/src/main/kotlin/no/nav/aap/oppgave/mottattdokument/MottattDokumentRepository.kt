@@ -59,6 +59,7 @@ class MottattDokumentRepository(private val connection: DBConnection) {
             type = row.getString("type"),
             behandlingRef = row.getUUID("behandling_ref"),
             referanse = row.getString("referanse"),
+            opprettetTidspunkt = row.getLocalDateTime("opprettet_tidspunkt")
         )
     }
 
