@@ -42,6 +42,11 @@ private fun responsFraMsGraph(): String {
                         "id": "00000000-0000-4000-8000-000000000001",
                         "displayName": "0000-GA-ENHET_superNav!",
                         "mailNickname": "superNav!"
+                    },
+                    {
+                        "id": "00000000-0000-4000-8000-000000000002",
+                        "displayName": "0000-GA-ENHET_4491",
+                        "mailNickname": "4491"
                     }
                 ]
             }
