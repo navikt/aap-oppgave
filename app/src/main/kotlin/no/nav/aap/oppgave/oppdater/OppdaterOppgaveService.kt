@@ -44,7 +44,7 @@ import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 class OppdaterOppgaveService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
