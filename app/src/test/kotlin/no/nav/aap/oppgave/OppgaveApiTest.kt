@@ -14,6 +14,10 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.ÅrsakTilOpprettelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingId
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingReferanse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakResultatDto
@@ -1193,6 +1197,104 @@ class OppgaveApiTest {
         assertThat(response2.tilstand!!.enhet).isEqualTo("4491")
     }
 
+    @Test
+    fun `forespørselSendtTilBehandler er true når legeerklæring er bestilt men ikke besvart`() {
+        val saksnummer = "555001"
+        val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
+        val nå = LocalDateTime.now()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer,
+                referanse = behandlingsReferanse.referanse,
+                behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                ),
+                // Legeerklæring mottatt før forespørselen ble sendt -> teller ikke som svar
+                mottattDokumenter = listOf(
+                    MottattDokumentDto(
+                        type = InnsendingType.LEGEERKLÆRING,
+                        referanse = InnsendingReferanse(id = InnsendingId(UUID.randomUUID())),
+                        mottattTidspunkt = nå.minusHours(1),
+                    )
+                ),
+            )
+        )
+
+        val oppgaver = hentOppgaveliste(
+            request = OppgavelisteRequest(
+                filterId = testFilterId,
+                enheter = setOf("superNav!"),
+                paging = Paging()
+            )
+        )
+        assertThat(oppgaver).isNotNull
+        val oppgave = oppgaver!!.oppgaver.single { it.avklaringsbehovKode == Definisjon.AVKLAR_SYKDOM.kode.name }
+        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isTrue()
+    }
+
+    @Test
+    fun `forespørselSendtTilBehandler er false når nyere legeerklæring er mottatt`() {
+        val saksnummer = "555002"
+        val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
+        val nå = LocalDateTime.now()
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer,
+                referanse = behandlingsReferanse.referanse,
+                behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                ),
+                // Legeerklæring mottatt etter at forespørselen ble sendt -> forespørsel besvart
+                mottattDokumenter = listOf(
+                    MottattDokumentDto(
+                        type = InnsendingType.LEGEERKLÆRING,
+                        referanse = InnsendingReferanse(id = InnsendingId(UUID.randomUUID())),
+                        mottattTidspunkt = nå.plusHours(1),
+                    )
+                ),
+            )
+        )
+
+        val oppgaver = hentOppgaveliste(
+            request = OppgavelisteRequest(
+                filterId = testFilterId,
+                enheter = setOf("superNav!"),
+                paging = Paging()
+            )
+        )
+        assertThat(oppgaver).isNotNull
+        val oppgave = oppgaver!!.oppgaver.single { it.avklaringsbehovKode == Definisjon.AVKLAR_SYKDOM.kode.name }
+        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isFalse()
+    }
+
     private data class Behandlingsbehov(
         val definisjon: Definisjon,
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1216,7 +1318,8 @@ class OppgaveApiTest {
         typeBehandling: TypeBehandling = TypeBehandling.Førstegangsbehandling,
         reserverTilPerAvklaringsbehov: Map<String, String> = emptyMap(),
         relaterteIdenter: List<String>? = emptyList(),
-        uførevedtak: UførevedtakDto? = null
+        uførevedtak: UførevedtakDto? = null,
+        mottattDokumenter: List<MottattDokumentDto> = emptyList(),
     ): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
         val avklaringsbehovHendelseDtoListe = behandlingsbehov.map { avklaringsbehovHendelse ->
@@ -1257,7 +1360,7 @@ class OppgaveApiTest {
             relevanteIdenterPåBehandling = relaterteIdenter,
             erPåVent = avklaringsbehovHendelseDtoListe.any { it.avklaringsbehovDefinisjon.erVentebehov() && it.status != no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET },
             uføreVedtak = uførevedtak,
-            mottattDokumenter = listOf(),
+            mottattDokumenter = mottattDokumenter,
             reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov,
             vurderingsbehov = listOf("SØKNAD"),
             årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,

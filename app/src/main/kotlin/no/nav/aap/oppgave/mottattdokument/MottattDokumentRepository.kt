@@ -54,11 +54,33 @@ class MottattDokumentRepository(private val connection: DBConnection) {
         }
     }
 
+    fun hentSisteDokumentAvType(behandlingRef: UUID, type: String): MottattDokument? {
+        val sql = """
+                SELECT * FROM mottatt_dokument
+                WHERE behandling_ref = ?
+                AND type = ?
+                ORDER BY opprettet_tidspunkt DESC
+                LIMIT 1
+            """.trimIndent()
+
+        val dokument = connection.queryFirstOrNull(sql) {
+            setParams {
+                setUUID(1, behandlingRef)
+                setString(2, type)
+            }
+            setRowMapper {
+                mottattDokumentMapper(it)
+            }
+        }
+        return dokument
+    }
+
     private fun mottattDokumentMapper(row: Row): MottattDokument {
         return MottattDokument(
             type = row.getString("type"),
             behandlingRef = row.getUUID("behandling_ref"),
             referanse = row.getString("referanse"),
+            opprettetTidspunkt = row.getLocalDateTime("opprettet_tidspunkt")
         )
     }
 
