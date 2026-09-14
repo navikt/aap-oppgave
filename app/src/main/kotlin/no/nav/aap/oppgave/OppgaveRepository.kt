@@ -61,9 +61,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 retur_aarsaker,
                 retur_returnert_av,
                 aarsak_til_opprettelse,
-                er_skjermet
+                er_skjermet,
+                FORESPORSEL_SENDT_TIL_BEHANDLER
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -97,6 +98,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(26, oppgave.returInformasjon?.endretAv)
                 setString(27, oppgave.årsakTilOpprettelse)
                 setBoolean(28, oppgave.erSkjermet)
+                setBoolean(29, oppgave.forespørselSendtTilBehandler)
             }
         }
         return OppgaveId(id, 0L)
@@ -229,6 +231,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         utløptVentefrist: LocalDate? = null,
         forrigeKvalitetssikrerIdent: String? = null,
         forrigeKvalitetssikrerNavn: String? = null,
+        forespørselSendtTilBehandler: Boolean = false,
     ) {
         val query = """
             UPDATE 
@@ -258,6 +261,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 UTLOEPT_VENTEFRIST = ?,
                 FORRIGE_KVALITETSSIKRER_IDENT = ?,
                 FORRIGE_KVALITETSSIKRER_NAVN = ?,
+                FORESPORSEL_SENDT_TIL_BEHANDLER = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -288,8 +292,9 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDate(20, utløptVentefrist)
                 setString(21, forrigeKvalitetssikrerIdent)
                 setString(22, forrigeKvalitetssikrerNavn)
-                setLong(23, oppgaveId.id)
-                setLong(24, oppgaveId.versjon)
+                setBoolean(23, forespørselSendtTilBehandler)
+                setLong(24, oppgaveId.id)
+                setLong(25, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -904,6 +909,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                     forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
                 )
             },
+            forespørselSendtTilBehandler = row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER")
         )
 
         val behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
@@ -1035,7 +1041,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPGAVE.AARSAK_TIL_OPPRETTELSE,
             OPPGAVE.UTLOEPT_VENTEFRIST,
             OPPGAVE.FORRIGE_KVALITETSSIKRER_IDENT,
-            OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN
+            OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN,
+            OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER
         """.trimIndent()
 
     }

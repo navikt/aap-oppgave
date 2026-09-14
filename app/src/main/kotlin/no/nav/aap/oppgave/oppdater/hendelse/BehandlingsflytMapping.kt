@@ -1,10 +1,12 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
+import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakResultatDto
@@ -12,11 +14,11 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.UføreVedtakStatus
 import org.slf4j.LoggerFactory
-import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 
@@ -46,8 +48,36 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         tattAvVentAutomatisk = !this.erPåVent && this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
-        uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse)
+        uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse),
+        forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter)
     )
+}
+
+private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
+    mottattDokumenter: List<MottattDokumentDto>
+): Boolean {
+    val bestillLegeerklæring = this.firstOrNull {
+        it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING
+    } ?: return false
+
+    val sisteOpprettetTidspunkt = bestillLegeerklæring.endringer
+        .filter { it.status == Status.OPPRETTET }
+        .maxByOrNull { it.tidsstempel }
+        ?.tidsstempel
+        ?: return false
+
+    val mottattLegeerklæring = mottattDokumenter
+        .filter { it.type == InnsendingType.LEGEERKLÆRING }
+
+    return when {
+        // Forespørsel er sendt, men ingen legeerklæring er mottatt
+        mottattLegeerklæring.isEmpty() -> true
+
+        // Forespørselen regnes som besvart hvis en legeerklæring er mottatt etter at forespørselen er sendt
+        mottattLegeerklæring.any { it.mottattTidspunkt.isAfter(sisteOpprettetTidspunkt) } -> false
+
+        else -> true
+    }
 }
 
 private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformasjon? {
@@ -78,6 +108,7 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
             type = it.type.name,
             behandlingRef = behandlingRef,
             referanse = it.referanse.verdi,
+            mottattTidspunkt = it.mottattTidspunkt,
         )
     }
 }

@@ -56,6 +56,7 @@ class MottattDokumentServiceTest {
             type = InnsendingType.LEGEERKLÆRING.name,
             behandlingRef = behandlingRef,
             referanse = UUID.randomUUID().toString(),
+            mottattTidspunkt = LocalDateTime.now()
         )
 
     private fun oppgave(behandlingRef: UUID) = OpprettOppgave(
