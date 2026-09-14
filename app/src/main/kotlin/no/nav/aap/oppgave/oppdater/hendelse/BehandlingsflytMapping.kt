@@ -63,7 +63,6 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
     val sisteOpprettetTidspunkt = bestillLegeerklæring.endringer
         .filter { it.status == Status.OPPRETTET }
         .maxByOrNull { it.tidsstempel }
-
         ?.tidsstempel
         ?: return false
 
