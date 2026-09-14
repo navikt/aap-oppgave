@@ -25,7 +25,6 @@ import no.nav.aap.oppgave.filter.OpprettFilter
 import no.nav.aap.oppgave.filter.tilDto
 import no.nav.aap.oppgave.historikk.OppgaveHistorikk
 import no.nav.aap.oppgave.historikk.OppgaveHistorikkRepository
-import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.server.authenticate.ident
@@ -36,11 +35,11 @@ import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.tilgang.DriftLes
 
 fun NormalOpenAPIRoute.driftApi(
     dataSource: DataSource,
     enhetService: EnhetService,
-    norgGateway: INorgGateway,
 ) {
     route("/api/drift") {
         route("/oppgave/behandling/{referanse}") {
@@ -65,7 +64,7 @@ fun NormalOpenAPIRoute.driftApi(
 
         route("/filter") {
             authorizedGet<Unit, DriftFilterResponsDTO>(
-                RollerConfig(listOf(Drift))
+                RollerConfig(listOf(DriftLes))
             ) { _ ->
                 val respons = dataSource.transaction(readOnly = true) { connection ->
                     val filterRepo = FilterRepository(connection)

@@ -163,7 +163,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 // Motor-API
                 motorApi(dataSource, påkrevdeRollerMotor)
                 // Drifts-API
-                driftApi(dataSource, enhetService, norgGateway)
+                driftApi(dataSource, enhetService)
             }
         }
         actuatorApi(prometheus)

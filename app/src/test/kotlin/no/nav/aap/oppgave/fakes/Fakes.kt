@@ -127,6 +127,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         System.setProperty("AAP_KVALITETSSIKRER", "kvalitetssikrer-rolle")
         System.setProperty("AAP_BESLUTTER", "beslutter-rolle")
         System.setProperty("AAP_DRIFT", "drift-rolle")
+        System.setProperty("AAP_DRIFT_LES", "drift-les-rolle")
 
         // AZP-UUID-der
         System.setProperty("AZP_API_INTERN", UUID.randomUUID().toString())
