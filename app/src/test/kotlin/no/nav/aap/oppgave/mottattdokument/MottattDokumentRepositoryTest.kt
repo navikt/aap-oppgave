@@ -9,6 +9,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.AfterTest
 
@@ -100,5 +101,6 @@ class MottattDokumentRepositoryTest {
             type = InnsendingType.LEGEERKLÆRING.name,
             behandlingRef = behandlingRef,
             referanse = UUID.randomUUID().toString(),
+            opprettetTidspunkt = LocalDateTime.now()
         )
 }
