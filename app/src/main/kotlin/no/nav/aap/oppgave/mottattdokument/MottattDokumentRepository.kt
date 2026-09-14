@@ -8,8 +8,8 @@ class MottattDokumentRepository(private val connection: DBConnection) {
 
     fun lagreDokumenter(dokumenter: List<MottattDokument>) {
         val sql = """
-                INSERT INTO mottatt_dokument(type, behandling_ref, referanse, mottatt_tidspunkt, opprettet_av)
-                VALUES (?, ?, ?, ?, 'Kelvin')
+                INSERT INTO mottatt_dokument(type, behandling_ref, referanse, opprettet_tidspunkt, mottatt_tidspunkt, opprettet_av)
+                VALUES (?, ?, ?, current_timestamp, ?, 'Kelvin')
                 ON CONFLICT (referanse) DO NOTHING
             """.trimIndent()
 
