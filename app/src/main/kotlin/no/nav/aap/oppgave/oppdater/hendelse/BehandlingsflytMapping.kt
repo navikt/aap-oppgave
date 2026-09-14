@@ -108,7 +108,7 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
             type = it.type.name,
             behandlingRef = behandlingRef,
             referanse = it.referanse.verdi,
-            opprettetTidspunkt = it.mottattTidspunkt,
+            mottattTidspunkt = it.mottattTidspunkt,
         )
     }
 }

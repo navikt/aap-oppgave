@@ -8,7 +8,7 @@ class MottattDokumentRepository(private val connection: DBConnection) {
 
     fun lagreDokumenter(dokumenter: List<MottattDokument>) {
         val sql = """
-                INSERT INTO mottatt_dokument(type, behandling_ref, referanse, opprettet_tidspunkt, opprettet_av)
+                INSERT INTO mottatt_dokument(type, behandling_ref, referanse, mottatt_tidspunkt, opprettet_av)
                 VALUES (?, ?, ?, ?, 'Kelvin')
                 ON CONFLICT (referanse) DO NOTHING
             """.trimIndent()
@@ -18,7 +18,7 @@ class MottattDokumentRepository(private val connection: DBConnection) {
                 setString(1, it.type)
                 setUUID(2, it.behandlingRef)
                 setString(3, it.referanse)
-                setLocalDateTime(4, it.opprettetTidspunkt)
+                setLocalDateTime(4, it.mottattTidspunkt)
             }
         }
     }
@@ -60,7 +60,7 @@ class MottattDokumentRepository(private val connection: DBConnection) {
             type = row.getString("type"),
             behandlingRef = row.getUUID("behandling_ref"),
             referanse = row.getString("referanse"),
-            opprettetTidspunkt = row.getLocalDateTime("opprettet_tidspunkt")
+            mottattTidspunkt = row.getLocalDateTime("mottatt_tidspunkt")
         )
     }
 

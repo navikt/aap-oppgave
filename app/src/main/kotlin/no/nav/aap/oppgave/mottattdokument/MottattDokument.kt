@@ -8,5 +8,5 @@ data class MottattDokument(
     val type: String,
     val behandlingRef: UUID,
     val referanse: String,
-    val opprettetTidspunkt: LocalDateTime,
+    val mottattTidspunkt: LocalDateTime,
 )
