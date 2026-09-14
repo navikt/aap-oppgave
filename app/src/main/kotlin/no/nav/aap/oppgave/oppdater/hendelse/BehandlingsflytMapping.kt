@@ -69,18 +69,15 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
     val mottattLegeerklæring = mottattDokumenter
         .filter { it.type == InnsendingType.LEGEERKLÆRING }
 
-    // Forespørsel er sendt, men ingen legeerklæring er mottatt
-    if (mottattLegeerklæring.isEmpty()) {
-        return true
-    }
+    return when {
+        // Forespørsel er sendt, men ingen legeerklæring er mottatt
+        mottattLegeerklæring.isEmpty() -> true
 
-    // Forespørselen regnes som besvart hvis en legeerklæring er mottatt etter at forespørselen er sendt
-    if (mottattLegeerklæring
-        .any { it.mottattTidspunkt.isAfter(sisteOpprettetTidspunkt) }) {
-        return false
-    }
+        // Forespørselen regnes som besvart hvis en legeerklæring er mottatt etter at forespørselen er sendt
+        mottattLegeerklæring.any { it.mottattTidspunkt.isAfter(sisteOpprettetTidspunkt) } -> false
 
-    return true
+        else -> true
+    }
 }
 
 private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformasjon? {
