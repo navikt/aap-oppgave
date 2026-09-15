@@ -64,7 +64,7 @@ fun NormalOpenAPIRoute.driftApi(
 
         route("/filter") {
             authorizedGet<Unit, DriftFilterResponsDTO>(
-                RollerConfig(listOf(DriftLes))
+                RollerConfig(listOf(Drift, DriftLes))
             ) { _ ->
                 val respons = dataSource.transaction(readOnly = true) { connection ->
                     val filterRepo = FilterRepository(connection)
