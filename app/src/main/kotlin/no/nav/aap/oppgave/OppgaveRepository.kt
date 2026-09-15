@@ -11,7 +11,9 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.oppdater.OpprettOppgave
+import no.nav.aap.oppgave.oppdater.hendelse.ForespørselPåminnelse
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
+import no.nav.aap.oppgave.oppdater.hendelse.PåminnelseStatus
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -232,6 +234,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         forrigeKvalitetssikrerIdent: String? = null,
         forrigeKvalitetssikrerNavn: String? = null,
         forespørselSendtTilBehandler: Boolean = false,
+        forespørselPåminnelse: ForespørselPåminnelse? = null,
     ) {
         val query = """
             UPDATE 
@@ -293,8 +296,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(21, forrigeKvalitetssikrerIdent)
                 setString(22, forrigeKvalitetssikrerNavn)
                 setBoolean(23, forespørselSendtTilBehandler)
-                setLong(24, oppgaveId.id)
-                setLong(25, oppgaveId.versjon)
+                setLocalDate(24, forespørselPåminnelse?.påminnelseDato)
+                setEnumName(25, forespørselPåminnelse?.påminnelseStatus)
+                setLong(26, oppgaveId.id)
+                setLong(27, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -909,7 +914,13 @@ class OppgaveRepository(private val connection: DBConnection) {
                     forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
                 )
             },
-            forespørselSendtTilBehandler = row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER")
+            forespørselSendtTilBehandler = row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER"),
+            forespørselPåminnelse = row.getLocalDateOrNull("FORESPORSEL_PAAMINNELSE_DATO")?.let { dato ->
+                ForespørselPåminnelse(
+                    påminnelseDato = dato,
+                    påminnelseStatus = row.getEnum<PåminnelseStatus>("FORESPORSEL_PAAMINNELSE_STATUS"),
+                )
+            },
         )
 
         val behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
@@ -1042,7 +1053,9 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPGAVE.UTLOEPT_VENTEFRIST,
             OPPGAVE.FORRIGE_KVALITETSSIKRER_IDENT,
             OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN,
-            OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER
+            OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER,
+            OPPGAVE.FORESPORSEL_PAAMINNELSE_DATO,
+            OPPGAVE.FORESPORSEL_PAAMINNELSE_STATUS
         """.trimIndent()
 
     }

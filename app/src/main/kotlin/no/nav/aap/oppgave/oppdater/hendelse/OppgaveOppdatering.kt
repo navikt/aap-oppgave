@@ -38,10 +38,22 @@ data class OppgaveOppdatering(
     val tilbakekrevingsUrl: String? = null,
     val behandlingMetadata: BehandlingMetadata? = null,
     val forespørselSendtTilBehandler: Boolean = false,
+    val forespørselPåminnelse: ForespørselPåminnelse? = null,
 ) {
     init {
         require(reserverTilPerAvklaringsbehov.values.none { it == KELVIN }) { "kan ikke reservere oppgave til KELVIN" }
     }
+}
+
+data class ForespørselPåminnelse(
+    val påminnelseDato: LocalDate,
+    val påminnelseStatus: PåminnelseStatus,
+)
+
+enum class PåminnelseStatus {
+    PLANLAGT,
+    AVBRUTT,
+    SENDT,
 }
 
 data class VenteInformasjon(

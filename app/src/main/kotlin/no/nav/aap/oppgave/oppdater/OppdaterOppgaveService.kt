@@ -25,6 +25,7 @@ import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
 import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
 import no.nav.aap.oppgave.oppdater.hendelse.Endring
+import no.nav.aap.oppgave.oppdater.hendelse.ForespørselPåminnelse
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.TILBAKEKREVING
@@ -184,7 +185,8 @@ class OppdaterOppgaveService(
                     forrigeKvalitetssikrer
                 )
             },
-            forespørselSendtTilBehandler = oppgaveOppdatering.forespørselSendtTilBehandler
+            forespørselSendtTilBehandler = oppgaveOppdatering.forespørselSendtTilBehandler,
+            forespørselPåminnelse = oppgaveOppdatering.forespørselPåminnelse
         )
 
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
@@ -476,6 +478,7 @@ class OppdaterOppgaveService(
             returInformasjon = utledReturFraToTrinn(avklaringsbehovHendelse),
             saksnummer = oppgaveOppdatering.saksnummer ?: utledSaksnummerFraIdent(oppgaveOppdatering.personIdent),
             forespørselSendtTilBehandler = oppgaveOppdatering.forespørselSendtTilBehandler,
+            forespørselPåminnelse = oppgaveOppdatering.forespørselPåminnelse,
         )
         val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
@@ -592,6 +595,7 @@ class OppdaterOppgaveService(
         harUlesteDokumenter: Boolean,
         returInformasjon: ReturInfo?,
         forespørselSendtTilBehandler: Boolean,
+        forespørselPåminnelse: ForespørselPåminnelse? = null,
         saksnummer: String? = null,
     ): OpprettOppgave {
         return OpprettOppgave(
@@ -618,6 +622,7 @@ class OppdaterOppgaveService(
             returInformasjon = returInformasjon,
             harUlesteDokumenter = harUlesteDokumenter,
             forespørselSendtTilBehandler = forespørselSendtTilBehandler,
+            forespørselPåminnelse = forespørselPåminnelse,
         )
     }
 

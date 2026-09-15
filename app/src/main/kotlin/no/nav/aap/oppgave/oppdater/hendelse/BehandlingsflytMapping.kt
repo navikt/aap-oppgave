@@ -49,8 +49,14 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
         uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse),
-        forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter)
+        forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter),
+        forespørselPåminnelse = this.avklaringsbehov.tilForespørselPåminnelse()
     )
+}
+
+private fun List<AvklaringsbehovHendelseDto>.tilForespørselPåminnelse(): ForespørselPåminnelse? {
+    // TODO: Utled påminnelse (dato + status) her
+    return null
 }
 
 private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(

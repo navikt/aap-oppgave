@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.oppgave.ReturInfo
+import no.nav.aap.oppgave.oppdater.hendelse.ForespørselPåminnelse
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDate
@@ -36,6 +37,7 @@ data class OpprettOppgave(
     val erSkjermet: Boolean = false,
     val harUlesteDokumenter: Boolean = false,
     val forespørselSendtTilBehandler: Boolean = false,
+    val forespørselPåminnelse: ForespørselPåminnelse? = null,
 ) {
     init {
         if (journalpostId == null) {

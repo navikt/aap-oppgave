@@ -11,6 +11,7 @@ import no.nav.aap.oppgave.hent.VenteInformasjonResponse
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class OppgavelisteRespons(
@@ -61,4 +62,10 @@ data class OppgavelisteTagsResponse(
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerDto?,
     val uføreVedtak: UførevedtakRespons?,
     val forespørselSendtTilBehandler: Boolean?,
+    val forespørselPåminnelse: ForespørselPåminnelse?,
+)
+
+data class ForespørselPåminnelse(
+    val påminnelseDato: LocalDate,
+    val påminnelseStatus: String,
 )

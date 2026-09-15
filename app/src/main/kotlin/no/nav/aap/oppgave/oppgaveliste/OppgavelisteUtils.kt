@@ -9,6 +9,7 @@ import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.hent.SkjermingInfoResponse
 import no.nav.aap.oppgave.hent.VenteInformasjonResponse
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
+import no.nav.aap.oppgave.liste.ForespørselPåminnelse
 import no.nav.aap.oppgave.liste.OppgaveMedKontekstResponse
 import no.nav.aap.oppgave.liste.OppgaveMetadataResponse
 import no.nav.aap.oppgave.liste.OppgavelisteTagsResponse
@@ -154,7 +155,13 @@ object OppgavelisteUtils {
                     )
                 },
                 uføreVedtak = uføreVedtak?.tilUføreVedtakRespsons(),
-                forespørselSendtTilBehandler = forespørselSendtTilBehandler == true
+                forespørselSendtTilBehandler = forespørselSendtTilBehandler == true,
+                forespørselPåminnelse = forespørselPåminnelse?.let {
+                    ForespørselPåminnelse(
+                        påminnelseDato = it.påminnelseDato,
+                        påminnelseStatus = it.påminnelseStatus.name,
+                    )
+                }
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
