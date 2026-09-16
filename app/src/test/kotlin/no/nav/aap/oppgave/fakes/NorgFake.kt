@@ -25,7 +25,9 @@ fun Application.norgFake(
     routing {
         post("/norg2/api/v1/arbeidsfordeling/enheter/bestmatch", bestMatch)
         get("/norg2/api/v1/enhet/simple") {
-            call.respond("""[{"enhetNr": "superNav!", "navn": "SuperNav"}]""")
+            call.respond(
+                """[{"enhetNr": "superNav!", "navn": "SuperNav"}, {"enhetNr": "4491", "navn": "Nav arbeid og ytelser"}]"""
+            )
         }
         get("/norg2/api/v1/enhet/{enhetNr}/overordnet") {
             call.respond(listOf(EnhetMedNavn("4321", "SuperFylkeskontor")))
