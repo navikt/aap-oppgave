@@ -6,6 +6,7 @@ import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.komponenter.verdityper.Bruker
 import no.nav.aap.oppgave.enhet.EnhetInfo
 import no.nav.aap.oppgave.filter.Filter
+import no.nav.aap.oppgave.liste.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -62,9 +63,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 retur_returnert_av,
                 aarsak_til_opprettelse,
                 er_skjermet,
-                FORESPORSEL_SENDT_TIL_BEHANDLER
+                FORESPORSEL_SENDT_TIL_BEHANDLER,
+                FORESPORSEL_PAAMINNELSE_DATO
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             
         """.trimIndent()
@@ -98,7 +100,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(26, oppgave.returInformasjon?.endretAv)
                 setString(27, oppgave.årsakTilOpprettelse)
                 setBoolean(28, oppgave.erSkjermet)
-                setBoolean(29, oppgave.forespørselSendtTilBehandler)
+                setBoolean(29, oppgave.forespørselSendtTilBehandler != null)
+                setLocalDateTime(30, oppgave.forespørselSendtTilBehandler?.påminnelseDato)
             }
         }
         return OppgaveId(id, 0L)
@@ -231,7 +234,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         utløptVentefrist: LocalDate? = null,
         forrigeKvalitetssikrerIdent: String? = null,
         forrigeKvalitetssikrerNavn: String? = null,
-        forespørselSendtTilBehandler: Boolean = false,
+        forespørselSendtTilBehandler: ForespørselSendtTilBehandler? = null,
     ) {
         val query = """
             UPDATE 
@@ -262,6 +265,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 FORRIGE_KVALITETSSIKRER_IDENT = ?,
                 FORRIGE_KVALITETSSIKRER_NAVN = ?,
                 FORESPORSEL_SENDT_TIL_BEHANDLER = ?,
+                FORESPORSEL_PAAMINNELSE_DATO = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -292,9 +296,10 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setLocalDate(20, utløptVentefrist)
                 setString(21, forrigeKvalitetssikrerIdent)
                 setString(22, forrigeKvalitetssikrerNavn)
-                setBoolean(23, forespørselSendtTilBehandler)
-                setLong(24, oppgaveId.id)
-                setLong(25, oppgaveId.versjon)
+                setBoolean(23, forespørselSendtTilBehandler != null)
+                setLocalDateTime(24, forespørselSendtTilBehandler?.påminnelseDato)
+                setLong(25, oppgaveId.id)
+                setLong(26, oppgaveId.versjon)
             }
             setResultValidator { require(it == 1) { "Prøvde å oppdatere én oppgave, men fant $it oppgaver. Oppgave: $oppgaveId" } }
         }
@@ -909,7 +914,11 @@ class OppgaveRepository(private val connection: DBConnection) {
                     forrigeKvalitetssikrerNavn = row.getStringOrNull("FORRIGE_KVALITETSSIKRER_NAVN")
                 )
             },
-            forespørselSendtTilBehandler = row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER")
+            forespørselSendtTilBehandler = if (row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER")) {
+                ForespørselSendtTilBehandler(påminnelseDato = row.getLocalDateTimeOrNull("FORESPORSEL_PAAMINNELSE_DATO"))
+            } else {
+                null
+            }
         )
 
         val behandlingstype = Behandlingstype.valueOf(row.getString("BEHANDLINGSTYPE"))
@@ -1042,7 +1051,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPGAVE.UTLOEPT_VENTEFRIST,
             OPPGAVE.FORRIGE_KVALITETSSIKRER_IDENT,
             OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN,
-            OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER
+            OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER,
+            OPPGAVE.FORESPORSEL_PAAMINNELSE_DATO
         """.trimIndent()
 
     }

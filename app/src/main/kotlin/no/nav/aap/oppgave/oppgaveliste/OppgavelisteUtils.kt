@@ -154,7 +154,7 @@ object OppgavelisteUtils {
                     )
                 },
                 uføreVedtak = uføreVedtak?.tilUføreVedtakRespsons(),
-                forespørselSendtTilBehandler = forespørselSendtTilBehandler == true
+                forespørselSendtTilBehandler = forespørselSendtTilBehandler
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,

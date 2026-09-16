@@ -60,5 +60,9 @@ data class OppgavelisteTagsResponse(
     val markeringer: List<MarkeringDto>,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerDto?,
     val uføreVedtak: UførevedtakRespons?,
-    val forespørselSendtTilBehandler: Boolean?,
+    val forespørselSendtTilBehandler: ForespørselSendtTilBehandler?,
+)
+
+data class ForespørselSendtTilBehandler(
+    val påminnelseDato: LocalDateTime?,
 )
