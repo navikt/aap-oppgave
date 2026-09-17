@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.liste
 
 import no.nav.aap.oppgave.BehandlingskontekstResponse
+import no.nav.aap.oppgave.ForespørselSendtTilBehandlerDto
 import no.nav.aap.oppgave.ForrigeKvalitetssikrerDto
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.TilbakekrevingsVarsDto
@@ -60,9 +61,5 @@ data class OppgavelisteTagsResponse(
     val markeringer: List<MarkeringDto>,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerDto?,
     val uføreVedtak: UførevedtakRespons?,
-    val forespørselSendtTilBehandler: ForespørselSendtTilBehandler?,
-)
-
-data class ForespørselSendtTilBehandler(
-    val påminnelseDato: LocalDateTime?,
+    val forespørselSendtTilBehandler: ForespørselSendtTilBehandlerDto?,
 )

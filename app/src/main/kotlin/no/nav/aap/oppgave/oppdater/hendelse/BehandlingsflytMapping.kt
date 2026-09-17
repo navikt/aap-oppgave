@@ -13,7 +13,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakResultatDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.liste.ForespørselSendtTilBehandler
+import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata

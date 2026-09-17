@@ -6,7 +6,6 @@ import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.komponenter.verdityper.Bruker
 import no.nav.aap.oppgave.enhet.EnhetInfo
 import no.nav.aap.oppgave.filter.Filter
-import no.nav.aap.oppgave.liste.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging

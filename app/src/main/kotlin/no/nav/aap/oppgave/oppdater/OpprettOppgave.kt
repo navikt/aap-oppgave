@@ -1,7 +1,7 @@
 package no.nav.aap.oppgave.oppdater
 
 import no.nav.aap.oppgave.ReturInfo
-import no.nav.aap.oppgave.liste.ForespørselSendtTilBehandler
+import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.Status
 import java.time.LocalDate

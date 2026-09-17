@@ -1,7 +1,7 @@
 package no.nav.aap.oppgave.oppdater.hendelse
 
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
-import no.nav.aap.oppgave.liste.ForespørselSendtTilBehandler
+import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
