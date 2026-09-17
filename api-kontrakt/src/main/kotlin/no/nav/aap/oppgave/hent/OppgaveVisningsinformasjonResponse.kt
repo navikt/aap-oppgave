@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.hent
 
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.UførevedtakRespons
+import no.nav.aap.oppgave.ForespørselSendtTilBehandlerDto
 import no.nav.aap.oppgave.markering.MarkeringDto
 import java.time.LocalDate
 
@@ -19,6 +20,7 @@ data class OppgaveVisningsinformasjonResponse(
     val skjermingInfo: SkjermingInfoResponse,
     val harUlesteDokumenter: Boolean,
     val tilhørerUtlandEnhet: Boolean,
+    val forespørselSendtTilBehandler: ForespørselSendtTilBehandlerDto?,
 )
 
 data class VenteInformasjonResponse(

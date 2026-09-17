@@ -13,6 +13,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakResultatDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
@@ -55,29 +56,31 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
 
 private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
     mottattDokumenter: List<MottattDokumentDto>
-): Boolean {
+): ForespørselSendtTilBehandler? {
     val bestillLegeerklæring = this.firstOrNull {
         it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING
-    } ?: return false
+    } ?: return null
 
     val sisteOpprettetTidspunkt = bestillLegeerklæring.endringer
         .filter { it.status == Status.OPPRETTET }
         .maxByOrNull { it.tidsstempel }
         ?.tidsstempel
-        ?: return false
+        ?: return null
 
     val mottattLegeerklæring = mottattDokumenter
         .filter { it.type == InnsendingType.LEGEERKLÆRING }
 
-    return when {
-        // Forespørsel er sendt, men ingen legeerklæring er mottatt
-        mottattLegeerklæring.isEmpty() -> true
-
-        // Forespørselen regnes som besvart hvis en legeerklæring er mottatt etter at forespørselen er sendt
-        mottattLegeerklæring.any { it.mottattTidspunkt.isAfter(sisteOpprettetTidspunkt) } -> false
-
-        else -> true
+    // Forespørselen regnes som besvart hvis en legeerklæring er mottatt etter at forespørselen er sendt
+    val erBesvart = mottattLegeerklæring.any { it.mottattTidspunkt.isAfter(sisteOpprettetTidspunkt) }
+    if (erBesvart) {
+        return null
     }
+
+    return ForespørselSendtTilBehandler(
+        // Påminnelse skal sendes 22 dager etter at forespørselen ble sendt
+        påminnelseDato = sisteOpprettetTidspunkt.plusDays(22),
+        // TODO: Hent metadata om påminnelse fra behandlingsflyt når behandlingsflyt får dette fra dokumentinnhenting
+    )
 }
 
 private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformasjon? {
