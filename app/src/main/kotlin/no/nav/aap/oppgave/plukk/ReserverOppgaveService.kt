@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.plukk
 
-import java.util.*
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.motor.FlytJobbRepository
 import no.nav.aap.oppgave.OppgaveId
@@ -9,6 +8,7 @@ import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
 import no.nav.aap.oppgave.statistikk.HendelseType
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 
 class ReserverOppgaveService(
@@ -16,7 +16,7 @@ class ReserverOppgaveService(
     private val flytJobbRepository: FlytJobbRepository,
     private val ansattInfoGateway: AnsattInfoGateway,
 ) {
-    constructor(connection: DBConnection, ansattInfoGateway: AnsattInfoGateway): this(
+    constructor(connection: DBConnection, ansattInfoGateway: AnsattInfoGateway) : this(
         oppgaveRepository = OppgaveRepository(connection),
         flytJobbRepository = FlytJobbRepository(connection),
         ansattInfoGateway = ansattInfoGateway,
@@ -71,7 +71,13 @@ class ReserverOppgaveService(
             reserverOppgave(it.oppgaveId(), endretAvIdent = tildeltAvIdent, reservertAvIdent = tildelTilIdent)
         }
 
-        log.info("Tildelte ${oppgaverSomSkalReserveres.size} oppgaver til $tildelTilIdent. Saksnumre: ${oppgaverSomSkalReserveres.joinToString(", ") { it.saksnummer.toString() }}")
-        return oppgaverSomSkalReserveres.mapNotNull { it.id }
+        log.info(
+            "$tildeltAvIdent tildelte ${oppgaverSomSkalReserveres.size} oppgaver til $tildelTilIdent. Saksnumre: ${
+                oppgaverSomSkalReserveres.joinToString(
+                    ", "
+                ) { it.saksnummer.toString() }
+            }"
+        )
+        return oppgaverSomSkalReserveres.map { it.id }
     }
 }
