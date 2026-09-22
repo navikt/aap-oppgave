@@ -146,6 +146,7 @@ object OppgavelisteUtils {
                     erSkjermet = erSkjermet == true
                 ),
                 harUlesteDokumenter = harUlesteDokumenter == true,
+                harMottattDokument = harMottattDokument,
                 markeringer = markeringer.tilDto(),
                 forrigeKvalitetssikrerInfo = forrigeKvalitetssikrerInfo?.let {
                     ForrigeKvalitetssikrerDto(
