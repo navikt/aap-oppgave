@@ -83,7 +83,7 @@ data class Oppgave(
     val tilbakekrevingsVars: TilbakekrevingsVars? = null,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrer? = null,
     val uføreVedtak: UføreVedtak? = null,
-    val forespørselSendtTilBehandler: Boolean? = null,
+    val forespørselSendtTilBehandler: ForespørselSendtTilBehandler? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.

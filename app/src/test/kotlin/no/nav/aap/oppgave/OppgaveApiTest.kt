@@ -1198,10 +1198,9 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun `forespørselSendtTilBehandler er true når legeerklæring er bestilt men ikke besvart`() {
+    fun `forespørselSendtTilBehandler er satt når forespørsel er sendt`() {
         val saksnummer = "555001"
         val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
-        val nå = LocalDateTime.now()
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
@@ -1223,14 +1222,7 @@ class OppgaveApiTest {
                         )
                     ),
                 ),
-                // Legeerklæring mottatt før forespørselen ble sendt -> teller ikke som svar
-                mottattDokumenter = listOf(
-                    MottattDokumentDto(
-                        type = InnsendingType.LEGEERKLÆRING,
-                        referanse = InnsendingReferanse(id = InnsendingId(UUID.randomUUID())),
-                        mottattTidspunkt = nå.minusHours(1),
-                    )
-                ),
+                // Ingen legeerklæring mottatt -> forespørselen er fortsatt ubesvart
             )
         )
 
@@ -1243,11 +1235,11 @@ class OppgaveApiTest {
         )
         assertThat(oppgaver).isNotNull
         val oppgave = oppgaver!!.oppgaver.single { it.avklaringsbehovKode == Definisjon.AVKLAR_SYKDOM.kode.name }
-        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isTrue()
+        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isNotNull()
     }
 
     @Test
-    fun `forespørselSendtTilBehandler er false når nyere legeerklæring er mottatt`() {
+    fun `forespørselSendtTilBehandler er null når legeerklæring er mottatt etter forespørsel er sendt`() {
         val saksnummer = "555002"
         val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
         val nå = LocalDateTime.now()
@@ -1292,9 +1284,43 @@ class OppgaveApiTest {
         )
         assertThat(oppgaver).isNotNull
         val oppgave = oppgaver!!.oppgaver.single { it.avklaringsbehovKode == Definisjon.AVKLAR_SYKDOM.kode.name }
-        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isFalse()
+        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isNull()
     }
 
+    @Test
+    fun `forespørselSendtTilBehandler er null når forespørsel ikke er sendt`() {
+        val saksnummer = "555003"
+        val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
+
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = saksnummer,
+                referanse = behandlingsReferanse.referanse,
+                behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                ),
+                // Ingen BESTILL_LEGEERKLÆRING -> forespørsel er ikke sendt
+            )
+        )
+
+        val oppgaver = hentOppgaveliste(
+            request = OppgavelisteRequest(
+                filterId = testFilterId,
+                enheter = setOf("superNav!"),
+                paging = Paging()
+            )
+        )
+        assertThat(oppgaver).isNotNull
+        val oppgave = oppgaver!!.oppgaver.single { it.avklaringsbehovKode == Definisjon.AVKLAR_SYKDOM.kode.name }
+        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isNull()
+    }
+    
     private data class Behandlingsbehov(
         val definisjon: Definisjon,
         val status: no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,

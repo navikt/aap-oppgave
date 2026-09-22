@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
+import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
@@ -591,7 +592,7 @@ class OppdaterOppgaveService(
         erSkjermet: Boolean,
         harUlesteDokumenter: Boolean,
         returInformasjon: ReturInfo?,
-        forespørselSendtTilBehandler: Boolean,
+        forespørselSendtTilBehandler: ForespørselSendtTilBehandler?,
         saksnummer: String? = null,
     ): OpprettOppgave {
         return OpprettOppgave(
