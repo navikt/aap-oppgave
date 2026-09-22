@@ -6,6 +6,7 @@ import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.komponenter.verdityper.Bruker
 import no.nav.aap.oppgave.enhet.EnhetInfo
 import no.nav.aap.oppgave.filter.Filter
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -899,6 +900,13 @@ class OppgaveRepository(private val connection: DBConnection) {
             harFortroligAdresse = row.getBoolean("FORTROLIG_ADRESSE"),
             erSkjermet = row.getBoolean("ER_SKJERMET"),
             harUlesteDokumenter = row.getBoolean("ULESTE_DOKUMENTER"),
+            harMottattDokument = if (row.getBoolean("ULESTE_DOKUMENTER")) {
+                MottattDokumentRepository(connection)
+                    .hentUlesteDokumenter(row.getUUID("BEHANDLING_REF"))
+                    .maxByOrNull { it.mottattTidspunkt }
+                    ?.type
+                    ?.let { HarMottattDokument(dokumentType = it) }
+            } else null,
             årsakTilOpprettelse = row.getStringOrNull("AARSAK_TIL_OPPRETTELSE"),
             utløptVentefrist = row.getLocalDateOrNull("UTLOEPT_VENTEFRIST"),
             returInformasjon = row.getEnumOrNull<ReturStatus>("RETUR_AARSAK")?.let {

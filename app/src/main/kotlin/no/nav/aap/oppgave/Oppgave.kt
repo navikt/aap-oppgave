@@ -79,6 +79,7 @@ data class Oppgave(
     val harFortroligAdresse: Boolean? = false,
     val erSkjermet: Boolean? = false,
     val harUlesteDokumenter: Boolean? = false,
+    val harMottattDokument: HarMottattDokument? = null,
     val markeringer: List<Markering> = emptyList(),
     val tilbakekrevingsVars: TilbakekrevingsVars? = null,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrer? = null,

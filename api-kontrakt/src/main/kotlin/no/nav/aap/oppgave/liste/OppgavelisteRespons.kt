@@ -3,6 +3,7 @@ package no.nav.aap.oppgave.liste
 import no.nav.aap.oppgave.BehandlingskontekstResponse
 import no.nav.aap.oppgave.ForespørselSendtTilBehandlerDto
 import no.nav.aap.oppgave.ForrigeKvalitetssikrerDto
+import no.nav.aap.oppgave.HarMottattDokument
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.TilbakekrevingsVarsDto
 import no.nav.aap.oppgave.UførevedtakRespons
@@ -57,7 +58,9 @@ data class OppgavelisteTagsResponse(
     val forrigePåVentInfo: VenteInformasjonResponse?,
     val returInformasjon: ReturInformasjonDto?,
     val skjermingInfo: SkjermingInfoResponse,
+    // TODO: Fjern harUlesteDokumenter når harMottattDokument har tatt over
     val harUlesteDokumenter: Boolean?,
+    val harMottattDokument: HarMottattDokument?,
     val markeringer: List<MarkeringDto>,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerDto?,
     val uføreVedtak: UførevedtakRespons?,

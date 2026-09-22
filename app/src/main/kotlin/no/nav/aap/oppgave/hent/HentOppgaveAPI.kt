@@ -110,6 +110,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
         erSkjermet = erSkjermet == true
     ),
     harUlesteDokumenter = harUlesteDokumenter == true,
+    harMottattDokument = harMottattDokument,
     tilhørerUtlandEnhet = enhetForKø in UTLAND_ENHETER.map { it.kode },
     forespørselSendtTilBehandler = forespørselSendtTilBehandler?.tilDto(),
 )
