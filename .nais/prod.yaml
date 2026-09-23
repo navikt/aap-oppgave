@@ -10,8 +10,6 @@ metadata:
     systemkatalog.nav.no/system: SK-268
 
 spec:
-  ingresses:
-    - https://aap-oppgave.intern.nav.no
   image: {{image}}
   port: 8080
   resources:
