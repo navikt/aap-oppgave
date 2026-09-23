@@ -41,6 +41,28 @@ class MottattDokumentRepository(private val connection: DBConnection) {
         return dokumenter
     }
 
+    fun hentSisteUlesteDokumentTypePerBehandling(behandlingRefs: Collection<UUID>): Map<UUID, String> {
+        if (behandlingRefs.isEmpty()) {
+            return emptyMap()
+        }
+        val sql = """
+                SELECT DISTINCT ON (behandling_ref) behandling_ref, type
+                FROM mottatt_dokument
+                WHERE behandling_ref = ANY(?::uuid[])
+                AND registrert_lest_av IS NULL
+                ORDER BY behandling_ref, mottatt_tidspunkt DESC
+            """.trimIndent()
+
+        return connection.queryList(sql) {
+            setParams {
+                setArray(1, behandlingRefs.map { it.toString() })
+            }
+            setRowMapper {
+                it.getUUID("behandling_ref") to it.getString("type")
+            }
+        }.toMap()
+    }
+
     fun registrerDokumenterSomLest(behandlingRef: UUID, lestAv: String) {
         val sql = """
             UPDATE mottatt_dokument SET registrert_lest_av = ?, registrert_lest_tidspunkt = current_timestamp 

@@ -12,6 +12,7 @@ import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.liste.MineOppgaverRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
@@ -36,6 +37,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
                     UføreVedtakRepository(connection),
+                    MottattDokumentRepository(connection),
                     enhetService,
                 ).hentMineOppgaver(
                     ident = ident(),
