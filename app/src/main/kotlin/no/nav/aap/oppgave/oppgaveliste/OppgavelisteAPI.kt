@@ -14,6 +14,7 @@ import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
@@ -52,6 +53,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                         oppgaveRepository = OppgaveRepository(connection),
                         markeringRepository = MarkeringRepository(connection),
                         uføreVedtakRepository = UføreVedtakRepository(connection),
+                        mottattDokumentRepository = MottattDokumentRepository(connection),
                         enhetService = enhetService,
                     ).hentOppgaverMedTilgang(
                         request.utvidetFilter,

@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.server.authenticate.ident
@@ -86,6 +87,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
                 UføreVedtakRepository(connection),
+                MottattDokumentRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)
         }

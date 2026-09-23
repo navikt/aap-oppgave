@@ -5,6 +5,7 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.OidcToken
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.komponenter.miljo.MiljøKode
 import no.nav.aap.oppgave.Oppgave
+import no.nav.aap.oppgave.HarMottattDokument
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
@@ -17,6 +18,7 @@ import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
 import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
@@ -31,6 +33,7 @@ class OppgavelisteService(
     private val oppgaveRepository: OppgaveRepository,
     private val markeringRepository: MarkeringRepository,
     private val uføreVedtakRepository: UføreVedtakRepository,
+    private val mottattDokumentRepository: MottattDokumentRepository,
     private val enhetService: EnhetService,
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
@@ -45,7 +48,7 @@ class OppgavelisteService(
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
             val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(oppgave.behandlingRef)
             oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uførevedtak)
-        }
+        }.leggPåMottattDokument()
     }
 
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): Oppgave? {
@@ -53,7 +56,7 @@ class OppgavelisteService(
         if (oppgave != null) {
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
             val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingReferanse.referanse)
-            return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer)
+            return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer).leggPåMottattDokument()
         }
         return oppgave
     }
@@ -124,7 +127,7 @@ class OppgavelisteService(
                 val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
                 val uføreVedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingRef)
                 oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uføreVedtak)
-            }
+            }.leggPåMottattDokument()
 
         return FinnOppgaverDto(
             oppgaver = oppgaver.filtrerPåTilgang(token, ident),
@@ -154,7 +157,7 @@ class OppgavelisteService(
                 uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(it.behandlingRef)
             )
 
-        }.hentPersonNavn()
+        }.hentPersonNavn().leggPåMottattDokument()
 
         val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
         return medMarkering + utenMarkering
@@ -193,6 +196,23 @@ class OppgavelisteService(
 
     private fun Oppgave.leggPåUføreVedtak(uførevedtak: UføreVedtak?): Oppgave =
         this.copy(uføreVedtak = uførevedtak)
+
+    private fun Oppgave.leggPåMottattDokument(): Oppgave =
+        listOf(this).leggPåMottattDokument().single()
+
+    private fun List<Oppgave>.leggPåMottattDokument(): List<Oppgave> {
+        if (isEmpty()) {
+            return this
+        }
+        val typePerBehandling =
+            mottattDokumentRepository.hentSisteUlesteDokumentTypePerBehandling(map { it.behandlingRef })
+        return map { oppgave ->
+            oppgave.copy(
+                harMottattDokument = typePerBehandling[oppgave.behandlingRef]
+                    ?.let { HarMottattDokument(dokumentType = it) }
+            )
+        }
+    }
 
     private fun List<Oppgave>.filtrerPåTilgang(
         token: OidcToken,

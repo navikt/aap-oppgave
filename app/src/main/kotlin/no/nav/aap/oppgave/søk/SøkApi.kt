@@ -17,6 +17,7 @@ import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
@@ -46,6 +47,7 @@ fun NormalOpenAPIRoute.søkApi(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
                     UføreVedtakRepository(connection),
+                    MottattDokumentRepository(connection),
                     enhetService,
                 ).søkEtterOppgaver(søketekst)
             }
