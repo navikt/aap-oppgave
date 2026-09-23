@@ -95,8 +95,7 @@ jobs:
     secrets: inherit
     with:
       cluster: dev-gcp
-      manifest: .nais/nais.yaml
-      vars: .nais/dev.yaml
+      manifest: .nais/dev.yaml
 
   prod:
     if: ${{ github.ref == 'refs/heads/main' || github.event.inputs.cluster == 'prod-gcp' }}
@@ -111,5 +110,4 @@ jobs:
     secrets: inherit
     with:
       cluster: prod-gcp
-      manifest: .nais/nais.yaml
-      vars: .nais/prod.yaml
+      manifest: .nais/prod.yaml
