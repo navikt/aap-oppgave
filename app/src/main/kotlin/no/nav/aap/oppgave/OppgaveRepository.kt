@@ -108,7 +108,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         return OppgaveId(id, 0L)
     }
 
-    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): Oppgave? {
+    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse, aktiv: Boolean = true): Oppgave? {
         val oppgaverForIdQuery = """
             SELECT 
                 $alleOppgaveFelt
@@ -116,13 +116,14 @@ class OppgaveRepository(private val connection: DBConnection) {
                 OPPGAVE 
             WHERE 
                 BEHANDLING_REF = ?
-            AND STATUS = 'OPPRETTET'
+            AND (? OR STATUS = 'OPPRETTET')
             ORDER BY OPPRETTET_TIDSPUNKT DESC
         """.trimIndent()
 
         return connection.queryFirstOrNull(oppgaverForIdQuery) {
             setParams {
                 setUUID(1, behandlingReferanse.referanse)
+                setBoolean(2, !aktiv)
             }
             setRowMapper { row ->
                 val tilbakekreving = getTilbakekreving(row, connection)
@@ -407,6 +408,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    @Suppress("EnumEntryName")
     enum class Rekkefølge { asc, desc }
 
     private fun utvidetFilterQuery(utvidetFilter: UtvidetOppgavelisteFilter): String {
@@ -1002,6 +1004,8 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private fun behandlingHarAktivMarkeringClause(markeringTyperSql: String): String {
         // nyeste markering-hendelse på behandling må ha hendelse-type lik null eller OPPRETTET
+
+// language="PostgreSQL"
         return """
         EXISTS (
             SELECT 1 FROM (
