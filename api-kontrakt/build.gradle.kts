@@ -9,6 +9,7 @@ group = "no.nav.aap.oppgave"
 dependencies {
     implementation(libs.jacksonDatatypeJsr310)
     api(libs.ktorOpenapiGenerator)
+    api(libs.behandlingsflytKontrakt)
 }
 
 java {
