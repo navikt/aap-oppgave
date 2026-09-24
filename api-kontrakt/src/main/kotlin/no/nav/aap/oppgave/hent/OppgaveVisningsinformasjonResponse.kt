@@ -19,7 +19,7 @@ data class OppgaveVisningsinformasjonResponse(
     val påVentInfo: VenteInformasjonResponse?,
     val utløptVenteInfo: VenteInformasjonResponse?,
     val skjermingInfo: SkjermingInfoResponse,
-    // TODO: Fjern harUlesteDokumenter når harMottattDokument har tatt over
+    @Deprecated("Bruk harMottattDokument når denne er implementert i frontend")
     val harUlesteDokumenter: Boolean,
     val harMottattDokument: HarMottattDokument?,
     val tilhørerUtlandEnhet: Boolean,
