@@ -1,8 +1,8 @@
 package no.nav.aap.oppgave.mottattdokument
 
-import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
+import no.nav.aap.oppgave.verdityper.Dokumenttype
 import java.util.*
 
 class MottattDokumentRepository(private val connection: DBConnection) {
@@ -42,7 +42,7 @@ class MottattDokumentRepository(private val connection: DBConnection) {
         return dokumenter
     }
 
-    fun hentSisteUlesteDokumentTypePerBehandling(behandlingRefs: Collection<UUID>): Map<UUID, InnsendingType> {
+    fun hentSisteUlesteDokumentTypePerBehandling(behandlingRefs: Collection<UUID>): Map<UUID, Dokumenttype> {
         if (behandlingRefs.isEmpty()) {
             return emptyMap()
         }
@@ -59,7 +59,7 @@ class MottattDokumentRepository(private val connection: DBConnection) {
                 setArray(1, behandlingRefs.map { it.toString() })
             }
             setRowMapper {
-                it.getUUID("behandling_ref") to InnsendingType.valueOf(it.getString("type"))
+                it.getUUID("behandling_ref") to Dokumenttype.valueOf(it.getString("type"))
             }
         }.toMap()
     }
