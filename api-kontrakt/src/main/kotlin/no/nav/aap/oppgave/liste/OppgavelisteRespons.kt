@@ -58,7 +58,7 @@ data class OppgavelisteTagsResponse(
     val forrigePåVentInfo: VenteInformasjonResponse?,
     val returInformasjon: ReturInformasjonDto?,
     val skjermingInfo: SkjermingInfoResponse,
-    // TODO: Fjern harUlesteDokumenter når harMottattDokument har tatt over
+    @Deprecated("Bruk harMottattDokument når denne er implementert i frontend")
     val harUlesteDokumenter: Boolean?,
     val harMottattDokument: HarMottattDokument?,
     val markeringer: List<MarkeringDto>,
