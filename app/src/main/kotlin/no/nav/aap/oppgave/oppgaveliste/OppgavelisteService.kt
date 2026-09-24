@@ -50,7 +50,7 @@ class OppgavelisteService(
 
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): Oppgave? {
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
-        if (oppgave != null) {
+        if (oppgave != null && oppgave.erÅpen) {
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
             val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingReferanse.referanse)
             return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer)

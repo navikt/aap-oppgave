@@ -7,7 +7,9 @@ import no.nav.aap.oppgave.markering.MarkeringDto
 import java.time.LocalDate
 
 data class OppgaveVisningsinformasjonResponse(
+    @Deprecated("Brukes ikke av frontend")
     val id: Long,
+    @Deprecated("Brukes ikke av frontend")
     val versjon: Long,
     val saksnummer: String?,
     val reservertAvNavn: String?,

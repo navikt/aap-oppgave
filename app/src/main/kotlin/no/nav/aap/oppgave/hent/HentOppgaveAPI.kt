@@ -14,7 +14,6 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.SaksnummerPathParam
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.UTLAND_ENHETER
-import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
@@ -75,7 +74,24 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
         }
 
         if (oppgave != null) {
-            respond(oppgave.tilOppgaveVisningsinformasjonResponse())
+            val visningsinformasjonResponse = oppgave.tilOppgaveVisningsinformasjonResponse()
+            val respons = if (oppgave.erÅpen) {
+                visningsinformasjonResponse
+            } else {
+                // Null ut felter som ikke gir mening for lukkede oppgaver
+                visningsinformasjonResponse.copy(
+                    reservertAvIdent = null,
+                    reservertAvNavn = null,
+                    returInformasjon = null,
+                    markeringer = emptyList(),
+                    uførevedtakinfo = null,
+                    påVentInfo = null,
+                    utløptVenteInfo = null,
+                    harUlesteDokumenter = false,
+                    forespørselSendtTilBehandler = null
+                )
+            }
+            respond(respons)
         } else {
             respondWithStatus(HttpStatusCode.NoContent)
         }
