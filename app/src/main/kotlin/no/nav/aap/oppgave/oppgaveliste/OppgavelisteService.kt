@@ -48,9 +48,9 @@ class OppgavelisteService(
         }
     }
 
-    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): Oppgave? {
-        val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
-        if (oppgave != null) {
+    fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse, aktiv: Boolean = true): Oppgave? {
+        val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse, aktiv = aktiv)
+        if (oppgave != null && oppgave.erÅpen) {
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
             val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingReferanse.referanse)
             return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer)
