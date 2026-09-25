@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id("aap.conventions")
-    id("io.ktor.plugin") version "3.5.2"
+    alias(kelvinLibs.plugins.ktor)
 }
 
 application {
@@ -63,41 +63,34 @@ dependencies {
     implementation(libs.behandlingsflytKontrakt)
     implementation(libs.postmottakKontrakt)
 
-    implementation(libs.ktorServerAuth)
-    implementation(libs.ktorServerAuthJwt)
-    implementation(libs.ktorClientCio)
-    implementation(libs.ktorClientContentNegotiation)
-    implementation(libs.ktorServerCallLogging)
-    implementation(libs.ktorServerCallId)
-    implementation(libs.ktorServerContentNegotiation)
-    implementation(libs.ktorServerMetricsMicrometer)
-    implementation(libs.ktorServerNetty)
-    implementation(libs.ktorServerStatusPages)
-    implementation(libs.ktorSerializationJackson)
+    implementation(kelvinLibs.ktor.server.auth)
+    implementation(kelvinLibs.ktor.server.auth.jwt)
+    implementation(kelvinLibs.ktor.client.cio)
+    implementation(kelvinLibs.ktor.client.content.negotiation)
+    implementation(kelvinLibs.ktor.server.call.logging)
+    implementation(kelvinLibs.ktor.server.call.id)
+    implementation(kelvinLibs.ktor.server.content.negotiation)
+    implementation(kelvinLibs.ktor.server.metrics.micrometer)
+    implementation(kelvinLibs.ktor.server.netty)
+    implementation(kelvinLibs.ktor.server.status.pages)
+    implementation(kelvinLibs.ktor.serialization.jackson)
 
-    implementation(libs.jacksonDatabind)
-    implementation(libs.jacksonDatatypeJsr310)
-    implementation(libs.micrometerRegistryPrometheus)
-    implementation(libs.logbackClassic)
-    implementation(libs.logstashLogbackEncoder)
+    implementation(kelvinLibs.jackson.databind)
+    implementation(kelvinLibs.jackson.datatype.jsr310)
+    implementation(kelvinLibs.micrometer.prometheus)
+    implementation(kelvinLibs.logback.classic)
+    implementation(kelvinLibs.logstash.logback.encoder)
 
-    implementation(libs.hikariCp)
-    implementation(libs.caffeine)
-    implementation(libs.flywayDatabasePostgresql)
-    implementation(libs.unleashClientJava)
-    runtimeOnly(libs.postgresql)
+    implementation(kelvinLibs.hikaricp)
+    implementation(kelvinLibs.caffeine)
+    implementation(kelvinLibs.flyway.postgresql)
+    implementation(kelvinLibs.unleash.client.java)
+    runtimeOnly(kelvinLibs.postgresql)
 
-    testImplementation(libs.nimbusJoseJwt)
-    testImplementation(libs.junitJupiterApi)
-    testRuntimeOnly(libs.junitJupiterEngine)
-    testImplementation(libs.testcontainersJunitJupiter)
-    testImplementation(libs.assertjCore)
-    testImplementation(libs.testcontainersPostgresql)
-    constraints {
-        implementation(libs.commonsCompress) {
-            because("https://github.com/advisories/GHSA-4g9r-vxhx-9pgx")
-        }
-    }
+    testImplementation(kelvinLibs.nimbus.jose.jwt)
+    testImplementation(kelvinLibs.bundles.junit)
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter:${kelvinLibs.versions.testcontainers.get()}")
+    testImplementation(kelvinLibs.testcontainers.postgresql)
     testImplementation(kotlin("test"))
 }
 

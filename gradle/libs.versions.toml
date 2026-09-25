@@ -1,29 +1,10 @@
 [versions]
-ktor = "3.5.2"
-jackson = "2.22.2"
 komponenter = "2.0.165"
 tilgang = "1.0.242"
 behandlingsflytVersjon = "0.0.664"
 postmottakVersjon = "6.0.10"
-junit = "6.1.3"
-testcontainers = "1.21.4"
 
 [libraries]
-jacksonDatabind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-jacksonDatatypeJsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
-
-ktorServerAuth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
-ktorServerAuthJwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
-ktorClientCio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
-ktorClientContentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
-ktorServerCallLogging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
-ktorServerCallId = { module = "io.ktor:ktor-server-call-id", version.ref = "ktor" }
-ktorServerContentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
-ktorServerMetricsMicrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
-ktorServerNetty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
-ktorServerStatusPages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
-ktorSerializationJackson = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
-
 json = { module = "no.nav.aap.kelvin:json", version.ref = "komponenter" }
 dbconnect = { module = "no.nav.aap.kelvin:dbconnect", version.ref = "komponenter" }
 dbmigrering = { module = "no.nav.aap.kelvin:dbmigrering", version.ref = "komponenter" }
@@ -39,20 +20,3 @@ behandlingsflytKontrakt = { module = "no.nav.aap.behandlingsflyt:kontrakt", vers
 postmottakKontrakt = { module = "no.nav.aap.postmottak:kontrakt", version.ref = "postmottakVersjon" }
 tilgangKontrakt = { module = "no.nav.aap.tilgang:api-kontrakt", version.ref = "tilgang" }
 tilgangPlugin = { module = "no.nav.aap.tilgang:plugin", version.ref = "tilgang" }
-
-commonsCompress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
-micrometerRegistryPrometheus = { module = "io.micrometer:micrometer-registry-prometheus", version = "1.17.1" }
-logbackClassic = { module = "ch.qos.logback:logback-classic", version = "1.6.3" }
-logstashLogbackEncoder = { module = "net.logstash.logback:logstash-logback-encoder", version = "9.0" }
-hikariCp = { module = "com.zaxxer:HikariCP", version = "7.1.0" }
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.4" }
-flywayDatabasePostgresql = { module = "org.flywaydb:flyway-database-postgresql", version = "13.5.0" }
-unleashClientJava = { module = "io.getunleash:unleash-client-java", version = "12.3.0" }
-postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
-nimbusJoseJwt = { module = "com.nimbusds:nimbus-jose-jwt", version = "10.9.1" }
-
-junitJupiterApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
-junitJupiterEngine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
-assertjCore = { module = "org.assertj:assertj-core", version = "3.27.7" }
-testcontainersJunitJupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
-testcontainersPostgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }

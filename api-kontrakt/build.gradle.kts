@@ -7,7 +7,7 @@ plugins {
 group = "no.nav.aap.oppgave"
 
 dependencies {
-    implementation(libs.jacksonDatatypeJsr310)
+    implementation(kelvinLibs.jackson.datatype.jsr310)
     api(libs.ktorOpenapiGenerator)
 }
 
