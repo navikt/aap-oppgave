@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.mottattdokument
 
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
+import no.nav.aap.oppgave.verdityper.Dokumenttype
 import java.util.*
 
 class MottattDokumentRepository(private val connection: DBConnection) {
@@ -39,6 +40,28 @@ class MottattDokumentRepository(private val connection: DBConnection) {
             }
         }
         return dokumenter
+    }
+
+    fun hentSisteUlesteDokumentTypePerBehandling(behandlingRefs: Collection<UUID>): Map<UUID, Dokumenttype> {
+        if (behandlingRefs.isEmpty()) {
+            return emptyMap()
+        }
+        val sql = """
+                SELECT DISTINCT ON (behandling_ref) behandling_ref, type
+                FROM mottatt_dokument
+                WHERE behandling_ref = ANY(?::uuid[])
+                AND registrert_lest_av IS NULL
+                ORDER BY behandling_ref, mottatt_tidspunkt DESC
+            """.trimIndent()
+
+        return connection.queryList(sql) {
+            setParams {
+                setArray(1, behandlingRefs.map { it.toString() })
+            }
+            setRowMapper {
+                it.getUUID("behandling_ref") to Dokumenttype.valueOf(it.getString("type"))
+            }
+        }.toMap()
     }
 
     fun registrerDokumenterSomLest(behandlingRef: UUID, lestAv: String) {

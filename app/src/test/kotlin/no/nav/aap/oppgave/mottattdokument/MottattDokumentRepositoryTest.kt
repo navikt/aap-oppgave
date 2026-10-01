@@ -3,15 +3,13 @@ package no.nav.aap.oppgave.mottattdokument
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.komponenter.dbtest.TestDataSource
+import no.nav.aap.oppgave.verdityper.Dokumenttype
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.test.AfterTest
 
 class MottattDokumentRepositoryTest {
 
@@ -96,11 +94,60 @@ class MottattDokumentRepositoryTest {
         }
     }
 
+    @Test
+    fun `skal ikke hente dokumenttype om alle dokumenter er leste dokumenter`() {
+        dataSource.transaction { connection ->
+            val repository = MottattDokumentRepository(connection)
+
+            repository.lagreDokumenter(listOf(dokument(behandlingRef)))
+            repository.registrerDokumenterSomLest(behandlingRef, "saksbehandler")
+
+            val typePerBehandling =
+                repository.hentSisteUlesteDokumentTypePerBehandling(listOf(behandlingRef))
+
+            assertThat(typePerBehandling).doesNotContainKey(behandlingRef)
+        }
+    }
+
+    @Test
+    fun `skal hente siste uleste dokumenttype for flere behandlinger`() {
+        dataSource.transaction { connection ->
+            val repository = MottattDokumentRepository(connection)
+
+            val behandlingRef2 = UUID.randomUUID()
+            repository.lagreDokumenter(
+                listOf(
+                    dokument(behandlingRef, Dokumenttype.LEGEERKLÆRING, LocalDateTime.now()),
+                    dokument(behandlingRef2, Dokumenttype.DIALOGMELDING, LocalDateTime.now()),
+                )
+            )
+
+            val typePerBehandling =
+                repository.hentSisteUlesteDokumentTypePerBehandling(listOf(behandlingRef, behandlingRef2))
+
+            assertThat(typePerBehandling)
+                .containsEntry(behandlingRef, Dokumenttype.LEGEERKLÆRING)
+                .containsEntry(behandlingRef2, Dokumenttype.DIALOGMELDING)
+        }
+    }
+
     private fun dokument(behandlingRef: UUID) =
         MottattDokument(
             type = InnsendingType.LEGEERKLÆRING.name,
             behandlingRef = behandlingRef,
             referanse = UUID.randomUUID().toString(),
             mottattTidspunkt = LocalDateTime.now()
+        )
+
+    private fun dokument(
+        behandlingRef: UUID,
+        dokumenttype: Dokumenttype,
+        mottattTidspunkt: LocalDateTime,
+    ) =
+        MottattDokument(
+            type = dokumenttype.name,
+            behandlingRef = behandlingRef,
+            referanse = UUID.randomUUID().toString(),
+            mottattTidspunkt = mottattTidspunkt
         )
 }

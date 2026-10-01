@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.UTLAND_ENHETER
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
@@ -70,6 +71,7 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
                 UføreVedtakRepository(connection),
+                MottattDokumentRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)
         }
@@ -110,6 +112,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
         erSkjermet = erSkjermet == true
     ),
     harUlesteDokumenter = harUlesteDokumenter == true,
+    harMottattDokument = harMottattDokument,
     tilhørerUtlandEnhet = enhetForKø in UTLAND_ENHETER.map { it.kode },
     forespørselSendtTilBehandler = forespørselSendtTilBehandler?.tilDto(),
 )

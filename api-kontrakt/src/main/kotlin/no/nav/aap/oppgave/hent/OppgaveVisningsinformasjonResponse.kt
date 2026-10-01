@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.hent
 
+import no.nav.aap.oppgave.HarMottattDokument
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.UførevedtakRespons
 import no.nav.aap.oppgave.ForespørselSendtTilBehandlerDto
@@ -18,7 +19,9 @@ data class OppgaveVisningsinformasjonResponse(
     val påVentInfo: VenteInformasjonResponse?,
     val utløptVenteInfo: VenteInformasjonResponse?,
     val skjermingInfo: SkjermingInfoResponse,
+    @Deprecated("Bruk harMottattDokument når denne er implementert i frontend")
     val harUlesteDokumenter: Boolean,
+    val harMottattDokument: HarMottattDokument?,
     val tilhørerUtlandEnhet: Boolean,
     val forespørselSendtTilBehandler: ForespørselSendtTilBehandlerDto?,
 )
