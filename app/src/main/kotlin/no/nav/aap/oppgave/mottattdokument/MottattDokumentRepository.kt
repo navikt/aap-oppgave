@@ -51,6 +51,7 @@ class MottattDokumentRepository(private val connection: DBConnection) {
                 FROM mottatt_dokument
                 WHERE behandling_ref = ANY(?::uuid[])
                 AND registrert_lest_av IS NULL
+                AND type IN ('LEGEERKLÆRING', 'DIALOGMELDING')
                 ORDER BY behandling_ref, mottatt_tidspunkt DESC
             """.trimIndent()
 
