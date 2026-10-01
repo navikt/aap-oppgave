@@ -1,6 +1,6 @@
 [versions]
 ktor = "3.5.2"
-jackson = "2.22.2"
+jackson = "2.22.3"
 komponenter = "2.0.165"
 tilgang = "1.0.242"
 behandlingsflytVersjon = "0.0.664"
