@@ -40,8 +40,7 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
             this.saksnummer,
             this.behandlingType.tilBehandlingstype()
         ),
-        reserverTilPerAvklaringsbehov = this.reserverTilPerAvklaringsbehov?.filterValues { it != KELVIN }
-            ?: emptyMap(),
+        reserverTilPerAvklaringsbehov = this.reserverTilPerAvklaringsbehov.filterValues { it != KELVIN },
         relevanteIdenter = this.relevanteIdenterPåBehandling ?: emptyList(),
         venteInformasjon = if (this.erPåVent) {
             this.utledVenteInformasjon()
@@ -50,7 +49,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
         uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse),
-        forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter)
+        forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter),
+        aktivtAvklaringsbehov = this.aktivtAvklaringsbehov?.let { AvklaringsbehovKode(it.kode.name) }
     )
 }
 
@@ -117,7 +117,7 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
     }
 }
 
-private fun UførevedtakDto.tilUførevedtak(behandlingRef: UUID) : UføreVedtak {
+private fun UførevedtakDto.tilUførevedtak(behandlingRef: UUID): UføreVedtak {
     return UføreVedtak(
         referanse = behandlingRef,
         virkningsdato = this.virkningsdato,
@@ -205,7 +205,7 @@ private fun no.nav.aap.behandlingsflyt.kontrakt.behandling.Status.tilBehandlings
     return BehandlingStatus.ÅPEN
 }
 
-fun no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
+fun Status.tilAvklaringsbehovStatus(): AvklaringsbehovStatus {
     return when (this) {
         no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET -> AvklaringsbehovStatus.OPPRETTET
         no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET -> AvklaringsbehovStatus.AVSLUTTET
