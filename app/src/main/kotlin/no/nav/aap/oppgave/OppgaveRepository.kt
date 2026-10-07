@@ -15,11 +15,13 @@ import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import no.nav.aap.oppgave.verdityper.PåminnelseStatus
 import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
@@ -102,7 +104,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setBoolean(28, oppgave.erSkjermet)
                 setBoolean(29, oppgave.forespørselSendtTilBehandler != null)
                 setLocalDateTime(30, oppgave.forespørselSendtTilBehandler?.påminnelseDato)
-                setString(31, oppgave.forespørselSendtTilBehandler?.påminnelseStatus)
+                setString(31, oppgave.forespørselSendtTilBehandler?.påminnelseStatus?.name)
             }
         }
         return OppgaveId(id, 0L)
@@ -193,6 +195,40 @@ class OppgaveRepository(private val connection: DBConnection) {
                 oppgaveMapper(row, tilbakekreving)
             }
         }
+    }
+
+    fun oppdaterPåminnelse(
+        referanse: UUID,
+        påminnelseDato: LocalDateTime?,
+        påminnelseStatus: PåminnelseStatus?,
+    ): Boolean {
+        val oppgave = hentAktivOppgave(BehandlingReferanse(referanse)) ?: return false
+        val query = """
+            UPDATE OPPGAVE
+            SET
+                FORESPORSEL_PAAMINNELSE_DATO = ?,
+                FORESPORSEL_PAAMINNELSE_STATUS = ?,
+                ENDRET_AV = ?,
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                VERSJON = VERSJON + 1
+            WHERE ID = ? AND VERSJON = ? AND STATUS = 'OPPRETTET'
+        """.trimIndent()
+
+        connection.execute(query) {
+            setParams {
+                setLocalDateTime(1, påminnelseDato)
+                setString(2, påminnelseStatus?.name)
+                setString(3, KELVIN)
+                setLong(4, oppgave.id)
+                setLong(5, oppgave.versjon)
+            }
+            setResultValidator {
+                require(it == 1) {
+                    "Prøvde å oppdatere påminnelse for én oppgave, men fant $it oppgaver. Oppgave: ${oppgave.oppgaveId()}"
+                }
+            }
+        }
+        return true
     }
 
     fun hentAktiveOppgaverPåSak(saksnummer: String): List<Oppgave> {
@@ -300,7 +336,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(22, forrigeKvalitetssikrerNavn)
                 setBoolean(23, forespørselSendtTilBehandler != null)
                 setLocalDateTime(24, forespørselSendtTilBehandler?.påminnelseDato)
-                setString(25, forespørselSendtTilBehandler?.påminnelseStatus)
+                setString(25, forespørselSendtTilBehandler?.påminnelseStatus?.name)
                 setLong(26, oppgaveId.id)
                 setLong(27, oppgaveId.versjon)
             }
@@ -920,7 +956,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             forespørselSendtTilBehandler = if (row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER")) {
                 ForespørselSendtTilBehandler(
                     påminnelseDato = row.getLocalDateTimeOrNull("FORESPORSEL_PAAMINNELSE_DATO"),
-                    påminnelseStatus = row.getStringOrNull("FORESPORSEL_PAAMINNELSE_STATUS"),
+                    påminnelseStatus = row.getStringOrNull("FORESPORSEL_PAAMINNELSE_STATUS")
+                        ?.let(PåminnelseStatus::valueOf),
                 )
             } else {
                 null

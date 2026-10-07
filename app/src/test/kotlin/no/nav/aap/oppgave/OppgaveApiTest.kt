@@ -70,6 +70,7 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
 import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
+import no.nav.aap.oppgave.verdityper.PåminnelseStatus
 import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
@@ -1239,6 +1240,49 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `oppdater påminnelse endrer ikke andre oppgavefelt`() {
+        val referanse = UUID.randomUUID()
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = "555004",
+                referanse = referanse,
+                behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                ),
+            )
+        )
+
+        val oppgaveFør = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
+        val dato = LocalDateTime.now().plusDays(30)
+        oppdaterPåminnelse(
+            OppdaterPåminnelseRequest(
+                referanse = referanse,
+                påminnelseDato = dato,
+                påminnelseStatus = PåminnelseStatus.PLANLAGT,
+            )
+        )
+
+        val oppgaveEtter = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(dato)
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseStatus)
+            .isEqualTo(PåminnelseStatus.PLANLAGT)
+        assertThat(oppgaveEtter.enhet).isEqualTo(oppgaveFør.enhet)
+        assertThat(oppgaveEtter.påVentTil).isEqualTo(oppgaveFør.påVentTil)
+        assertThat(oppgaveEtter.versjon).isEqualTo(oppgaveFør.versjon + 1)
+    }
+
+    @Test
     fun `forespørselSendtTilBehandler er null når legeerklæring er mottatt etter forespørsel er sendt`() {
         val saksnummer = "555002"
         val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
@@ -1397,6 +1441,13 @@ class OppgaveApiTest {
         return client.post(
             URI.create("http://localhost:$port/oppdater-oppgaver"),
             PostRequest(body = behandlingFlytStoppetHendelse)
+        )
+    }
+
+    private fun oppdaterPåminnelse(request: OppdaterPåminnelseRequest): Unit? {
+        return client.post(
+            URI.create("http://localhost:$port/oppdater-paaminnelse"),
+            PostRequest(body = request)
         )
     }
 

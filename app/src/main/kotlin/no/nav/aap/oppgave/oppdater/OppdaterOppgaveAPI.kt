@@ -9,6 +9,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendels
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.OppdaterPåminnelseRequest
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
@@ -130,4 +131,25 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
         }
     }
     respondWithStatus(HttpStatusCode.OK)
+}
+
+fun NormalOpenAPIRoute.oppdaterPåminnelseApi(
+    dataSource: DataSource,
+    prometheus: PrometheusMeterRegistry,
+) = route("/oppdater-paaminnelse").authorizedPost<Unit, Unit, OppdaterPåminnelseRequest>(
+    routeConfig = AuthorizationBodyPathConfig(
+        operasjon = Operasjon.SAKSBEHANDLE,
+        applicationsOnly = true,
+        applicationRole = "oppdater-behandlingsflyt-oppgaver",
+    )
+) { _, request ->
+    prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
+    val oppdatert = dataSource.transaction { connection ->
+        OppgaveRepository(connection).oppdaterPåminnelse(
+            referanse = request.referanse,
+            påminnelseDato = request.påminnelseDato,
+            påminnelseStatus = request.påminnelseStatus,
+        )
+    }
+    respondWithStatus(if (oppdatert) HttpStatusCode.OK else HttpStatusCode.NotFound)
 }
