@@ -1264,7 +1264,7 @@ class OppgaveApiTest {
         )
 
         val oppgaveFør = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
-        val dato = LocalDateTime.now().plusDays(30)
+        val dato = LocalDateTime.now().plusDays(30).truncatedTo(ChronoUnit.MILLIS)
         oppdaterPåminnelse(
             OppdaterPåminnelseRequest(
                 referanse = referanse,
