@@ -1,9 +1,8 @@
 package no.nav.aap.oppgave
 
-import no.nav.aap.oppgave.verdityper.PåminnelseStatus
 import java.time.LocalDateTime
 
 data class ForespørselSendtTilBehandlerDto(
     val påminnelseDato: LocalDateTime?,
-    val påminnelseStatus: PåminnelseStatus?,
+    val påminnelseAvbrutt: Boolean?,
 )

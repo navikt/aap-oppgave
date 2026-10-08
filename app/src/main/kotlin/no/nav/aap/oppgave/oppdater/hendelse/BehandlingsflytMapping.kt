@@ -18,7 +18,6 @@ import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
-import no.nav.aap.oppgave.verdityper.PåminnelseStatus
 import no.nav.aap.oppgave.verdityper.UføreVedtakStatus
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -80,7 +79,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
     return ForespørselSendtTilBehandler(
         // Påminnelse skal sendes 22 dager etter at forespørselen ble sendt
         påminnelseDato = sisteOpprettetTidspunkt.plusDays(22),
-        påminnelseStatus = PåminnelseStatus.PLANLAGT,
+        påminnelseAvbrutt = false,
     )
 }
 

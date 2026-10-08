@@ -70,7 +70,6 @@ import no.nav.aap.oppgave.tildel.TildelOppgaveRequest
 import no.nav.aap.oppgave.tildel.TildelOppgaveResponse
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.MarkeringHendelseType
-import no.nav.aap.oppgave.verdityper.PåminnelseStatus
 import no.nav.aap.oppgave.verdityper.ReturStatus
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
@@ -1199,7 +1198,7 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun `forespørselSendtTilBehandler er satt når forespørsel er sendt`() {
+    fun `forespørselSendtTilBehandler er satt når forespørsel om legeerklæring (L40) er sendt`() {
         val saksnummer = "555001"
         val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
 
@@ -1223,7 +1222,6 @@ class OppgaveApiTest {
                         )
                     ),
                 ),
-                // Ingen legeerklæring mottatt -> forespørselen er fortsatt ubesvart
             )
         )
 
@@ -1237,10 +1235,11 @@ class OppgaveApiTest {
         assertThat(oppgaver).isNotNull
         val oppgave = oppgaver!!.oppgaver.single { it.avklaringsbehovKode == Definisjon.AVKLAR_SYKDOM.kode.name }
         assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isNotNull()
+        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler?.påminnelseAvbrutt).isFalse()
     }
 
     @Test
-    fun `oppdater påminnelse endrer ikke andre oppgavefelt`() {
+    fun `oppdater påminnelse`() {
         val referanse = UUID.randomUUID()
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
@@ -1264,22 +1263,20 @@ class OppgaveApiTest {
         )
 
         val oppgaveFør = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
-        val dato = LocalDateTime.now().plusDays(30)
+        assertThat(oppgaveFør.forespørselSendtTilBehandler?.påminnelseAvbrutt).isFalse()
+
+        val dato = LocalDateTime.of(2026, 11, 7, 12, 0)
         oppdaterPåminnelse(
             OppdaterPåminnelseRequest(
                 referanse = referanse,
                 påminnelseDato = dato,
-                påminnelseStatus = PåminnelseStatus.PLANLAGT,
+                påminnelseAvbrutt = true,
             )
         )
 
         val oppgaveEtter = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
         assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(dato)
-        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseStatus)
-            .isEqualTo(PåminnelseStatus.PLANLAGT)
-        assertThat(oppgaveEtter.enhet).isEqualTo(oppgaveFør.enhet)
-        assertThat(oppgaveEtter.påVentTil).isEqualTo(oppgaveFør.påVentTil)
-        assertThat(oppgaveEtter.versjon).isEqualTo(oppgaveFør.versjon + 1)
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseAvbrutt).isTrue()
     }
 
     @Test

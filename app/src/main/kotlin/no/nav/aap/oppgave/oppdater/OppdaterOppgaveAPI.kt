@@ -148,7 +148,7 @@ fun NormalOpenAPIRoute.oppdaterPåminnelseApi(
         OppgaveRepository(connection).oppdaterPåminnelse(
             referanse = request.referanse,
             påminnelseDato = request.påminnelseDato,
-            påminnelseStatus = request.påminnelseStatus,
+            påminnelseAvbrutt = request.påminnelseAvbrutt,
         )
     }
     respondWithStatus(if (oppdatert) HttpStatusCode.OK else HttpStatusCode.NotFound)
