@@ -207,7 +207,7 @@ class OppdaterOppgaveService(
             }
         }
 
-        if (eksisterendeOppgave.status == Status.AVSLUTTET && erReturTilBeslutter(avklaringsbehov)) {
+        if (erReturTilBeslutter(avklaringsbehov, eksisterendeOppgave)) {
             val beslutterSomSendteIRetur = finnBeslutterSomSendteIRetur(oppgaveOppdatering)
 
             if (beslutterSomSendteIRetur != null && beslutterSomSendteIRetur != KELVIN) {
@@ -354,8 +354,11 @@ class OppdaterOppgaveService(
             AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
         )
 
-    private fun erReturTilBeslutter(avklaringsbehov: AvklaringsbehovHendelse): Boolean =
-        avklaringsbehov.avklaringsbehovKode.kode in setOf(
+    private fun erReturTilBeslutter(
+        avklaringsbehov: AvklaringsbehovHendelse,
+        eksisterendeOppgave: Oppgave,
+    ): Boolean =
+        eksisterendeOppgave.status == Status.AVSLUTTET && avklaringsbehov.avklaringsbehovKode.kode in setOf(
             Definisjon.FATTE_VEDTAK.kode.name,
         ) && avklaringsbehov.endringer.any { it.status == AvklaringsbehovStatus.AVSLUTTET }
 
