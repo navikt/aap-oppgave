@@ -207,7 +207,7 @@ class OppdaterOppgaveService(
             }
         }
 
-        if (erReturTilBeslutter(avklaringsbehov)) {
+        if (eksisterendeOppgave.status == Status.AVSLUTTET && erReturTilBeslutter(avklaringsbehov)) {
             val beslutterSomSendteIRetur = finnBeslutterSomSendteIRetur(oppgaveOppdatering)
 
             if (beslutterSomSendteIRetur != null && beslutterSomSendteIRetur != KELVIN) {
