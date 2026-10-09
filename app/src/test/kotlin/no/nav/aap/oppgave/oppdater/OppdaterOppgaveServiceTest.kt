@@ -43,6 +43,7 @@ import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.bufretStatistikk
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -56,7 +57,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -180,6 +180,36 @@ class OppdaterOppgaveServiceTest {
         assertThat(sykdomOppgave.status).isEqualTo(Status.OPPRETTET)
         val fastsettBeregningstidspunktOppgave = hentOppgave(fastsettBeregningstidspunktOppgaveId)
         assertThat(fastsettBeregningstidspunktOppgave.status).isEqualTo(Status.AVSLUTTET)
+    }
+
+    @Test
+    fun `Hvis aktivtAvklaringsbehov finnes på hendelsen skal den overstyre åpent behov tidligere i flyten`() {
+        val nå = LocalDateTime.now()
+        val hendelseMedBeregningstidspunktSomAktivtAvklaringsbehov = behandlingFlytHendelse(
+            saksnummer = TEST_SAKSNUMMER,
+            referanse = TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT
+        ) {
+            avklaringsbehov(
+                Definisjon.ETABLERING_EGEN_VIRKSOMHET,
+                status = AvklaringsbehovStatus.OPPRETTET,
+            ) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(13))
+            }
+            avklaringsbehov(
+                Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
+                AvklaringsbehovStatus.OPPRETTET
+            ) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(12))
+            }
+        }
+
+        sendBehandlingFlytStoppetHendelse(hendelseMedBeregningstidspunktSomAktivtAvklaringsbehov)
+
+        val åpneOppgaver =
+            hentOppgaverForBehandling(behandlingsref = TEST_BEHANDLINGREF).filter { it.status == Status.OPPRETTET }
+        assertThat(åpneOppgaver).hasSize(1)
+        assertThat(åpneOppgaver.first().avklaringsbehovKode).isEqualTo(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
     }
 
     @Test
