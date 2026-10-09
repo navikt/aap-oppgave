@@ -12,6 +12,7 @@ import no.nav.aap.oppgave.klienter.nom.skjerming.NomSkjermingGateway
 import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingGateway
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
+import no.nav.aap.oppgave.klienter.norg.UDEFINERT_ENHET
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytningType
@@ -174,7 +175,7 @@ class EnhetService(
         // Dette er et unntak fra hovedregel om at vi skal bruke overordnet enhet fra NORG
         // og må derfor spesialhåndteres
         if (enhet.oppfølgingsenhet == Enhet.NAV_UTLAND.kode) {
-            if (enhet.enhet == "UDEFINERT") {
+            if (enhet.enhet == UDEFINERT_ENHET) {
                 log.warn("Norg fant ingen enhet. Bruker Nav Utland fra oppfølgingsenheten til kvalitetssikring. Saksnummer: $saksnummer")
                 return EnhetForOppgave(
                     enhet = Enhet.NAV_UTLAND.kode,

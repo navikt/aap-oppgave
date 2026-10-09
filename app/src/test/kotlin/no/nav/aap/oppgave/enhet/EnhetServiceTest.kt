@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingGateway
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
+import no.nav.aap.oppgave.klienter.norg.UDEFINERT_ENHET
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.Code
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
@@ -137,7 +138,7 @@ class EnhetServiceTest {
 
     @Test
     fun `Skal kvalitetssikres av Nav Utland når Norg ikke finner enhet og Arena returnerer Nav Utland`() {
-        val norgGateway = object : INorgGateway by NorgGatewayMock.medRespons(responsEnhet = "UDEFINERT") {
+        val norgGateway = object : INorgGateway by NorgGatewayMock.medRespons(responsEnhet = UDEFINERT_ENHET) {
             override fun hentOverordnetFylkesenheter(enhetsnummer: String): List<String> {
                 error("Skal ikke hente fylkesenhet for $enhetsnummer når Nav Utland kvalitetssikrer egne saker")
             }

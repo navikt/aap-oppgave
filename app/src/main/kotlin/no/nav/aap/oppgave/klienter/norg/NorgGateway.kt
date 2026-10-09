@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
 
+const val UDEFINERT_ENHET = "UDEFINERT"
+
 data class Enhet(val enhetNr: String)
 
 data class EnhetMedNavn(val enhetNr: String, val navn: String)
@@ -69,8 +71,8 @@ class NorgGateway: INorgGateway {
                 log.warn("Fant ingen enhet for geografiskTilknyttning=$geografiskTilknyttning, erNavansatt=$erNavansatt, diskresjonskode=$diskresjonskode. Returnerer 1902 (Tromsø)")
                 return "1902"
             }
-            log.warn("Fant ingen enhet for geografiskTilknyttning=$geografiskTilknyttning, erNavansatt=$erNavansatt, diskresjonskode=$diskresjonskode. Returnerer UDEFINERT")
-            return "UDEFINERT"
+            log.warn("Fant ingen enhet for geografiskTilknyttning=$geografiskTilknyttning, erNavansatt=$erNavansatt, diskresjonskode=$diskresjonskode. Returnerer $UDEFINERT_ENHET")
+            return UDEFINERT_ENHET
         }
         if (enheter.size > 1) {
             log.warn("Flere aktuelle enheter for geografiskTilknyttning=$geografiskTilknyttning, erNavansatt=$erNavansatt, diskresjonskode=$diskresjonskode. Returnerer første.")
