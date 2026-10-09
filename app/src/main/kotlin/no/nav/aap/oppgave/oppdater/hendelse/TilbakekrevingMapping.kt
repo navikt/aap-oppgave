@@ -8,6 +8,7 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import kotlin.collections.emptyList
 
 fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
+    val avklaringsbehov = this.behandlingStatus.tilAvklaringsBehov()
     return OppgaveOppdatering(
         personIdent = this.personIdent,
         saksnummer = this.saksnummer.toString(),
@@ -16,7 +17,8 @@ fun TilbakekrevingsbehandlingOppdatertHendelse.tilOppgaveOppdatering(): OppgaveO
         behandlingStatus = this.behandlingStatus.tilBehandlingsstatus(),
         behandlingstype = Behandlingstype.TILBAKEKREVING,
         opprettetTidspunkt = this.sakOpprettet,
-        avklaringsbehov = this.behandlingStatus.tilAvklaringsBehov(),
+        avklaringsbehov = avklaringsbehov,
+        aktivtAvklaringsbehov = avklaringsbehov.firstOrNull()?.avklaringsbehovKode,
         vurderingsbehov = emptyList(),
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
