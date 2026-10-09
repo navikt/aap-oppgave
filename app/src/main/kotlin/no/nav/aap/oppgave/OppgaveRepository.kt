@@ -223,7 +223,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             }
             setResultValidator {
                 require(it == 1) {
-                    "Prøvde å oppdatere påminnelse for én oppgave, men fant $it oppgaver. Oppgave: ${oppgave.oppgaveId()}"
+                    "Påminnelsen ble ikke oppdatert. Oppgaven kan ha blitt endret eller avsluttet."
                 }
             }
         }
