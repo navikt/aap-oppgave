@@ -174,6 +174,13 @@ class EnhetService(
         // Dette er et unntak fra hovedregel om at vi skal bruke overordnet enhet fra NORG
         // og må derfor spesialhåndteres
         if (enhet.oppfølgingsenhet == Enhet.NAV_UTLAND.kode) {
+            if (enhet.enhet == "UDEFINERT") {
+                log.warn("Norg fant ingen enhet. Bruker Nav Utland fra oppfølgingsenheten til kvalitetssikring. Saksnummer: $saksnummer")
+                return EnhetForOppgave(
+                    enhet = Enhet.NAV_UTLAND.kode,
+                    oppfølgingsenhet = Enhet.NAV_UTLAND.kode
+                )
+            }
             return EnhetForOppgave(
                 enhet = getOverordnetEnhet(enhet.enhet),
                 oppfølgingsenhet = Enhet.NAV_UTLAND.kode
