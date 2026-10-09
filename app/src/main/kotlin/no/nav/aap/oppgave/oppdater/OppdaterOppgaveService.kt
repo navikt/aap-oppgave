@@ -93,14 +93,12 @@ class OppdaterOppgaveService(
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, Oppgave>,
     ) {
-        val åpentAvklaringsbehov = if (oppgaveOppdatering.aktivtAvklaringsbehov != null) {
+        val åpentAvklaringsbehov = oppgaveOppdatering.aktivtAvklaringsbehov?.let {
             oppgaveOppdatering.avklaringsbehov.find { it.avklaringsbehovKode == oppgaveOppdatering.aktivtAvklaringsbehov }
-        } else {
-            oppgaveOppdatering.avklaringsbehov.find { it.status in ÅPNE_STATUSER }
         }
 
-        if (åpentAvklaringsbehov != null && åpentAvklaringsbehov.status !in ÅPNE_STATUSER) {
-            throw IllegalStateException("Aktivt avklaringsbehov ${åpentAvklaringsbehov.avklaringsbehovKode} må være åpent, men er ${åpentAvklaringsbehov.status}")
+        require (åpentAvklaringsbehov == null || åpentAvklaringsbehov.status in ÅPNE_STATUSER) {
+            "Aktivt avklaringsbehov ${åpentAvklaringsbehov?.avklaringsbehovKode} må være åpent, men er ${åpentAvklaringsbehov?.status}"
         }
 
         // avslutt oppgaver som ikke lenger er åpne
