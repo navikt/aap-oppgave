@@ -116,7 +116,7 @@ class OppgaveApiTest {
         // Opprett ny oppgave
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = behandlingsReferanse.referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = behandlingsReferanse.referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -174,7 +174,7 @@ class OppgaveApiTest {
         // Opprett ny oppgave
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SAMORDNING_GRADERING, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -223,7 +223,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -275,7 +275,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -320,7 +320,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -425,7 +425,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -451,7 +451,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -477,7 +477,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -521,7 +521,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -538,7 +538,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
+                saksnummer = saksnummer2, referanse = referanse2, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -574,6 +574,7 @@ class OppgaveApiTest {
             opprettBehandlingshistorikk(
                 saksnummer = saksnummer,
                 referanse = behandlingRef.referanse,
+                aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM,
                 behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
@@ -608,7 +609,7 @@ class OppgaveApiTest {
         // ny kontor-oppgavr
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -620,10 +621,10 @@ class OppgaveApiTest {
             )
         )
 
-        val oppgave = hentOppgaveVisningsinfo(referanse1)
+        val oppgave = hentOppgaveVisningsinfo(referanse1) ?: error("Fant ikke noen oppgave")
 
         // Søk på å tildele en 11-5-oppgave skal bare returnere veiledere med tilgang til enheten
-        val lokalSaksbehandlere = søkEtterSaksbehandlere("Kontorsen", listOf(oppgave?.id!!))?.saksbehandlere
+        val lokalSaksbehandlere = søkEtterSaksbehandlere("Kontorsen", listOf(oppgave.id))?.saksbehandlere
         assertThat(lokalSaksbehandlere).hasSize(1)
         assertThat(lokalSaksbehandlere?.first()?.navIdent).isEqualTo("KontorVeileder123")
 
@@ -633,7 +634,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
+                saksnummer = saksnummer2, referanse = referanse2, aktivtAvklaringsbehov = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -680,7 +681,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -697,7 +698,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer2, referanse = referanse2, behandlingsbehov = listOf(
+                saksnummer = saksnummer2, referanse = referanse2, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -734,7 +735,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -781,7 +782,7 @@ class OppgaveApiTest {
         // BehandlingsflytStoppetHendelse uten relaterte identer
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SAMORDNING_GRADERING, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SAMORDNING_GRADERING,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -818,7 +819,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -872,7 +873,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -907,7 +908,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -937,7 +938,7 @@ class OppgaveApiTest {
         // Den ble returnert fra kvalitetssikrer
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.SENDT_TILBAKE_FRA_KVALITETSSIKRER,
@@ -1005,7 +1006,7 @@ class OppgaveApiTest {
 
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.SKRIV_VEDTAKSBREV, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.SKRIV_VEDTAKSBREV,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1020,7 +1021,7 @@ class OppgaveApiTest {
         // Behandlingen er AVSLUTTET, da skal åpne oppgaver lukkes
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer1, referanse = referanse1, behandlingsbehov = listOf(
+                saksnummer = saksnummer1, referanse = referanse1, aktivtAvklaringsbehov = Definisjon.SKRIV_VEDTAKSBREV, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.SKRIV_VEDTAKSBREV,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1040,7 +1041,7 @@ class OppgaveApiTest {
         val saksnummer = "1023005"
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = behandlingref.referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = behandlingref.referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1084,7 +1085,7 @@ class OppgaveApiTest {
         val saksnummer = "1023005"
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = behandlingref.referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = behandlingref.referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1133,7 +1134,7 @@ class OppgaveApiTest {
         // Opprett lokalkontor-oppgave
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
@@ -1163,7 +1164,7 @@ class OppgaveApiTest {
         // Opprett NAY-oppgave
         oppdaterOppgaver(
             opprettBehandlingshistorikk(
-                saksnummer = saksnummer, referanse = referanse, behandlingsbehov = listOf(
+                saksnummer = saksnummer, referanse = referanse, aktivtAvklaringsbehov = Definisjon.AVKLAR_SAMORDNING_GRADERING, behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
                         status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
@@ -1206,6 +1207,7 @@ class OppgaveApiTest {
             opprettBehandlingshistorikk(
                 saksnummer = saksnummer,
                 referanse = behandlingsReferanse.referanse,
+                aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM,
                 behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
@@ -1248,6 +1250,7 @@ class OppgaveApiTest {
             opprettBehandlingshistorikk(
                 saksnummer = saksnummer,
                 referanse = behandlingsReferanse.referanse,
+                aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM,
                 behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
@@ -1296,6 +1299,7 @@ class OppgaveApiTest {
             opprettBehandlingshistorikk(
                 saksnummer = saksnummer,
                 referanse = behandlingsReferanse.referanse,
+                aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM,
                 behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
@@ -1346,6 +1350,7 @@ class OppgaveApiTest {
         relaterteIdenter: List<String>? = emptyList(),
         uførevedtak: UførevedtakDto? = null,
         mottattDokumenter: List<MottattDokumentDto> = emptyList(),
+        aktivtAvklaringsbehov: Definisjon? = null
     ): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
         val avklaringsbehovHendelseDtoListe = behandlingsbehov.map { avklaringsbehovHendelse ->
@@ -1381,6 +1386,7 @@ class OppgaveApiTest {
             opprettetTidspunkt = nå,
             hendelsesTidspunkt = nå,
             versjon = "1",
+            aktivtAvklaringsbehov = aktivtAvklaringsbehov ,
             avklaringsbehov = avklaringsbehovHendelseDtoListe,
             årsakerTilBehandling = listOf("SØKNAD"),
             relevanteIdenterPåBehandling = relaterteIdenter,
