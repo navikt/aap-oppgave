@@ -1,6 +1,6 @@
 [versions]
-komponenter = "2.0.177"
-tilgang = "1.0.242"
+komponenter = "2.0.185"
+tilgang = "1.0.243"
 behandlingsflytVersjon = "0.0.669"
 postmottakVersjon = "6.0.10"
 
