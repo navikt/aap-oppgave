@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.klienter.msgraph.MemberOf
 import no.nav.aap.oppgave.klienter.nom.skjerming.SkjermingGateway
 import no.nav.aap.oppgave.klienter.norg.Diskresjonskode
 import no.nav.aap.oppgave.klienter.norg.INorgGateway
+import no.nav.aap.oppgave.klienter.norg.UDEFINERT_ENHET
 import no.nav.aap.oppgave.klienter.pdl.Adressebeskyttelseskode
 import no.nav.aap.oppgave.klienter.pdl.Code
 import no.nav.aap.oppgave.klienter.pdl.GeografiskTilknytning
@@ -133,6 +134,31 @@ class EnhetServiceTest {
         assertThat(utledetEnhet.enhet).isEqualTo("0400")
         assertThat(utledetEnhet.oppfølgingsenhet).isEqualTo(null)
 
+    }
+
+    @Test
+    fun `Skal kvalitetssikres av Nav Utland når Norg ikke finner enhet og Arena returnerer Nav Utland`() {
+        val norgGateway = object : INorgGateway by NorgGatewayMock.medRespons(responsEnhet = UDEFINERT_ENHET) {
+            override fun hentOverordnetFylkesenheter(enhetsnummer: String): List<String> {
+                error("Skal ikke hente fylkesenhet for $enhetsnummer når Nav Utland kvalitetssikrer egne saker")
+            }
+        }
+        val service = EnhetService(
+            graphGateway,
+            pdlGateway,
+            nomGateway,
+            OppfølgingsenhetService(dataSource, VeilarbarenaGatewayMock.medRespons("0393")),
+            norgGateway
+        )
+
+        val utledetEnhet = service.utledEnhetForOppgave(
+            KVALITETSSIKRER_AVKLARINGSBEHOVKODE,
+            "12345678910",
+            emptyList(),
+            erFørstegangsbehandling = false
+        )
+
+        assertThat(utledetEnhet).isEqualTo(EnhetForOppgave(enhet = "0393", oppfølgingsenhet = "0393"))
     }
 
     @Test
