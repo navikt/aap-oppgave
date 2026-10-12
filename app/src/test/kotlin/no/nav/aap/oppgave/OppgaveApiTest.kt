@@ -1444,7 +1444,12 @@ class OppgaveApiTest {
     private fun oppdaterPåminnelse(request: OppdaterPåminnelseRequest): Unit? {
         return client.post(
             URI.create("http://localhost:$port/oppdater-paaminnelse"),
-            PostRequest(body = request)
+            PostRequest(
+                body = request,
+                additionalHeaders = listOf(
+                    Header("Authorization", "Bearer ${getOboToken(listOf(SaksbehandlerOppfolging.id)).token()}")
+                )
+            )
         )
     }
 
