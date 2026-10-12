@@ -1,7 +1,6 @@
 package no.nav.aap.oppgave.oppdater
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
-import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.*
@@ -26,6 +25,11 @@ import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.tilgang.Beslutter
+import no.nav.aap.tilgang.Kvalitetssikrer
+import no.nav.aap.tilgang.RollerConfig
+import no.nav.aap.tilgang.SaksbehandlerNasjonal
+import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
@@ -137,14 +141,16 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
 fun NormalOpenAPIRoute.oppdaterPåminnelseApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry,
-) = route("/oppdater-paaminnelse").post<Unit, Unit, OppdaterPåminnelseRequest> { _, request ->
-    prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
-    val oppdatert = dataSource.transaction { connection ->
-        OppgaveRepository(connection).oppdaterPåminnelse(
-            referanse = request.referanse,
-            påminnelseDato = request.påminnelseDato,
-            påminnelseAvbrutt = request.påminnelseAvbrutt,
-        )
-    }
-    respondWithStatus(if (oppdatert) HttpStatusCode.OK else HttpStatusCode.NotFound)
+) = route("/oppdater-paaminnelse").authorizedPost<Unit, Unit, OppdaterPåminnelseRequest>(
+    RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
+    ) { _, request ->
+        prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
+        val oppdatert = dataSource.transaction { connection ->
+            OppgaveRepository(connection).oppdaterPåminnelse(
+                referanse = request.referanse,
+                påminnelseDato = request.påminnelseDato,
+                påminnelseAvbrutt = request.påminnelseAvbrutt,
+            )
+        }
+        respondWithStatus(if (oppdatert) HttpStatusCode.OK else HttpStatusCode.NotFound)
 }
