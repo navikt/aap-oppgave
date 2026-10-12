@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.oppdater
 
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
+import com.papsign.ktor.openapigen.route.path.normal.post
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
 import io.ktor.http.*
@@ -136,13 +137,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
 fun NormalOpenAPIRoute.oppdaterPåminnelseApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry,
-) = route("/oppdater-paaminnelse").authorizedPost<Unit, Unit, OppdaterPåminnelseRequest>(
-    routeConfig = AuthorizationBodyPathConfig(
-        operasjon = Operasjon.SAKSBEHANDLE,
-        applicationsOnly = true,
-        applicationRole = "oppdater-behandlingsflyt-oppgaver",
-    )
-) { _, request ->
+) = route("/oppdater-paaminnelse").post<Unit, Unit, OppdaterPåminnelseRequest> { _, request ->
     prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
     val oppdatert = dataSource.transaction { connection ->
         OppgaveRepository(connection).oppdaterPåminnelse(
