@@ -1490,8 +1490,6 @@ class OppdaterOppgaveServiceTest {
             referanse = behandlingsRefPostmottak.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
-            // TODO: Må legges inn når postmottak-backend er merget
-            //  aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             avklaringsbehov = listOf(
                 no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
