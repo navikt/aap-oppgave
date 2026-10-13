@@ -236,6 +236,7 @@ class OppdaterOppgaveServiceTest {
                     )
                 )
             ),
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             opprettetTidspunkt = nå.minusHours(1),
             hendelsesTidspunkt = nå.minusHours(1),
         )
@@ -300,6 +301,7 @@ class OppdaterOppgaveServiceTest {
                     )
                 )
             ),
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.DIGITALISER_DOKUMENT,
             opprettetTidspunkt = nå.minusHours(2),
             hendelsesTidspunkt = nå.minusHours(2),
         )
@@ -1338,8 +1340,7 @@ class OppdaterOppgaveServiceTest {
             referanse = TEST_BEHANDLINGREF.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
-            // TODO: Oppdater når posttmottak backend er oppdatert
-            //  aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             avklaringsbehov = listOf(
                 no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
@@ -1381,7 +1382,7 @@ class OppdaterOppgaveServiceTest {
             referanse = TEST_BEHANDLINGREF.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
-            // TODO: aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             avklaringsbehov = listOf(
                 no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
@@ -1504,6 +1505,7 @@ class OppdaterOppgaveServiceTest {
                     ),
                 ),
             ),
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             opprettetTidspunkt = nå.minusDays(2),
             hendelsesTidspunkt = nå.minusHours(5),
         )
