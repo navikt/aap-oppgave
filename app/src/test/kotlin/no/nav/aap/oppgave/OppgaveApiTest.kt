@@ -1247,6 +1247,7 @@ class OppgaveApiTest {
             opprettBehandlingshistorikk(
                 saksnummer = "555004",
                 referanse = referanse,
+                aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM,
                 behandlingsbehov = listOf(
                     Behandlingsbehov(
                         definisjon = Definisjon.AVKLAR_SYKDOM,
