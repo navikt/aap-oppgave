@@ -34,6 +34,7 @@ fun behandlingFlytHendelse(
     vurderingsbehov: List<String> = listOf("SØKNAD"),
     reserverTilPerAvklaringsbehov: Map<String, String>? = null,
     behandlingMetadata: BehandlingMetadata? = null,
+    aktivtAvklaringsbehov: Definisjon? = null,
     block: BehandlingFlytHendelseBuilder.() -> Unit = {}
 ): BehandlingFlytStoppetHendelse {
     val builder = BehandlingFlytHendelseBuilder().apply(block)
@@ -56,7 +57,8 @@ fun behandlingFlytHendelse(
         uføreVedtak = null,
         relevanteIdenterPåBehandling = relevanteIdenterPåBehandling,
         behandlingMetadata = behandlingMetadata,
-        reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov ?: emptyMap()
+        reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov ?: emptyMap(),
+        aktivtAvklaringsbehov = aktivtAvklaringsbehov
     )
 }
 

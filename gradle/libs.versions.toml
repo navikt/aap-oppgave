@@ -1,8 +1,8 @@
 [versions]
 komponenter = "2.0.185"
 tilgang = "1.0.243"
-behandlingsflytVersjon = "0.0.669"
-postmottakVersjon = "6.0.10"
+behandlingsflytVersjon = "0.0.672"
+postmottakVersjon = "6.0.13"
 
 [libraries]
 json = { module = "no.nav.aap.kelvin:json", version.ref = "komponenter" }

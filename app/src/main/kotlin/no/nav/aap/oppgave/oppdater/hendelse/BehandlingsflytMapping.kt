@@ -49,7 +49,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
         uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse),
-        forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter)
+        forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter),
+        aktivtAvklaringsbehov = this.aktivtAvklaringsbehov?.let { AvklaringsbehovKode(it.kode.name) }
     )
 }
 
@@ -115,7 +116,7 @@ private fun List<MottattDokumentDto>.tilMottattDokumenter(behandlingRef: UUID): 
     }
 }
 
-private fun UførevedtakDto.tilUførevedtak(behandlingRef: UUID) : UføreVedtak {
+private fun UførevedtakDto.tilUførevedtak(behandlingRef: UUID): UføreVedtak {
     return UføreVedtak(
         referanse = behandlingRef,
         virkningsdato = this.virkningsdato,

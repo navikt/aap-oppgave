@@ -9,11 +9,11 @@ import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_OG_SAKSBEHANDLER
 import no.nav.aap.oppgave.AVKLARINGSBEHOV_FOR_VEILEDER_POSTMOTTAK
 import no.nav.aap.oppgave.AvklaringsbehovKode
+import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
-import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
@@ -21,7 +21,6 @@ import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.SykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.VeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
-import no.nav.aap.oppgave.oppdater.hendelse.AVSLUTTEDE_STATUSER
 import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovHendelse
 import no.nav.aap.oppgave.oppdater.hendelse.AvklaringsbehovStatus
 import no.nav.aap.oppgave.oppdater.hendelse.BehandlingStatus
@@ -82,7 +81,10 @@ class OppdaterOppgaveService(
             if (endringer.any { it.erEndret() }) sendOppgaveStatusOppdatert(oppgaveOppdatering.referanse)
         }
 
-        if (oppgaveOppdatering.uføreVedtak != null) uføreVedtakRepository.lagreUføreVedtak(oppgaveOppdatering.referanse, oppgaveOppdatering.uføreVedtak)
+        if (oppgaveOppdatering.uføreVedtak != null) uføreVedtakRepository.lagreUføreVedtak(
+            oppgaveOppdatering.referanse,
+            oppgaveOppdatering.uføreVedtak
+        )
 
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)
     }
@@ -91,23 +93,26 @@ class OppdaterOppgaveService(
         oppgaveOppdatering: OppgaveOppdatering,
         oppgaveMap: Map<AvklaringsbehovKode, Oppgave>,
     ) {
-        // avklaringsbehov kommer inn i riktig rekkefølge fra behandlingsflyt. Velger det første åpne
-        val åpentAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.firstOrNull { it.status in ÅPNE_STATUSER }
-        val avsluttedeAvklaringsbehov = oppgaveOppdatering.avklaringsbehov.filter { it.status in AVSLUTTEDE_STATUSER }
+        val åpentAvklaringsbehov = oppgaveOppdatering.aktivtAvklaringsbehov?.let {
+            oppgaveOppdatering.avklaringsbehov.find { it.avklaringsbehovKode == oppgaveOppdatering.aktivtAvklaringsbehov }
+        }
 
+        require (åpentAvklaringsbehov == null || åpentAvklaringsbehov.status in ÅPNE_STATUSER) {
+            "Aktivt avklaringsbehov ${åpentAvklaringsbehov?.avklaringsbehovKode} må være åpent, men er ${åpentAvklaringsbehov?.status}"
+        }
+
+        // avslutt oppgaver som ikke lenger er åpne
+        avslutteOppgaver(oppgaveMap.filterKeys { it != åpentAvklaringsbehov?.avklaringsbehovKode }.values.toList())
+
+        // opprett eller oppdater oppgave for aktivt avklaringsbehov
         if (åpentAvklaringsbehov != null) {
             val eksisterendeOppgave = oppgaveMap[åpentAvklaringsbehov.avklaringsbehovKode]
             if (eksisterendeOppgave == null) {
-                opprettNyOppgaveForAvklaringsbehov(oppgaveOppdatering, oppgaveMap, åpentAvklaringsbehov)
+                opprettNyOppgaveForAvklaringsbehov(oppgaveOppdatering, åpentAvklaringsbehov)
             } else {
-                avsluttOppgaverSenereIFlyt(oppgaveMap, åpentAvklaringsbehov)
                 oppdaterEksistendeOppgave(oppgaveOppdatering, eksisterendeOppgave, åpentAvklaringsbehov)
             }
         }
-
-        // Avslutt oppgaver hvor avklaringsbehovet er lukket
-        val oppgaverSomSkalAvsluttes = avsluttedeAvklaringsbehov.mapNotNull { oppgaveMap[it.avklaringsbehovKode] }
-        avslutteOppgaver(oppgaverSomSkalAvsluttes)
     }
 
     private fun oppdaterEksistendeOppgave(
@@ -327,24 +332,10 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun avsluttOppgaverSenereIFlyt(
-        oppgaveMap: Map<AvklaringsbehovKode, Oppgave>,
-        åpentAvklaringsbehov: AvklaringsbehovHendelse
-    ) {
-        val oppgaverSomMåAvsluttes =
-            oppgaveMap.values.filter { it.avklaringsbehovKode != åpentAvklaringsbehov.avklaringsbehovKode.kode }
-        avslutteOppgaver(oppgaverSomMåAvsluttes)
-    }
-
     private fun opprettNyOppgaveForAvklaringsbehov(
         oppgaveOppdatering: OppgaveOppdatering,
-        oppgaveMap: Map<AvklaringsbehovKode, Oppgave>,
         åpentAvklaringsbehov: AvklaringsbehovHendelse
     ) {
-        if (oppgaveMap.isNotEmpty()) {
-            // Dersom det finnes åpne oppgaver fra før, skal disse avsluttes før ny oppgave opprettes.
-            avslutteOppgaver(oppgaveMap.values.toList())
-        }
         opprettOppgave(oppgaveOppdatering, åpentAvklaringsbehov)
     }
 
@@ -628,11 +619,7 @@ class OppdaterOppgaveService(
     private fun validerOppgaveTilstandEtterOppdatering(behandlingsreferanse: UUID) {
         val åpneOppgaver = oppgaveRepository.hentOppgaver(behandlingsreferanse).filter { it.status == Status.OPPRETTET }
         if (åpneOppgaver.size > 1) {
-            log.warn(
-                "Fant ${åpneOppgaver.size} åpne oppgaver for behandling $behandlingsreferanse. " +
-                        "Oppgaver: ${åpneOppgaver.map { it.id }.joinToString()} " +
-                        "på avklaringsbehov: ${åpneOppgaver.joinToString { it.avklaringsbehovKode }}"
-            )
+            throw IllegalStateException("Det finnes flere åpne oppgaver for behandlingsreferanse $behandlingsreferanse: ${åpneOppgaver.map { it.oppgaveId() }}")
         }
     }
 

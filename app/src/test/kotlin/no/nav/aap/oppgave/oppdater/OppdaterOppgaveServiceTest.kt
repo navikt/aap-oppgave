@@ -1,6 +1,9 @@
 package no.nav.aap.oppgave.oppdater
 
 import io.getunleash.FakeUnleash
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
@@ -43,6 +46,7 @@ import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.bufretStatistikk
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -56,10 +60,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.UUID
+import org.slf4j.event.KeyValuePair
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 
@@ -143,7 +144,7 @@ class OppdaterOppgaveServiceTest {
 
         val nå = LocalDateTime.now()
 
-        val nyHendelse = behandlingFlytHendelse(saksnummer = TEST_SAKSNUMMER, referanse = TEST_BEHANDLINGREF) {
+        val nyHendelse = behandlingFlytHendelse(saksnummer = TEST_SAKSNUMMER, referanse = TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Saksbehandler", nå.minusHours(9))
@@ -183,6 +184,36 @@ class OppdaterOppgaveServiceTest {
     }
 
     @Test
+    fun `Hvis aktivtAvklaringsbehov finnes på hendelsen skal den overstyre åpent behov tidligere i flyten`() {
+        val nå = LocalDateTime.now()
+        val hendelseMedBeregningstidspunktSomAktivtAvklaringsbehov = behandlingFlytHendelse(
+            saksnummer = TEST_SAKSNUMMER,
+            referanse = TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT
+        ) {
+            avklaringsbehov(
+                Definisjon.ETABLERING_EGEN_VIRKSOMHET,
+                status = AvklaringsbehovStatus.OPPRETTET,
+            ) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(13))
+            }
+            avklaringsbehov(
+                Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
+                AvklaringsbehovStatus.OPPRETTET
+            ) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(12))
+            }
+        }
+
+        sendBehandlingFlytStoppetHendelse(hendelseMedBeregningstidspunktSomAktivtAvklaringsbehov)
+
+        val åpneOppgaver =
+            hentOppgaverForBehandling(behandlingsref = TEST_BEHANDLINGREF).filter { it.status == Status.OPPRETTET }
+        assertThat(åpneOppgaver).hasSize(1)
+        assertThat(åpneOppgaver.first().avklaringsbehovKode).isEqualTo(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
+    }
+
+    @Test
     fun `oppgaver fra postmottak lukkes etter at saksnummer er satt`() {
         val nå = LocalDateTime.now()
 
@@ -205,6 +236,7 @@ class OppdaterOppgaveServiceTest {
                     )
                 )
             ),
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             opprettetTidspunkt = nå.minusHours(1),
             hendelsesTidspunkt = nå.minusHours(1),
         )
@@ -269,6 +301,7 @@ class OppdaterOppgaveServiceTest {
                     )
                 )
             ),
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.DIGITALISER_DOKUMENT,
             opprettetTidspunkt = nå.minusHours(2),
             hendelsesTidspunkt = nå.minusHours(2),
         )
@@ -342,7 +375,8 @@ class OppdaterOppgaveServiceTest {
         val hendelseMedKode6RelatertIdent = behandlingFlytHendelse(
             saksnummer = TEST_SAKSNUMMER,
             referanse = BehandlingReferanse(behandlingsref),
-            relevanteIdenterPåBehandling = listOf(STRENGT_FORTROLIG_IDENT)
+            relevanteIdenterPåBehandling = listOf(STRENGT_FORTROLIG_IDENT),
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -376,7 +410,8 @@ class OppdaterOppgaveServiceTest {
         val hendelseMedKode7RelatertIdent = behandlingFlytHendelse(
             saksnummer = Saksnummer(saksnummer2),
             referanse = BehandlingReferanse(behandlingsref2),
-            relevanteIdenterPåBehandling = listOf(FORTROLIG_ADRESSE_IDENT)
+            relevanteIdenterPåBehandling = listOf(FORTROLIG_ADRESSE_IDENT),
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SAMORDNING_GRADERING
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SAMORDNING_GRADERING, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -402,6 +437,7 @@ class OppdaterOppgaveServiceTest {
         val hendelse = behandlingFlytHendelse(
             saksnummer = saksnummer,
             referanse = behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -476,7 +512,8 @@ class OppdaterOppgaveServiceTest {
 
         val tilbakeTilBeslutter = behandlingFlytHendelse(
             saksnummer = TEST_SAKSNUMMER,
-            referanse = behandlingsref
+            referanse = behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK
         ) {
             avklaringsbehov(Definisjon.AVKLAR_OPPHOLDSKRAV, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(3))
@@ -544,7 +581,8 @@ class OppdaterOppgaveServiceTest {
 
         val tilbakeTilBeslutter = behandlingFlytHendelse(
             saksnummer = TEST_SAKSNUMMER,
-            referanse = behandlingsref
+            referanse = behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK
         ) {
             avklaringsbehov(Definisjon.AVKLAR_OPPHOLDSKRAV, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(3))
@@ -590,7 +628,8 @@ class OppdaterOppgaveServiceTest {
         // Ingen AVSLUTTET-endring på FATTE_VEDTAK → erReturTilToTrinn == false
         val førsteTilBeslutter = behandlingFlytHendelse(
             saksnummer = TEST_SAKSNUMMER,
-            referanse = behandlingsref
+            referanse = behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK
         ) {
             avklaringsbehov(Definisjon.FORESLÅ_VEDTAK, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
@@ -622,7 +661,8 @@ class OppdaterOppgaveServiceTest {
 
         val tilbakeTilBeslutterAndreGang = behandlingFlytHendelse(
             saksnummer = TEST_SAKSNUMMER,
-            referanse = behandlingsref
+            referanse = behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK
         ) {
             avklaringsbehov(Definisjon.AVKLAR_OPPHOLDSKRAV, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(6))
@@ -763,7 +803,8 @@ class OppdaterOppgaveServiceTest {
 
         val tilKvalitetssikrer = behandlingFlytHendelse(
             TEST_SAKSNUMMER,
-            behandlingsref
+            behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.KVALITETSSIKRING
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -778,7 +819,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
 
         val returFraKvalitetssikrer = behandlingFlytHendelse(
-            TEST_SAKSNUMMER, behandlingsref
+            TEST_SAKSNUMMER, behandlingsref, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -820,7 +861,8 @@ class OppdaterOppgaveServiceTest {
 
         val tilKvalitetssikrer = behandlingFlytHendelse(
             TEST_SAKSNUMMER,
-            TEST_BEHANDLINGREF
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.KVALITETSSIKRING
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -835,7 +877,7 @@ class OppdaterOppgaveServiceTest {
         sendBehandlingFlytStoppetHendelse(tilKvalitetssikrer)
 
         val returFraKvalitetssikrer = behandlingFlytHendelse(
-            TEST_SAKSNUMMER, TEST_BEHANDLINGREF
+            TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -946,7 +988,7 @@ class OppdaterOppgaveServiceTest {
         val nå = LocalDateTime.now()
 
         // saksbehandler setter sak på vent i sykdomssteget
-        val hendelse = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true) {
+        val hendelse = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(
                     AvklaringsbehovStatus.OPPRETTET,
@@ -1006,7 +1048,9 @@ class OppdaterOppgaveServiceTest {
         // Kvalitetssikrer til veileder til kvalitetssikrer
         val tilKvalitetssikrer = behandlingFlytHendelse(
             TEST_SAKSNUMMER,
-            TEST_BEHANDLINGREF
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.KVALITETSSIKRING
+
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -1023,7 +1067,8 @@ class OppdaterOppgaveServiceTest {
 
 
         val returFraKvalitetssikrer = behandlingFlytHendelse(
-            TEST_SAKSNUMMER, TEST_BEHANDLINGREF
+            TEST_SAKSNUMMER, TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -1053,7 +1098,8 @@ class OppdaterOppgaveServiceTest {
         assertThat(returOppgave.returInformasjon?.endretAv).isEqualTo("Kvalitetssikrer")
 
         val returTilKvalitetssikrer = behandlingFlytHendelse(
-            TEST_SAKSNUMMER, TEST_BEHANDLINGREF
+            TEST_SAKSNUMMER, TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.KVALITETSSIKRING
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -1093,7 +1139,7 @@ class OppdaterOppgaveServiceTest {
         )
 
         // Beslutter til veileder til beslutter
-        val tilBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
+        val tilBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK) {
             avklaringsbehov(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Saksbehandler", nå.minusHours(9))
@@ -1108,7 +1154,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.FATTE_VEDTAK.kode.name)
 
 
-        val returFraBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
+        val returFraBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT) {
             avklaringsbehov(
                 Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
                 AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
@@ -1134,7 +1180,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(returOppgave.avklaringsbehovKode).isEqualTo(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
         assertThat(returOppgave.returInformasjon?.endretAv).isEqualTo("Beslutter")
 
-        val returTilBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
+        val returTilBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK) {
             avklaringsbehov(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Veileder", nå.minusHours(9))
@@ -1168,7 +1214,7 @@ class OppdaterOppgaveServiceTest {
 
         val nå = LocalDateTime.now()
 
-        val hendelsePåVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true) {
+        val hendelsePåVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1183,7 +1229,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgavePåVent.erPåVent).isTrue()
         assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
 
-        val hendelseTattAvVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
+        val hendelseTattAvVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1202,7 +1248,7 @@ class OppdaterOppgaveServiceTest {
 
         // sender oppdatering på oppgave, tidligere utløptVentefrist skal videreføres
 
-        val hendelseOppdatering = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
+        val hendelseOppdatering = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1218,7 +1264,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgaveEtterOppdatering.utløptVentefrist).isEqualTo(LocalDate.now())
 
         // setter på vent på nytt, utløptVentefrist skal da bli borte
-        val hendelseSettPåVentIgjen = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true) {
+        val hendelseSettPåVentIgjen = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1244,7 +1290,7 @@ class OppdaterOppgaveServiceTest {
 
         val nå = LocalDateTime.now()
 
-        val hendelsePåVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true) {
+        val hendelsePåVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1259,7 +1305,7 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgavePåVent.erPåVent).isTrue()
         assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
 
-        val hendelseTattAvVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
+        val hendelseTattAvVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1294,6 +1340,7 @@ class OppdaterOppgaveServiceTest {
             referanse = TEST_BEHANDLINGREF.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             avklaringsbehov = listOf(
                 no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
@@ -1335,6 +1382,7 @@ class OppdaterOppgaveServiceTest {
             referanse = TEST_BEHANDLINGREF.referanse,
             behandlingType = no.nav.aap.postmottak.kontrakt.behandling.TypeBehandling.Journalføring,
             status = no.nav.aap.postmottak.kontrakt.behandling.Status.OPPRETTET,
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             avklaringsbehov = listOf(
                 no.nav.aap.postmottak.kontrakt.hendelse.AvklaringsbehovHendelseDto(
                     avklaringsbehovDefinisjon = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
@@ -1385,7 +1433,7 @@ class OppdaterOppgaveServiceTest {
         val nå = LocalDateTime.now()
 
         // sak på sykdomssteget
-        val tilSykdom = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF) {
+        val tilSykdom = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1398,6 +1446,7 @@ class OppdaterOppgaveServiceTest {
         // søknad trekkes fra sykdomssteget
         val trekkSøknad = behandlingFlytHendelse(
             TEST_SAKSNUMMER, TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.VURDER_TREKK_AV_SØKNAD,
             vurderingsbehov = listOf("SØKNAD", "SØKNAD_TRUKKET")
         ) {
             avklaringsbehov(Definisjon.VURDER_TREKK_AV_SØKNAD, AvklaringsbehovStatus.OPPRETTET) {
@@ -1421,7 +1470,7 @@ class OppdaterOppgaveServiceTest {
         val nå = LocalDateTime.now()
 
         val opprett115Hendelse = behandlingFlytHendelse(
-            saksnummer, behandlingsref,
+            saksnummer, behandlingsref, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
@@ -1454,6 +1503,7 @@ class OppdaterOppgaveServiceTest {
                     ),
                 ),
             ),
+            aktivtAvklaringsbehov = no.nav.aap.postmottak.kontrakt.avklaringsbehov.Definisjon.AVKLAR_SAK,
             opprettetTidspunkt = nå.minusDays(2),
             hendelsesTidspunkt = nå.minusHours(5),
         )
@@ -1476,7 +1526,8 @@ class OppdaterOppgaveServiceTest {
             behandlingType = TypeBehandling.Revurdering,
             hendelsesTidspunkt = nå.minusHours(1),
             opprettetTidspunkt = nå.minusDays(3),
-            vurderingsbehov = listOf("INSTITUSJONSOPPHOLD")
+            vurderingsbehov = listOf("INSTITUSJONSOPPHOLD"),
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SONINGSFORRHOLD
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SONINGSFORRHOLD, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
@@ -1495,7 +1546,8 @@ class OppdaterOppgaveServiceTest {
             behandlingType = TypeBehandling.Revurdering,
             hendelsesTidspunkt = nå,
             opprettetTidspunkt = nå.minusDays(3),
-            vurderingsbehov = emptyList()
+            vurderingsbehov = emptyList(),
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusMinutes(20))
@@ -1518,7 +1570,8 @@ class OppdaterOppgaveServiceTest {
             saksnummer = Saksnummer("123"),
             referanse = behandlingsref,
             behandlingType = TypeBehandling.Førstegangsbehandling,
-            vurderingsbehov = listOf("INSTITUSJONSOPPHOLD")
+            vurderingsbehov = listOf("INSTITUSJONSOPPHOLD"),
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SONINGSFORRHOLD
         )
         {
             avklaringsbehov(Definisjon.AVKLAR_SONINGSFORRHOLD, AvklaringsbehovStatus.OPPRETTET) {
@@ -1540,7 +1593,8 @@ class OppdaterOppgaveServiceTest {
             saksnummer = saksnummer,
             referanse = behandlingsref,
             behandlingMetadata = BehandlingsflytMetadata.AVSLAG_11_5_FØRSTEGANGSBEHANDLING,
-            hendelsesTidspunkt = nå.minusHours(2)
+            hendelsesTidspunkt = nå.minusHours(2),
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
@@ -1579,7 +1633,8 @@ class OppdaterOppgaveServiceTest {
         // Kvalitetssikrer til veileder til kvalitetssikrer
         val tilKvalitetssikrer = behandlingFlytHendelse(
             TEST_SAKSNUMMER,
-            behandlingsref
+            behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.KVALITETSSIKRING
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -1597,7 +1652,8 @@ class OppdaterOppgaveServiceTest {
 
 
         val returFraKvalitetssikrer = behandlingFlytHendelse(
-            TEST_SAKSNUMMER, behandlingsref
+            TEST_SAKSNUMMER, behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_KVALITETSSIKRER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -1627,7 +1683,8 @@ class OppdaterOppgaveServiceTest {
         assertThat(returOppgave.forrigeKvalitetssikrerInfo?.forrigeKvalitetssikrerIdent).isNull()
 
         val returTilKvalitetssikrer = behandlingFlytHendelse(
-            TEST_SAKSNUMMER, behandlingsref
+            TEST_SAKSNUMMER, behandlingsref,
+            aktivtAvklaringsbehov = Definisjon.KVALITETSSIKRING
         ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
@@ -1667,7 +1724,8 @@ class OppdaterOppgaveServiceTest {
         val hendelseTrekkSøknad = behandlingFlytHendelse(
             saksnummer = saksnummer,
             referanse = behandlingsref,
-            reserverTilPerAvklaringsbehov = mapOf(Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name to "Veileder1")
+            reserverTilPerAvklaringsbehov = mapOf(Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name to "Veileder1"),
+            aktivtAvklaringsbehov = Definisjon.VURDER_TREKK_AV_SØKNAD
         ) {
             avklaringsbehov(Definisjon.VURDER_TREKK_AV_SØKNAD, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Veileder1", nå.minusHours(9))
@@ -1686,7 +1744,8 @@ class OppdaterOppgaveServiceTest {
         val hendelseSykdom = behandlingFlytHendelse(
             saksnummer = saksnummer,
             referanse = behandlingsref,
-            reserverTilPerAvklaringsbehov = mapOf(Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name to "Veileder1")
+            reserverTilPerAvklaringsbehov = mapOf(Definisjon.VURDER_TREKK_AV_SØKNAD.kode.name to "Veileder1"),
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_BISTANDSBEHOV
         ) {
             avklaringsbehov(Definisjon.VURDER_TREKK_AV_SØKNAD, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Veileder1", nå.minusHours(9))

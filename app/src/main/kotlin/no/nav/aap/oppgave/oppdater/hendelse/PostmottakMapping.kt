@@ -22,6 +22,7 @@ fun DokumentflytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         mottattDokumenter = emptyList(),
         årsakTilOpprettelse = null,
         venteInformasjon = this.utledVenteinformasjonFraPostmottak(),
+        aktivtAvklaringsbehov = this.aktivtAvklaringsbehov?.let { AvklaringsbehovKode(it.kode.name) },
         tattAvVentAutomatisk = this.avklaringsbehov.filter { it.avklaringsbehovDefinisjon.erVentebehov() }
             .tilAvklaringsbehovHendelse().kelvinTokBehandlingAvVent(),
     )
