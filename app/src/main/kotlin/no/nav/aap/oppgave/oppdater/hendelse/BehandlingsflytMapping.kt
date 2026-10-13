@@ -79,8 +79,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
     return ForespørselSendtTilBehandler(
         // Påminnelse skal sendes 22 dager etter at forespørselen ble sendt
         påminnelseDato = sisteOpprettetTidspunkt.plusDays(22),
-        // TODO: Hent metadata om påminnelse fra behandlingsflyt når behandlingsflyt får dette fra dokumentinnhenting
-        påminnelseStatus = null,
+        påminnelseAvbrutt = false,
     )
 }
 

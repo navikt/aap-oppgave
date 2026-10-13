@@ -1199,7 +1199,7 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun `forespørselSendtTilBehandler er satt når forespørsel er sendt`() {
+    fun `forespørselSendtTilBehandler er satt når forespørsel om legeerklæring (L40) er sendt`() {
         val saksnummer = "555001"
         val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())
 
@@ -1224,7 +1224,6 @@ class OppgaveApiTest {
                         )
                     ),
                 ),
-                // Ingen legeerklæring mottatt -> forespørselen er fortsatt ubesvart
             )
         )
 
@@ -1238,6 +1237,48 @@ class OppgaveApiTest {
         assertThat(oppgaver).isNotNull
         val oppgave = oppgaver!!.oppgaver.single { it.avklaringsbehovKode == Definisjon.AVKLAR_SYKDOM.kode.name }
         assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler).isNotNull()
+        assertThat(oppgave.oppgavelisteTags.forespørselSendtTilBehandler?.påminnelseAvbrutt).isFalse()
+    }
+
+    @Test
+    fun `oppdater påminnelse`() {
+        val referanse = UUID.randomUUID()
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = "555004",
+                referanse = referanse,
+                behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                ),
+            )
+        )
+
+        val oppgaveFør = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
+        assertThat(oppgaveFør.forespørselSendtTilBehandler?.påminnelseAvbrutt).isFalse()
+
+        val dato = LocalDateTime.of(2026, 11, 7, 12, 0)
+        oppdaterPåminnelse(
+            OppdaterPåminnelseRequest(
+                referanse = referanse,
+                påminnelseDato = dato,
+                påminnelseAvbrutt = true,
+            )
+        )
+
+        val oppgaveEtter = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(dato)
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseAvbrutt).isTrue()
     }
 
     @Test
@@ -1403,6 +1444,13 @@ class OppgaveApiTest {
         return client.post(
             URI.create("http://localhost:$port/oppdater-oppgaver"),
             PostRequest(body = behandlingFlytStoppetHendelse)
+        )
+    }
+
+    private fun oppdaterPåminnelse(request: OppdaterPåminnelseRequest): Unit? {
+        return client.post(
+            URI.create("http://localhost:$port/oppdater-paaminnelse"),
+            PostRequest(body = request)
         )
     }
 

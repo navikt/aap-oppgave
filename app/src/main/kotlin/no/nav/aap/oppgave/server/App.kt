@@ -50,6 +50,7 @@ import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.mottattdokument.mottattDokumentApi
 import no.nav.aap.oppgave.oppdater.oppdaterBehandlingOppgaverApi
 import no.nav.aap.oppgave.oppdater.oppdaterPostmottakOppgaverApi
+import no.nav.aap.oppgave.oppdater.oppdaterPåminnelseApi
 import no.nav.aap.oppgave.oppdater.oppdaterTilbakekrevingOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
@@ -138,6 +139,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
                 oppdaterBehandlingOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
                 oppdaterPostmottakOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
                 oppdaterTilbakekrevingOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
+                oppdaterPåminnelseApi(dataSource, prometheus)
                 // Plukk/endre oppgave
                 plukkOppgaveApi(dataSource, prometheus, enhetService, nomApiGateway)
                 avreserverOppgave(dataSource, prometheus, nomApiGateway)

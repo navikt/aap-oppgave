@@ -4,10 +4,10 @@ import java.time.LocalDateTime
 
 data class ForespørselSendtTilBehandler(
     val påminnelseDato: LocalDateTime?,
-    val påminnelseStatus: String?,
+    val påminnelseAvbrutt: Boolean?,
 ) {
     fun tilDto(): ForespørselSendtTilBehandlerDto = ForespørselSendtTilBehandlerDto(
         påminnelseDato = påminnelseDato,
-        påminnelseStatus = påminnelseStatus,
+        påminnelseAvbrutt = påminnelseAvbrutt,
     )
 }

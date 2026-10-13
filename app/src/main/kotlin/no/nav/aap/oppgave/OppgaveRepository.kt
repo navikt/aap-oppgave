@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
@@ -64,7 +65,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 er_skjermet,
                 FORESPORSEL_SENDT_TIL_BEHANDLER,
                 FORESPORSEL_PAAMINNELSE_DATO,
-                FORESPORSEL_PAAMINNELSE_STATUS
+                FORESPORSEL_PAAMINNELSE_AVBRUTT
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
@@ -102,7 +103,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setBoolean(28, oppgave.erSkjermet)
                 setBoolean(29, oppgave.forespørselSendtTilBehandler != null)
                 setLocalDateTime(30, oppgave.forespørselSendtTilBehandler?.påminnelseDato)
-                setString(31, oppgave.forespørselSendtTilBehandler?.påminnelseStatus)
+                setBoolean(31, oppgave.forespørselSendtTilBehandler?.påminnelseAvbrutt)
             }
         }
         return OppgaveId(id, 0L)
@@ -195,6 +196,40 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    fun oppdaterPåminnelse(
+        referanse: UUID,
+        påminnelseDato: LocalDateTime?,
+        påminnelseAvbrutt: Boolean?,
+    ): Boolean {
+        val oppgave = hentAktivOppgave(BehandlingReferanse(referanse)) ?: return false
+        val query = """
+            UPDATE OPPGAVE
+            SET
+                FORESPORSEL_PAAMINNELSE_DATO = ?,
+                FORESPORSEL_PAAMINNELSE_AVBRUTT = ?,
+                ENDRET_AV = ?,
+                ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
+                VERSJON = VERSJON + 1
+            WHERE ID = ? AND VERSJON = ? AND STATUS = 'OPPRETTET'
+        """.trimIndent()
+
+        connection.execute(query) {
+            setParams {
+                setLocalDateTime(1, påminnelseDato)
+                setBoolean(2, påminnelseAvbrutt)
+                setString(3, KELVIN)
+                setLong(4, oppgave.id)
+                setLong(5, oppgave.versjon)
+            }
+            setResultValidator {
+                require(it == 1) {
+                    "Påminnelsen ble ikke oppdatert. Oppgaven kan ha blitt endret eller avsluttet."
+                }
+            }
+        }
+        return true
+    }
+
     fun hentAktiveOppgaverPåSak(saksnummer: String): List<Oppgave> {
         val oppgaverForSakQuery = """
         SELECT 
@@ -267,7 +302,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 FORRIGE_KVALITETSSIKRER_NAVN = ?,
                 FORESPORSEL_SENDT_TIL_BEHANDLER = ?,
                 FORESPORSEL_PAAMINNELSE_DATO = ?,
-                FORESPORSEL_PAAMINNELSE_STATUS = ?,
+                FORESPORSEL_PAAMINNELSE_AVBRUTT = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -300,7 +335,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(22, forrigeKvalitetssikrerNavn)
                 setBoolean(23, forespørselSendtTilBehandler != null)
                 setLocalDateTime(24, forespørselSendtTilBehandler?.påminnelseDato)
-                setString(25, forespørselSendtTilBehandler?.påminnelseStatus)
+                setBoolean(25, forespørselSendtTilBehandler?.påminnelseAvbrutt)
                 setLong(26, oppgaveId.id)
                 setLong(27, oppgaveId.versjon)
             }
@@ -920,7 +955,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             forespørselSendtTilBehandler = if (row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER")) {
                 ForespørselSendtTilBehandler(
                     påminnelseDato = row.getLocalDateTimeOrNull("FORESPORSEL_PAAMINNELSE_DATO"),
-                    påminnelseStatus = row.getStringOrNull("FORESPORSEL_PAAMINNELSE_STATUS"),
+                    påminnelseAvbrutt = row.getBooleanOrNull("FORESPORSEL_PAAMINNELSE_AVBRUTT"),
                 )
             } else {
                 null
@@ -1059,7 +1094,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN,
             OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER,
             OPPGAVE.FORESPORSEL_PAAMINNELSE_DATO,
-            OPPGAVE.FORESPORSEL_PAAMINNELSE_STATUS
+            OPPGAVE.FORESPORSEL_PAAMINNELSE_AVBRUTT
         """.trimIndent()
 
     }

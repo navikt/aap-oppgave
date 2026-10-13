@@ -500,7 +500,7 @@ class OppdaterOppgaveServiceTest {
     fun `Oppgave skal reserveres til beslutter som sendte saken i retur når saksbehandler har rettet og sendt tilbake`() {
         val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
         val oppgaveId = opprettOppgaveWrapper(
-            status = Status.OPPRETTET,
+            status = Status.AVSLUTTET,
             behandlingRef = behandlingsref.referanse,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
@@ -539,6 +539,27 @@ class OppdaterOppgaveServiceTest {
         val oppgave = hentOppgave(oppgaveId)
         assertThat(oppgave.status).isEqualTo(Status.OPPRETTET)
         assertThat(oppgave.reservertAv).isEqualTo(beslutter)
+
+        avreserverOppgave(oppgave.oppgaveId(), beslutter)
+        sendBehandlingFlytStoppetHendelse(tilbakeTilBeslutter)
+        val frigittOppgave = hentOppgave(oppgaveId)
+        assertThat(frigittOppgave.status).isEqualTo(Status.OPPRETTET)
+        assertThat(frigittOppgave.reservertAv).isNull()
+
+        val nyBeslutter = "NyBeslutter"
+        dataSource.transaction { connection ->
+            OppgaveRepository(connection).reserverOppgave(
+                frigittOppgave.oppgaveId(),
+                endretAvIdent = nyBeslutter,
+                reservertAvIdent = nyBeslutter,
+                reservertAvNavn = "Ny beslutter",
+            )
+        }
+        sendBehandlingFlytStoppetHendelse(tilbakeTilBeslutter)
+        val tildeltOppgave = hentOppgave(oppgaveId)
+        assertThat(tildeltOppgave.status).isEqualTo(Status.OPPRETTET)
+        assertThat(tildeltOppgave.reservertAv).isEqualTo(nyBeslutter)
+        assertThat(tildeltOppgave.reservertAvNavn).isEqualTo("Ny beslutter")
     }
 
     @Test
@@ -548,7 +569,7 @@ class OppdaterOppgaveServiceTest {
         // Vi forventer at kun én JOBB-rad legges til for oppgaven, ikke én per hendelse.
         val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
         val oppgaveId = opprettOppgaveWrapper(
-            status = Status.OPPRETTET,
+            status = Status.AVSLUTTET,
             behandlingRef = behandlingsref.referanse,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
@@ -627,7 +648,7 @@ class OppdaterOppgaveServiceTest {
     fun `Oppgave reserveres til siste beslutter ved flere retur fra beslutter`() {
         val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
         val oppgaveId = opprettOppgaveWrapper(
-            status = Status.OPPRETTET,
+            status = Status.AVSLUTTET,
             behandlingRef = behandlingsref.referanse,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
@@ -676,7 +697,7 @@ class OppdaterOppgaveServiceTest {
     fun `Oppgave skal ikke reserveres til Kelvin selv om Kelvin har SENDT_TILBAKE_FRA_BESLUTTER`() {
         val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
         val oppgaveId = opprettOppgaveWrapper(
-            status = Status.OPPRETTET,
+            status = Status.AVSLUTTET,
             behandlingRef = behandlingsref.referanse,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
@@ -717,7 +738,7 @@ class OppdaterOppgaveServiceTest {
     fun `Oppgave skal ikke reserveres dersom ingen SENDT_TILBAKE_FRA_BESLUTTER finnes`() {
         val behandlingsref = UUID.randomUUID().let(::BehandlingReferanse)
         val oppgaveId = opprettOppgaveWrapper(
-            status = Status.OPPRETTET,
+            status = Status.AVSLUTTET,
             behandlingRef = behandlingsref.referanse,
             avklaringsbehovKode = AvklaringsbehovKode(Definisjon.FATTE_VEDTAK.kode.name),
         )
