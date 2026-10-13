@@ -346,10 +346,10 @@ class EnhetService(
             emptyList()
         } else {
             pdlGraphqlKlient.hentAdressebeskyttelseForIdenter(relevanteIdenter).hentPersonBolk?.flatMap {
-                it.person?.adressebeskyttelse ?: emptyList()
-            }?.map { it.gradering.tilDiskresjonskode() }
+                it.person?.adressebeskyttelse.orEmpty()
+            }.orEmpty().map { it.gradering.tilDiskresjonskode() }
         }
-        val alleGraderinger = graderingerForRelevanteIdenter?.plus(søkersGradering) ?: listOf(søkersGradering)
+        val alleGraderinger = graderingerForRelevanteIdenter.plus(søkersGradering)
         return alleGraderinger.max()
     }
 
