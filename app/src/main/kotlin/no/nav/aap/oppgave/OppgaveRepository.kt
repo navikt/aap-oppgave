@@ -102,7 +102,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(27, oppgave.årsakTilOpprettelse)
                 setBoolean(28, oppgave.erSkjermet)
                 setBoolean(29, oppgave.forespørselSendtTilBehandler != null)
-                setLocalDateTime(30, oppgave.forespørselSendtTilBehandler?.påminnelseDato)
+                setLocalDate(30, oppgave.forespørselSendtTilBehandler?.påminnelseDato)
                 setBoolean(31, oppgave.forespørselSendtTilBehandler?.påminnelseAvbrutt)
             }
         }
@@ -198,7 +198,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     fun oppdaterPåminnelse(
         referanse: UUID,
-        påminnelseDato: LocalDateTime?,
+        påminnelseDato: LocalDate?,
         påminnelseAvbrutt: Boolean?,
     ): Boolean {
         val oppgave = hentAktivOppgave(BehandlingReferanse(referanse)) ?: return false
@@ -215,7 +215,7 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         connection.execute(query) {
             setParams {
-                setLocalDateTime(1, påminnelseDato)
+                setLocalDate(1, påminnelseDato)
                 setBoolean(2, påminnelseAvbrutt)
                 setString(3, KELVIN)
                 setLong(4, oppgave.id)
@@ -334,7 +334,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(21, forrigeKvalitetssikrerIdent)
                 setString(22, forrigeKvalitetssikrerNavn)
                 setBoolean(23, forespørselSendtTilBehandler != null)
-                setLocalDateTime(24, forespørselSendtTilBehandler?.påminnelseDato)
+                setLocalDate(24, forespørselSendtTilBehandler?.påminnelseDato)
                 setBoolean(25, forespørselSendtTilBehandler?.påminnelseAvbrutt)
                 setLong(26, oppgaveId.id)
                 setLong(27, oppgaveId.versjon)
@@ -954,7 +954,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             },
             forespørselSendtTilBehandler = if (row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER")) {
                 ForespørselSendtTilBehandler(
-                    påminnelseDato = row.getLocalDateTimeOrNull("FORESPORSEL_PAAMINNELSE_DATO"),
+                    påminnelseDato = row.getLocalDateOrNull("FORESPORSEL_PAAMINNELSE_DATO"),
                     påminnelseAvbrutt = row.getBooleanOrNull("FORESPORSEL_PAAMINNELSE_AVBRUTT"),
                 )
             } else {

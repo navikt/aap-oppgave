@@ -1,8 +1,8 @@
 package no.nav.aap.oppgave
 
-import java.time.LocalDateTime
+import java.time.LocalDate
 
 data class ForespørselSendtTilBehandlerDto(
-    val påminnelseDato: LocalDateTime?,
+    val påminnelseDato: LocalDate?,
     val påminnelseAvbrutt: Boolean?,
 )
