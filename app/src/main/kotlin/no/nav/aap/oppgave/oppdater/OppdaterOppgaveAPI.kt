@@ -25,6 +25,11 @@ import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.tilgang.Beslutter
+import no.nav.aap.tilgang.Kvalitetssikrer
+import no.nav.aap.tilgang.RollerConfig
+import no.nav.aap.tilgang.SaksbehandlerNasjonal
+import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
@@ -137,19 +142,15 @@ fun NormalOpenAPIRoute.oppdaterPåminnelseApi(
     dataSource: DataSource,
     prometheus: PrometheusMeterRegistry,
 ) = route("/oppdater-paaminnelse").authorizedPost<Unit, Unit, OppdaterPåminnelseRequest>(
-    routeConfig = AuthorizationBodyPathConfig(
-        operasjon = Operasjon.SAKSBEHANDLE,
-        applicationsOnly = true,
-        applicationRole = "oppdater-behandlingsflyt-oppgaver",
-    )
-) { _, request ->
-    prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
-    val oppdatert = dataSource.transaction { connection ->
-        OppgaveRepository(connection).oppdaterPåminnelse(
-            referanse = request.referanse,
-            påminnelseDato = request.påminnelseDato,
-            påminnelseAvbrutt = request.påminnelseAvbrutt,
-        )
-    }
-    respondWithStatus(if (oppdatert) HttpStatusCode.OK else HttpStatusCode.NotFound)
+    RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
+    ) { _, request ->
+        prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
+        val oppdatert = dataSource.transaction { connection ->
+            OppgaveRepository(connection).oppdaterPåminnelse(
+                referanse = request.referanse,
+                påminnelseDato = request.påminnelseDato,
+                påminnelseAvbrutt = request.påminnelseAvbrutt,
+            )
+        }
+        respondWithStatus(if (oppdatert) HttpStatusCode.OK else HttpStatusCode.NotFound)
 }
