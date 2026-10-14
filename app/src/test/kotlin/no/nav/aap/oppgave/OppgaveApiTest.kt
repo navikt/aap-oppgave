@@ -1268,7 +1268,7 @@ class OppgaveApiTest {
         val oppgaveFør = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
         assertThat(oppgaveFør.forespørselSendtTilBehandler?.påminnelseAvbrutt).isFalse()
 
-        val dato = LocalDateTime.of(2026, 11, 7, 12, 0)
+        val dato = LocalDate.of(2026, 11, 7)
         oppdaterPåminnelse(
             OppdaterPåminnelseRequest(
                 referanse = referanse,
@@ -1279,6 +1279,7 @@ class OppgaveApiTest {
 
         val oppgaveEtter = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
         assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(dato)
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.tilDto()?.påminnelseDato).isEqualTo(dato)
         assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseAvbrutt).isTrue()
     }
 
