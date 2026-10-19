@@ -26,6 +26,8 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as Behand
 
 private val logger = LoggerFactory.getLogger(OppgaveOppdatering::class.java)
 
+const val DAGER_TIL_PÅMINNELSE = 22L
+
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
         personIdent = this.personIdent,
@@ -77,11 +79,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
         return null
     }
 
-    // TODO: Denne må settes til 22L samtidig som vi gjør tilsvarende i behandlingsflyt
-    val DAGER_TIL_PÅMINNELSE = if (Miljø.erProd()) 22L else 1L
-
     return ForespørselSendtTilBehandler(
-        // Påminnelse skal sendes 22 dager etter at forespørselen ble sendt
         påminnelseDato = sisteOpprettetTidspunkt.toLocalDate().plusDays(DAGER_TIL_PÅMINNELSE),
         påminnelseAvbrutt = false,
     )
