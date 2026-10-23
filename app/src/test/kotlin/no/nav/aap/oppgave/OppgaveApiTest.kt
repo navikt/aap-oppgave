@@ -1284,6 +1284,53 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `beholder opprinnelig påminnelsesdato når påminnelse blir avbrutt`() {
+        val referanse = UUID.randomUUID()
+        oppdaterOppgaver(
+            opprettBehandlingshistorikk(
+                saksnummer = "555004",
+                referanse = referanse,
+                aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM,
+                behandlingsbehov = listOf(
+                    Behandlingsbehov(
+                        definisjon = Definisjon.AVKLAR_SYKDOM,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                    Behandlingsbehov(
+                        definisjon = Definisjon.BESTILL_LEGEERKLÆRING,
+                        endringer = listOf(
+                            Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET)
+                        )
+                    ),
+                ),
+            )
+        )
+
+        val opprinneligDato = LocalDate.of(2026, 11, 7)
+        oppdaterPåminnelse(
+            OppdaterPåminnelseRequest(
+                referanse = referanse,
+                påminnelseDato = opprinneligDato,
+                påminnelseAvbrutt = true,
+            )
+        )
+
+        oppdaterPåminnelse(
+            OppdaterPåminnelseRequest(
+                referanse = referanse,
+                påminnelseDato = null,
+                påminnelseAvbrutt = false,
+            )
+        )
+
+        val oppgave = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
+        assertThat(oppgave.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(opprinneligDato)
+        assertThat(oppgave.forespørselSendtTilBehandler?.påminnelseAvbrutt).isFalse()
+    }
+
+    @Test
     fun `forespørselSendtTilBehandler er null når legeerklæring er mottatt etter forespørsel er sendt`() {
         val saksnummer = "555002"
         val behandlingsReferanse = BehandlingReferanse(UUID.randomUUID())

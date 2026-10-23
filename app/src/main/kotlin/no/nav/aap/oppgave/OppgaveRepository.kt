@@ -205,7 +205,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val query = """
             UPDATE OPPGAVE
             SET
-                FORESPORSEL_PAAMINNELSE_DATO = ?,
+                FORESPORSEL_PAAMINNELSE_DATO = CASE WHEN ? = FALSE THEN FORESPORSEL_PAAMINNELSE_DATO ELSE ? END,
                 FORESPORSEL_PAAMINNELSE_AVBRUTT = ?,
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
@@ -215,11 +215,12 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         connection.execute(query) {
             setParams {
-                setLocalDate(1, påminnelseDato)
-                setBoolean(2, påminnelseAvbrutt)
-                setString(3, KELVIN)
-                setLong(4, oppgave.id)
-                setLong(5, oppgave.versjon)
+                setBoolean(1, påminnelseAvbrutt)
+                setLocalDate(2, påminnelseDato)
+                setBoolean(3, påminnelseAvbrutt)
+                setString(4, KELVIN)
+                setLong(5, oppgave.id)
+                setLong(6, oppgave.versjon)
             }
             setResultValidator {
                 require(it == 1) {
