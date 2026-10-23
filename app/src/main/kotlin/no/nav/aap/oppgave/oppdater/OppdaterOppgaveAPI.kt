@@ -145,12 +145,14 @@ fun NormalOpenAPIRoute.oppdaterPåminnelseApi(
     RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
-        val oppdatert = dataSource.transaction { connection ->
-            OppgaveRepository(connection).oppdaterPåminnelse(
-                referanse = request.referanse,
-                påminnelseDato = request.påminnelseDato,
-                påminnelseAvbrutt = request.påminnelseAvbrutt,
-            )
+        MDC.putCloseable("saksnummer", request.referanse.toString()).use {
+            dataSource.transaction { connection ->
+                OppgaveRepository(connection).oppdaterPåminnelse(
+                    referanse = request.referanse,
+                    påminnelseDato = request.påminnelseDato,
+                    påminnelseAvbrutt = request.påminnelseAvbrutt,
+                )
+            }
         }
-        respondWithStatus(if (oppdatert) HttpStatusCode.OK else HttpStatusCode.NotFound)
+        respondWithStatus(HttpStatusCode.OK)
 }
