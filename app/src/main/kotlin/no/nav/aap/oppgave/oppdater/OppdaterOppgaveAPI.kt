@@ -13,6 +13,7 @@ import no.nav.aap.oppgave.OppdaterPåminnelseRequest
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
+import no.nav.aap.oppgave.mdc.LoggingKontekst
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
@@ -23,7 +24,6 @@ import no.nav.aap.tilgang.AuthorizationBodyPathConfig
 import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import no.nav.aap.tilgang.Beslutter
 import no.nav.aap.tilgang.Kvalitetssikrer
@@ -45,7 +45,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-oppgaver").increment()
-    MDC.putCloseable("saksnummer", request.saksnummer.toString()).use {
+    LoggingKontekst(saksnummer = request.saksnummer.toString()).use {
         dataSource.transaction { connection ->
             bufretStatistikk(connection) { flytJobbRepository ->
                 OppdaterOppgaveService(
@@ -81,7 +81,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
     )
 ) { _, request ->
     prometheus.httpCallCounter("/oppdater-postmottak-oppgaver").increment()
-    MDC.putCloseable("journalpostId", request.journalpostId.toString()).use {
+    LoggingKontekst(journalpostId = request.journalpostId.toString()).use {
         dataSource.transaction { connection ->
             bufretStatistikk(connection) { flytJobbRepository ->
                 OppdaterOppgaveService(
@@ -117,7 +117,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
     prometheus.httpCallCounter("/oppdater-tilbakekreving-oppgaver").increment()
     LoggerFactory.getLogger("tilbakekreving")
         .info("Mottatt melding om oppdatering av oppgave med tilbakekrevingsbehandling, saksnummer: ${request.saksnummer}")
-    MDC.putCloseable("saksnummer", request.saksnummer.toString()).use {
+    LoggingKontekst(saksnummer = request.saksnummer.toString()).use {
         dataSource.transaction { connection ->
             bufretStatistikk(connection) { flytJobbRepository ->
                 OppdaterOppgaveService(
@@ -145,7 +145,7 @@ fun NormalOpenAPIRoute.oppdaterPåminnelseApi(
     RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
     ) { _, request ->
         prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
-        MDC.putCloseable("saksnummer", request.referanse.toString()).use {
+        LoggingKontekst(saksnummer = request.referanse.toString()).use {
             dataSource.transaction { connection ->
                 OppgaveRepository(connection).oppdaterPåminnelse(
                     referanse = request.referanse,
