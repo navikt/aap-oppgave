@@ -61,7 +61,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
     mottattDokumenter: List<MottattDokumentDto>
 ): ForespørselSendtTilBehandler? {
     val bestillLegeerklæring = this.firstOrNull {
-        it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING && it.status == Status.OPPRETTET
+        it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING
     } ?: return null
 
     val sisteOpprettetTidspunkt = bestillLegeerklæring.endringer
@@ -79,9 +79,11 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
         return null
     }
 
+    val påminnelseAvbrutt = if (bestillLegeerklæring.status == Status.AVSLUTTET) true else false
+
     return ForespørselSendtTilBehandler(
         påminnelseDato = sisteOpprettetTidspunkt.toLocalDate().plusDays(DAGER_TIL_PÅMINNELSE),
-        påminnelseAvbrutt = false,
+        påminnelseAvbrutt = påminnelseAvbrutt,
     )
 }
 
