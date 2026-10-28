@@ -61,7 +61,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
     mottattDokumenter: List<MottattDokumentDto>
 ): ForespørselSendtTilBehandler? {
     val bestillLegeerklæring = this.firstOrNull {
-        it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING
+        it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING && it.status == Status.OPPRETTET
     } ?: return null
 
     val sisteOpprettetTidspunkt = bestillLegeerklæring.endringer
