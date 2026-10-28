@@ -79,11 +79,9 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
         return null
     }
 
-    val påminnelseAvbrutt = if (bestillLegeerklæring.status == Status.AVSLUTTET) true else false
-
     return ForespørselSendtTilBehandler(
         påminnelseDato = sisteOpprettetTidspunkt.toLocalDate().plusDays(DAGER_TIL_PÅMINNELSE),
-        påminnelseAvbrutt = påminnelseAvbrutt,
+        påminnelseAvbrutt = false,
     )
 }
 
