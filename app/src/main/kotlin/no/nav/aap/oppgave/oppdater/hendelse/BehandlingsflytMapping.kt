@@ -26,7 +26,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as Behand
 
 private val logger = LoggerFactory.getLogger(OppgaveOppdatering::class.java)
 
-const val DAGER_TIL_PÅMINNELSE = 22L
+val DAGER_TIL_PÅMINNELSE = if (Miljø.erProd()) 22L else 1L
 
 fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
     return OppgaveOppdatering(
