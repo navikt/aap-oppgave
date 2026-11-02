@@ -4,7 +4,9 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.komponenter.verdityper.Bruker
+import no.nav.aap.oppgave.drift.OppgaveIkkeEndretDto
 import no.nav.aap.oppgave.enhet.EnhetInfo
+import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -751,6 +753,47 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+
+    internal fun hentOppgaverIkkeEndret(nå: LocalDateTime = LocalDateTime.now()): List<OppgaveIkkeEndretDto> {
+        val query = """
+            SELECT ID, BEHANDLING_REF, SAKSNUMMER, AVKLARINGSBEHOV_TYPE,
+                   COALESCE(OPPFOLGINGSENHET, ENHET) AS ENHET_FOR_KO,
+                   OPPRETTET_TIDSPUNKT, ENDRET_TIDSPUNKT
+            FROM OPPGAVE
+            WHERE STATUS != 'AVSLUTTET'
+              AND RESERVERT_AV IS NULL
+              AND (
+                  PAA_VENT_TIL IS NULL
+                  OR (
+                      BEHANDLINGSTYPE = ?
+                      AND PAA_VENT_TIL <= ?
+                      AND UTLOEPT_VENTEFRIST IS NULL
+                  )
+              )
+              AND COALESCE(ENDRET_TIDSPUNKT, OPPRETTET_TIDSPUNKT) < ?
+              AND COALESCE(OPPFOLGINGSENHET, ENHET) <> ALL(?::text[])
+        """.trimIndent()
+
+        return connection.queryList(query) {
+            setParams {
+                setString(1, Behandlingstype.TILBAKEKREVING.name)
+                setLocalDate(2, nå.toLocalDate())
+                setLocalDateTime(3, nå.minusWeeks(5))
+                setArray(4, NAY_ENHETER.map { it.kode })
+            }
+            setRowMapper { row ->
+                OppgaveIkkeEndretDto(
+                    oppgaveId = row.getLong("ID"),
+                    behandlingRef = row.getUUID("BEHANDLING_REF"),
+                    saksnummer = row.getStringOrNull("SAKSNUMMER"),
+                    avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
+                    enhetForKø = row.getString("ENHET_FOR_KO"),
+                    opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
+                    endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
+                )
+            }
+        }
+    }
 
     fun hentAlleÅpneOppgaver(): List<Oppgave> {
         val query = """
