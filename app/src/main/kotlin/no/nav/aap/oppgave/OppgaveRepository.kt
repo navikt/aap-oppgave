@@ -754,14 +754,19 @@ class OppgaveRepository(private val connection: DBConnection) {
     }
 
 
-    internal fun hentOppgaverIkkeEndret(nå: LocalDateTime = LocalDateTime.now()): List<OppgaveIkkeEndretDto> {
+    internal fun hentOppgaverIkkeEndret(
+        antallUker: Long,
+        kunUreserverte: Boolean,
+        nå: LocalDateTime = LocalDateTime.now(),
+    ): List<OppgaveIkkeEndretDto> {
+        val reserveringsfilter = if (kunUreserverte) "AND RESERVERT_AV IS NULL" else ""
         val query = """
             SELECT ID, BEHANDLING_REF, SAKSNUMMER, AVKLARINGSBEHOV_TYPE,
                    COALESCE(OPPFOLGINGSENHET, ENHET) AS ENHET_FOR_KO,
                    OPPRETTET_TIDSPUNKT, ENDRET_TIDSPUNKT
             FROM OPPGAVE
             WHERE STATUS != 'AVSLUTTET'
-              AND RESERVERT_AV IS NULL
+              $reserveringsfilter
               AND (
                   PAA_VENT_TIL IS NULL
                   OR (
@@ -778,7 +783,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             setParams {
                 setString(1, Behandlingstype.TILBAKEKREVING.name)
                 setLocalDate(2, nå.toLocalDate())
-                setLocalDateTime(3, nå.minusWeeks(5))
+                setLocalDateTime(3, nå.minusWeeks(antallUker))
                 setArray(4, NAY_ENHETER.map { it.kode })
             }
             setRowMapper { row ->
