@@ -1,5 +1,6 @@
 package no.nav.aap.oppgave.drift
 
+import com.papsign.ktor.openapigen.annotations.parameters.QueryParam
 import java.time.LocalDateTime
 import java.util.UUID
 import no.nav.aap.oppgave.filter.FilterTypeDto
@@ -7,6 +8,18 @@ import no.nav.aap.oppgave.filter.Filtermodus
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
+
+internal data class OppgaverIkkeEndretRequest(
+    @param:QueryParam("Antall uker uten endring. Defaultverdi er 5.")
+    val antallUker: Int? = DEFAULT_ANTALL_UKER,
+    @param:QueryParam("Bare ureserverte oppgaver. Defaultverdi er true.")
+    val kunUreserverte: Boolean? = DEFAULT_KUN_URESERVERTE,
+) {
+    companion object {
+        const val DEFAULT_ANTALL_UKER = 5
+        const val DEFAULT_KUN_URESERVERTE = true
+    }
+}
 
 internal data class OppgaveIkkeEndretDto(
     val oppgaveId: Long,

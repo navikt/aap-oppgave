@@ -12,6 +12,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon.BehovType
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.transaction
+import no.nav.aap.komponenter.httpklient.exception.ApiException
 import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.EnhetService
@@ -44,11 +45,18 @@ fun NormalOpenAPIRoute.driftApi(
 ) {
     route("/api/drift") {
         route("/oppgaver-ikke-endret") {
-            authorizedGet<Unit, List<OppgaveIkkeEndretDto>>(
+            authorizedGet<OppgaverIkkeEndretRequest, List<OppgaveIkkeEndretDto>>(
                 RollerConfig(listOf(Drift, DriftLes))
-            ) { _ ->
+            ) { request ->
+                val antallUker = request.antallUker ?: OppgaverIkkeEndretRequest.DEFAULT_ANTALL_UKER
+                if (antallUker < 0) {
+                    throw ApiException(status = HttpStatusCode.BadRequest, message = "antallUker kan ikke være negativ")
+                }
                 val oppgaver = dataSource.transaction(readOnly = true) { connection ->
-                    OppgaveRepository(connection).hentOppgaverIkkeEndret()
+                    OppgaveRepository(connection).hentOppgaverIkkeEndret(
+                        antallUker = antallUker.toLong(),
+                        kunUreserverte = request.kunUreserverte ?: OppgaverIkkeEndretRequest.DEFAULT_KUN_URESERVERTE,
+                    )
                 }
                 respond(oppgaver)
             }
