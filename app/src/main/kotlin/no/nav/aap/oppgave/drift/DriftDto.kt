@@ -8,6 +8,16 @@ import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
 import no.nav.aap.oppgave.verdityper.Status
 
+internal data class OppgaveIkkeEndretDto(
+    val oppgaveId: Long,
+    val behandlingRef: UUID,
+    val saksnummer: String?,
+    val avklaringsbehovKode: String,
+    val enhetForKø: String,
+    val opprettetTidspunkt: LocalDateTime,
+    val endretTidspunkt: LocalDateTime?,
+)
+
 
 internal data class OppgaveDriftsinfoDTO(
     val oppgaveId: Long,

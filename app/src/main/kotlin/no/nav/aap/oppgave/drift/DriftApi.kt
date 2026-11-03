@@ -43,6 +43,17 @@ fun NormalOpenAPIRoute.driftApi(
     enhetService: EnhetService,
 ) {
     route("/api/drift") {
+        route("/oppgaver-ikke-endret") {
+            authorizedGet<Unit, List<OppgaveIkkeEndretDto>>(
+                RollerConfig(listOf(Drift, DriftLes))
+            ) { _ ->
+                val oppgaver = dataSource.transaction(readOnly = true) { connection ->
+                    OppgaveRepository(connection).hentOppgaverIkkeEndret()
+                }
+                respond(oppgaver)
+            }
+        }
+
         route("/oppgave/behandling/{referanse}") {
             post<BehandlingReferanse, List<OppgaveDriftsinfoDTO>, Unit> { params, _ ->
                 val oppgaver = dataSource.transaction { connection ->
