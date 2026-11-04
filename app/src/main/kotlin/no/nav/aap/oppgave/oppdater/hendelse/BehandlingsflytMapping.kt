@@ -70,11 +70,11 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
         ?.tidsstempel
         ?: return null
 
-    val mottattLegeerklæring = mottattDokumenter
-        .filter { it.type == InnsendingType.LEGEERKLÆRING }
+    val mottattHelseopplysning = mottattDokumenter
+        .filter { it.type == InnsendingType.LEGEERKLÆRING || it.type == InnsendingType.DIALOGMELDING }
 
-    // Forespørselen regnes som besvart hvis en legeerklæring er mottatt etter at forespørselen er sendt
-    val erBesvart = mottattLegeerklæring.any { it.mottattTidspunkt.isAfter(sisteOpprettetTidspunkt) }
+    // Forespørselen regnes som besvart hvis en legeerklæring eller dialogmelding er mottatt etter at forespørselen er sendt
+    val erBesvart = mottattHelseopplysning.any { it.mottattTidspunkt.isAfter(sisteOpprettetTidspunkt) }
     if (erBesvart) {
         return null
     }
