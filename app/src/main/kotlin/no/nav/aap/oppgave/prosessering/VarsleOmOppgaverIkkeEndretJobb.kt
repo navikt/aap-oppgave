@@ -30,7 +30,7 @@ class VarsleOmOppgaverIkkeEndretJobb(
             }
             if (oppgaverIkkeHosNay.isNotEmpty()) {
                 val enheter = oppgaverIkkeHosNay.map { it.enhetForKø }.toSet()
-                log.error(
+                log.warn(
                     "Fant ${oppgaverIkkeHosNay.size} oppgaver på enhetene $enheter som ikke er endret på lang tid. Sjekk info-logger med denne trace-id for hvilke det gjelder."
                 )
             }
