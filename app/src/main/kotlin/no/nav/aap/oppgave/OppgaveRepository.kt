@@ -8,6 +8,7 @@ import no.nav.aap.oppgave.drift.OppgaveIkkeEndretDto
 import no.nav.aap.oppgave.enhet.EnhetInfo
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.filter.Filter
+import no.nav.aap.oppgave.liste.MineOppgaverFilter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -504,29 +505,6 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND ${behandlingHarAktivMarkeringClause("('${MarkeringForBehandling.HASTER}')")}")
         }
 
-        if (utvidetFilter.forespørselSendt == true) {
-            sb.append(" AND FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE")
-        }
-
-        if (utvidetFilter.påminnelseSendt == true) {
-            sb.append(" AND FORESPORSEL_PAAMINNELSE_DATO <= CURRENT_DATE")
-        }
-
-        if (utvidetFilter.svarMottatt == true) {
-            sb.append(" AND ").append(
-                """
-                OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE
-                AND OPPGAVE.ULESTE_DOKUMENTER = TRUE
-                AND EXISTS (
-                    SELECT 1
-                    FROM MOTTATT_DOKUMENT md
-                    WHERE md.BEHANDLING_REF = OPPGAVE.BEHANDLING_REF
-                      AND md.TYPE IN ('LEGEERKLÆRING', 'DIALOGMELDING')
-                )
-                """.trimIndent()
-            )
-        }
-
         return sb.toString()
     }
 
@@ -744,13 +722,44 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+    private fun mineOppgaverFilterQuery(
+        kunPåVent: Boolean,
+        filtre: Set<MineOppgaverFilter>,
+    ): String = buildString {
+        if (kunPåVent) {
+            append(" AND PAA_VENT_TIL IS NOT NULL")
+        }
+        val statusFiltre = filtre.map { filter ->
+            when (filter) {
+                MineOppgaverFilter.FORESPØRSEL_SENDT -> "FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE"
+                MineOppgaverFilter.PÅMINNELSE_SENDT -> "FORESPORSEL_PAAMINNELSE_DATO <= CURRENT_DATE"
+                MineOppgaverFilter.SVAR_MOTTATT -> """
+                    (OPPGAVE.ULESTE_DOKUMENTER = TRUE
+                     AND EXISTS (
+                         SELECT 1
+                         FROM MOTTATT_DOKUMENT md
+                         WHERE md.BEHANDLING_REF = OPPGAVE.BEHANDLING_REF
+                           AND md.TYPE IN ('LEGEERKLÆRING', 'DIALOGMELDING')
+                     ))
+                """.trimIndent()
+            }
+        }
+        if (statusFiltre.isNotEmpty()) {
+            append(statusFiltre.joinToString(separator = " OR ", prefix = " AND (", postfix = ")"))
+        }
+    }
+
     fun hentMineOppgaver(
         ident: String,
         kunPåVent: Boolean = false,
         sortBy: OppgaveSorteringFelt? = null,
-        sortOrder: OppgaveSorteringRekkefølge? = null
+        sortOrder: OppgaveSorteringRekkefølge? = null,
+        filtre: Set<MineOppgaverFilter> = emptySet(),
     ): List<Oppgave> {
-        val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
+        val filterQuery = mineOppgaverFilterQuery(
+            kunPåVent = kunPåVent,
+            filtre = filtre,
+        )
         val sortering = oppgaveSorteringQuery(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
         )
@@ -761,7 +770,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             FROM OPPGAVE
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on OPPGAVE.ID = t.OPPGAVE_ID
             WHERE RESERVERT_AV = ?
-              AND STATUS != 'AVSLUTTET' $kunPåVentQuery
+              AND STATUS != 'AVSLUTTET' $filterQuery
             ORDER BY $sortering $sorteringRekkefølge
         """.trimIndent()
 

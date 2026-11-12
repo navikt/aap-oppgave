@@ -18,7 +18,4 @@ data class UtvidetOppgavelisteFilter (
     val beløpMerEnn : BigDecimal? = null,
     val beløpMindreEnn: BigDecimal? = null,
     val saksbehandlere: Set<String> = emptySet(),
-    val forespørselSendt: Boolean? = null,
-    val påminnelseSendt: Boolean? = null,
-    val svarMottatt: Boolean? = null
 )
