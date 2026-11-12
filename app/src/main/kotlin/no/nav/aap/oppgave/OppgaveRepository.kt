@@ -504,6 +504,29 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append(" AND ${behandlingHarAktivMarkeringClause("('${MarkeringForBehandling.HASTER}')")}")
         }
 
+        if (utvidetFilter.forespørselSendt == true) {
+            sb.append(" AND FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE")
+        }
+
+        if (utvidetFilter.påminnelseSendt == true) {
+            sb.append(" AND FORESPORSEL_PAAMINNELSE_DATO <= CURRENT_DATE")
+        }
+
+        if (utvidetFilter.svarMottatt == true) {
+            sb.append(" AND ").append(
+                """
+                OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE
+                AND OPPGAVE.ULESTE_DOKUMENTER = TRUE
+                AND EXISTS (
+                    SELECT 1
+                    FROM MOTTATT_DOKUMENT md
+                    WHERE md.BEHANDLING_REF = OPPGAVE.BEHANDLING_REF
+                      AND md.TYPE IN ('LEGEERKLÆRING', 'DIALOGMELDING')
+                )
+                """.trimIndent()
+            )
+        }
+
         return sb.toString()
     }
 
