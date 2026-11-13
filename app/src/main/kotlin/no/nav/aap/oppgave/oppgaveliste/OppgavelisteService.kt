@@ -142,7 +142,7 @@ class OppgavelisteService(
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
         sortOrder: OppgaveSorteringRekkefølge?,
-        markeringFiltre: Set<MineOppgaverMarkeringFilter> = emptySet(),
+        markeringfiltre: Set<MineOppgaverMarkeringFilter> = emptySet(),
     ): List<Oppgave> {
 
         val aktivSortering = toggleAktivSortering(sortBy)
@@ -152,7 +152,7 @@ class OppgavelisteService(
             kunPåVent = kunPaaVent == true,
             sortBy = aktivSortering,
             sortOrder = sortOrder,
-            markeringFiltre = markeringFiltre,
+            markeringfiltre = markeringfiltre,
         ).map {
             it.leggPåMarkeringer(
                 markeringRepository.hentGjeldendeMarkeringerForBehandling(it.behandlingRef)

@@ -724,12 +724,12 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private fun mineOppgaverFilterQuery(
         kunPåVent: Boolean,
-        markeringFiltre: Set<MineOppgaverMarkeringFilter>,
+        markeringfiltre: Set<MineOppgaverMarkeringFilter>,
     ): String = buildString {
         if (kunPåVent) {
             append(" AND PAA_VENT_TIL IS NOT NULL")
         }
-        val filtre = markeringFiltre.map { filter ->
+        val filtre = markeringfiltre.map { filter ->
             when (filter) {
                 // TODO: Disse må basere seg på historikk-tabellen når denne er på plass
                 MineOppgaverMarkeringFilter.FORESPØRSEL_SENDT -> "FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE"
@@ -755,11 +755,11 @@ class OppgaveRepository(private val connection: DBConnection) {
         kunPåVent: Boolean = false,
         sortBy: OppgaveSorteringFelt? = null,
         sortOrder: OppgaveSorteringRekkefølge? = null,
-        markeringFiltre: Set<MineOppgaverMarkeringFilter> = emptySet(),
+        markeringfiltre: Set<MineOppgaverMarkeringFilter> = emptySet(),
     ): List<Oppgave> {
         val filterQuery = mineOppgaverFilterQuery(
             kunPåVent = kunPåVent,
-            markeringFiltre = markeringFiltre,
+            markeringfiltre = markeringfiltre,
         )
         val sortering = oppgaveSorteringQuery(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
