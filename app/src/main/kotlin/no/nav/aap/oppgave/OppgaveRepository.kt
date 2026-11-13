@@ -731,6 +731,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
         val filtre = markeringFiltre.map { filter ->
             when (filter) {
+                // TODO: Disse må basere seg på historikk-tabellen når denne er på plass
                 MineOppgaverMarkeringFilter.FORESPØRSEL_SENDT -> "FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE"
                 MineOppgaverMarkeringFilter.PÅMINNELSE_SENDT -> "FORESPORSEL_PAAMINNELSE_DATO <= CURRENT_DATE"
                 MineOppgaverMarkeringFilter.SVAR_MOTTATT -> """
