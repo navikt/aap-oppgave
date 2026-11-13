@@ -46,6 +46,7 @@ import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.bufretStatistikk
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -60,7 +61,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.slf4j.event.KeyValuePair
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 
@@ -1786,6 +1786,7 @@ class OppdaterOppgaveServiceTest {
                         MarkeringRepository(connection)
                     ),
                     UføreVedtakRepository(connection),
+                    GjenståendeSykedagerRepository(connection),
                     NomApiGateway.withClientCredentialsRestClient(),
                 ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
             }
@@ -1809,6 +1810,7 @@ class OppdaterOppgaveServiceTest {
                     MottattDokumentRepository(connection),
                     MarkeringService(MarkeringRepository(connection)),
                     UføreVedtakRepository(connection),
+                    GjenståendeSykedagerRepository(connection),
                     NomApiGateway.withClientCredentialsRestClient(),
 
                     ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
