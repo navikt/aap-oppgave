@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.uføreVedtak.tilUføreVedtakRespsons
 import javax.sql.DataSource
 
@@ -70,6 +71,7 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
                 UføreVedtakRepository(connection),
+                GjenståendeSykedagerRepository(connection),
                 MottattDokumentRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)
@@ -90,7 +92,8 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
                     påVentInfo = null,
                     utløptVenteInfo = null,
                     harUlesteDokumenter = false,
-                    forespørselSendtTilBehandler = null
+                    forespørselSendtTilBehandler = null,
+                    gjenståendeSykedager = null
                 )
             }
             respond(respons)
@@ -131,6 +134,7 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
     harMottattDokument = harMottattDokument,
     tilhørerUtlandEnhet = enhetForKø in UTLAND_ENHETER.map { it.kode },
     forespørselSendtTilBehandler = forespørselSendtTilBehandler?.tilDto(),
+    gjenståendeSykedager = gjenståendeSykedager?.tilDto(),
 )
 
 private fun Oppgave.tilOppgavePåBehandlingResponse(): OppgavePåBehandlingResponse {

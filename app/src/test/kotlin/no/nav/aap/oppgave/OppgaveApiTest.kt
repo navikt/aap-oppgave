@@ -19,6 +19,8 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.GjenståendeSykedagerDto as GjenståendeSykedagerHendelseDto
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.GjenståendeSykedagerGrunnlagDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakResultatDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.dokumenter.TilbakekrevingBehandlingsstatus
@@ -599,6 +601,93 @@ class OppgaveApiTest {
 
         val tags = mineOppgaver.oppgaver.first().oppgavelisteTags
         assertThat(tags.uføreVedtak).isNotNull()
+    }
+
+    @Test
+    fun `gjenstående sykedager skal lagres per behandling og vises i visningsinformasjon og oppgaveliste`() {
+        val behandlingRef = UUID.randomUUID()
+        val annenBehandlingRef = UUID.randomUUID()
+        val sykedager = GjenståendeSykedagerHendelseDto(
+            grunnlag = GjenståendeSykedagerGrunnlagDto.VEDTAK_I_NY_LØSNING,
+            gjenståendeDager = 42,
+            vurdertTilOgMed = LocalDate.of(2026, 1, 1),
+            maksdato = LocalDate.of(2026, 3, 2),
+        )
+        val forventet = GjenståendeSykedagerDto(
+            grunnlag = GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING,
+            gjenståendeDager = 42,
+            vurdertTilOgMed = LocalDate.of(2026, 1, 1),
+            maksdato = LocalDate.of(2026, 3, 2),
+        )
+
+        oppdaterOppgaver(sykedagerHendelse("1001", behandlingRef, Definisjon.AVKLAR_SYKDOM, sykedager))
+        // Idempotent: samme hendelse på nytt endrer ingenting
+        oppdaterOppgaver(sykedagerHendelse("1001", behandlingRef, Definisjon.AVKLAR_SYKDOM, sykedager))
+        // Behandling uten sykedager i hendelsen
+        oppdaterOppgaver(sykedagerHendelse("1002", annenBehandlingRef, Definisjon.AVKLAR_SYKDOM, null))
+
+        val visning = hentOppgaveVisningsinfo(behandlingRef)!!
+        assertThat(visning.gjenståendeSykedager).isEqualTo(forventet)
+        assertThat(hentOppgaveVisningsinfo(annenBehandlingRef)!!.gjenståendeSykedager).isNull()
+
+        plukkOppgave(visning.oppgaveId())
+        plukkOppgave(hentOppgaveVisningsinfo(annenBehandlingRef)!!.oppgaveId())
+        val tagsPerSak = hentMineOppgaver().oppgaver.associate {
+            it.behandlingskontekst.saksnummer to it.gjenståendeSykedager
+        }
+        assertThat(tagsPerSak["1001"]).isEqualTo(forventet)
+        assertThat(tagsPerSak["1002"]).isNull()
+    }
+
+    @Test
+    fun `gjenstående sykedager følger behandlingen når avklaringsbehov bytter og beholder null-felt og tidligere grunnlag`() {
+        val behandlingRef = UUID.randomUUID()
+        val saksnummer = "1003"
+
+        oppdaterOppgaver(
+            sykedagerHendelse(
+                saksnummer, behandlingRef, Definisjon.AVKLAR_SYKDOM,
+                GjenståendeSykedagerHendelseDto(
+                    grunnlag = GjenståendeSykedagerGrunnlagDto.MANGLER_MAKSDATO_I_INFOTRYGD,
+                    gjenståendeDager = null,
+                    vurdertTilOgMed = null,
+                    maksdato = null,
+                )
+            )
+        )
+
+        assertThat(hentOppgaveVisningsinfo(behandlingRef)!!.gjenståendeSykedager).isEqualTo(
+            GjenståendeSykedagerDto(GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null, null)
+        )
+
+        oppdaterOppgaver(
+            sykedagerHendelse(
+                saksnummer, behandlingRef, Definisjon.AVKLAR_BISTANDSBEHOV, null,
+                avsluttet = listOf(Definisjon.AVKLAR_SYKDOM)
+            )
+        )
+        val bistandOppgave = hentOppgaveVisningsinfo(behandlingRef)!!
+        assertThat(bistandOppgave.gjenståendeSykedager).isEqualTo(
+            GjenståendeSykedagerDto(GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null, null)
+        )
+
+        oppdaterOppgaver(
+            sykedagerHendelse(
+                saksnummer, behandlingRef, Definisjon.FORESLÅ_VEDTAK,
+                GjenståendeSykedagerHendelseDto(
+                    grunnlag = GjenståendeSykedagerGrunnlagDto.INGEN_SYKEPENGER_SISTE_26_UKER,
+                    gjenståendeDager = 0,
+                    vurdertTilOgMed = LocalDate.of(2026, 1, 1),
+                    maksdato = null,
+                ),
+                avsluttet = listOf(Definisjon.AVKLAR_SYKDOM, Definisjon.AVKLAR_BISTANDSBEHOV)
+            )
+        )
+        assertThat(hentOppgaveVisningsinfo(behandlingRef)!!.gjenståendeSykedager).isEqualTo(
+            GjenståendeSykedagerDto(
+                GjenståendeSykedagerGrunnlag.INGEN_SYKEPENGER_SISTE_26_UKER, 0, LocalDate.of(2026, 1, 1), null
+            )
+        )
     }
 
     @Test
@@ -1440,7 +1529,8 @@ class OppgaveApiTest {
         relaterteIdenter: List<String>? = emptyList(),
         uførevedtak: UførevedtakDto? = null,
         mottattDokumenter: List<MottattDokumentDto> = emptyList(),
-        aktivtAvklaringsbehov: Definisjon? = null
+        aktivtAvklaringsbehov: Definisjon? = null,
+        gjenståendeSykedager: GjenståendeSykedagerHendelseDto? = null,
     ): BehandlingFlytStoppetHendelse {
         val nå = LocalDateTime.now()
         val avklaringsbehovHendelseDtoListe = behandlingsbehov.map { avklaringsbehovHendelse ->
@@ -1486,8 +1576,33 @@ class OppgaveApiTest {
             reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov,
             vurderingsbehov = listOf("SØKNAD"),
             årsakTilOpprettelse = ÅrsakTilOpprettelse.SØKNAD,
+            gjenståendeSykedager = gjenståendeSykedager,
         )
     }
+
+    private fun sykedagerHendelse(
+        saksnummer: String,
+        referanse: UUID,
+        aktivt: Definisjon,
+        gjenståendeSykedager: GjenståendeSykedagerHendelseDto?,
+        avsluttet: List<Definisjon> = emptyList(),
+    ) = opprettBehandlingshistorikk(
+        saksnummer = saksnummer,
+        referanse = referanse,
+        aktivtAvklaringsbehov = aktivt,
+        behandlingsbehov = avsluttet.map {
+            Behandlingsbehov(
+                definisjon = it,
+                status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET,
+                endringer = listOf(Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.AVSLUTTET))
+            )
+        } + Behandlingsbehov(
+            definisjon = aktivt,
+            status = no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET,
+            endringer = listOf(Endring(no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status.OPPRETTET))
+        ),
+        gjenståendeSykedager = gjenståendeSykedager,
+    )
 
     private fun oppdaterOppgaver(behandlingFlytStoppetHendelse: BehandlingFlytStoppetHendelse): Unit? {
         return client.post(

@@ -17,6 +17,7 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.tilgang.AuthorizationParamPathConfig
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 
 fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
     dataSource: DataSource,
@@ -34,6 +35,7 @@ fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
             OppgaveRepository(connection),
             MarkeringRepository(connection),
             UføreVedtakRepository(connection),
+            GjenståendeSykedagerRepository(connection),
             MottattDokumentRepository(connection),
             enhetService,
         ).hentOppgaveEnhetListe(behandlingReferanse)
