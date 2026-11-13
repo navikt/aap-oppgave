@@ -12,7 +12,6 @@ import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
-import no.nav.aap.oppgave.liste.OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
@@ -20,9 +19,6 @@ import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
-import no.nav.aap.oppgave.unleash.FeatureToggles
-import no.nav.aap.oppgave.unleash.IUnleashService
-import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import java.util.UUID
@@ -35,7 +31,6 @@ class OppgavelisteService(
     private val uføreVedtakRepository: UføreVedtakRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
     private val enhetService: EnhetService,
-    private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
 ) {
     fun søkEtterOppgaver(søketekst: String): List<Oppgave> {
         val oppgaver = if (søketekst.all { it.isDigit() }) {
@@ -105,8 +100,6 @@ class OppgavelisteService(
             )
         }
 
-        val aktivSortering = toggleAktivSortering(sortBy)
-
         val finnOppgaverDto = oppgaveRepository.finnOppgaver(
             filter = kombinertFilter.copy(
                 enheter = enheter,
@@ -116,7 +109,7 @@ class OppgavelisteService(
             paging = paging,
             kunLedigeOppgaver = kunLedigeOppgaver,
             utvidetFilter = utvidetFilter,
-            sortBy = aktivSortering,
+            sortBy = sortBy,
             enheterMedNavn = enhetService.hentEnheterMedNavn().takeIf { filter.navn == "Kvalitetssikrer" }.orEmpty(),
             hastemarkeringerFørst = hastemarkeringerFørst
         )
@@ -143,12 +136,10 @@ class OppgavelisteService(
         sortOrder: OppgaveSorteringRekkefølge?,
     ): List<Oppgave> {
 
-        val aktivSortering = toggleAktivSortering(sortBy)
-
         val oppgaver = oppgaveRepository.hentMineOppgaver(
             ident = ident,
             kunPåVent = kunPaaVent == true,
-            sortBy = aktivSortering,
+            sortBy = sortBy,
             sortOrder = sortOrder
         ).map {
             it.leggPåMarkeringer(
@@ -161,11 +152,6 @@ class OppgavelisteService(
 
         val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
         return medMarkering + utenMarkering
-    }
-
-    private fun toggleAktivSortering(sortBy: OppgaveSorteringFelt?): OppgaveSorteringFelt? {
-        val aktivBelopSortering = unleashService.isEnabled(FeatureToggles.SorterOppgavelistePaBelop)
-        return if (sortBy == TILBAKEKREVINGS_BELOP && !aktivBelopSortering) null else sortBy
     }
 
     fun hentOppgaverForBehandling(referanse: UUID): List<Oppgave> {
