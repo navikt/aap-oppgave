@@ -88,7 +88,6 @@ class OppdaterOppgaveService(
             oppgaveOppdatering.uføreVedtak
         )
 
-        // Mangler hendelsen sykedager (null) beholdes det som er lagret tidligere
         if (oppgaveOppdatering.gjenståendeSykedager != null) gjenståendeSykedagerRepository.lagre(
             oppgaveOppdatering.referanse,
             oppgaveOppdatering.gjenståendeSykedager

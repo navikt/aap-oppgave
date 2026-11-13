@@ -23,33 +23,84 @@ class GjenståendeSykedagerRepositoryTest {
     @AfterEach
     fun tearDown() = dataSource.close()
 
-    @Test
-    fun `lagrer én rad per behandling, er idempotent og oppdaterer ved endring`() {
-        val behandlingRef = UUID.randomUUID()
-        val annenBehandlingRef = UUID.randomUUID()
-        val sykedager = GjenståendeSykedager(
-            grunnlag = GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING,
-            gjenståendeDager = 42,
-            vurdertTilOgMed = LocalDate.of(2026, 1, 1),
-            maksdato = LocalDate.of(2026, 3, 2),
-        )
-        val oppdatert = GjenståendeSykedager(GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null, null)
+    private val behandlingRef = UUID.randomUUID()
+    private val sykedager = GjenståendeSykedager(
+        grunnlag = GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING,
+        gjenståendeDager = 42,
+        vurdertTilOgMed = LocalDate.of(2026, 1, 1),
+        maksdato = LocalDate.of(2026, 3, 2),
+    )
+    private val utenDatoer =
+        GjenståendeSykedager(GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null, null)
 
+    @Test
+    fun `lagrer og henter gjenstående sykedager`() {
+        dataSource.transaction { connection ->
+            val repository = GjenståendeSykedagerRepository(connection)
+
+            repository.lagre(behandlingRef, sykedager)
+
+            assertEquals(sykedager, repository.hent(behandlingRef))
+        }
+    }
+
+    @Test
+    fun `lagrer null-felt som null`() {
+        dataSource.transaction { connection ->
+            val repository = GjenståendeSykedagerRepository(connection)
+
+            repository.lagre(behandlingRef, utenDatoer)
+
+            assertEquals(utenDatoer, repository.hent(behandlingRef))
+        }
+    }
+
+    @Test
+    fun `lagring av samme verdi flere ganger gir én rad`() {
         dataSource.transaction { connection ->
             val repository = GjenståendeSykedagerRepository(connection)
 
             repository.lagre(behandlingRef, sykedager)
             repository.lagre(behandlingRef, sykedager)
+
             assertEquals(sykedager, repository.hent(behandlingRef))
             assertEquals(1, antallRader(connection, behandlingRef))
+        }
+    }
 
-            repository.lagre(behandlingRef, oppdatert)
-            assertEquals(oppdatert, repository.hent(behandlingRef))
+    @Test
+    fun `ny lagring overskriver eksisterende verdi`() {
+        dataSource.transaction { connection ->
+            val repository = GjenståendeSykedagerRepository(connection)
+
+            repository.lagre(behandlingRef, sykedager)
+            repository.lagre(behandlingRef, utenDatoer)
+
+            assertEquals(utenDatoer, repository.hent(behandlingRef))
             assertEquals(1, antallRader(connection, behandlingRef))
+        }
+    }
 
-            repository.lagre(annenBehandlingRef, sykedager)
-            val perBehandling = repository.hentForBehandlinger(listOf(behandlingRef, annenBehandlingRef, UUID.randomUUID()))
-            assertEquals(mapOf(behandlingRef to oppdatert, annenBehandlingRef to sykedager), perBehandling)
+    @Test
+    fun `henter for flere behandlinger og hopper over ukjente`() {
+        val annenBehandlingRef = UUID.randomUUID()
+
+        dataSource.transaction { connection ->
+            val repository = GjenståendeSykedagerRepository(connection)
+            repository.lagre(behandlingRef, sykedager)
+            repository.lagre(annenBehandlingRef, utenDatoer)
+
+            val perBehandling =
+                repository.hentForBehandlinger(listOf(behandlingRef, annenBehandlingRef, UUID.randomUUID()))
+
+            assertEquals(mapOf(behandlingRef to sykedager, annenBehandlingRef to utenDatoer), perBehandling)
+        }
+    }
+
+    @Test
+    fun `returnerer null eller tomt resultat når ingenting er lagret`() {
+        dataSource.transaction { connection ->
+            val repository = GjenståendeSykedagerRepository(connection)
 
             assertNull(repository.hent(UUID.randomUUID()))
             assertEquals(emptyMap(), repository.hentForBehandlinger(emptyList()))
