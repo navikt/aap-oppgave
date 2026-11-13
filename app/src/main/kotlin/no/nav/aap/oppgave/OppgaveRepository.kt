@@ -729,7 +729,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         if (kunPåVent) {
             append(" AND PAA_VENT_TIL IS NOT NULL")
         }
-        val statusFiltre = markeringFiltre.map { filter ->
+        val filtre = markeringFiltre.map { filter ->
             when (filter) {
                 MineOppgaverMarkeringFilter.FORESPØRSEL_SENDT -> "FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE"
                 MineOppgaverMarkeringFilter.PÅMINNELSE_SENDT -> "FORESPORSEL_PAAMINNELSE_DATO <= CURRENT_DATE"
@@ -744,8 +744,8 @@ class OppgaveRepository(private val connection: DBConnection) {
                 """.trimIndent()
             }
         }
-        if (statusFiltre.isNotEmpty()) {
-            append(statusFiltre.joinToString(separator = " OR ", prefix = " AND (", postfix = ")"))
+        if (filtre.isNotEmpty()) {
+            append(filtre.joinToString(separator = " OR ", prefix = " AND (", postfix = ")"))
         }
     }
 
