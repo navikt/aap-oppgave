@@ -97,7 +97,7 @@ class OppdaterOppgaveService(
             oppgaveOppdatering.avklaringsbehov.find { it.avklaringsbehovKode == oppgaveOppdatering.aktivtAvklaringsbehov }
         }
 
-        require (åpentAvklaringsbehov == null || åpentAvklaringsbehov.status in ÅPNE_STATUSER) {
+        require(åpentAvklaringsbehov == null || åpentAvklaringsbehov.status in ÅPNE_STATUSER) {
             "Aktivt avklaringsbehov ${åpentAvklaringsbehov?.avklaringsbehovKode} må være åpent, men er ${åpentAvklaringsbehov?.status}"
         }
 
@@ -190,7 +190,7 @@ class OppdaterOppgaveService(
                     forrigeKvalitetssikrer
                 )
             },
-            forespørselSendtTilBehandler = oppgaveOppdatering.forespørselSendtTilBehandler
+            forespørselSendtTilBehandler = utledForespørselSendtTilBehandler(oppgaveOppdatering)
         )
 
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
@@ -470,7 +470,7 @@ class OppdaterOppgaveService(
             harUlesteDokumenter = harUlesteDokumenter(oppgaveOppdatering),
             returInformasjon = utledReturFraToTrinn(avklaringsbehovHendelse),
             saksnummer = oppgaveOppdatering.saksnummer ?: utledSaksnummerFraIdent(oppgaveOppdatering.personIdent),
-            forespørselSendtTilBehandler = oppgaveOppdatering.forespørselSendtTilBehandler,
+            forespørselSendtTilBehandler = utledForespørselSendtTilBehandler(oppgaveOppdatering),
         )
         val oppgaveId = oppgaveRepository.opprettOppgave(nyOppgave)
         if (oppgaveOppdatering.behandlingstype == Behandlingstype.TILBAKEKREVING && oppgaveOppdatering.totaltFeilutbetaltBeløp != null && oppgaveOppdatering.tilbakekrevingsUrl != null) {
@@ -484,6 +484,25 @@ class OppdaterOppgaveService(
         sendOppgaveStatusOppdatering(oppgaveId, HendelseType.OPPRETTET, flytJobbRepository)
         prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(oppgaveOppdatering, oppgaveId, avklaringsbehovHendelse)
         håndterReservasjonFraBehandlingsflyt(oppgaveOppdatering, oppgaveId, avklaringsbehovHendelse)
+    }
+
+    private fun utledForespørselSendtTilBehandler(oppgaveOppdatering: OppgaveOppdatering): ForespørselSendtTilBehandler? {
+        if (oppgaveOppdatering.forespørselSendtTilBehandler == null) {
+            // hva enn som er lagret skal cleares
+            return null
+        }
+
+        val forrigeForespørselSendtTilBehandler = oppgaveRepository.hentOppgaver(oppgaveOppdatering.referanse)
+            .sortedBy { it.endretTidspunkt }
+            .mapNotNull { it.forespørselSendtTilBehandler }.lastOrNull()
+
+
+        // hvis påminnelseDatoene er forskjellige (eller den gamle er null og den nye ikke er det) så antar vi endring og lagrer den nye.
+        return if (forrigeForespørselSendtTilBehandler?.påminnelseDato == oppgaveOppdatering.forespørselSendtTilBehandler.påminnelseDato) {
+            forrigeForespørselSendtTilBehandler
+        } else {
+            oppgaveOppdatering.forespørselSendtTilBehandler
+        }
     }
 
     private fun hentVeilederSykefraværoppfølging(personIdent: String): String? =
