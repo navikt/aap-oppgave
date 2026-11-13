@@ -20,7 +20,6 @@ import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
@@ -594,6 +593,25 @@ class OppgaveRepository(private val connection: DBConnection) {
         return connection.queryList(query) {
             setRowMapper { row ->
                 IdentMedOppgaveId(row.getString("PERSON_IDENT"), row.getLong("ID"), row.getLong("VERSJON"))
+            }
+        }
+    }
+
+    fun finnÅpneOppgaverSomErReservert(): List<IdentMedOppgaveId> {
+        val query = """
+            SELECT 
+                RESERVERT_AV, ID, VERSJON
+            FROM 
+                OPPGAVE 
+            WHERE 
+                STATUS != 'AVSLUTTET'
+            AND 
+                RESERVERT_AV IS NOT NULL
+        """.trimIndent()
+
+        return connection.queryList(query) {
+            setRowMapper { row ->
+                IdentMedOppgaveId(row.getString("RESERVERT_AV"), row.getLong("ID"), row.getLong("VERSJON"))
             }
         }
     }
