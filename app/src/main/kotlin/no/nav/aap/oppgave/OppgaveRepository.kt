@@ -8,7 +8,7 @@ import no.nav.aap.oppgave.drift.OppgaveIkkeEndretDto
 import no.nav.aap.oppgave.enhet.EnhetInfo
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.filter.Filter
-import no.nav.aap.oppgave.liste.MineOppgaverFilter
+import no.nav.aap.oppgave.liste.MineOppgaverMarkeringFilter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -724,16 +724,16 @@ class OppgaveRepository(private val connection: DBConnection) {
 
     private fun mineOppgaverFilterQuery(
         kunPåVent: Boolean,
-        filtre: Set<MineOppgaverFilter>,
+        markeringFiltre: Set<MineOppgaverMarkeringFilter>,
     ): String = buildString {
         if (kunPåVent) {
             append(" AND PAA_VENT_TIL IS NOT NULL")
         }
-        val statusFiltre = filtre.map { filter ->
+        val statusFiltre = markeringFiltre.map { filter ->
             when (filter) {
-                MineOppgaverFilter.FORESPØRSEL_SENDT -> "FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE"
-                MineOppgaverFilter.PÅMINNELSE_SENDT -> "FORESPORSEL_PAAMINNELSE_DATO <= CURRENT_DATE"
-                MineOppgaverFilter.SVAR_MOTTATT -> """
+                MineOppgaverMarkeringFilter.FORESPØRSEL_SENDT -> "FORESPORSEL_SENDT_TIL_BEHANDLER = TRUE"
+                MineOppgaverMarkeringFilter.PÅMINNELSE_SENDT -> "FORESPORSEL_PAAMINNELSE_DATO <= CURRENT_DATE"
+                MineOppgaverMarkeringFilter.SVAR_MOTTATT -> """
                     (OPPGAVE.ULESTE_DOKUMENTER = TRUE
                      AND EXISTS (
                          SELECT 1
@@ -754,11 +754,11 @@ class OppgaveRepository(private val connection: DBConnection) {
         kunPåVent: Boolean = false,
         sortBy: OppgaveSorteringFelt? = null,
         sortOrder: OppgaveSorteringRekkefølge? = null,
-        filtre: Set<MineOppgaverFilter> = emptySet(),
+        markeringFiltre: Set<MineOppgaverMarkeringFilter> = emptySet(),
     ): List<Oppgave> {
         val filterQuery = mineOppgaverFilterQuery(
             kunPåVent = kunPåVent,
-            filtre = filtre,
+            markeringFiltre = markeringFiltre,
         )
         val sortering = oppgaveSorteringQuery(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,

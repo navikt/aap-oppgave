@@ -1,6 +1,6 @@
 package no.nav.aap.oppgave.liste
 
-enum class MineOppgaverFilter {
+enum class MineOppgaverMarkeringFilter {
     FORESPØRSEL_SENDT,
     PÅMINNELSE_SENDT,
     SVAR_MOTTATT,

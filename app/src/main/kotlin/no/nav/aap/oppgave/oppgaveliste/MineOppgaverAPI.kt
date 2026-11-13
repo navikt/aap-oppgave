@@ -44,7 +44,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
                     kunPaaVent = req.kunPaaVent,
                     sortBy = req.sortby,
                     sortOrder = req.sortorder,
-                    filtre = req.filtre.toSet(),
+                    markeringFiltre = req.markeringFiltre.toSet(),
                 )
             }
         respond(
