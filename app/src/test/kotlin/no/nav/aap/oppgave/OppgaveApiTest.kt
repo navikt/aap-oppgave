@@ -635,7 +635,7 @@ class OppgaveApiTest {
     }
 
     @Test
-    fun `gjenstående sykedager skal lagres per behandling og vises i visningsinformasjon og oppgaveliste`() {
+    fun `gjenstående sykedager skal lagres per behandling og vises i oppgaveliste`() {
         val behandlingRef = UUID.randomUUID()
         val annenBehandlingRef = UUID.randomUUID()
         val sykedager = GjenståendeSykedagerHendelseDto(
@@ -657,11 +657,7 @@ class OppgaveApiTest {
         // Behandling uten sykedager i hendelsen
         oppdaterOppgaver(sykedagerHendelse("1002", annenBehandlingRef, Definisjon.AVKLAR_SYKDOM, null))
 
-        val visning = hentOppgaveVisningsinfo(behandlingRef)!!
-        assertThat(visning.gjenståendeSykedager).isEqualTo(forventet)
-        assertThat(hentOppgaveVisningsinfo(annenBehandlingRef)!!.gjenståendeSykedager).isNull()
-
-        plukkOppgave(visning.oppgaveId())
+        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
         plukkOppgave(hentOppgaveVisningsinfo(annenBehandlingRef)!!.oppgaveId())
         val tagsPerSak = hentMineOppgaver().oppgaver.associate {
             it.behandlingskontekst.saksnummer to it.gjenståendeSykedager
@@ -687,7 +683,7 @@ class OppgaveApiTest {
             )
         )
 
-        assertThat(hentOppgaveVisningsinfo(behandlingRef)!!.gjenståendeSykedager).isEqualTo(
+        assertThat(plukkOgHentGjenståendeSykedager(behandlingRef)).isEqualTo(
             GjenståendeSykedagerDto(GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null, null)
         )
 
@@ -697,8 +693,7 @@ class OppgaveApiTest {
                 avsluttet = listOf(Definisjon.AVKLAR_SYKDOM)
             )
         )
-        val bistandOppgave = hentOppgaveVisningsinfo(behandlingRef)!!
-        assertThat(bistandOppgave.gjenståendeSykedager).isEqualTo(
+        assertThat(plukkOgHentGjenståendeSykedager(behandlingRef)).isEqualTo(
             GjenståendeSykedagerDto(GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null, null)
         )
 
@@ -714,7 +709,7 @@ class OppgaveApiTest {
                 avsluttet = listOf(Definisjon.AVKLAR_SYKDOM, Definisjon.AVKLAR_BISTANDSBEHOV)
             )
         )
-        assertThat(hentOppgaveVisningsinfo(behandlingRef)!!.gjenståendeSykedager).isEqualTo(
+        assertThat(plukkOgHentGjenståendeSykedager(behandlingRef)).isEqualTo(
             GjenståendeSykedagerDto(
                 GjenståendeSykedagerGrunnlag.INGEN_SYKEPENGER_SISTE_26_UKER, 0, LocalDate.of(2026, 1, 1), null
             )
@@ -1950,6 +1945,16 @@ class OppgaveApiTest {
                 currentToken = getOboToken()
             )
         )
+    }
+
+    private fun plukkOgHentGjenståendeSykedager(behandlingRef: UUID): GjenståendeSykedagerDto? {
+        fun mineOppgaverForBehandling() =
+            hentMineOppgaver().oppgaver.filter { it.behandlingskontekst.behandlingsreferanse == behandlingRef }
+
+        if (mineOppgaverForBehandling().isEmpty()) {
+            plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
+        }
+        return mineOppgaverForBehandling().single().gjenståendeSykedager
     }
 
     private fun hentMineOppgaver(kunPåVent: Boolean = false): OppgavelisteRespons {

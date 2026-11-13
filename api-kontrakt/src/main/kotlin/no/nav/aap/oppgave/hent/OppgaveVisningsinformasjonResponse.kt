@@ -1,6 +1,5 @@
 package no.nav.aap.oppgave.hent
 
-import no.nav.aap.oppgave.GjenståendeSykedagerDto
 import no.nav.aap.oppgave.HarMottattDokument
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.UførevedtakRespons
@@ -27,7 +26,6 @@ data class OppgaveVisningsinformasjonResponse(
     val harMottattDokument: HarMottattDokument?,
     val tilhørerUtlandEnhet: Boolean,
     val forespørselSendtTilBehandler: ForespørselSendtTilBehandlerDto?,
-    val gjenståendeSykedager: GjenståendeSykedagerDto? = null,
 )
 
 data class VenteInformasjonResponse(

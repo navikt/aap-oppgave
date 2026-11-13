@@ -92,8 +92,7 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
                     påVentInfo = null,
                     utløptVenteInfo = null,
                     harUlesteDokumenter = false,
-                    forespørselSendtTilBehandler = null,
-                    gjenståendeSykedager = null
+                    forespørselSendtTilBehandler = null
                 )
             }
             respond(respons)
@@ -134,7 +133,6 @@ private fun Oppgave.tilOppgaveVisningsinformasjonResponse() = OppgaveVisningsinf
     harMottattDokument = harMottattDokument,
     tilhørerUtlandEnhet = enhetForKø in UTLAND_ENHETER.map { it.kode },
     forespørselSendtTilBehandler = forespørselSendtTilBehandler?.tilDto(),
-    gjenståendeSykedager = gjenståendeSykedager?.tilDto(),
 )
 
 private fun Oppgave.tilOppgavePåBehandlingResponse(): OppgavePåBehandlingResponse {

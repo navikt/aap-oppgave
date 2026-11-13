@@ -59,7 +59,6 @@ class OppgavelisteService(
             val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
             val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingReferanse.referanse)
             return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer).leggPåMottattDokument()
-                .leggPåGjenståendeSykedager()
         }
         return oppgave
     }
