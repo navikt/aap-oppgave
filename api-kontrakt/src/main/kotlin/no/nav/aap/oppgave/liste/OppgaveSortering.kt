@@ -10,6 +10,7 @@ enum class OppgaveSorteringFelt {
     OPPRETTET_TIDSPUNKT,
     RESERVERT_AV,
     TILBAKEKREVINGS_BELOP,
+    MAKSDATO_SP,
 }
 
 enum class OppgaveSorteringRekkefølge {

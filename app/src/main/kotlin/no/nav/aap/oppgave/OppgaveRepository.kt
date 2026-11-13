@@ -526,14 +526,14 @@ class OppgaveRepository(private val connection: DBConnection) {
         val kunLedigeQuery =
             if (kunLedigeOppgaver == true) "AND RESERVERT_AV IS NULL AND PAA_VENT_TIL IS NULL" else ""
         val utvidetFilterQuery = if (utvidetFilter != null) utvidetFilterQuery(utvidetFilter) else ""
-        val sortering = oppgaveSorteringQuery(
+        val sortering = oppgaveSorteringUttrykk(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            rekkefølge,
         )
-        val sorteringsRekkefølge = oppgaveRekkefølge(rekkefølge)
         val orderBy = if (hastemarkeringerFørst) {
-            "ORDER BY CASE WHEN ${behandlingHarAktivMarkeringClause("('${MarkeringForBehandling.HASTER}')")} THEN 0 ELSE 1 END, $sortering $sorteringsRekkefølge"
+            "ORDER BY CASE WHEN ${behandlingHarAktivMarkeringClause("('${MarkeringForBehandling.HASTER}')")} THEN 0 ELSE 1 END, $sortering"
         } else {
-            "ORDER BY $sortering $sorteringsRekkefølge"
+            "ORDER BY $sortering"
         }
 
         // COUNT(*) OVER() beregnes som et vindusfunksjonskall før OFFSET/FETCH, så vi slipper en ekstra spørring
@@ -728,10 +728,10 @@ class OppgaveRepository(private val connection: DBConnection) {
         sortOrder: OppgaveSorteringRekkefølge? = null
     ): List<Oppgave> {
         val kunPåVentQuery = if (kunPåVent) " AND PAA_VENT_TIL IS NOT NULL" else ""
-        val sortering = oppgaveSorteringQuery(
+        val sortering = oppgaveSorteringUttrykk(
             sortBy ?: OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            sortOrder ?: OppgaveSorteringRekkefølge.ASC,
         )
-        val sorteringRekkefølge = oppgaveRekkefølge(sortOrder ?: OppgaveSorteringRekkefølge.ASC)
 
         val query = """
             SELECT $alleOppgaveFelt
@@ -739,7 +739,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             LEFT JOIN TILBAKEKREVING_OPPGAVE_VAR t on OPPGAVE.ID = t.OPPGAVE_ID
             WHERE RESERVERT_AV = ?
               AND STATUS != 'AVSLUTTET' $kunPåVentQuery
-            ORDER BY $sortering $sorteringRekkefølge
+            ORDER BY $sortering
         """.trimIndent()
 
         return connection.queryList(query) {
@@ -1063,6 +1063,12 @@ class OppgaveRepository(private val connection: DBConnection) {
         return tilbakekrevingVars
     }
 
+    private fun oppgaveSorteringUttrykk(sortBy: OppgaveSorteringFelt, rekkefølge: OppgaveSorteringRekkefølge): String {
+        val uttrykk = "${oppgaveSorteringQuery(sortBy)} ${oppgaveRekkefølge(rekkefølge)}"
+        // Oppgaver uten maksdato skal alltid ligge sist, uavhengig av rekkefølge
+        return if (sortBy == OppgaveSorteringFelt.MAKSDATO_SP) "$uttrykk NULLS LAST" else uttrykk
+    }
+
     private fun oppgaveSorteringQuery(sortBy: OppgaveSorteringFelt): String {
         return when (sortBy) {
             OppgaveSorteringFelt.PERSONIDENT -> "OPPGAVE.person_ident"
@@ -1074,6 +1080,8 @@ class OppgaveRepository(private val connection: DBConnection) {
             OppgaveSorteringFelt.OPPRETTET_TIDSPUNKT -> "OPPGAVE.opprettet_tidspunkt"
             OppgaveSorteringFelt.RESERVERT_AV -> "OPPGAVE.reservert_av"
             OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP -> "t.belop"
+            OppgaveSorteringFelt.MAKSDATO_SP ->
+                "(SELECT gs.maksdato FROM GJENSTAENDE_SYKEDAGER gs WHERE gs.behandling_ref = OPPGAVE.behandling_ref)"
         }
     }
 
