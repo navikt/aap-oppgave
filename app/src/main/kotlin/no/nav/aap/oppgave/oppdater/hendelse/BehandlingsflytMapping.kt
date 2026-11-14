@@ -6,6 +6,8 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.GjenståendeSykedagerDto
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.GjenståendeSykedagerGrunnlagDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.InnsendingType
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.UførevedtakDto
@@ -15,6 +17,8 @@ import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.ForespørselSendtTilBehandler
+import no.nav.aap.oppgave.GjenståendeSykedagerGrunnlag
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedager
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
@@ -53,7 +57,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
         uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse),
         forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter),
-        aktivtAvklaringsbehov = this.aktivtAvklaringsbehov?.let { AvklaringsbehovKode(it.kode.name) }
+        aktivtAvklaringsbehov = this.aktivtAvklaringsbehov?.let { AvklaringsbehovKode(it.kode.name) },
+        gjenståendeSykedager = this.gjenståendeSykedager?.tilGjenståendeSykedager()
     )
 }
 
@@ -130,6 +135,19 @@ private fun UførevedtakDto.tilUførevedtak(behandlingRef: UUID): UføreVedtak {
         },
     )
 }
+
+private fun GjenståendeSykedagerDto.tilGjenståendeSykedager() = GjenståendeSykedager(
+    grunnlag = when (this.grunnlag) {
+        GjenståendeSykedagerGrunnlagDto.VEDTAK_I_NY_LØSNING -> GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING
+        GjenståendeSykedagerGrunnlagDto.SISTE_UTBETALING_I_INFOTRYGD -> GjenståendeSykedagerGrunnlag.SISTE_UTBETALING_I_INFOTRYGD
+        GjenståendeSykedagerGrunnlagDto.MAKSDATO_I_INFOTRYGD -> GjenståendeSykedagerGrunnlag.MAKSDATO_I_INFOTRYGD
+        GjenståendeSykedagerGrunnlagDto.MANGLER_MAKSDATO_I_INFOTRYGD -> GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD
+        GjenståendeSykedagerGrunnlagDto.INGEN_SYKEPENGER_SISTE_26_UKER -> GjenståendeSykedagerGrunnlag.INGEN_SYKEPENGER_SISTE_26_UKER
+    },
+    gjenståendeDager = this.gjenståendeDager,
+    vurdertTilOgMed = this.vurdertTilOgMed,
+    maksdato = this.maksdato,
+)
 
 private fun TypeBehandling.tilBehandlingstype() =
     when (this) {

@@ -161,7 +161,8 @@ object OppgavelisteUtils {
             veilederSykdom = veilederSykdom,
             reservertAv = reservertAv,
             reservertAvNavn = reservertAvNavn,
-            tilbakekrevingsVars = tilbakekrevingsVars?.tilDto()
+            tilbakekrevingsVars = tilbakekrevingsVars?.tilDto(),
+            gjenståendeSykedager = gjenståendeSykedager?.tilDto()
         )
     }
 }

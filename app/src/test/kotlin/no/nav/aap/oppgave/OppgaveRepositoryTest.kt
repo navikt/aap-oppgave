@@ -7,6 +7,9 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterType
+import no.nav.aap.oppgave.GjenståendeSykedagerGrunnlag
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedager
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -438,6 +441,47 @@ class OppgaveRepositoryTest {
         val oppgavelisteSorterteBehandlingstyperDesc =
             oppgavelisteBehandlingstyperDesc.oppgaver.map { it.behandlingstype }
         assertThat(oppgavelisteSorterteBehandlingstyperDesc).isEqualTo(sorterteBehandlingstyper.reversed())
+    }
+
+    @Test
+    fun `Kan sortere på maksdato sykepenger og oppgaver uten maksdato havner sist`() {
+        val senest = UUID.randomUUID()
+        val tidligst = UUID.randomUUID()
+        val utenMaksdato = UUID.randomUUID()
+        val utenSykedager = UUID.randomUUID()
+        val oppgaveIdPerBehandling = listOf(senest, utenMaksdato, tidligst, utenSykedager).associateWith {
+            opprettOppgaveMedDataSource(enhet = ENHET_NAV_ENEBAKK, behandlingRef = it)
+        }
+        dataSource.transaction { connection ->
+            val repository = GjenståendeSykedagerRepository(connection)
+            fun sykedager(maksdato: LocalDate?) =
+                GjenståendeSykedager(GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING, 10, null, maksdato)
+            repository.lagre(senest, sykedager(LocalDate.of(2026, 6, 1)))
+            repository.lagre(tidligst, sykedager(LocalDate.of(2026, 2, 1)))
+            repository.lagre(utenMaksdato, sykedager(null))
+        }
+
+        fun refs(rekkefølge: OppgaveSorteringRekkefølge) = finnAlleOppgaverMedSortering(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            null,
+            OppgaveSorteringFelt.MAKSDATO_SP,
+            rekkefølge
+        ).oppgaver.map { it.behandlingRef }
+
+        assertThat(refs(OppgaveSorteringRekkefølge.ASC).take(2)).containsExactly(tidligst, senest)
+        assertThat(refs(OppgaveSorteringRekkefølge.DESC).take(2)).containsExactly(senest, tidligst)
+        assertThat(refs(OppgaveSorteringRekkefølge.ASC).takeLast(2)).containsExactlyInAnyOrder(utenMaksdato, utenSykedager)
+        assertThat(refs(OppgaveSorteringRekkefølge.DESC).takeLast(2)).containsExactlyInAnyOrder(utenMaksdato, utenSykedager)
+
+        listOf(senest, tidligst, utenMaksdato).forEach {
+            reserverOppgave(oppgaveIdPerBehandling.getValue(it), "bruker1")
+        }
+        val mine = dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentMineOppgaver(
+                "bruker1", sortBy = OppgaveSorteringFelt.MAKSDATO_SP, sortOrder = OppgaveSorteringRekkefølge.DESC
+            )
+        }
+        assertThat(mine.map { it.behandlingRef }).containsExactly(senest, tidligst, utenMaksdato)
     }
 
     @Test

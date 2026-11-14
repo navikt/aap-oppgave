@@ -1,7 +1,7 @@
 [versions]
 komponenter = "3.0.0"
 tilgang = "1.0.244"
-behandlingsflytVersjon = "0.0.676"
+behandlingsflytVersjon = "0.0.678"
 postmottakVersjon = "6.0.14"
 
 [libraries]

@@ -17,6 +17,7 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import javax.sql.DataSource
 
 
@@ -37,6 +38,7 @@ fun NormalOpenAPIRoute.mineOppgaverApi(
                     OppgaveRepository(connection),
                     MarkeringRepository(connection),
                     UføreVedtakRepository(connection),
+                    GjenståendeSykedagerRepository(connection),
                     MottattDokumentRepository(connection),
                     enhetService,
                 ).hentMineOppgaver(
