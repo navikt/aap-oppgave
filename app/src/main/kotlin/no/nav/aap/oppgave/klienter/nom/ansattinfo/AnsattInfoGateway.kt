@@ -13,9 +13,12 @@ import java.io.InputStream
 import java.net.URI
 import java.time.Duration
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
+import java.time.LocalDate
 
 interface AnsattInfoGateway {
     fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
+    fun hentSluttetDatoHvisAnsattHarSluttet(navIdent: String): LocalDate?
+    fun hentDeaktiverteBrukere(navIdenter: List<String>): List<String>
 }
 
 class NomApiGateway
@@ -75,6 +78,20 @@ private constructor(
         val httpRequest = PostRequest(body = request)
         return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
+
+    override fun hentSluttetDatoHvisAnsattHarSluttet(navIdent: String): LocalDate? {
+        val request = AnsattInfoRequest(sluttetQuery, AnsattInfoVariables(navIdent))
+        val response = checkNotNull(ansattInfoQuery(request).data?.ressurs) {
+            "Fant ikke ansatt i NOM"
+        }
+        return response.sluttdato?.let { LocalDate.parse(it) }
+    }
+
+    override fun hentDeaktiverteBrukere(navIdenter: List<String>): List<String> {
+        return  navIdenter.filter { navIdent ->
+             hentSluttetDatoHvisAnsattHarSluttet(navIdent)?.isBefore(LocalDate.now()) == true
+        }
+    }
 }
 
 private const val navIdent = "\$navIdent"
@@ -82,6 +99,15 @@ val navnQuery = """
     query($navIdent: String!) {
       ressurs(where: {navident: $navIdent}) {
         visningsnavn
+      }
+    }
+""".trimIndent()
+
+val sluttetQuery = """
+    query($navIdent: String!) {
+      ressurs(where: {navident: $navIdent}) {
+        visningsnavn,
+        sluttdato
       }
     }
 """.trimIndent()

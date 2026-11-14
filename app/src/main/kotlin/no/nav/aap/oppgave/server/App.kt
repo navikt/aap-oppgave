@@ -55,6 +55,7 @@ import no.nav.aap.oppgave.oppdater.oppdaterTilbakekrevingOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.mineOppgaverApi
 import no.nav.aap.oppgave.oppgaveliste.oppgavelisteApi
 import no.nav.aap.oppgave.plukk.plukkOppgaveApi
+import no.nav.aap.oppgave.prosessering.FjernOppgaverFraDeaktiverteBrukereJobb
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.VarsleOmOppgaverIkkeEndretJobb
@@ -183,7 +184,8 @@ fun Application.motor(dataSource: DataSource, prometheus: MeterRegistry): Motor 
         jobber = listOf(
             StatistikkHendelseJobb,
             OppdaterOppgaveEnhetJobb,
-            VarsleOmOppgaverIkkeEndretJobb
+            VarsleOmOppgaverIkkeEndretJobb,
+            FjernOppgaverFraDeaktiverteBrukereJobb
         )
     )
 
