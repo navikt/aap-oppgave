@@ -5,6 +5,7 @@ import no.nav.aap.motor.Jobb
 import no.nav.aap.motor.JobbInput
 import no.nav.aap.motor.JobbUtfører
 import no.nav.aap.motor.cron.CronExpression
+import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.unleash.FeatureToggles
@@ -20,6 +21,23 @@ class VarsleOmOppgaverIkkeEndretJobb(
     private val log = LoggerFactory.getLogger(VarsleOmOppgaverIkkeEndretJobb::class.java)
 
     override fun utfør(input: JobbInput) {
+        val oppgaverIkkeHosNay = hentOppgaverIkkeEndret()
+        if (unleashService.isEnabled(FeatureToggles.VarsleOmOppgaverEldreEnn7Dager)) {
+            oppgaverIkkeHosNay.forEach {
+                log.info(
+                    "Oppgave ${it.oppgaveId()} for avklaringsbehov ${it.avklaringsbehovKode} på enhet ${it.enhetForKø} er ikke endret siden ${(it.endretTidspunkt ?: it.opprettetTidspunkt).toLocalDate()}. Saksnummer: ${it.saksnummer}"
+                )
+            }
+            if (oppgaverIkkeHosNay.isNotEmpty()) {
+                val enheter = oppgaverIkkeHosNay.map { it.enhetForKø }.toSet()
+                log.warn(
+                    "Fant ${oppgaverIkkeHosNay.size} oppgaver på enhetene $enheter som ikke er endret på lang tid. Sjekk info-logger med denne trace-id for hvilke det gjelder."
+                )
+            }
+        }
+    }
+
+    fun hentOppgaverIkkeEndret(): List<Oppgave> {
         val alleÅpneOppgaverIkkePåVent =
             oppgaveRepository.hentAlleÅpneOppgaver().filter { !it.erPåVent && it.reservertAv == null }
         log.info("Fant ${alleÅpneOppgaverIkkePåVent.size} åpne oppgaver som ikke er på vent og ikke er reservert.")
@@ -34,19 +52,7 @@ class VarsleOmOppgaverIkkeEndretJobb(
         }
 
         log.info("Fant ${oppgaverIkkeEndretPåFemUker.size} oppgaver som ikke er endret på mer enn fem uker, hvorav ${oppgaverIkkeHosNay.size} ikke er hos NAY.")
-        if (unleashService.isEnabled(FeatureToggles.VarsleOmOppgaverEldreEnn7Dager)) {
-            oppgaverIkkeHosNay.forEach {
-                log.info(
-                    "Oppgave ${it.oppgaveId()} for avklaringsbehov ${it.avklaringsbehovKode} på enhet ${it.enhetForKø} er ikke endret siden ${(it.endretTidspunkt ?: it.opprettetTidspunkt).toLocalDate()}. Saksnummer: ${it.saksnummer}"
-                )
-            }
-            if (oppgaverIkkeHosNay.isNotEmpty()) {
-                val enheter = oppgaverIkkeHosNay.map { it.enhetForKø }.toSet()
-                log.error(
-                    "Fant ${oppgaverIkkeHosNay.size} oppgaver på enhetene $enheter som ikke er endret på lang tid. Sjekk info-logger med denne trace-id for hvilke det gjelder."
-                )
-            }
-        }
+        return oppgaverIkkeHosNay
     }
 
     companion object : Jobb {

@@ -4,7 +4,9 @@ import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.komponenter.dbconnect.DBConnection
 import no.nav.aap.komponenter.dbconnect.Row
 import no.nav.aap.komponenter.verdityper.Bruker
+import no.nav.aap.oppgave.drift.OppgaveIkkeEndretDto
 import no.nav.aap.oppgave.enhet.EnhetInfo
+import no.nav.aap.oppgave.enhet.NAY_ENHETER
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -20,6 +22,7 @@ import no.nav.aap.oppgave.verdityper.Status
 import no.nav.aap.oppgave.verdityper.ÅrsakTilReturKode
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.UUID
 
 private val log = LoggerFactory.getLogger(OppgaveRepository::class.java)
@@ -204,7 +207,7 @@ class OppgaveRepository(private val connection: DBConnection) {
         val query = """
             UPDATE OPPGAVE
             SET
-                FORESPORSEL_PAAMINNELSE_DATO = ?,
+                FORESPORSEL_PAAMINNELSE_DATO = CASE WHEN ? = FALSE THEN FORESPORSEL_PAAMINNELSE_DATO ELSE ? END,
                 FORESPORSEL_PAAMINNELSE_AVBRUTT = ?,
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
@@ -214,11 +217,12 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         connection.execute(query) {
             setParams {
-                setLocalDate(1, påminnelseDato)
-                setBoolean(2, påminnelseAvbrutt)
-                setString(3, KELVIN)
-                setLong(4, oppgave.id)
-                setLong(5, oppgave.versjon)
+                setBoolean(1, påminnelseAvbrutt)
+                setLocalDate(2, påminnelseDato)
+                setBoolean(3, påminnelseAvbrutt)
+                setString(4, KELVIN)
+                setLong(5, oppgave.id)
+                setLong(6, oppgave.versjon)
             }
             setResultValidator {
                 require(it == 1) {
@@ -768,6 +772,52 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
+
+    internal fun hentOppgaverIkkeEndret(
+        antallUker: Long,
+        kunUreserverte: Boolean,
+        nå: LocalDateTime = LocalDateTime.now(),
+    ): List<OppgaveIkkeEndretDto> {
+        val reserveringsfilter = if (kunUreserverte) "AND RESERVERT_AV IS NULL" else ""
+        val query = """
+            SELECT ID, BEHANDLING_REF, SAKSNUMMER, AVKLARINGSBEHOV_TYPE,
+                   COALESCE(OPPFOLGINGSENHET, ENHET) AS ENHET_FOR_KO,
+                   OPPRETTET_TIDSPUNKT, ENDRET_TIDSPUNKT
+            FROM OPPGAVE
+            WHERE STATUS != 'AVSLUTTET'
+              $reserveringsfilter
+              AND (
+                  PAA_VENT_TIL IS NULL
+                  OR (
+                      BEHANDLINGSTYPE = ?
+                      AND PAA_VENT_TIL <= ?
+                      AND UTLOEPT_VENTEFRIST IS NULL
+                  )
+              )
+              AND COALESCE(ENDRET_TIDSPUNKT, OPPRETTET_TIDSPUNKT) < ?
+              AND COALESCE(OPPFOLGINGSENHET, ENHET) <> ALL(?::text[])
+        """.trimIndent()
+
+        return connection.queryList(query) {
+            setParams {
+                setString(1, Behandlingstype.TILBAKEKREVING.name)
+                setLocalDate(2, nå.toLocalDate())
+                setLocalDateTime(3, nå.minusWeeks(antallUker))
+                setArray(4, NAY_ENHETER.map { it.kode })
+            }
+            setRowMapper { row ->
+                OppgaveIkkeEndretDto(
+                    oppgaveId = row.getLong("ID"),
+                    behandlingRef = row.getUUID("BEHANDLING_REF"),
+                    saksnummer = row.getStringOrNull("SAKSNUMMER"),
+                    avklaringsbehovKode = row.getString("AVKLARINGSBEHOV_TYPE"),
+                    enhetForKø = row.getString("ENHET_FOR_KO"),
+                    opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
+                    endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
+                )
+            }
+        }
+    }
 
     fun hentAlleÅpneOppgaver(): List<Oppgave> {
         val query = """
