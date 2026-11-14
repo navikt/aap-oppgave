@@ -6,4 +6,5 @@ data class MineOppgaverRequest(
     @param:QueryParam("Vis kun på vent-oppgaver.") val kunPaaVent: Boolean? = false,
     @param:QueryParam("Sorter oppgaveliste") val sortby: OppgaveSorteringFelt? = null,
     @param:QueryParam("Sorteringsrekkefølge") val sortorder: OppgaveSorteringRekkefølge? = null,
+    @param:QueryParam("Filtre for markering i oppgavelisten.") val markeringfiltre: List<MineOppgaverMarkeringFilter> = emptyList(),
 )

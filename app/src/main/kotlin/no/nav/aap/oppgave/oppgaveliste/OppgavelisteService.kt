@@ -11,6 +11,7 @@ import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.Filter
+import no.nav.aap.oppgave.liste.MineOppgaverMarkeringFilter
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt.TILBAKEKREVINGS_BELOP
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -141,6 +142,7 @@ class OppgavelisteService(
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
         sortOrder: OppgaveSorteringRekkefølge?,
+        markeringfiltre: Set<MineOppgaverMarkeringFilter> = emptySet(),
     ): List<Oppgave> {
 
         val aktivSortering = toggleAktivSortering(sortBy)
@@ -149,7 +151,8 @@ class OppgavelisteService(
             ident = ident,
             kunPåVent = kunPaaVent == true,
             sortBy = aktivSortering,
-            sortOrder = sortOrder
+            sortOrder = sortOrder,
+            markeringfiltre = markeringfiltre,
         ).map {
             it.leggPåMarkeringer(
                 markeringRepository.hentGjeldendeMarkeringerForBehandling(it.behandlingRef)
