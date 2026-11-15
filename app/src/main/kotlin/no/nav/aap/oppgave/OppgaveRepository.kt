@@ -601,25 +601,6 @@ class OppgaveRepository(private val connection: DBConnection) {
         }
     }
 
-    fun finnÅpneOppgaverSomErReservert(): List<IdentMedOppgaveId> {
-        val query = """
-            SELECT 
-                RESERVERT_AV, ID, VERSJON
-            FROM 
-                OPPGAVE 
-            WHERE 
-                STATUS != 'AVSLUTTET'
-            AND 
-                RESERVERT_AV IS NOT NULL
-        """.trimIndent()
-
-        return connection.queryList(query) {
-            setRowMapper { row ->
-                IdentMedOppgaveId(row.getString("RESERVERT_AV"), row.getLong("ID"), row.getLong("VERSJON"))
-            }
-        }
-    }
-
     fun oppdaterOppgaveEnhetOgFjernReservasjonBatch(oppgaveIds: List<Long>, enhet: String): Int {
         require(oppgaveIds.isNotEmpty()) { "Må ha minst en oppgave å oppdatere" }
         val query = """
