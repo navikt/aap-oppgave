@@ -13,5 +13,4 @@ data class AnsattInfoData(
 
 data class NomRessurs(
     val visningsnavn: String,
-    val sluttdato: String? = null,
 )
