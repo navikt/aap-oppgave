@@ -2,6 +2,7 @@ package no.nav.aap.oppgave
 
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetInfo
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedager
 import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.ReturStatus
@@ -85,6 +86,7 @@ data class Oppgave(
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrer? = null,
     val uføreVedtak: UføreVedtak? = null,
     val forespørselSendtTilBehandler: ForespørselSendtTilBehandler? = null,
+    val gjenståendeSykedager: GjenståendeSykedager? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.

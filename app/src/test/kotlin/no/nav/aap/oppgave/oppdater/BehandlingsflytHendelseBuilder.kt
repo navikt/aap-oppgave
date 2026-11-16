@@ -9,6 +9,7 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.AvklaringsbehovHendelseDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.EndringDTO
+import no.nav.aap.behandlingsflyt.kontrakt.hendelse.GjenståendeSykedagerDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.MottattDokumentDto
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilRetur
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilSettPåVent
@@ -35,6 +36,7 @@ fun behandlingFlytHendelse(
     reserverTilPerAvklaringsbehov: Map<String, String>? = null,
     behandlingMetadata: BehandlingMetadata? = null,
     aktivtAvklaringsbehov: Definisjon? = null,
+    gjenståendeSykedager: GjenståendeSykedagerDto? = null,
     block: BehandlingFlytHendelseBuilder.() -> Unit = {}
 ): BehandlingFlytStoppetHendelse {
     val builder = BehandlingFlytHendelseBuilder().apply(block)
@@ -58,7 +60,8 @@ fun behandlingFlytHendelse(
         relevanteIdenterPåBehandling = relevanteIdenterPåBehandling,
         behandlingMetadata = behandlingMetadata,
         reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov ?: emptyMap(),
-        aktivtAvklaringsbehov = aktivtAvklaringsbehov
+        aktivtAvklaringsbehov = aktivtAvklaringsbehov,
+        gjenståendeSykedager = gjenståendeSykedager
     )
 }
 
