@@ -390,7 +390,7 @@ class OppdaterOppgaveService(
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
         // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt
-        prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov( //hvis ikkje person har sluttet
+        prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
             oppgaveOppdatering,
             eksisterendeOppgave.oppgaveId(),
             avklaringsbehov,
@@ -555,7 +555,6 @@ class OppdaterOppgaveService(
             }
     }
 
-    //endring her for automatisk sikkert om ikkje der identer blir lagret til å begynne med
     private fun OppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
         val sisteAvsluttetAvklaringsbehov = avklaringsbehov
             .filter { it.status == AvklaringsbehovStatus.AVSLUTTET }
@@ -660,28 +659,17 @@ class OppdaterOppgaveService(
             ?: return
 
         val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
-
         if (hvemLøsteForrigeIdent == KELVIN) {
             log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): KELVIN løste forrige avklaringsbehov")
-            return
-        }
-
-        if (harSluttetINav(hvemLøsteForrigeIdent)) {
-            log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): $hvemLøsteForrigeIdent har sluttet i NAV")
-            return
-        }
-
-        if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
+        } else if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
             log.info("Prøver å tilordne oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Gjenåpnet: $gjenåpnerOppgave")
             reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                 oppgaveOppdatering.referanse,
                 hvemLøsteForrigeIdent
             )
-            return
+        } else {
+            log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
         }
-
-        log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
-
     }
 
     private fun sendOppgaveStatusOppdatert(behandlingsreferanse: UUID) {
@@ -696,8 +684,4 @@ class OppdaterOppgaveService(
             )
         }
     }
-
-    private fun harSluttetINav(saksbehandlerIdent: String): Boolean =
-        ansattInfoGateway.hentSluttetDatoHvisAnsattHarSluttet(saksbehandlerIdent)
-            ?.isBefore(LocalDate.now()) == true
 }
