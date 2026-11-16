@@ -142,7 +142,7 @@ class OppgavelisteService(
         kunPaaVent: Boolean?,
         sortBy: OppgaveSorteringFelt?,
         sortOrder: OppgaveSorteringRekkefølge?,
-        markeringfiltre: Set<MineOppgaverMarkeringFilter> = emptySet(),
+        markeringfiltre: Set<MineOppgaverMarkeringFilter>? = emptySet(),
     ): List<Oppgave> {
 
         val aktivSortering = toggleAktivSortering(sortBy)
