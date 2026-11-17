@@ -109,7 +109,7 @@ class FilterRepository(private val connection: DBConnection) {
 
     private fun opprettFilter(filter: OpprettFilter): Long {
         val insertFilterSql = """
-            INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, TYPE) VALUES (?, ?, ?, ?, ?)
+            INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER) VALUES (?, ?, ?, ?, ?, ?)
         """.trimIndent()
 
         return connection.executeReturnKey(insertFilterSql) {
@@ -119,6 +119,7 @@ class FilterRepository(private val connection: DBConnection) {
                 setString(3, filter.opprettetAv)
                 setLocalDateTime(4, filter.opprettetTidspunkt)
                 setString(5, filter.type.name)
+                setBoolean(6, filter.kunMedGjenståendeSykedager)
             }
         }
     }
@@ -197,7 +198,7 @@ class FilterRepository(private val connection: DBConnection) {
 
         val query = """
             SELECT 
-                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE
+                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER
             FROM 
                 FILTER 
             WHERE SLETTET = FALSE 
@@ -221,7 +222,8 @@ class FilterRepository(private val connection: DBConnection) {
                     opprettetTidspunkt = row.getLocalDateTime("OPPRETTET_TIDSPUNKT"),
                     endretAv = row.getStringOrNull("ENDRET_AV"),
                     endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
-                    type = FilterType.valueOf(row.getString("TYPE"))
+                    type = FilterType.valueOf(row.getString("TYPE")),
+                    kunMedGjenståendeSykedager = row.getBoolean("KUN_MED_GJENSTAENDE_SYKEDAGER")
                 )
             }
         }
@@ -251,7 +253,7 @@ class FilterRepository(private val connection: DBConnection) {
         val filterIdClause = if (filterId != null) " AND ID = ?" else ""
         val query = """
             SELECT 
-                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE
+                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER
             FROM 
                 FILTER 
             WHERE 
@@ -274,6 +276,7 @@ class FilterRepository(private val connection: DBConnection) {
                     endretAv = row.getStringOrNull("ENDRET_AV"),
                     endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
                     type = FilterType.valueOf(row.getString("TYPE")),
+                    kunMedGjenståendeSykedager = row.getBoolean("KUN_MED_GJENSTAENDE_SYKEDAGER"),
                 )
             }
         }

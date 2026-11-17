@@ -928,6 +928,11 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append("NOT ${behandlingHarAktivMarkeringClause(stringListeAvMarkeringer)} AND ")
         }
 
+        // Sykepenger
+        if (kunMedGjenståendeSykedager) {
+            sb.append("EXISTS (SELECT 1 FROM GJENSTAENDE_SYKEDAGER gs WHERE gs.behandling_ref = OPPGAVE.behandling_ref) AND ")
+        }
+
         // Enheter
         if (enheter.isNotEmpty()) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }
