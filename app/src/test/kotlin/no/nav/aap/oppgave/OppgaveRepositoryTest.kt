@@ -485,6 +485,30 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Filter for sykepenger viser kun oppgaver der behandlingen har gjenstående sykedager`() {
+        val medSykedager = UUID.randomUUID()
+        val utenSykedager = UUID.randomUUID()
+        listOf(medSykedager, utenSykedager).forEach {
+            opprettOppgaveMedDataSource(enhet = ENHET_NAV_ENEBAKK, behandlingRef = it)
+        }
+        dataSource.transaction { connection ->
+            GjenståendeSykedagerRepository(connection).lagre(
+                medSykedager,
+                GjenståendeSykedager(GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING, 10, null, null)
+            )
+        }
+
+        val sykepengerKø = finnAlleOppgaverMedSortering(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK), kunMedGjenståendeSykedager = true),
+            null,
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        assertThat(sykepengerKø.oppgaver.map { it.behandlingRef }).containsExactly(medSykedager)
+        assertThat(sykepengerKø.antallTotalt).isEqualTo(1)
+    }
+
+    @Test
     fun `Kan sortere og endre rekkefølge på oppgaver fra finnOppgaver med paginering`() {
 
         val sorterteDatoer = listOf(
@@ -1541,6 +1565,7 @@ class OppgaveRepositoryTest {
         inkluderteMarkeringer: Set<MarkeringForBehandling> = emptySet(),
         ekskluderteMarkeringer: Set<MarkeringForBehandling> = emptySet(),
         type: FilterType = FilterType.GENERELL,
+        kunMedGjenståendeSykedager: Boolean = false,
     ): Filter {
         return Filter(
             id = 1,
@@ -1553,6 +1578,7 @@ class OppgaveRepositoryTest {
             inkluderteMarkeringer = inkluderteMarkeringer,
             ekskluderteMarkeringer = ekskluderteMarkeringer,
             type = type,
+            kunMedGjenståendeSykedager = kunMedGjenståendeSykedager,
             opprettetAv = "saksbehandler",
             opprettetTidspunkt = LocalDateTime.now().minusDays(10),
             endretAv = "saksbehandler",

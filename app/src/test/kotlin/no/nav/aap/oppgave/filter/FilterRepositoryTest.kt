@@ -222,6 +222,34 @@ internal class FilterRepositoryTest {
     }
 
     @Test
+    fun `Opprett filter for sykepenger og hent det ut igjen`() {
+        dataSource.transaction { connection ->
+            val filterRepo = FilterRepository(connection)
+            val filterId = filterRepo.opprett(
+                OpprettFilter(
+                    navn = "Sykepenger",
+                    beskrivelse = "Sykepenger",
+                    kunMedGjenståendeSykedager = true,
+                    opprettetAv = "test",
+                    opprettetTidspunkt = LocalDateTime.now()
+                )
+            )
+            val vanligFilterId = filterRepo.opprett(
+                OpprettFilter(
+                    navn = "Vanlig",
+                    beskrivelse = "Vanlig",
+                    opprettetAv = "test",
+                    opprettetTidspunkt = LocalDateTime.now()
+                )
+            )
+
+            assertThat(filterRepo.hent(filterId)!!.kunMedGjenståendeSykedager).isTrue()
+            assertThat(filterRepo.hent(vanligFilterId)!!.kunMedGjenståendeSykedager).isFalse()
+            assertThat(filterRepo.hentForEnheter(null).first { it.id == filterId }.kunMedGjenståendeSykedager).isTrue()
+        }
+    }
+
+    @Test
     fun `Opprett filter med type KVALITETSSIKRING og hent det ut igjen`() {
         dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
