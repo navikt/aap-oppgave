@@ -7,6 +7,9 @@ import com.papsign.ktor.openapigen.route.route
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.komponenter.dbconnect.transaction
 import no.nav.aap.oppgave.metrikker.httpCallCounter
+import no.nav.aap.oppgave.unleash.FeatureToggles
+import no.nav.aap.oppgave.unleash.IUnleashService
+import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.hentFilterApi(dataSource: DataSource, prometheus: PrometheusMeterRegistry) {
@@ -15,7 +18,11 @@ fun NormalOpenAPIRoute.hentFilterApi(dataSource: DataSource, prometheus: Prometh
         prometheus.httpCallCounter("/filter").increment()
         val filterListe = dataSource.transaction(readOnly = true) { connection ->
             FilterRepository(connection).hentForEnheter(req.enheter)
-        }.map { it.tilResponse() }
+        }.skjulSykepengerKøHvisToggleAv(UnleashServiceProvider.provideUnleashService())
+            .map { it.tilResponse() }
         respond(filterListe)
     }
 }
+
+internal fun List<Filter>.skjulSykepengerKøHvisToggleAv(unleash: IUnleashService): List<Filter> =
+    if (unleash.isEnabled(FeatureToggles.OppgavekoSykepenger)) this else filterNot { it.kunMedGjenståendeSykedager }
