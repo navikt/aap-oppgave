@@ -202,7 +202,7 @@ class FilterRepository(private val connection: DBConnection) {
 
         val query = """
             SELECT 
-                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER
+                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER,
                 BEHANDLING_OPPRETTET_FOM, BEHANDLING_OPPRETTET_TOM
             FROM 
                 FILTER 
@@ -260,7 +260,7 @@ class FilterRepository(private val connection: DBConnection) {
         val filterIdClause = if (filterId != null) " AND ID = ?" else ""
         val query = """
             SELECT 
-                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER
+                ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER,
                 BEHANDLING_OPPRETTET_FOM, BEHANDLING_OPPRETTET_TOM
             FROM 
                 FILTER 
