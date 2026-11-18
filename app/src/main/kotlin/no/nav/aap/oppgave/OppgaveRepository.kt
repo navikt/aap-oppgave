@@ -933,6 +933,14 @@ class OppgaveRepository(private val connection: DBConnection) {
             sb.append("EXISTS (SELECT 1 FROM GJENSTAENDE_SYKEDAGER gs WHERE gs.behandling_ref = OPPGAVE.behandling_ref) AND ")
         }
 
+        // Behandling opprettet (fra og med / til og med)
+        if (behandlingOpprettetFom != null) {
+            sb.append("BEHANDLING_OPPRETTET >= '$behandlingOpprettetFom' AND ")
+        }
+        if (behandlingOpprettetTom != null) {
+            sb.append("BEHANDLING_OPPRETTET < '${behandlingOpprettetTom.plusDays(1)}' AND ")
+        }
+
         // Enheter
         if (enheter.isNotEmpty()) {
             val stringListeEnheter = enheter.joinToString(prefix = "(", postfix = ")", separator = ", ") { "'$it'" }

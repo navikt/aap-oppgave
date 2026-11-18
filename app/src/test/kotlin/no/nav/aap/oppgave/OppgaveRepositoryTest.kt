@@ -846,6 +846,45 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `kø-filter med behandling opprettet fom og tom er inklusivt på begge dager`() {
+        val førFom = opprettOppgaveMedDataSource(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2025, 1, 9, 23, 59)
+        )
+        val påFom = opprettOppgaveMedDataSource(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2025, 1, 10, 0, 0)
+        )
+        val påTom = opprettOppgaveMedDataSource(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2025, 1, 20, 23, 59)
+        )
+        val etterTom = opprettOppgaveMedDataSource(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2025, 1, 21, 0, 0)
+        )
+
+        val medBeggeGrenser = finnAlleOppgaver(
+            filter(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                behandlingOpprettetFom = LocalDate.of(2025, 1, 10),
+                behandlingOpprettetTom = LocalDate.of(2025, 1, 20),
+            )
+        )
+        assertThat(medBeggeGrenser.oppgaver.map { it.id }).containsExactlyInAnyOrder(påFom.id, påTom.id)
+
+        val kunFom = finnAlleOppgaver(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK), behandlingOpprettetFom = LocalDate.of(2025, 1, 10))
+        )
+        assertThat(kunFom.oppgaver.map { it.id }).containsExactlyInAnyOrder(påFom.id, påTom.id, etterTom.id)
+
+        val kunTom = finnAlleOppgaver(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK), behandlingOpprettetTom = LocalDate.of(2025, 1, 20))
+        )
+        assertThat(kunTom.oppgaver.map { it.id }).containsExactlyInAnyOrder(førFom.id, påFom.id, påTom.id)
+    }
+
+    @Test
     fun `beløpMerEnn filter er inklusiv - inkluderer tilbakekrevingsoppgaver med eksakt beløp`() {
         val tilbakekrevingOppgave = opprettOppgaveMedDataSource(
             enhet = ENHET_NAV_ENEBAKK,
@@ -1566,11 +1605,15 @@ class OppgaveRepositoryTest {
         ekskluderteMarkeringer: Set<MarkeringForBehandling> = emptySet(),
         type: FilterType = FilterType.GENERELL,
         kunMedGjenståendeSykedager: Boolean = false,
+        behandlingOpprettetFom: LocalDate? = null,
+        behandlingOpprettetTom: LocalDate? = null,
     ): Filter {
         return Filter(
             id = 1,
             navn = "navn",
             beskrivelse = "beskrivelse",
+            behandlingOpprettetFom = behandlingOpprettetFom,
+            behandlingOpprettetTom = behandlingOpprettetTom,
             avklaringsbehovKoder = avklaringsbehovKoder,
             behandlingstyper = behandlingstyper,
             enheter = enheter,
