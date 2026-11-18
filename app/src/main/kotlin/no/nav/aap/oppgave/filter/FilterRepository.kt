@@ -228,7 +228,7 @@ class FilterRepository(private val connection: DBConnection) {
                     endretAv = row.getStringOrNull("ENDRET_AV"),
                     endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
                     type = FilterType.valueOf(row.getString("TYPE")),
-                    kunMedGjenståendeSykedager = row.getBoolean("KUN_MED_GJENSTAENDE_SYKEDAGER")
+                    kunMedGjenståendeSykedager = row.getBoolean("KUN_MED_GJENSTAENDE_SYKEDAGER"),
                     behandlingOpprettetFom = row.getLocalDateOrNull("BEHANDLING_OPPRETTET_FOM"),
                     behandlingOpprettetTom = row.getLocalDateOrNull("BEHANDLING_OPPRETTET_TOM"),
                 )
