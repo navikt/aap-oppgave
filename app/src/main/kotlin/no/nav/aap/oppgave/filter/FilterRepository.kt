@@ -77,13 +77,15 @@ class FilterRepository(private val connection: DBConnection) {
     }
 
     private fun oppdaterFilter(filter: OppdaterFilter) {
-        connection.execute("UPDATE FILTER SET NAVN = ?, BESKRIVELSE = ?, ENDRET_AV = ?, ENDRET_TIDSPUNKT = ? WHERE ID = ?") {
+        connection.execute("UPDATE FILTER SET NAVN = ?, BESKRIVELSE = ?, ENDRET_AV = ?, ENDRET_TIDSPUNKT = ?, BEHANDLING_OPPRETTET_FOM = ?, BEHANDLING_OPPRETTET_TOM = ? WHERE ID = ?") {
             setParams {
                 setString(1, filter.navn)
                 setString(2, filter.beskrivelse)
                 setString(3, filter.endretAv)
                 setLocalDateTime(4, filter.endretTidspunkt)
-                setLong(5, filter.id)
+                setLocalDate(5, filter.behandlingOpprettetFom)
+                setLocalDate(6, filter.behandlingOpprettetTom)
+                setLong(7, filter.id)
             }
         }
     }
@@ -109,7 +111,7 @@ class FilterRepository(private val connection: DBConnection) {
 
     private fun opprettFilter(filter: OpprettFilter): Long {
         val insertFilterSql = """
-            INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER) VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO FILTER (NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER, BEHANDLING_OPPRETTET_FOM, BEHANDLING_OPPRETTET_TOM) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """.trimIndent()
 
         return connection.executeReturnKey(insertFilterSql) {
@@ -120,6 +122,8 @@ class FilterRepository(private val connection: DBConnection) {
                 setLocalDateTime(4, filter.opprettetTidspunkt)
                 setString(5, filter.type.name)
                 setBoolean(6, filter.kunMedGjenståendeSykedager)
+                setLocalDate(7, filter.behandlingOpprettetFom)
+                setLocalDate(8, filter.behandlingOpprettetTom)
             }
         }
     }
@@ -199,6 +203,7 @@ class FilterRepository(private val connection: DBConnection) {
         val query = """
             SELECT 
                 ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER
+                BEHANDLING_OPPRETTET_FOM, BEHANDLING_OPPRETTET_TOM
             FROM 
                 FILTER 
             WHERE SLETTET = FALSE 
@@ -224,6 +229,8 @@ class FilterRepository(private val connection: DBConnection) {
                     endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
                     type = FilterType.valueOf(row.getString("TYPE")),
                     kunMedGjenståendeSykedager = row.getBoolean("KUN_MED_GJENSTAENDE_SYKEDAGER")
+                    behandlingOpprettetFom = row.getLocalDateOrNull("BEHANDLING_OPPRETTET_FOM"),
+                    behandlingOpprettetTom = row.getLocalDateOrNull("BEHANDLING_OPPRETTET_TOM"),
                 )
             }
         }
@@ -254,6 +261,7 @@ class FilterRepository(private val connection: DBConnection) {
         val query = """
             SELECT 
                 ID, NAVN, BESKRIVELSE, OPPRETTET_AV, OPPRETTET_TIDSPUNKT, ENDRET_AV, ENDRET_TIDSPUNKT, TYPE, KUN_MED_GJENSTAENDE_SYKEDAGER
+                BEHANDLING_OPPRETTET_FOM, BEHANDLING_OPPRETTET_TOM
             FROM 
                 FILTER 
             WHERE 
@@ -277,6 +285,8 @@ class FilterRepository(private val connection: DBConnection) {
                     endretTidspunkt = row.getLocalDateTimeOrNull("ENDRET_TIDSPUNKT"),
                     type = FilterType.valueOf(row.getString("TYPE")),
                     kunMedGjenståendeSykedager = row.getBoolean("KUN_MED_GJENSTAENDE_SYKEDAGER"),
+                    behandlingOpprettetFom = row.getLocalDateOrNull("BEHANDLING_OPPRETTET_FOM"),
+                    behandlingOpprettetTom = row.getLocalDateOrNull("BEHANDLING_OPPRETTET_TOM"),
                 )
             }
         }

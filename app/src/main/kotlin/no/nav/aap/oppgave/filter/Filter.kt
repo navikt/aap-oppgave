@@ -2,6 +2,7 @@ package no.nav.aap.oppgave.filter
 
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 
@@ -22,6 +23,8 @@ data class Filter(
     val inkluderteMarkeringer: Set<MarkeringForBehandling> = emptySet(),
     val ekskluderteMarkeringer: Set<MarkeringForBehandling> = emptySet(),
     val kunMedGjenståendeSykedager: Boolean = false,
+    val behandlingOpprettetFom: LocalDate? = null,
+    val behandlingOpprettetTom: LocalDate? = null,
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String? = null,
@@ -49,6 +52,8 @@ data class OpprettFilter(
     val opprettetTidspunkt: LocalDateTime,
     val enhetFilter: List<EnhetFilter>? = null,
     val markeringer: List<MarkeringFilter> = emptyList(),
+    val behandlingOpprettetFom: LocalDate? = null,
+    val behandlingOpprettetTom: LocalDate? = null,
     val type: FilterTypeDto = FilterTypeDto.GENERELL,
 )
 
@@ -70,6 +75,8 @@ data class OppdaterFilter(
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
     val markeringer: List<MarkeringFilter> = emptyList(),
     val enhetFilter: List<EnhetFilter>? = null,
+    val behandlingOpprettetFom: LocalDate? = null,
+    val behandlingOpprettetTom: LocalDate? = null,
     val endretAv: String? = null,
     val endretTidspunkt: LocalDateTime? = null,
 )
