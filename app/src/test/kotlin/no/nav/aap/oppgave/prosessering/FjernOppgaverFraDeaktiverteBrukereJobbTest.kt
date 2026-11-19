@@ -216,6 +216,35 @@ class FjernOppgaverFraDeaktiverteBrukereJobbTest {
 
     }
 
+    @Test
+    fun `navident finnes ikke`() {
+        val oppgaveId = opprettOppgaveWrapper()
+
+        dataSource.transaction { connection ->
+            OppgaveRepository(connection).reserverOppgave(
+                oppgaveId = OppgaveId(oppgaveId.id, oppgaveId.versjon),
+                reservertAvIdent = "12121212",
+                endretAvIdent = "KELVIN",
+                reservertAvNavn = "Testine Testesen"
+            )
+        }
+        val oppgave = hentOppgave(oppgaveId)
+
+        assertEquals("12121212", oppgave.reservertAv)
+
+        dataSource.transaction {
+            FjernOppgaverFraDeaktiverteBrukereJobb(
+                OppgaveRepository(it),
+                FlytJobbRepository(it),
+                NomApiGateway.withClientCredentialsRestClient()
+            ).utfør(JobbInput(FjernOppgaverFraDeaktiverteBrukereJobb))
+        }
+
+        val oppgaveEtterJobb = hentOppgave(oppgaveId)
+        assertEquals("12121212", oppgaveEtterJobb.reservertAv, "Reservasjon skal ikke fjernes for ansatt som ikke har sluttet")
+
+    }
+
     private fun hentOppgave(oppgaveId: OppgaveId): Oppgave {
         return dataSource.transaction { connection ->
             OppgaveRepository(connection).hentOppgave(oppgaveId.id)

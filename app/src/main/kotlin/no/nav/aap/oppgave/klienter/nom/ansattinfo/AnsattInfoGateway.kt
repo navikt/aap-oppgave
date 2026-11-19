@@ -88,8 +88,13 @@ private constructor(
     }
 
     override fun hentDeaktiverteBrukere(navIdenter: List<String>): List<String> {
-        return  navIdenter.filter { navIdent ->
-             hentSluttetDatoHvisAnsattHarSluttet(navIdent)?.isBefore(LocalDate.now()) == true
+        return navIdenter.filter { navIdent ->
+            try {
+                hentSluttetDatoHvisAnsattHarSluttet(navIdent)?.isBefore(LocalDate.now()) == true
+            } catch (e: Exception) {
+                log.warn("Feil ved henting av sluttet dato for ansatt $navIdent", e)
+                false
+            }
         }
     }
 }

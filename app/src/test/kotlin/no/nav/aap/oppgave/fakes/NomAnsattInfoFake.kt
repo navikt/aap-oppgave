@@ -12,6 +12,9 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import no.nav.aap.oppgave.klienter.graphql.GraphQLError
+import no.nav.aap.oppgave.klienter.graphql.GraphQLErrorExtension
+import no.nav.aap.oppgave.klienter.graphql.GraphQLExtensions
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoData
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoRequest
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoRespons
@@ -51,10 +54,26 @@ fun Application.nomAnsattInfoFake() {
                     sluttdato = sluttdato
                 )
             )
-            val response = AnsattInfoRespons(
-                data,
-                emptyList()
-            )
+            val response = when (request.variables.navIdent) {
+                "12121212" -> AnsattInfoRespons(
+                    null,
+                    listOf(
+                        GraphQLError(
+                            message = "Fant ikke ansatt i NOM",
+                            locations = emptyList(),
+                            path = emptyList(),
+                            extensions = GraphQLErrorExtension(
+                                code = "not_found",
+                                classification = "DataFetchingException"
+                            )
+                        )
+                    )
+                )
+                else -> AnsattInfoRespons(
+                    data,
+                    emptyList()
+                )
+            }
             call.respond(response)
         }
     }
