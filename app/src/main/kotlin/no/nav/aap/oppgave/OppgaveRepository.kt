@@ -930,7 +930,11 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         // Sykepenger
         if (kunMedGjenståendeSykedager) {
-            sb.append("EXISTS (SELECT 1 FROM GJENSTAENDE_SYKEDAGER gs WHERE gs.behandling_ref = OPPGAVE.behandling_ref) AND ")
+            sb.append(
+                "EXISTS (SELECT 1 FROM GJENSTAENDE_SYKEDAGER gs " +
+                    "WHERE gs.behandling_ref = OPPGAVE.behandling_ref " +
+                    "AND gs.grunnlag != '${GjenståendeSykedagerGrunnlag.INGEN_SYKEPENGER_SISTE_26_UKER.name}') AND "
+            )
         }
 
         // Behandling opprettet (fra og med / til og med)
