@@ -485,16 +485,28 @@ class OppgaveRepositoryTest {
     }
 
     @Test
-    fun `Filter for sykepenger viser kun oppgaver der behandlingen har gjenstående sykedager`() {
+    fun `Filter for sykepenger utelater oppgaver uten opplysninger og uten sykepenger siste 26 uker`() {
         val medSykedager = UUID.randomUUID()
         val utenSykedager = UUID.randomUUID()
-        listOf(medSykedager, utenSykedager).forEach {
+        val ukjentMaksdato = UUID.randomUUID()
+        val ingenSykepengerSiste26Uker = UUID.randomUUID()
+        val behandlinger = listOf(medSykedager, utenSykedager, ukjentMaksdato, ingenSykepengerSiste26Uker)
+        behandlinger.forEach {
             opprettOppgaveMedDataSource(enhet = ENHET_NAV_ENEBAKK, behandlingRef = it)
         }
         dataSource.transaction { connection ->
-            GjenståendeSykedagerRepository(connection).lagre(
+            val repository = GjenståendeSykedagerRepository(connection)
+            repository.lagre(
                 medSykedager,
                 GjenståendeSykedager(GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING, 10, null, null)
+            )
+            repository.lagre(
+                ukjentMaksdato,
+                GjenståendeSykedager(GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null, null)
+            )
+            repository.lagre(
+                ingenSykepengerSiste26Uker,
+                GjenståendeSykedager(GjenståendeSykedagerGrunnlag.INGEN_SYKEPENGER_SISTE_26_UKER, 0, null, null)
             )
         }
 
@@ -504,8 +516,17 @@ class OppgaveRepositoryTest {
             OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
             OppgaveSorteringRekkefølge.ASC
         )
-        assertThat(sykepengerKø.oppgaver.map { it.behandlingRef }).containsExactly(medSykedager)
-        assertThat(sykepengerKø.antallTotalt).isEqualTo(1)
+        assertThat(sykepengerKø.oppgaver.map { it.behandlingRef }).containsExactlyInAnyOrder(medSykedager, ukjentMaksdato)
+        assertThat(sykepengerKø.antallTotalt).isEqualTo(2)
+
+        val vanligKø = finnAlleOppgaverMedSortering(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            null,
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        assertThat(vanligKø.oppgaver.map { it.behandlingRef }).containsExactlyInAnyOrderElementsOf(behandlinger)
+        assertThat(vanligKø.antallTotalt).isEqualTo(4)
     }
 
     @Test
