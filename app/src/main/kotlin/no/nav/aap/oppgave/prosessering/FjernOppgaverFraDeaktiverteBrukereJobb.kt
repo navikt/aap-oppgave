@@ -9,6 +9,7 @@ import no.nav.aap.motor.JobbUtfører
 import no.nav.aap.motor.cron.CronExpression
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.harSluttetEllerFinnesIkke
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.statistikk.HendelseType
@@ -29,10 +30,10 @@ class FjernOppgaverFraDeaktiverteBrukereJobb(
             return
         }
 
-        val deaktiverteBrukere = ansattInfoGateway.hentDeaktiverteBrukere(oppgaverForBruker.keys.toList())
+        val brukereSomMaFjernes = hentIdenterSomHarSluttetEllerIkkeFinnes(oppgaverForBruker.keys.toList())
 
         val oppgaverSomMåOppdateres = oppgaverForBruker
-            .filterKeys { it in deaktiverteBrukere }
+            .filterKeys { it in brukereSomMaFjernes }
             .flatMap { it.value }
 
         if (oppgaverSomMåOppdateres.isNotEmpty()) {
@@ -67,4 +68,12 @@ class FjernOppgaverFraDeaktiverteBrukereJobb(
         }
     }
 
+
+    private fun hentIdenterSomHarSluttetEllerIkkeFinnes(navIdenter: List<String>): List<String> {
+
+        return navIdenter.chunked(100).flatMap { navIdenter100 ->
+            val resultater = ansattInfoGateway.hentAnsattstatuser(navIdenter100)
+            resultater.filter { harSluttetEllerFinnesIkke(it) }.map { it.id }
+        }
+    }
 }

@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.enhet.IEnhetService
+import no.nav.aap.oppgave.harSluttetEllerFinnesIkke
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
@@ -382,8 +383,8 @@ class OppdaterOppgaveService(
         eksisterendeOppgave: Oppgave,
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
-        // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt
-        prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov( //hvis ikkje person har sluttet
+        // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt hvis ikke person har sluttet
+        prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
             oppgaveOppdatering,
             eksisterendeOppgave.oppgaveId(),
             avklaringsbehov,
@@ -548,7 +549,6 @@ class OppdaterOppgaveService(
             }
     }
 
-    //endring her for automatisk sikkert om ikkje der identer blir lagret til å begynne med
     private fun OppgaveOppdatering.hvemLøsteForrigeAvklaringsbehov(): Pair<AvklaringsbehovKode, String>? {
         val sisteAvsluttetAvklaringsbehov = avklaringsbehov
             .filter { it.status == AvklaringsbehovStatus.AVSLUTTET }
@@ -659,8 +659,8 @@ class OppdaterOppgaveService(
             return
         }
 
-        if (harSluttetINav(hvemLøsteForrigeIdent)) {
-            log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): $hvemLøsteForrigeIdent har sluttet i NAV")
+        if (harSluttetEllerFinnesIkke(hvemLøsteForrigeIdent)) {
+            log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): $hvemLøsteForrigeIdent kan ikke ha reservasjon på oppgaver")
             return
         }
 
@@ -690,7 +690,10 @@ class OppdaterOppgaveService(
         }
     }
 
-    private fun harSluttetINav(saksbehandlerIdent: String): Boolean =
-        ansattInfoGateway.hentSluttetDatoHvisAnsattHarSluttet(saksbehandlerIdent)
-            ?.isBefore(LocalDate.now()) == true
+
+    private fun harSluttetEllerFinnesIkke(ident: String): Boolean {
+        val ansattInfo = ansattInfoGateway.hentAnsattstatuser(listOf(ident)).single { it.id == ident }
+        return harSluttetEllerFinnesIkke(ansattInfo)
+    }
+
 }

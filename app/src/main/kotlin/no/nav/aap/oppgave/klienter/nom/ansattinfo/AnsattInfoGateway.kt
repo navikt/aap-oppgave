@@ -13,18 +13,15 @@ import java.io.InputStream
 import java.net.URI
 import java.time.Duration
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
-import java.time.LocalDate
 
 interface AnsattInfoGateway {
-    fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
-    fun hentSluttetDatoHvisAnsattHarSluttet(navIdent: String): LocalDate?
-    fun hentDeaktiverteBrukere(navIdenter: List<String>): List<String>
-}
+    fun hentAnsattNavnHvisFinnes(navIdent: String): String?
+    fun hentAnsattstatuser(navIdent: List<String>): List<NomBatchData>}
 
 class NomApiGateway
 private constructor(
     private val restClient: RestClient<InputStream>,
-): AnsattInfoGateway {
+) : AnsattInfoGateway {
     private val log = LoggerFactory.getLogger(NomApiGateway::class.java)
     private val graphqlUrl = URI.create(requiredConfigForKey("INTEGRASJON_NOM_API_URL"))
 
@@ -79,22 +76,15 @@ private constructor(
         return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
 
-    override fun hentSluttetDatoHvisAnsattHarSluttet(navIdent: String): LocalDate? {
-        val request = AnsattInfoRequest(sluttetQuery, AnsattInfoVariables(navIdent))
-        val response = checkNotNull(ansattInfoQuery(request).data?.ressurs) {
-            "Fant ikke ansatt i NOM"
-        }
-        return response.sluttdato?.let { LocalDate.parse(it) }
+    private fun ansattInfoQuery(request: AnsattInfoBatchRequest): AnsattInfoRespons {
+        val httpRequest = PostRequest(body = request)
+        return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
 
-    override fun hentDeaktiverteBrukere(navIdenter: List<String>): List<String> {
-        return navIdenter.filter { navIdent ->
-            try {
-                hentSluttetDatoHvisAnsattHarSluttet(navIdent)?.isBefore(LocalDate.now()) == true
-            } catch (e: Exception) {
-                log.warn("Feil ved henting av sluttet dato for ansatt $navIdent", e)
-                false
-            }
+    override fun hentAnsattstatuser(navIdent: List<String>): List<NomBatchData> {
+        val request = AnsattInfoBatchRequest(sluttetQuery, AnsattInfoBatchVariables(navIdent))
+        return checkNotNull(ansattInfoQuery(request).data?.ressurser) {
+            "Mangler data i respons fra NOM"
         }
     }
 }
@@ -108,11 +98,16 @@ val navnQuery = """
     }
 """.trimIndent()
 
+private const val navidenter = "\$navidenter"
 val sluttetQuery = """
-    query($navIdent: String!) {
-      ressurs(where: {navident: $navIdent}) {
-        visningsnavn,
-        sluttdato
+    query ($navidenter: [String!]!) {
+      ressurser(where: { navidenter: $navidenter }) {
+        id
+        code
+        ressurs {
+          navident
+          sluttdato
+        }
       }
     }
 """.trimIndent()

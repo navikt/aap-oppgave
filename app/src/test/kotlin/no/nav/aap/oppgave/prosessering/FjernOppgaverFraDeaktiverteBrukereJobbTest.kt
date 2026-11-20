@@ -217,7 +217,7 @@ class FjernOppgaverFraDeaktiverteBrukereJobbTest {
     }
 
     @Test
-    fun `navident finnes ikke`() {
+    fun `navident finnes ikke bør også fjerne reservasjon`() {
         val oppgaveId = opprettOppgaveWrapper()
 
         dataSource.transaction { connection ->
@@ -241,7 +241,7 @@ class FjernOppgaverFraDeaktiverteBrukereJobbTest {
         }
 
         val oppgaveEtterJobb = hentOppgave(oppgaveId)
-        assertEquals("12121212", oppgaveEtterJobb.reservertAv, "Reservasjon skal ikke fjernes for ansatt som ikke har sluttet")
+        assertEquals(null, oppgaveEtterJobb.reservertAv, "Reservasjon skal fjernes for ansatt som ikke finnes i NOM")
 
     }
 
