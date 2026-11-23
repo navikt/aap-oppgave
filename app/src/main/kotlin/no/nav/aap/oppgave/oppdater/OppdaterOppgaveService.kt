@@ -15,6 +15,7 @@ import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.enhet.IEnhetService
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.harSluttetEllerFinnesIkke
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
@@ -58,6 +59,7 @@ class OppdaterOppgaveService(
     private val mottattDokumentRepository: MottattDokumentRepository,
     private val markeringService: MarkeringService,
     private val uføreVedtakRepository: UføreVedtakRepository,
+    private val gjenståendeSykedagerRepository: GjenståendeSykedagerRepository,
     private val ansattInfoGateway: AnsattInfoGateway,
 ) {
 
@@ -85,6 +87,11 @@ class OppdaterOppgaveService(
         if (oppgaveOppdatering.uføreVedtak != null) uføreVedtakRepository.lagreUføreVedtak(
             oppgaveOppdatering.referanse,
             oppgaveOppdatering.uføreVedtak
+        )
+
+        if (oppgaveOppdatering.gjenståendeSykedager != null) gjenståendeSykedagerRepository.lagre(
+            oppgaveOppdatering.referanse,
+            oppgaveOppdatering.gjenståendeSykedager
         )
 
         validerOppgaveTilstandEtterOppdatering(oppgaveOppdatering.referanse)

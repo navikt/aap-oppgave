@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Execution(ExecutionMode.SAME_THREAD)
@@ -222,6 +223,34 @@ internal class FilterRepositoryTest {
     }
 
     @Test
+    fun `Opprett filter for sykepenger og hent det ut igjen`() {
+        dataSource.transaction { connection ->
+            val filterRepo = FilterRepository(connection)
+            val filterId = filterRepo.opprett(
+                OpprettFilter(
+                    navn = "Sykepenger",
+                    beskrivelse = "Sykepenger",
+                    kunMedGjenståendeSykedager = true,
+                    opprettetAv = "test",
+                    opprettetTidspunkt = LocalDateTime.now()
+                )
+            )
+            val vanligFilterId = filterRepo.opprett(
+                OpprettFilter(
+                    navn = "Vanlig",
+                    beskrivelse = "Vanlig",
+                    opprettetAv = "test",
+                    opprettetTidspunkt = LocalDateTime.now()
+                )
+            )
+
+            assertThat(filterRepo.hent(filterId)!!.kunMedGjenståendeSykedager).isTrue()
+            assertThat(filterRepo.hent(vanligFilterId)!!.kunMedGjenståendeSykedager).isFalse()
+            assertThat(filterRepo.hentForEnheter(null).first { it.id == filterId }.kunMedGjenståendeSykedager).isTrue()
+        }
+    }
+
+    @Test
     fun `Opprett filter med type KVALITETSSIKRING og hent det ut igjen`() {
         dataSource.transaction { connection ->
             val filterRepo = FilterRepository(connection)
@@ -240,6 +269,61 @@ internal class FilterRepositoryTest {
         }
     }
 
+    @Test
+    fun `Lagrer og oppdaterer behandling opprettet fom og tom på filter`() {
+        dataSource.transaction { connection ->
+            val filterRepo = FilterRepository(connection)
+            val filterId = filterRepo.opprett(
+                OpprettFilter(
+                    navn = "Periodefilter",
+                    beskrivelse = "Periodefilter",
+                    opprettetAv = "test",
+                    opprettetTidspunkt = LocalDateTime.now(),
+                    behandlingOpprettetFom = LocalDate.of(2025, 1, 10),
+                    behandlingOpprettetTom = LocalDate.of(2025, 1, 20),
+                )
+            )
+
+            val opprettet = filterRepo.hent(filterId)!!
+            assertThat(opprettet.behandlingOpprettetFom).isEqualTo(LocalDate.of(2025, 1, 10))
+            assertThat(opprettet.behandlingOpprettetTom).isEqualTo(LocalDate.of(2025, 1, 20))
+            assertThat(filterRepo.hentForEnheter(null).single { it.id == filterId }.behandlingOpprettetFom)
+                .isEqualTo(LocalDate.of(2025, 1, 10))
+
+            filterRepo.oppdater(
+                OppdaterFilter(
+                    id = filterId,
+                    navn = "Periodefilter",
+                    beskrivelse = "Periodefilter",
+                    behandlingOpprettetFom = null,
+                    behandlingOpprettetTom = LocalDate.of(2025, 2, 1),
+                )
+            )
+
+            val oppdatert = filterRepo.hent(filterId)!!
+            assertThat(oppdatert.behandlingOpprettetFom).isNull()
+            assertThat(oppdatert.behandlingOpprettetTom).isEqualTo(LocalDate.of(2025, 2, 1))
+        }
+    }
+
+    @Test
+    fun `Filter uten periode har null for behandling opprettet fom og tom`() {
+        dataSource.transaction { connection ->
+            val filterRepo = FilterRepository(connection)
+            val filterId = filterRepo.opprett(
+                OpprettFilter(
+                    navn = "Uten periode",
+                    beskrivelse = "Uten periode",
+                    opprettetAv = "test",
+                    opprettetTidspunkt = LocalDateTime.now(),
+                )
+            )
+
+            val filter = filterRepo.hent(filterId)!!
+            assertThat(filter.behandlingOpprettetFom).isNull()
+            assertThat(filter.behandlingOpprettetTom).isNull()
+        }
+    }
 
     @Test
     fun `Logisk sletting av filter`() {

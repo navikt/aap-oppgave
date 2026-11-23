@@ -3,6 +3,7 @@ package no.nav.aap.oppgave.liste
 import no.nav.aap.oppgave.BehandlingskontekstResponse
 import no.nav.aap.oppgave.ForespørselSendtTilBehandlerDto
 import no.nav.aap.oppgave.ForrigeKvalitetssikrerDto
+import no.nav.aap.oppgave.GjenståendeSykedagerDto
 import no.nav.aap.oppgave.HarMottattDokument
 import no.nav.aap.oppgave.ReturInformasjonDto
 import no.nav.aap.oppgave.TilbakekrevingsVarsDto
@@ -36,6 +37,7 @@ data class OppgaveMedKontekstResponse(
     val reservertAv: String?,
     val reservertAvNavn: String?,
     val tilbakekrevingsVars: TilbakekrevingsVarsDto?,
+    val gjenståendeSykedager: GjenståendeSykedagerDto? = null,
 )
 
 data class OppgaveMetadataResponse(

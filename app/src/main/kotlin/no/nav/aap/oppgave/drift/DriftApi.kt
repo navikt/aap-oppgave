@@ -37,6 +37,7 @@ import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.tilgang.DriftLes
 
 fun NormalOpenAPIRoute.driftApi(
@@ -71,6 +72,7 @@ fun NormalOpenAPIRoute.driftApi(
                         OppgaveRepository(connection),
                         MarkeringRepository(connection),
                         UføreVedtakRepository(connection),
+                        GjenståendeSykedagerRepository(connection),
                         MottattDokumentRepository(connection),
                         enhetService,
                     )
@@ -124,6 +126,8 @@ fun NormalOpenAPIRoute.driftApi(
                                 behandlingstyper = request.behandlingstyper,
                                 enhetFilter = enhetFilter,
                                 markeringer = markeringFilter,
+                                behandlingOpprettetFom = request.behandlingOpprettetFom,
+                                behandlingOpprettetTom = request.behandlingOpprettetTom,
                                 endretAv = ident(),
                                 endretTidspunkt = LocalDateTime.now(),
                             )
@@ -137,6 +141,8 @@ fun NormalOpenAPIRoute.driftApi(
                                 behandlingstyper = request.behandlingstyper,
                                 enhetFilter = enhetFilter,
                                 markeringer = markeringFilter,
+                                behandlingOpprettetFom = request.behandlingOpprettetFom,
+                                behandlingOpprettetTom = request.behandlingOpprettetTom,
                                 type = request.type,
                                 opprettetAv = ident(),
                                 opprettetTidspunkt = LocalDateTime.now(),
@@ -198,6 +204,8 @@ private fun Filter.tilDriftResponse(enhetPerFilter: Map<Long, List<EnhetFilter>>
         .map { it.enhetNr },
     inkluderteMarkeringer = inkluderteMarkeringer.toList(),
     ekskluderteMarkeringer = ekskluderteMarkeringer.toList(),
+    behandlingOpprettetFom = behandlingOpprettetFom,
+    behandlingOpprettetTom = behandlingOpprettetTom,
     opprettetAv = opprettetAv,
     opprettetTidspunkt = opprettetTidspunkt,
     endretAv = endretAv,

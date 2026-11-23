@@ -1,6 +1,7 @@
 package no.nav.aap.oppgave.drift
 
 import com.papsign.ktor.openapigen.annotations.parameters.QueryParam
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 import no.nav.aap.oppgave.filter.FilterTypeDto
@@ -63,6 +64,8 @@ data class FilterDriftResponse(
     val ekskluderteEnheter: List<String>,
     val inkluderteMarkeringer: List<MarkeringForBehandling>,
     val ekskluderteMarkeringer: List<MarkeringForBehandling>,
+    val behandlingOpprettetFom: LocalDate?,
+    val behandlingOpprettetTom: LocalDate?,
     val opprettetAv: String,
     val opprettetTidspunkt: LocalDateTime,
     val endretAv: String?,
@@ -78,6 +81,8 @@ data class FilterDriftRequest(
     val behandlingstyper: Set<Behandlingstype> = emptySet(),
     val enheter: List<EnhetDriftRequest> = emptyList(),
     val markeringer: List<MarkeringDriftRequest> = emptyList(),
+    val behandlingOpprettetFom: LocalDate? = null,
+    val behandlingOpprettetTom: LocalDate? = null,
 )
 
 data class EnhetDriftRequest(

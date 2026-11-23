@@ -21,6 +21,7 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import javax.sql.DataSource
 
 private val log = LoggerFactory.getLogger("oppgavelisteApi")
@@ -53,6 +54,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                         oppgaveRepository = OppgaveRepository(connection),
                         markeringRepository = MarkeringRepository(connection),
                         uføreVedtakRepository = UføreVedtakRepository(connection),
+                        gjenståendeSykedagerRepository = GjenståendeSykedagerRepository(connection),
                         mottattDokumentRepository = MottattDokumentRepository(connection),
                         enhetService = enhetService,
                     ).hentOppgaverMedTilgang(

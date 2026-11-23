@@ -27,6 +27,7 @@ import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 
 fun NormalOpenAPIRoute.tildelOppgaveApi(
     dataSource: DataSource,
@@ -87,6 +88,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(
                 OppgaveRepository(connection),
                 MarkeringRepository(connection),
                 UføreVedtakRepository(connection),
+                GjenståendeSykedagerRepository(connection),
                 MottattDokumentRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)

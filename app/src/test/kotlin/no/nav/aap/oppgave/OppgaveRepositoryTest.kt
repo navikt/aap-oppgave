@@ -7,6 +7,9 @@ import no.nav.aap.komponenter.dbtest.TestDataSource
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.filter.Filter
 import no.nav.aap.oppgave.filter.FilterType
+import no.nav.aap.oppgave.GjenståendeSykedagerGrunnlag
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedager
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
@@ -441,6 +444,92 @@ class OppgaveRepositoryTest {
     }
 
     @Test
+    fun `Kan sortere på maksdato sykepenger og oppgaver uten maksdato havner sist`() {
+        val senest = UUID.randomUUID()
+        val tidligst = UUID.randomUUID()
+        val utenMaksdato = UUID.randomUUID()
+        val utenSykedager = UUID.randomUUID()
+        val oppgaveIdPerBehandling = listOf(senest, utenMaksdato, tidligst, utenSykedager).associateWith {
+            opprettOppgaveMedDataSource(enhet = ENHET_NAV_ENEBAKK, behandlingRef = it)
+        }
+        dataSource.transaction { connection ->
+            val repository = GjenståendeSykedagerRepository(connection)
+            fun sykedager(maksdato: LocalDate?) =
+                GjenståendeSykedager(GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING, 10, null, maksdato)
+            repository.lagre(senest, sykedager(LocalDate.of(2026, 6, 1)))
+            repository.lagre(tidligst, sykedager(LocalDate.of(2026, 2, 1)))
+            repository.lagre(utenMaksdato, sykedager(null))
+        }
+
+        fun refs(rekkefølge: OppgaveSorteringRekkefølge) = finnAlleOppgaverMedSortering(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            null,
+            OppgaveSorteringFelt.MAKSDATO_SP,
+            rekkefølge
+        ).oppgaver.map { it.behandlingRef }
+
+        assertThat(refs(OppgaveSorteringRekkefølge.ASC).take(2)).containsExactly(tidligst, senest)
+        assertThat(refs(OppgaveSorteringRekkefølge.DESC).take(2)).containsExactly(senest, tidligst)
+        assertThat(refs(OppgaveSorteringRekkefølge.ASC).takeLast(2)).containsExactlyInAnyOrder(utenMaksdato, utenSykedager)
+        assertThat(refs(OppgaveSorteringRekkefølge.DESC).takeLast(2)).containsExactlyInAnyOrder(utenMaksdato, utenSykedager)
+
+        listOf(senest, tidligst, utenMaksdato).forEach {
+            reserverOppgave(oppgaveIdPerBehandling.getValue(it), "bruker1")
+        }
+        val mine = dataSource.transaction { connection ->
+            OppgaveRepository(connection).hentMineOppgaver(
+                "bruker1", sortBy = OppgaveSorteringFelt.MAKSDATO_SP, sortOrder = OppgaveSorteringRekkefølge.DESC
+            )
+        }
+        assertThat(mine.map { it.behandlingRef }).containsExactly(senest, tidligst, utenMaksdato)
+    }
+
+    @Test
+    fun `Filter for sykepenger utelater oppgaver uten opplysninger og uten sykepenger siste 26 uker`() {
+        val medSykedager = UUID.randomUUID()
+        val utenSykedager = UUID.randomUUID()
+        val ukjentMaksdato = UUID.randomUUID()
+        val ingenSykepengerSiste26Uker = UUID.randomUUID()
+        val behandlinger = listOf(medSykedager, utenSykedager, ukjentMaksdato, ingenSykepengerSiste26Uker)
+        behandlinger.forEach {
+            opprettOppgaveMedDataSource(enhet = ENHET_NAV_ENEBAKK, behandlingRef = it)
+        }
+        dataSource.transaction { connection ->
+            val repository = GjenståendeSykedagerRepository(connection)
+            repository.lagre(
+                medSykedager,
+                GjenståendeSykedager(GjenståendeSykedagerGrunnlag.VEDTAK_I_NY_LØSNING, 10, null, null)
+            )
+            repository.lagre(
+                ukjentMaksdato,
+                GjenståendeSykedager(GjenståendeSykedagerGrunnlag.MANGLER_MAKSDATO_I_INFOTRYGD, null, null, null)
+            )
+            repository.lagre(
+                ingenSykepengerSiste26Uker,
+                GjenståendeSykedager(GjenståendeSykedagerGrunnlag.INGEN_SYKEPENGER_SISTE_26_UKER, 0, null, null)
+            )
+        }
+
+        val sykepengerKø = finnAlleOppgaverMedSortering(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK), kunMedGjenståendeSykedager = true),
+            null,
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        assertThat(sykepengerKø.oppgaver.map { it.behandlingRef }).containsExactlyInAnyOrder(medSykedager, ukjentMaksdato)
+        assertThat(sykepengerKø.antallTotalt).isEqualTo(2)
+
+        val vanligKø = finnAlleOppgaverMedSortering(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK)),
+            null,
+            OppgaveSorteringFelt.BEHANDLING_OPPRETTET,
+            OppgaveSorteringRekkefølge.ASC
+        )
+        assertThat(vanligKø.oppgaver.map { it.behandlingRef }).containsExactlyInAnyOrderElementsOf(behandlinger)
+        assertThat(vanligKø.antallTotalt).isEqualTo(4)
+    }
+
+    @Test
     fun `Kan sortere og endre rekkefølge på oppgaver fra finnOppgaver med paginering`() {
 
         val sorterteDatoer = listOf(
@@ -775,6 +864,45 @@ class OppgaveRepositoryTest {
         )
 
         assertThat(resultat.oppgaver.map { it.id }).containsExactly(innenforRange.id)
+    }
+
+    @Test
+    fun `kø-filter med behandling opprettet fom og tom er inklusivt på begge dager`() {
+        val førFom = opprettOppgaveMedDataSource(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2025, 1, 9, 23, 59)
+        )
+        val påFom = opprettOppgaveMedDataSource(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2025, 1, 10, 0, 0)
+        )
+        val påTom = opprettOppgaveMedDataSource(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2025, 1, 20, 23, 59)
+        )
+        val etterTom = opprettOppgaveMedDataSource(
+            enhet = ENHET_NAV_ENEBAKK,
+            behandlingOpprettet = LocalDateTime.of(2025, 1, 21, 0, 0)
+        )
+
+        val medBeggeGrenser = finnAlleOppgaver(
+            filter(
+                enheter = setOf(ENHET_NAV_ENEBAKK),
+                behandlingOpprettetFom = LocalDate.of(2025, 1, 10),
+                behandlingOpprettetTom = LocalDate.of(2025, 1, 20),
+            )
+        )
+        assertThat(medBeggeGrenser.oppgaver.map { it.id }).containsExactlyInAnyOrder(påFom.id, påTom.id)
+
+        val kunFom = finnAlleOppgaver(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK), behandlingOpprettetFom = LocalDate.of(2025, 1, 10))
+        )
+        assertThat(kunFom.oppgaver.map { it.id }).containsExactlyInAnyOrder(påFom.id, påTom.id, etterTom.id)
+
+        val kunTom = finnAlleOppgaver(
+            filter(enheter = setOf(ENHET_NAV_ENEBAKK), behandlingOpprettetTom = LocalDate.of(2025, 1, 20))
+        )
+        assertThat(kunTom.oppgaver.map { it.id }).containsExactlyInAnyOrder(førFom.id, påFom.id, påTom.id)
     }
 
     @Test
@@ -1497,11 +1625,16 @@ class OppgaveRepositoryTest {
         inkluderteMarkeringer: Set<MarkeringForBehandling> = emptySet(),
         ekskluderteMarkeringer: Set<MarkeringForBehandling> = emptySet(),
         type: FilterType = FilterType.GENERELL,
+        kunMedGjenståendeSykedager: Boolean = false,
+        behandlingOpprettetFom: LocalDate? = null,
+        behandlingOpprettetTom: LocalDate? = null,
     ): Filter {
         return Filter(
             id = 1,
             navn = "navn",
             beskrivelse = "beskrivelse",
+            behandlingOpprettetFom = behandlingOpprettetFom,
+            behandlingOpprettetTom = behandlingOpprettetTom,
             avklaringsbehovKoder = avklaringsbehovKoder,
             behandlingstyper = behandlingstyper,
             enheter = enheter,
@@ -1509,6 +1642,7 @@ class OppgaveRepositoryTest {
             inkluderteMarkeringer = inkluderteMarkeringer,
             ekskluderteMarkeringer = ekskluderteMarkeringer,
             type = type,
+            kunMedGjenståendeSykedager = kunMedGjenståendeSykedager,
             opprettetAv = "saksbehandler",
             opprettetTidspunkt = LocalDateTime.now().minusDays(10),
             endretAv = "saksbehandler",

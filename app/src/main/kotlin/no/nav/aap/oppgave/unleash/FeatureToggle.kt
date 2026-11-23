@@ -6,7 +6,7 @@ interface FeatureToggle {
 
 enum class FeatureToggles(private val toggleKey: String) : FeatureToggle {
     VarsleOmOppgaverEldreEnn7Dager("VarsleOmOppgaverEldreEnn7Dager"),
-    SorterOppgavelistePaBelop("SorterOppgavelistePaBelop");
+    OppgavekoSykepenger("OppgavekoSykepenger");
 
     override fun key(): String = toggleKey
 }
