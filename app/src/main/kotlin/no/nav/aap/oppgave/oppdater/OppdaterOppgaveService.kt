@@ -16,6 +16,7 @@ import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
+import no.nav.aap.oppgave.harSluttetEllerFinnesIkke
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
@@ -389,7 +390,7 @@ class OppdaterOppgaveService(
         eksisterendeOppgave: Oppgave,
         avklaringsbehov: AvklaringsbehovHendelse,
     ) {
-        // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt
+        // oppgave kan gjenåpnes uten å være sendt i retur fra totrinn - følger da samme regler for tildeling som første gang gjennom flyt hvis ikke person har sluttet
         prøvÅReservereTilDenSomLøsteForrigeAvklaringsbehov(
             oppgaveOppdatering,
             eksisterendeOppgave.oppgaveId(),
@@ -659,17 +660,28 @@ class OppdaterOppgaveService(
             ?: return
 
         val (forrigeAvklaringsbehovKode, hvemLøsteForrigeIdent) = hvemLøsteForrigeAvklaringsbehov
+
         if (hvemLøsteForrigeIdent == KELVIN) {
             log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): KELVIN løste forrige avklaringsbehov")
-        } else if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
+            return
+        }
+
+        if (harSluttetEllerFinnesIkke(hvemLøsteForrigeIdent)) {
+            log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): $hvemLøsteForrigeIdent kan ikke ha reservasjon på oppgaver")
+            return
+        }
+
+        if (sammeSaksbehandlerType(forrigeAvklaringsbehovKode, avklaringsbehovHendelse.avklaringsbehovKode)) {
             log.info("Prøver å tilordne oppgave(id=${eksisterendeOppgaveId.id}) automatisk til: $hvemLøsteForrigeIdent. Gjenåpnet: $gjenåpnerOppgave")
             reserverOppgaveService.reserverOppgaveUtenTilgangskontroll(
                 oppgaveOppdatering.referanse,
                 hvemLøsteForrigeIdent
             )
-        } else {
-            log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
+            return
         }
+
+        log.info("Ingen automatisk tilordning av oppgave(id=${eksisterendeOppgaveId.id}): Forskjellig saksbehandler-type mellom $forrigeAvklaringsbehovKode og ${avklaringsbehovHendelse.avklaringsbehovKode}")
+
     }
 
     private fun sendOppgaveStatusOppdatert(behandlingsreferanse: UUID) {
@@ -684,4 +696,11 @@ class OppdaterOppgaveService(
             )
         }
     }
+
+
+    private fun harSluttetEllerFinnesIkke(ident: String): Boolean {
+        val ansattInfo = ansattInfoGateway.hentAnsattstatuser(listOf(ident)).single { it.id == ident }
+        return harSluttetEllerFinnesIkke(ansattInfo)
+    }
+
 }

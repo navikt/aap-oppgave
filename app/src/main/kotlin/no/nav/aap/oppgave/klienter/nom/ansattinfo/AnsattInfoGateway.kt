@@ -15,13 +15,13 @@ import java.time.Duration
 import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM2MTokenProvider
 
 interface AnsattInfoGateway {
-    fun hentAnsattNavnHvisFinnes(navIdent: String) : String?
-}
+    fun hentAnsattNavnHvisFinnes(navIdent: String): String?
+    fun hentAnsattstatuser(navIdent: List<String>): List<NomBatchData>}
 
 class NomApiGateway
 private constructor(
     private val restClient: RestClient<InputStream>,
-): AnsattInfoGateway {
+) : AnsattInfoGateway {
     private val log = LoggerFactory.getLogger(NomApiGateway::class.java)
     private val graphqlUrl = URI.create(requiredConfigForKey("INTEGRASJON_NOM_API_URL"))
 
@@ -75,6 +75,18 @@ private constructor(
         val httpRequest = PostRequest(body = request)
         return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
     }
+
+    private fun ansattInfoQuery(request: AnsattInfoBatchRequest): AnsattInfoRespons {
+        val httpRequest = PostRequest(body = request)
+        return requireNotNull(restClient.post(uri = graphqlUrl, request = httpRequest))
+    }
+
+    override fun hentAnsattstatuser(navIdent: List<String>): List<NomBatchData> {
+        val request = AnsattInfoBatchRequest(sluttetQuery, AnsattInfoBatchVariables(navIdent))
+        return checkNotNull(ansattInfoQuery(request).data?.ressurser) {
+            "Mangler data i respons fra NOM"
+        }
+    }
 }
 
 private const val navIdent = "\$navIdent"
@@ -82,6 +94,20 @@ val navnQuery = """
     query($navIdent: String!) {
       ressurs(where: {navident: $navIdent}) {
         visningsnavn
+      }
+    }
+""".trimIndent()
+
+private const val navidenter = "\$navidenter"
+val sluttetQuery = """
+    query ($navidenter: [String!]!) {
+      ressurser(where: { navidenter: $navidenter }) {
+        id
+        code
+        ressurs {
+          navident
+          sluttdato
+        }
       }
     }
 """.trimIndent()

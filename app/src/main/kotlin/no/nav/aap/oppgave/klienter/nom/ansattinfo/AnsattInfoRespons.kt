@@ -9,8 +9,27 @@ data class AnsattInfoRespons(
 
 data class AnsattInfoData(
     val ressurs: NomRessurs?,
+    val ressurser: List<NomBatchData>?,
 )
 
 data class NomRessurs(
     val visningsnavn: String,
 )
+
+data class NomBatchData(
+    val id: String,
+    val code: NomResultCode,
+    val ressurs: NomBatchRessurs?,
+)
+
+data class NomBatchRessurs(
+    val navident: String,
+    val sluttdato: String?,
+)
+
+enum class NomResultCode {
+    OK,
+    ERROR,
+    NOT_FOUND,
+    NOT_IN_FILTER,
+}
