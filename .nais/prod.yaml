@@ -91,6 +91,7 @@ spec:
         - application: tilgang
         - application: statistikk
         - application: behandlingsflyt
+        - application: dokumentinnhenting
         - application: skjermede-personer-pip
           namespace: nom
         - application: nom-api
