@@ -11,6 +11,7 @@ import no.nav.aap.oppgave.OppgaveRepository.FinnOppgaverDto
 import no.nav.aap.oppgave.enhet.EnhetService
 import no.nav.aap.oppgave.enhet.OppgaveEnhetDto
 import no.nav.aap.oppgave.filter.Filter
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
@@ -31,6 +32,7 @@ class OppgavelisteService(
     private val markeringRepository: MarkeringRepository,
     private val uføreVedtakRepository: UføreVedtakRepository,
     private val gjenståendeSykedagerRepository: GjenståendeSykedagerRepository,
+    private val ikkeBeslutterRepository: IkkeBeslutterRepository,
     private val mottattDokumentRepository: MottattDokumentRepository,
     private val enhetService: EnhetService,
 ) {
@@ -122,7 +124,7 @@ class OppgavelisteService(
                 val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
                 val uføreVedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingRef)
                 oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uføreVedtak)
-            }.leggPåMottattDokument().leggPåGjenståendeSykedager()
+            }.leggPåMottattDokument().leggPåGjenståendeSykedager().leggPåIkkeBesluttere()
 
         return FinnOppgaverDto(
             oppgaver = oppgaver.filtrerPåTilgang(token, ident),
@@ -150,7 +152,7 @@ class OppgavelisteService(
                 uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(it.behandlingRef)
             )
 
-        }.hentPersonNavn().leggPåMottattDokument().leggPåGjenståendeSykedager()
+        }.hentPersonNavn().leggPåMottattDokument().leggPåGjenståendeSykedager().leggPåIkkeBesluttere()
 
         val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
         return medMarkering + utenMarkering
@@ -212,6 +214,16 @@ class OppgavelisteService(
         val sykedagerPerBehandling = gjenståendeSykedagerRepository.hentForBehandlinger(map { it.behandlingRef })
         return map { oppgave ->
             oppgave.copy(gjenståendeSykedager = sykedagerPerBehandling[oppgave.behandlingRef])
+        }
+    }
+
+    private fun List<Oppgave>.leggPåIkkeBesluttere(): List<Oppgave> {
+        if (isEmpty()) {
+            return this
+        }
+        val ikkeBesluttere = ikkeBeslutterRepository.hentForBehandlinger(map { it.behandlingRef })
+        return map { oppgave ->
+            oppgave.copy(saksbehandlereSomIkkeKanBeslutte = ikkeBesluttere[oppgave.behandlingRef])
         }
     }
 

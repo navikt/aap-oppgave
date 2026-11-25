@@ -25,6 +25,7 @@ import no.nav.aap.oppgave.plukk.TilgangService
 import no.nav.aap.tilgang.Operasjon
 import org.slf4j.LoggerFactory
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import javax.sql.DataSource
 
@@ -49,6 +50,7 @@ fun NormalOpenAPIRoute.søkApi(
                     MarkeringRepository(connection),
                     UføreVedtakRepository(connection),
                     GjenståendeSykedagerRepository(connection),
+                    IkkeBeslutterRepository(connection),
                     MottattDokumentRepository(connection),
                     enhetService,
                 ).søkEtterOppgaver(søketekst)

@@ -667,6 +667,27 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `flagg for om innlogget bruker kan beslutte behandlingen utledes fra hendelsen uten å filtrere oppgaver`() {
+        val behandlingRef = UUID.randomUUID()
+        val hendelse = sykedagerHendelse("1004", behandlingRef, Definisjon.AVKLAR_SYKDOM, null)
+
+        // Ukjent: eldre hendelse uten feltet
+        oppdaterOppgaver(hendelse)
+        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
+        assertThat(hentMineOppgaver().oppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isTrue()
+
+        val innloggetIdent = hentOppgaveVisningsinfo(behandlingRef)!!.reservertAvIdent!!
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf(innloggetIdent, "Z999999")))
+
+        val mineOppgaver = hentMineOppgaver().oppgaver
+        assertThat(mineOppgaver).hasSize(1)
+        assertThat(mineOppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isFalse()
+
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf("Z999999")))
+        assertThat(hentMineOppgaver().oppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isTrue()
+    }
+
+    @Test
     fun `gjenstående sykedager følger behandlingen når avklaringsbehov bytter og beholder null-felt og tidligere grunnlag`() {
         val behandlingRef = UUID.randomUUID()
         val saksnummer = "1003"
