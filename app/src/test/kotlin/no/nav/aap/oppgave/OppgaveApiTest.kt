@@ -669,7 +669,7 @@ class OppgaveApiTest {
     @Test
     fun `flagg for om innlogget bruker kan beslutte behandlingen utledes fra hendelsen uten å filtrere oppgaver`() {
         val behandlingRef = UUID.randomUUID()
-        val hendelse = sykedagerHendelse("1004", behandlingRef, Definisjon.AVKLAR_SYKDOM, null)
+        val hendelse = sykedagerHendelse("1004", behandlingRef, Definisjon.FATTE_VEDTAK, null)
 
         // Ukjent: eldre hendelse uten feltet
         oppdaterOppgaver(hendelse)
@@ -684,6 +684,18 @@ class OppgaveApiTest {
         assertThat(mineOppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isFalse()
 
         oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf("Z999999")))
+        assertThat(hentMineOppgaver().oppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isTrue()
+    }
+
+    @Test
+    fun `flagg for om innlogget bruker kan beslutte er true når oppgaven ikke er en beslutteroppgave`() {
+        val behandlingRef = UUID.randomUUID()
+        val hendelse = sykedagerHendelse("1005", behandlingRef, Definisjon.AVKLAR_SYKDOM, null)
+        oppdaterOppgaver(hendelse)
+        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
+        val innloggetIdent = hentOppgaveVisningsinfo(behandlingRef)!!.reservertAvIdent!!
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf(innloggetIdent)))
+
         assertThat(hentMineOppgaver().oppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isTrue()
     }
 
