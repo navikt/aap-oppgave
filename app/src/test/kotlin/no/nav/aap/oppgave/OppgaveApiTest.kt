@@ -670,21 +670,16 @@ class OppgaveApiTest {
     fun `flagg for om innlogget bruker kan beslutte behandlingen utledes fra hendelsen uten å filtrere oppgaver`() {
         val behandlingRef = UUID.randomUUID()
         val hendelse = sykedagerHendelse("1004", behandlingRef, Definisjon.FATTE_VEDTAK, null)
-
-        // Ukjent: eldre hendelse uten feltet
         oppdaterOppgaver(hendelse)
-        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
-        assertThat(hentMineOppgaver().oppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isTrue()
+        val innloggetIdent = identTilInnloggetBruker(behandlingRef)
 
-        val innloggetIdent = hentOppgaveVisningsinfo(behandlingRef)!!.reservertAvIdent!!
+        assertThat(kanBesluttePåOppgavelisten(behandlingRef)).isTrue()
+
         oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf(innloggetIdent, "Z999999")))
-
-        val mineOppgaver = hentMineOppgaver().oppgaver
-        assertThat(mineOppgaver).hasSize(1)
-        assertThat(mineOppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isFalse()
+        assertThat(kanBesluttePåOppgavelisten(behandlingRef)).isFalse()
 
         oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf("Z999999")))
-        assertThat(hentMineOppgaver().oppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isTrue()
+        assertThat(kanBesluttePåOppgavelisten(behandlingRef)).isTrue()
     }
 
     @Test
@@ -692,11 +687,10 @@ class OppgaveApiTest {
         val behandlingRef = UUID.randomUUID()
         val hendelse = sykedagerHendelse("1005", behandlingRef, Definisjon.AVKLAR_SYKDOM, null)
         oppdaterOppgaver(hendelse)
-        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
-        val innloggetIdent = hentOppgaveVisningsinfo(behandlingRef)!!.reservertAvIdent!!
+        val innloggetIdent = identTilInnloggetBruker(behandlingRef)
         oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf(innloggetIdent)))
 
-        assertThat(hentMineOppgaver().oppgaver.single().oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen).isTrue()
+        assertThat(kanBesluttePåOppgavelisten(behandlingRef)).isTrue()
     }
 
     @Test
@@ -1968,6 +1962,22 @@ class OppgaveApiTest {
                 currentToken = getOboToken()
             )
         )
+    }
+
+    // Plukker oppgaven for å finne innlogget ident, og avreserverer den siden oppgavelisten kun viser ledige oppgaver
+    private fun identTilInnloggetBruker(behandlingRef: UUID): String {
+        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
+        val visningsinfo = hentOppgaveVisningsinfo(behandlingRef)!!
+        avreserverOppgaver(listOf(visningsinfo.id))
+        return visningsinfo.reservertAvIdent!!
+    }
+
+    private fun kanBesluttePåOppgavelisten(behandlingRef: UUID): Boolean {
+        val oppgaver = hentOppgaveliste(
+            OppgavelisteRequest(filterId = testFilterId, enheter = setOf("superNav!", Enhet.NAY.kode), paging = Paging())
+        )!!.oppgaver
+        return oppgaver.single { it.behandlingskontekst.behandlingsreferanse == behandlingRef }
+            .oppgavelisteTags.kanInnloggetBrukerBeslutteBehandlingen
     }
 
     private fun hentOppgaveliste(request: OppgavelisteRequest): OppgavelisteRespons? {

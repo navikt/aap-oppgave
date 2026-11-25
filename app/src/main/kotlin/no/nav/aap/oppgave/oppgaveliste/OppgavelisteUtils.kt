@@ -91,7 +91,7 @@ object OppgavelisteUtils {
         return this.copy(personNavn = personNavn)
     }
 
-    fun Oppgave.tilListeOppgaveResponse(innloggetIdent: String): OppgaveMedKontekstResponse {
+    fun Oppgave.tilListeOppgaveResponse(innloggetIdent: String? = null): OppgaveMedKontekstResponse {
         return OppgaveMedKontekstResponse(
             behandlingOpprettet = behandlingOpprettet,
             avklaringsbehovKode = avklaringsbehovKode,
@@ -156,7 +156,7 @@ object OppgavelisteUtils {
                 },
                 uføreVedtak = uføreVedtak?.tilUføreVedtakRespsons(),
                 forespørselSendtTilBehandler = forespørselSendtTilBehandler?.tilDto(),
-                kanInnloggetBrukerBeslutteBehandlingen = kanBesluttesAvInnloggetBruker(innloggetIdent)
+                kanInnloggetBrukerBeslutteBehandlingen = innloggetIdent?.let { kanBesluttesAvInnloggetBruker(it) } ?: true
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
