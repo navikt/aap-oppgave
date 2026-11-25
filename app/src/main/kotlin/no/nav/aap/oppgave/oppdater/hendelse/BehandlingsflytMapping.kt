@@ -58,7 +58,8 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
         uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse),
         forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter),
         aktivtAvklaringsbehov = this.aktivtAvklaringsbehov?.let { AvklaringsbehovKode(it.kode.name) },
-        gjenståendeSykedager = this.gjenståendeSykedager?.tilGjenståendeSykedager()
+        gjenståendeSykedager = this.gjenståendeSykedager?.tilGjenståendeSykedager(),
+        saksbehandlereSomIkkeKanBeslutte = this.saksbehandlereSomIkkeKanBeslutte
     )
 }
 

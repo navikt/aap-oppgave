@@ -25,6 +25,7 @@ import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.authorizedPost
 import org.slf4j.LoggerFactory
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.tilgang.Beslutter
 import no.nav.aap.tilgang.Kvalitetssikrer
@@ -61,6 +62,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
                     ),
                     uføreVedtakRepository = UføreVedtakRepository(connection),
                     gjenståendeSykedagerRepository = GjenståendeSykedagerRepository(connection),
+                    ikkeBeslutterRepository = IkkeBeslutterRepository(connection),
                 ).håndterNyOppgaveOppdatering(
                     request.tilOppgaveOppdatering()
                 )
@@ -98,6 +100,7 @@ fun NormalOpenAPIRoute.oppdaterPostmottakOppgaverApi(
                     ),
                     uføreVedtakRepository = UføreVedtakRepository(connection),
                     gjenståendeSykedagerRepository = GjenståendeSykedagerRepository(connection),
+                    ikkeBeslutterRepository = IkkeBeslutterRepository(connection),
                 ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
             }
         }
@@ -135,6 +138,7 @@ fun NormalOpenAPIRoute.oppdaterTilbakekrevingOppgaverApi(
                     ),
                     uføreVedtakRepository = UføreVedtakRepository(connection),
                     gjenståendeSykedagerRepository = GjenståendeSykedagerRepository(connection),
+                    ikkeBeslutterRepository = IkkeBeslutterRepository(connection),
                 ).håndterNyOppgaveOppdatering(request.tilOppgaveOppdatering())
             }
         }
