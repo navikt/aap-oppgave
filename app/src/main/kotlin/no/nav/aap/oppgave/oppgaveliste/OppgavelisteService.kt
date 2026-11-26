@@ -42,13 +42,13 @@ class OppgavelisteService(
             oppgaveRepository.finnOppgaverGittSaksnummer(søketekst)
         }
 
-        return oppgaver.leggPåMarkeringer().leggPåUføreVedtak().leggPåMottattDokument()
+        return oppgaver.berikOppgaver()
     }
 
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): Oppgave? {
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null && oppgave.erÅpen) {
-            return listOf(oppgave).leggPåMarkeringer().leggPåUføreVedtak().leggPåMottattDokument().single()
+            return listOf(oppgave).berikOppgaver().single()
         }
         return oppgave
     }
@@ -112,11 +112,7 @@ class OppgavelisteService(
         )
 
         val oppgaver = finnOppgaverDto.oppgaver
-            .leggPåMarkeringer()
-            .leggPåUføreVedtak()
-            .leggPåMottattDokument()
-            .leggPåGjenståendeSykedager()
-            .leggPåIkkeBesluttere()
+            .berikOppgaver(forOppgaveliste = true)
 
         return FinnOppgaverDto(
             oppgaver = oppgaver.filtrerPåTilgang(token, ident),
@@ -137,7 +133,7 @@ class OppgavelisteService(
             kunPåVent = kunPaaVent == true,
             sortBy = sortBy,
             sortOrder = sortOrder
-        ).leggPåMarkeringer().leggPåUføreVedtak().hentPersonNavn().leggPåMottattDokument().leggPåGjenståendeSykedager().leggPåIkkeBesluttere()
+        ).berikOppgaver(forOppgaveliste = true).hentPersonNavn()
 
         val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
         return medMarkering + utenMarkering
@@ -164,6 +160,21 @@ class OppgavelisteService(
             behandlingstyper = utvidetFilter.behandlingstyper,
             avklaringsbehovKoder = avklaringsbehovKoder,
         )
+    }
+
+    private fun List<Oppgave>.berikOppgaver(forOppgaveliste: Boolean = false): List<Oppgave> {
+        return when (forOppgaveliste) {
+            true -> this
+                .leggPåMarkeringer()
+                .leggPåUføreVedtak()
+                .leggPåMottattDokument()
+                .leggPåGjenståendeSykedager()
+                .leggPåIkkeBesluttere()
+            false -> this
+                .leggPåMarkeringer()
+                .leggPåUføreVedtak()
+                .leggPåMottattDokument()
+        }
     }
 
     private fun List<Oppgave>.leggPåMarkeringer(): List<Oppgave> {
