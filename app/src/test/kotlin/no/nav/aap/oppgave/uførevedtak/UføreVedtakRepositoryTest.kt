@@ -98,6 +98,34 @@ class UføreVedtakRepositoryTest {
     }
 
     @Test
+    fun `skal hente nyeste aktive vedtak per behandling for flere behandlinger`() {
+        val annenBehandlingRef = UUID.randomUUID()
+
+        dataSource.transaction { connection ->
+            val repository = UføreVedtakRepository(connection)
+
+            repository.lagreUføreVedtak(
+                behandlingRef,
+                UføreVedtak(behandlingRef, LocalDate.of(2026, 1, 1), UføreVedtakStatus.INNVILGELSE)
+            )
+            repository.lagreUføreVedtak(
+                behandlingRef,
+                UføreVedtak(behandlingRef, LocalDate.of(2026, 2, 1), UføreVedtakStatus.ENDRET)
+            )
+            repository.lagreUføreVedtak(
+                annenBehandlingRef,
+                UføreVedtak(annenBehandlingRef, LocalDate.of(2026, 3, 1), UføreVedtakStatus.INNVILGELSE)
+            )
+            repository.fjernUføreVedtakTag(annenBehandlingRef, "bruker1")
+
+            val resultat = repository.hentAktiveUføreVedtakForBehandlinger(listOf(behandlingRef, annenBehandlingRef))
+
+            assertEquals(setOf(behandlingRef), resultat.keys)
+            assertEquals(LocalDate.of(2026, 2, 1), resultat.getValue(behandlingRef).virkningsdato)
+        }
+    }
+
+    @Test
     fun `skal ikke lagre duplikater`() {
 
         dataSource.transaction { connection ->

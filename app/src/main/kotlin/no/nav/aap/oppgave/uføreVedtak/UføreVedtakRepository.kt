@@ -41,22 +41,29 @@ class UføreVedtakRepository (
         }
     }
 
-    fun hentAktiveUføreVedtakForBehandling(referanse: UUID): UføreVedtak? {
+    fun hentAktiveUføreVedtakForBehandling(referanse: UUID): UføreVedtak? =
+        hentAktiveUføreVedtakForBehandlinger(listOf(referanse))[referanse]
+
+    fun hentAktiveUføreVedtakForBehandlinger(referanser: Collection<UUID>): Map<UUID, UføreVedtak> {
+        if (referanser.isEmpty()) {
+            return emptyMap()
+        }
         val query =
             """
-            SELECT * FROM UFORE_VEDTAK
-            WHERE behandling_ref = ? AND VEDTAK_FJERNET_AV IS NULL
-            ORDER BY virkningsdato DESC
+            SELECT DISTINCT ON (behandling_ref) *
+            FROM UFORE_VEDTAK
+            WHERE behandling_ref = ANY(?::uuid[]) AND VEDTAK_FJERNET_AV IS NULL
+            ORDER BY behandling_ref, virkningsdato DESC
             """.trimIndent()
 
-       return connection.queryList(query) {
+        return connection.queryList(query) {
             setParams {
-                setUUID(1, referanse)
+                setArray(1, referanser.distinct().map { it.toString() })
             }
             setRowMapper {
-                uføreVedtakMapper(it)
+                it.getUUID("behandling_ref") to uføreVedtakMapper(it)
             }
-        }.firstOrNull()
+        }.toMap()
     }
 
     private fun uføreVedtakMapper(row: Row) : UføreVedtak =
