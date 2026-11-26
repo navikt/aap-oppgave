@@ -3,7 +3,6 @@ package no.nav.aap.oppgave.oppdater.hendelse
 import no.nav.aap.oppgave.AvklaringsbehovKode
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedager
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
-import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -41,7 +40,9 @@ data class OppgaveOppdatering(
     val totaltFeilutbetaltBeløp: BigDecimal? = null,
     val tilbakekrevingsUrl: String? = null,
     val behandlingMetadata: BehandlingMetadata? = null,
-    val forespørselSendtTilBehandler: ForespørselSendtTilBehandler? = null,
+    val skalViseForespørselSendt: Boolean = false,
+    @Deprecated("Fjern når dokumentinnhenting har all info om påminnelser")
+    val utledetPåminnelseDato: LocalDate? = null,
     val aktivtAvklaringsbehov: AvklaringsbehovKode? = null,
     val gjenståendeSykedager: GjenståendeSykedager? = null,
     val saksbehandlereSomIkkeKanBeslutte: List<String>? = null,

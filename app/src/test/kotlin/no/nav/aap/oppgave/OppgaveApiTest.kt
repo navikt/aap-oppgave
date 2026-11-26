@@ -62,6 +62,7 @@ import no.nav.aap.oppgave.plukk.AvreserverOppgaveDto
 import no.nav.aap.oppgave.plukk.PlukkOppgaveRequest
 import no.nav.aap.oppgave.plukk.PlukkOppgaveResponse
 import no.nav.aap.oppgave.prosessering.OppdaterOppgaveEnhetJobb
+import no.nav.aap.oppgave.påminnelse.PåminnelseStatus
 import no.nav.aap.oppgave.server.DbConfig
 import no.nav.aap.oppgave.server.initDatasource
 import no.nav.aap.oppgave.server.server
@@ -1487,7 +1488,7 @@ class OppgaveApiTest {
         )
 
         val oppgaveFør = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
-        assertThat(oppgaveFør.forespørselSendtTilBehandler?.påminnelseAvbrutt).isFalse()
+        assertThat(oppgaveFør.forespørselSendtTilBehandler?.påminnelseStatus).isEqualTo(PåminnelseStatus.PLANLAGT)
 
         val dato = LocalDate.of(2026, 11, 7)
         oppdaterPåminnelse(
@@ -1500,8 +1501,7 @@ class OppgaveApiTest {
 
         val oppgaveEtter = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
         assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(dato)
-        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.tilDto()?.påminnelseDato).isEqualTo(dato)
-        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseAvbrutt).isTrue()
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseStatus).isEqualTo(PåminnelseStatus.AVBRUTT)
     }
 
     @Test
@@ -1512,7 +1512,7 @@ class OppgaveApiTest {
 
         val oppgaveFør = requireNotNull(hentOppgaveGittBehandlingref(referanse))
         val forespørselFør = requireNotNull(oppgaveFør.forespørselSendtTilBehandler)
-        assertThat(forespørselFør.påminnelseAvbrutt).isFalse()
+        assertThat(forespørselFør.påminnelseStatus).isEqualTo(PåminnelseStatus.PLANLAGT)
 
         val dato = forespørselFør.påminnelseDato
         oppdaterPåminnelse(
@@ -1525,7 +1525,7 @@ class OppgaveApiTest {
         val avbruttForespørsel = requireNotNull(
             hentOppgaveGittBehandlingref(referanse)?.forespørselSendtTilBehandler
         )
-        assertThat(avbruttForespørsel.påminnelseAvbrutt).isTrue()
+        assertThat(avbruttForespørsel.påminnelseStatus).isEqualTo(PåminnelseStatus.AVBRUTT)
         assertThat(avbruttForespørsel.påminnelseDato).isEqualTo(dato)
 
         for (aktivtAvklaringsbehov in listOf(Definisjon.AVKLAR_BISTANDSBEHOV, Definisjon.AVKLAR_SYKDOM)) {
@@ -1562,8 +1562,8 @@ class OppgaveApiTest {
                     påminnelseAvbrutt = true,
                 )
             )
-            assertThat(hentOppgaveGittBehandlingref(referanse)?.forespørselSendtTilBehandler?.påminnelseAvbrutt)
-                .isTrue()
+            assertThat(hentOppgaveGittBehandlingref(referanse)?.forespørselSendtTilBehandler?.påminnelseStatus)
+                .isEqualTo(PåminnelseStatus.AVBRUTT)
 
             val nyBestillingTidspunkt = hendelse.hendelsesTidspunkt.plusDays(2)
             oppdaterOppgaver(
@@ -1590,7 +1590,7 @@ class OppgaveApiTest {
             assertThat(nyDato).isNotEqualTo(forespørselFør.påminnelseDato)
             assertThat(oppgaveEtter.avklaringsbehovKode).isEqualTo(aktivtAvklaringsbehov.kode.name)
             assertThat(forespørselEtter.påminnelseDato).isEqualTo(nyDato)
-            assertThat(forespørselEtter.påminnelseAvbrutt).isFalse()
+            assertThat(forespørselEtter.påminnelseStatus).isEqualTo(PåminnelseStatus.PLANLAGT)
         }
     }
 
@@ -1608,8 +1608,8 @@ class OppgaveApiTest {
                     påminnelseAvbrutt = true,
                 )
             )
-            assertThat(hentOppgaveGittBehandlingref(referanse)?.forespørselSendtTilBehandler?.påminnelseAvbrutt)
-                .isTrue()
+            assertThat(hentOppgaveGittBehandlingref(referanse)?.forespørselSendtTilBehandler?.påminnelseStatus)
+                .isEqualTo(PåminnelseStatus.AVBRUTT)
 
             oppdaterOppgaver(
                 hendelse.copy(
@@ -1694,7 +1694,7 @@ class OppgaveApiTest {
 
         val oppgave = requireNotNull(hentOppgaveGittBehandlingref(BehandlingReferanse(referanse)))
         assertThat(oppgave.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(opprinneligDato)
-        assertThat(oppgave.forespørselSendtTilBehandler?.påminnelseAvbrutt).isFalse()
+        assertThat(oppgave.forespørselSendtTilBehandler?.påminnelseStatus).isEqualTo(PåminnelseStatus.PLANLAGT)
     }
 
     @Test

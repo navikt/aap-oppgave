@@ -16,7 +16,6 @@ import no.nav.aap.behandlingsflyt.kontrakt.hendelse.ÅrsakTilReturKode
 import no.nav.aap.behandlingsflyt.kontrakt.sak.Saksnummer
 import no.nav.aap.komponenter.miljo.Miljø
 import no.nav.aap.oppgave.AvklaringsbehovKode
-import no.nav.aap.oppgave.ForespørselSendtTilBehandler
 import no.nav.aap.oppgave.GjenståendeSykedagerGrunnlag
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedager
 import no.nav.aap.oppgave.mottattdokument.MottattDokument
@@ -25,6 +24,7 @@ import no.nav.aap.oppgave.verdityper.BehandlingMetadata
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.UføreVedtakStatus
 import org.slf4j.LoggerFactory
+import java.time.LocalDate
 import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 
@@ -56,16 +56,38 @@ fun BehandlingFlytStoppetHendelse.tilOppgaveOppdatering(): OppgaveOppdatering {
             .tilAvklaringsbehovHendelseForBehandlingsflyt().kelvinTokBehandlingAvVent(),
         mottattDokumenter = mottattDokumenter.tilMottattDokumenter(this.referanse.referanse),
         uføreVedtak = this.uføreVedtak?.tilUførevedtak(this.referanse.referanse),
-        forespørselSendtTilBehandler = this.avklaringsbehov.tilForespørselSendtTilBehandler(this.mottattDokumenter),
+        skalViseForespørselSendt = this.avklaringsbehov.skalViseForespørselSendt(this.mottattDokumenter),
+        utledetPåminnelseDato = this.avklaringsbehov.utledPåminnelseDato(this.mottattDokumenter),
         aktivtAvklaringsbehov = this.aktivtAvklaringsbehov?.let { AvklaringsbehovKode(it.kode.name) },
         gjenståendeSykedager = this.gjenståendeSykedager?.tilGjenståendeSykedager(),
         saksbehandlereSomIkkeKanBeslutte = this.saksbehandlereSomIkkeKanBeslutte
     )
 }
 
-private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
+private fun List<AvklaringsbehovHendelseDto>.skalViseForespørselSendt(mottattDokumenter: List<MottattDokumentDto>): Boolean {
+    val bestillLegeerklæring = this.firstOrNull {
+        it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING
+    } ?: return false
+
+    val sisteOpprettetTidspunkt = bestillLegeerklæring.endringer
+        .filter { it.status == Status.OPPRETTET }
+        .maxByOrNull { it.tidsstempel }
+        ?.tidsstempel
+        ?: return false
+
+    val mottattHelseopplysning = mottattDokumenter
+        .filter { it.type == InnsendingType.LEGEERKLÆRING || it.type == InnsendingType.DIALOGMELDING }
+
+    // Forespørselen regnes som besvart hvis en legeerklæring eller dialogmelding er mottatt etter at forespørselen er sendt
+    val erBesvart = mottattHelseopplysning.any { it.mottattTidspunkt.isAfter(sisteOpprettetTidspunkt) }
+    return !erBesvart
+}
+
+
+// TODO: slett når dokumentinnhenting har all data
+private fun List<AvklaringsbehovHendelseDto>.utledPåminnelseDato(
     mottattDokumenter: List<MottattDokumentDto>
-): ForespørselSendtTilBehandler? {
+): LocalDate? {
     val bestillLegeerklæring = this.firstOrNull {
         it.avklaringsbehovDefinisjon == Definisjon.BESTILL_LEGEERKLÆRING
     } ?: return null
@@ -85,10 +107,7 @@ private fun List<AvklaringsbehovHendelseDto>.tilForespørselSendtTilBehandler(
         return null
     }
 
-    return ForespørselSendtTilBehandler(
-        påminnelseDato = sisteOpprettetTidspunkt.toLocalDate().plusDays(DAGER_TIL_PÅMINNELSE),
-        påminnelseAvbrutt = false,
-    )
+    return sisteOpprettetTidspunkt.toLocalDate().plusDays(DAGER_TIL_PÅMINNELSE)
 }
 
 private fun BehandlingFlytStoppetHendelse.utledVenteInformasjon(): VenteInformasjon? {

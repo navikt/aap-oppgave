@@ -1,9 +1,6 @@
 package no.nav.aap.oppgave.oppdater
 
 import io.getunleash.FakeUnleash
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Definisjon
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.BehandlingReferanse
 import no.nav.aap.behandlingsflyt.kontrakt.behandling.TypeBehandling
@@ -29,26 +26,29 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.enhet.Enhet
 import no.nav.aap.oppgave.enhet.EnhetForOppgave
 import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.fakes.Fakes
 import no.nav.aap.oppgave.fakes.STRENGT_FORTROLIG_IDENT
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
+import no.nav.aap.oppgave.klienter.dokumentinnhenting.DokumentinnhentingGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
 import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
+import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.opprettOppgave
 import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.bufretStatistikk
+import no.nav.aap.oppgave.påminnelse.PåminnelseInfo
+import no.nav.aap.oppgave.påminnelse.PåminnelseStatus
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
-import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
-import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
-import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import no.nav.aap.oppgave.unleash.UnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
@@ -63,6 +63,9 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.UUID
 import no.nav.aap.behandlingsflyt.kontrakt.avklaringsbehov.Status as AvklaringsbehovStatus
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingMetadata as BehandlingsflytMetadata
 
@@ -146,7 +149,11 @@ class OppdaterOppgaveServiceTest {
 
         val nå = LocalDateTime.now()
 
-        val nyHendelse = behandlingFlytHendelse(saksnummer = TEST_SAKSNUMMER, referanse = TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val nyHendelse = behandlingFlytHendelse(
+            saksnummer = TEST_SAKSNUMMER,
+            referanse = TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Saksbehandler", nå.minusHours(9))
@@ -990,7 +997,12 @@ class OppdaterOppgaveServiceTest {
         val nå = LocalDateTime.now()
 
         // saksbehandler setter sak på vent i sykdomssteget
-        val hendelse = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val hendelse = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            erPåVent = true,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(
                     AvklaringsbehovStatus.OPPRETTET,
@@ -1141,7 +1153,11 @@ class OppdaterOppgaveServiceTest {
         )
 
         // Beslutter til veileder til beslutter
-        val tilBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK) {
+        val tilBeslutter = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK
+        ) {
             avklaringsbehov(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Saksbehandler", nå.minusHours(9))
@@ -1156,7 +1172,11 @@ class OppdaterOppgaveServiceTest {
         assertThat(kvalitetssikringsOppgave.avklaringsbehovKode).isEqualTo(Definisjon.FATTE_VEDTAK.kode.name)
 
 
-        val returFraBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT) {
+        val returFraBeslutter = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT
+        ) {
             avklaringsbehov(
                 Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT,
                 AvklaringsbehovStatus.SENDT_TILBAKE_FRA_BESLUTTER
@@ -1182,7 +1202,11 @@ class OppdaterOppgaveServiceTest {
         assertThat(returOppgave.avklaringsbehovKode).isEqualTo(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT.kode.name)
         assertThat(returOppgave.returInformasjon?.endretAv).isEqualTo("Beslutter")
 
-        val returTilBeslutter = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK) {
+        val returTilBeslutter = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.FATTE_VEDTAK
+        ) {
             avklaringsbehov(Definisjon.FASTSETT_BEREGNINGSTIDSPUNKT, AvklaringsbehovStatus.AVSLUTTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(10))
                 endring(AvklaringsbehovStatus.AVSLUTTET, "Veileder", nå.minusHours(9))
@@ -1216,7 +1240,12 @@ class OppdaterOppgaveServiceTest {
 
         val nå = LocalDateTime.now()
 
-        val hendelsePåVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val hendelsePåVent = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            erPåVent = true,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1231,7 +1260,11 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgavePåVent.erPåVent).isTrue()
         assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
 
-        val hendelseTattAvVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val hendelseTattAvVent = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1250,7 +1283,11 @@ class OppdaterOppgaveServiceTest {
 
         // sender oppdatering på oppgave, tidligere utløptVentefrist skal videreføres
 
-        val hendelseOppdatering = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val hendelseOppdatering = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1266,7 +1303,12 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgaveEtterOppdatering.utløptVentefrist).isEqualTo(LocalDate.now())
 
         // setter på vent på nytt, utløptVentefrist skal da bli borte
-        val hendelseSettPåVentIgjen = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val hendelseSettPåVentIgjen = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            erPåVent = true,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1292,7 +1334,12 @@ class OppdaterOppgaveServiceTest {
 
         val nå = LocalDateTime.now()
 
-        val hendelsePåVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, erPåVent = true, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val hendelsePåVent = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            erPåVent = true,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1307,7 +1354,11 @@ class OppdaterOppgaveServiceTest {
         assertThat(oppgavePåVent.erPåVent).isTrue()
         assertThat(oppgavePåVent.påVentTil).isEqualTo(LocalDate.now())
 
-        val hendelseTattAvVent = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val hendelseTattAvVent = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1435,7 +1486,11 @@ class OppdaterOppgaveServiceTest {
         val nå = LocalDateTime.now()
 
         // sak på sykdomssteget
-        val tilSykdom = behandlingFlytHendelse(TEST_SAKSNUMMER, TEST_BEHANDLINGREF, aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM) {
+        val tilSykdom = behandlingFlytHendelse(
+            TEST_SAKSNUMMER,
+            TEST_BEHANDLINGREF,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM
+        ) {
             avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
                 endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå.minusHours(2))
             }
@@ -1793,6 +1848,89 @@ class OppdaterOppgaveServiceTest {
         assertThat(hentIkkeBesluttere(behandlingsref)).isEmpty()
     }
 
+    @Test
+    fun `påminnelse fra dokumentinnhenting overstyrer utledet dato og tidligere avbrutt påminnelse`() {
+        val oppdatering = oppgaveOppdateringMedUbesvartForespørsel()
+        var påminnelse = PåminnelseInfo(
+            status = PåminnelseStatus.AVBRUTT,
+            påminnelseDato = LocalDate.of(2026, 2, 10),
+            opprettetTidspunkt = LocalDateTime.of(2026, 1, 20, 12, 0),
+        )
+        val gateway = object : DokumentinnhentingGateway {
+            override fun hentPåminnelserForBehandling(behandlingsreferanse: UUID): List<PåminnelseInfo> {
+                assertThat(behandlingsreferanse).isEqualTo(oppdatering.referanse)
+                return listOf(påminnelse)
+            }
+        }
+
+        sendOppgaveOppdatering(oppdatering, gateway)
+        val oppgaveFør = hentOppgaverForBehandling(TEST_BEHANDLINGREF).single()
+        assertThat(oppgaveFør.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(påminnelse.påminnelseDato)
+        assertThat(oppgaveFør.forespørselSendtTilBehandler?.påminnelseStatus).isEqualTo(PåminnelseStatus.AVBRUTT)
+        assertThat(påminnelse.påminnelseDato).isNotEqualTo(oppdatering.utledetPåminnelseDato)
+
+        påminnelse = påminnelse.copy(
+            status = PåminnelseStatus.SENDT,
+            opprettetTidspunkt = påminnelse.opprettetTidspunkt.plusDays(1),
+        )
+        sendOppgaveOppdatering(oppdatering, gateway)
+
+        val oppgaveEtter = hentOppgaverForBehandling(TEST_BEHANDLINGREF).single()
+        assertThat(oppgaveEtter.id).isEqualTo(oppgaveFør.id)
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseDato).isEqualTo(påminnelse.påminnelseDato)
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler?.påminnelseStatus).isEqualTo(PåminnelseStatus.SENDT)
+    }
+
+    @Test
+    fun `fjerner lagret påminnelse uten å hente dokumentinnhenting når forespørselen ikke skal vises`() {
+        val oppdatering = oppgaveOppdateringMedUbesvartForespørsel()
+        var antallKall = 0
+        val gateway = object : DokumentinnhentingGateway {
+            override fun hentPåminnelserForBehandling(behandlingsreferanse: UUID): List<PåminnelseInfo> {
+                antallKall++
+                return listOf(
+                    PåminnelseInfo(
+                        status = PåminnelseStatus.AVBRUTT,
+                        påminnelseDato = LocalDate.of(2026, 2, 10),
+                        opprettetTidspunkt = LocalDateTime.of(2026, 1, 20, 12, 0),
+                    )
+                )
+            }
+        }
+        sendOppgaveOppdatering(oppdatering, gateway)
+        val oppgaveFør = hentOppgaverForBehandling(TEST_BEHANDLINGREF).single()
+        assertThat(oppgaveFør.forespørselSendtTilBehandler).isNotNull()
+        assertThat(antallKall).isEqualTo(1)
+
+        sendOppgaveOppdatering(
+            oppdatering.copy(skalViseForespørselSendt = false, utledetPåminnelseDato = null),
+            gateway,
+        )
+
+        val oppgaveEtter = hentOppgaverForBehandling(TEST_BEHANDLINGREF).single()
+        assertThat(oppgaveEtter.id).isEqualTo(oppgaveFør.id)
+        assertThat(oppgaveEtter.forespørselSendtTilBehandler).isNull()
+        assertThat(antallKall).isEqualTo(1)
+    }
+
+    private fun oppgaveOppdateringMedUbesvartForespørsel(): OppgaveOppdatering {
+        val tidspunkt = LocalDateTime.of(2026, 1, 10, 12, 0)
+        return behandlingFlytHendelse(
+            saksnummer = TEST_SAKSNUMMER,
+            referanse = TEST_BEHANDLINGREF,
+            hendelsesTidspunkt = tidspunkt,
+            opprettetTidspunkt = tidspunkt,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM,
+        ) {
+            avklaringsbehov(Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", tidspunkt)
+            }
+            avklaringsbehov(Definisjon.BESTILL_LEGEERKLÆRING, AvklaringsbehovStatus.OPPRETTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", tidspunkt)
+            }
+        }.tilOppgaveOppdatering()
+    }
+
     private fun hentIkkeBesluttere(behandlingsref: BehandlingReferanse): List<String>? =
         dataSource.transaction(readOnly = true) { connection ->
             IkkeBeslutterRepository(connection).hentForBehandlinger(listOf(behandlingsref.referanse))[behandlingsref.referanse]
@@ -1805,7 +1943,8 @@ class OppdaterOppgaveServiceTest {
     }
 
     private fun sendOppgaveOppdatering(
-        oppgaveOppdatering: OppgaveOppdatering
+        oppgaveOppdatering: OppgaveOppdatering,
+        dokumentinnhentingGateway: DokumentinnhentingGateway = this.dokumentinnhentingGateway,
     ) {
         val unleash = UnleashService(FakeUnleash().apply {
             enableAll()
@@ -1816,6 +1955,7 @@ class OppdaterOppgaveServiceTest {
                     unleash,
                     veilarbarboppfolgingGateway,
                     sykefravarsoppfolgingGateway,
+                    dokumentinnhentingGateway,
                     enhetService,
                     OppgaveRepository(connection),
                     flytJobbRepository,
@@ -1843,6 +1983,7 @@ class OppdaterOppgaveServiceTest {
                     unleash,
                     veilarbarboppfolgingGateway,
                     sykefravarsoppfolgingGateway,
+                    dokumentinnhentingGateway,
                     enhetService,
                     OppgaveRepository(connection),
                     flytJobbRepository,
@@ -1854,7 +1995,7 @@ class OppdaterOppgaveServiceTest {
                     IkkeBeslutterRepository(connection),
                     NomApiGateway.withClientCredentialsRestClient(),
 
-                    ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+                ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
             }
         }
     }
@@ -1873,6 +2014,12 @@ class OppdaterOppgaveServiceTest {
 
     val veilarbarboppfolgingGateway = object : IVeilarbarboppfolgingGateway {
         override fun hentVeileder(personIdent: String) = null
+    }
+
+    val dokumentinnhentingGateway = object : DokumentinnhentingGateway {
+        override fun hentPåminnelserForBehandling(behandlingsreferanse: UUID): List<PåminnelseInfo> {
+            return emptyList()
+        }
     }
 
     val sykefravarsoppfolgingGateway = object : ISykefravarsoppfolgingGateway {

@@ -41,6 +41,7 @@ import no.nav.aap.oppgave.hent.hentOppgaveApi
 import no.nav.aap.oppgave.hent.hentOppgaveEnhetApi
 import no.nav.aap.oppgave.hent.hentOppgaveVisningsinformasjonApi
 import no.nav.aap.oppgave.klienter.arena.VeilarbarenaGateway
+import no.nav.aap.oppgave.klienter.dokumentinnhenting.DokumentinnhentingGatewayImpl
 import no.nav.aap.oppgave.klienter.msgraph.MsGraphGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.NomApiGateway
 import no.nav.aap.oppgave.klienter.norg.NorgGateway
@@ -127,6 +128,7 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
     )
 
     val nomApiGateway = NomApiGateway.withClientCredentialsRestClient()
+    val dokumentinnhentingGateway = DokumentinnhentingGatewayImpl.withClientCredentialsRestClient()
 
     motor(dataSource, prometheus)
     val påkrevdeRollerMotor = if (Miljø.erProd()) listOf(TeamAap.id) else emptyList()
@@ -137,7 +139,13 @@ internal fun Application.server(dbConfig: DbConfig, prometheus: PrometheusMeterR
 
             apiRouting {
                 // Oppdater oppgaver fra applikasjonene
-                oppdaterBehandlingOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
+                oppdaterBehandlingOppgaverApi(
+                    dataSource,
+                    enhetService,
+                    prometheus,
+                    dokumentinnhentingGateway,
+                    nomApiGateway
+                )
                 oppdaterPostmottakOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
                 oppdaterTilbakekrevingOppgaverApi(dataSource, enhetService, prometheus, nomApiGateway)
                 oppdaterPåminnelseApi(dataSource, prometheus)

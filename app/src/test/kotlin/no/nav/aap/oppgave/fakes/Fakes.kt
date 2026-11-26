@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ParameterContext
 import org.junit.jupiter.api.extension.ParameterResolver
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.UUID
 
 data class FakesConfig(
     var negativtSvarFraTilgangForBehandling: Set<UUID> = setOf(),
@@ -31,6 +31,7 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
     private val sykefravavaroppfolging = FakeServer(module = { sykefravaroppfolgingFake() })
     private val msGraph = FakeServer(module = { msGraphFake() })
     private val statistikkFake = FakeServer(module = { statistikkFake() })
+    private val dokumentinnhentingFake = FakeServer(module = { dokumentinnhentingFake() })
     private val fakeServere = listOf(
         texas,
         tilgang,
@@ -43,7 +44,8 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         veilarboppfolging,
         sykefravavaroppfolging,
         msGraph,
-        statistikkFake
+        statistikkFake,
+        dokumentinnhentingFake
     )
 
     override fun close() {
@@ -121,6 +123,10 @@ class Fakes(val fakesConfig: FakesConfig = FakesConfig()) : AutoCloseable, Param
         // Statistikk
         System.setProperty("INTEGRASJON_STATISTIKK_URL", "http://localhost:${statistikkFake.port()}")
         System.setProperty("INTEGRASJON_STATISTIKK_SCOPE", "scope")
+        // Dokumentinnhenting
+        System.setProperty("INTEGRASJON_DOKUMENTINNHENTING_URL", "http://localhost:${dokumentinnhentingFake.port()}")
+        System.setProperty("INTEGRASJON_DOKUMENTINNHENTING_SCOPE", "scope")
+
         // Roller
         System.setProperty("AAP_SAKSBEHANDLER_NASJONAL", "saksbehandler-rolle")
         System.setProperty("AAP_SAKSBEHANDLER_OPPFOLGING", "veileder-rolle")

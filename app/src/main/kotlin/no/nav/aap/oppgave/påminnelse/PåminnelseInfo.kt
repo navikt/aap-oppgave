@@ -12,5 +12,5 @@ data class PåminnelseInfo(
 enum class PåminnelseStatus {
     PLANLAGT,
     SENDT,
-    AVBRUTT
+    AVBRUTT,
 }

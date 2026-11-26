@@ -14,6 +14,7 @@ import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
 import no.nav.aap.oppgave.oppdater.OpprettOppgave
 import no.nav.aap.oppgave.oppdater.hendelse.KELVIN
+import no.nav.aap.oppgave.påminnelse.PåminnelseStatus
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.verdityper.Behandlingstype
 import no.nav.aap.oppgave.verdityper.MarkeringForBehandling
@@ -67,7 +68,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 er_skjermet,
                 FORESPORSEL_SENDT_TIL_BEHANDLER,
                 FORESPORSEL_PAAMINNELSE_DATO,
-                FORESPORSEL_PAAMINNELSE_AVBRUTT
+                FORESPORSEL_PAAMINNELSE_STATUS
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
@@ -105,7 +106,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setBoolean(28, oppgave.erSkjermet)
                 setBoolean(29, oppgave.forespørselSendtTilBehandler != null)
                 setLocalDate(30, oppgave.forespørselSendtTilBehandler?.påminnelseDato)
-                setBoolean(31, oppgave.forespørselSendtTilBehandler?.påminnelseAvbrutt)
+                setEnumName(31, oppgave.forespørselSendtTilBehandler?.påminnelseStatus)
             }
         }
         return OppgaveId(id, 0L)
@@ -201,14 +202,14 @@ class OppgaveRepository(private val connection: DBConnection) {
     fun oppdaterPåminnelse(
         referanse: UUID,
         påminnelseDato: LocalDate?,
-        påminnelseAvbrutt: Boolean?,
+        påminnelseStatus: PåminnelseStatus?,
     ): Boolean {
         val oppgave = hentAktivOppgave(BehandlingReferanse(referanse)) ?: return false
         val query = """
             UPDATE OPPGAVE
             SET
                 FORESPORSEL_PAAMINNELSE_DATO = CASE WHEN ? = FALSE THEN FORESPORSEL_PAAMINNELSE_DATO ELSE ? END,
-                FORESPORSEL_PAAMINNELSE_AVBRUTT = ?,
+                FORESPORSEL_PAAMINNELSE_STATUS = ?,
                 ENDRET_AV = ?,
                 ENDRET_TIDSPUNKT = CURRENT_TIMESTAMP,
                 VERSJON = VERSJON + 1
@@ -217,9 +218,9 @@ class OppgaveRepository(private val connection: DBConnection) {
 
         connection.execute(query) {
             setParams {
-                setBoolean(1, påminnelseAvbrutt)
+                setBoolean(1, påminnelseStatus == PåminnelseStatus.AVBRUTT)
                 setLocalDate(2, påminnelseDato)
-                setBoolean(3, påminnelseAvbrutt)
+                setEnumName(3, påminnelseStatus)
                 setString(4, KELVIN)
                 setLong(5, oppgave.id)
                 setLong(6, oppgave.versjon)
@@ -305,7 +306,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 FORRIGE_KVALITETSSIKRER_NAVN = ?,
                 FORESPORSEL_SENDT_TIL_BEHANDLER = ?,
                 FORESPORSEL_PAAMINNELSE_DATO = ?,
-                FORESPORSEL_PAAMINNELSE_AVBRUTT = ?,
+                FORESPORSEL_PAAMINNELSE_STATUS = ?,
                 VERSJON = VERSJON + 1
             WHERE 
                 ID = ? AND
@@ -338,7 +339,7 @@ class OppgaveRepository(private val connection: DBConnection) {
                 setString(22, forrigeKvalitetssikrerNavn)
                 setBoolean(23, forespørselSendtTilBehandler != null)
                 setLocalDate(24, forespørselSendtTilBehandler?.påminnelseDato)
-                setBoolean(25, forespørselSendtTilBehandler?.påminnelseAvbrutt)
+                setEnumName(25, forespørselSendtTilBehandler?.påminnelseStatus)
                 setLong(26, oppgaveId.id)
                 setLong(27, oppgaveId.versjon)
             }
@@ -1023,7 +1024,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             forespørselSendtTilBehandler = if (row.getBoolean("FORESPORSEL_SENDT_TIL_BEHANDLER")) {
                 ForespørselSendtTilBehandler(
                     påminnelseDato = row.getLocalDateOrNull("FORESPORSEL_PAAMINNELSE_DATO"),
-                    påminnelseAvbrutt = row.getBooleanOrNull("FORESPORSEL_PAAMINNELSE_AVBRUTT"),
+                    påminnelseStatus = row.getEnumOrNull<PåminnelseStatus>("FORESPORSEL_PAAMINNELSE_STATUS"),
                 )
             } else {
                 null
@@ -1168,7 +1169,7 @@ class OppgaveRepository(private val connection: DBConnection) {
             OPPGAVE.FORRIGE_KVALITETSSIKRER_NAVN,
             OPPGAVE.FORESPORSEL_SENDT_TIL_BEHANDLER,
             OPPGAVE.FORESPORSEL_PAAMINNELSE_DATO,
-            OPPGAVE.FORESPORSEL_PAAMINNELSE_AVBRUTT
+            OPPGAVE.FORESPORSEL_PAAMINNELSE_STATUS
         """.trimIndent()
 
     }
