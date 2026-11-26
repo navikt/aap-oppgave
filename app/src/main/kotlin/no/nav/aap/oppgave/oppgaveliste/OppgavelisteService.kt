@@ -152,7 +152,7 @@ class OppgavelisteService(
                 uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(it.behandlingRef)
             )
 
-        }.hentPersonNavn().leggPåMottattDokument().leggPåGjenståendeSykedager()
+        }.hentPersonNavn().leggPåMottattDokument().leggPåGjenståendeSykedager().leggPåIkkeBesluttere()
 
         val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
         return medMarkering + utenMarkering

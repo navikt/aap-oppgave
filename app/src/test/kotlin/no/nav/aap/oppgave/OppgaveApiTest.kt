@@ -709,6 +709,22 @@ class OppgaveApiTest {
     }
 
     @Test
+    fun `mine oppgaver viser beslutterbegrensning for innlogget bruker`() {
+        val behandlingRef = UUID.randomUUID()
+        val hendelse = sykedagerHendelse("1007", behandlingRef, Definisjon.FATTE_VEDTAK, null)
+        oppdaterOppgaver(hendelse)
+        val innloggetIdent = identTilInnloggetBruker(behandlingRef)
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf(innloggetIdent)))
+        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
+
+        val oppgave = hentMineOppgaver().oppgaver.single {
+            it.behandlingskontekst.behandlingsreferanse == behandlingRef
+        }
+
+        assertThat(oppgave.oppgavelisteTags.harBeslutterbegrensning).isTrue()
+    }
+
+    @Test
     fun `gjenstående sykedager følger behandlingen når avklaringsbehov bytter og beholder null-felt og tidligere grunnlag`() {
         val behandlingRef = UUID.randomUUID()
         val saksnummer = "1003"
