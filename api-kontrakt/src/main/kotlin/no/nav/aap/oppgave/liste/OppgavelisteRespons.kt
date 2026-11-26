@@ -66,6 +66,7 @@ data class OppgavelisteTagsResponse(
     val markeringer: List<MarkeringDto>,
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerDto?,
     val uføreVedtak: UførevedtakRespons?,
+    // TODO: endre til ny DTO
     val forespørselSendtTilBehandler: ForespørselSendtTilBehandlerDto?,
     val harBeslutterbegrensning: Boolean,
 )

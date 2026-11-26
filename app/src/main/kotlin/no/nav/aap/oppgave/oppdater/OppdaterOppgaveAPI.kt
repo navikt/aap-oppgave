@@ -3,14 +3,17 @@ package no.nav.aap.oppgave.oppdater
 import com.papsign.ktor.openapigen.route.path.normal.NormalOpenAPIRoute
 import com.papsign.ktor.openapigen.route.response.respondWithStatus
 import com.papsign.ktor.openapigen.route.route
-import io.ktor.http.*
+import io.ktor.http.HttpStatusCode
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.BehandlingFlytStoppetHendelse
 import no.nav.aap.behandlingsflyt.kontrakt.hendelse.TilbakekrevingsbehandlingOppdatertHendelse
 import no.nav.aap.komponenter.dbconnect.transaction
-import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.OppdaterPåminnelseRequest
+import no.nav.aap.oppgave.OppgaveRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.enhet.EnhetService
+import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
+import no.nav.aap.oppgave.klienter.dokumentinnhenting.DokumentinnhentingGateway
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mdc.LoggingKontekst
@@ -18,26 +21,26 @@ import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppdater.hendelse.tilOppgaveOppdatering
 import no.nav.aap.oppgave.prosessering.bufretStatistikk
+import no.nav.aap.oppgave.påminnelse.PåminnelseStatus
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import no.nav.aap.postmottak.kontrakt.hendelse.DokumentflytStoppetHendelse
 import no.nav.aap.tilgang.AuthorizationBodyPathConfig
-import no.nav.aap.tilgang.Operasjon
-import no.nav.aap.tilgang.authorizedPost
-import org.slf4j.LoggerFactory
-import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
-import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
-import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.tilgang.Beslutter
 import no.nav.aap.tilgang.Kvalitetssikrer
+import no.nav.aap.tilgang.Operasjon
 import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.SaksbehandlerNasjonal
 import no.nav.aap.tilgang.SaksbehandlerOppfolging
+import no.nav.aap.tilgang.authorizedPost
+import org.slf4j.LoggerFactory
 import javax.sql.DataSource
 
 fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
     dataSource: DataSource,
     enhetService: EnhetService,
     prometheus: PrometheusMeterRegistry,
+    dokumentinnhentingGateway: DokumentinnhentingGateway,
     ansattInfoGateway: AnsattInfoGateway,
 ) = route("/oppdater-oppgaver").authorizedPost<Unit, Unit, BehandlingFlytStoppetHendelse>(
     routeConfig = AuthorizationBodyPathConfig(
@@ -52,6 +55,7 @@ fun NormalOpenAPIRoute.oppdaterBehandlingOppgaverApi(
             bufretStatistikk(connection) { flytJobbRepository ->
                 OppdaterOppgaveService(
                     enhetService = enhetService,
+                    dokumentinnhentingGateway = dokumentinnhentingGateway,
                     oppgaveRepository = OppgaveRepository(connection),
                     flytJobbRepository = flytJobbRepository,
                     mottattDokumentRepository = MottattDokumentRepository(connection),
@@ -151,16 +155,21 @@ fun NormalOpenAPIRoute.oppdaterPåminnelseApi(
     prometheus: PrometheusMeterRegistry,
 ) = route("/oppdater-paaminnelse").authorizedPost<Unit, Unit, OppdaterPåminnelseRequest>(
     RollerConfig(listOf(SaksbehandlerNasjonal, SaksbehandlerOppfolging, Beslutter, Kvalitetssikrer))
-    ) { _, request ->
-        prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
-        LoggingKontekst(saksnummer = request.referanse.toString()).use {
-            dataSource.transaction { connection ->
-                OppgaveRepository(connection).oppdaterPåminnelse(
-                    referanse = request.referanse,
-                    påminnelseDato = request.påminnelseDato,
-                    påminnelseAvbrutt = request.påminnelseAvbrutt,
-                )
-            }
+) { _, request ->
+    prometheus.httpCallCounter("/oppdater-paaminnelse").increment()
+    LoggingKontekst(saksnummer = request.referanse.toString()).use {
+        dataSource.transaction { connection ->
+            OppgaveRepository(connection).oppdaterPåminnelse(
+                referanse = request.referanse,
+                påminnelseDato = request.påminnelseDato,
+                påminnelseStatus = utledPåminnelseStatus(request.påminnelseAvbrutt),
+            )
         }
-        respondWithStatus(HttpStatusCode.OK)
+    }
+    respondWithStatus(HttpStatusCode.OK)
+}
+
+private fun utledPåminnelseStatus(påminnelseAvbrutt: Boolean?): PåminnelseStatus {
+    // dette endepunktet kalles aldri hvis vi er i PåminnelseStatus.SENDT, så de eneste alternativene er AVBRUTT og PLANLAGT
+    return if (påminnelseAvbrutt == true) PåminnelseStatus.AVBRUTT else PåminnelseStatus.PLANLAGT
 }

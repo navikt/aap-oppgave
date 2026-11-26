@@ -14,9 +14,11 @@ import no.nav.aap.oppgave.Oppgave
 import no.nav.aap.oppgave.OppgaveId
 import no.nav.aap.oppgave.OppgaveRepository
 import no.nav.aap.oppgave.ReturInfo
-import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
+import no.nav.aap.oppgave.enhet.IEnhetService
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
+import no.nav.aap.oppgave.klienter.dokumentinnhenting.DokumentinnhentingGateway
+import no.nav.aap.oppgave.klienter.dokumentinnhenting.DokumentinnhentingGatewayImpl
 import no.nav.aap.oppgave.klienter.nom.ansattinfo.AnsattInfoGateway
 import no.nav.aap.oppgave.klienter.oppfolging.ISykefravarsoppfolgingGateway
 import no.nav.aap.oppgave.klienter.oppfolging.IVeilarbarboppfolgingGateway
@@ -33,10 +35,13 @@ import no.nav.aap.oppgave.oppdater.hendelse.TILBAKEKREVING
 import no.nav.aap.oppgave.oppdater.hendelse.ÅPNE_STATUSER
 import no.nav.aap.oppgave.plukk.ReserverOppgaveService
 import no.nav.aap.oppgave.prosessering.sendOppgaveStatusOppdatering
+import no.nav.aap.oppgave.påminnelse.PåminnelseInfo
+import no.nav.aap.oppgave.påminnelse.PåminnelseStatus
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingVars
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.unleash.FeatureToggles
 import no.nav.aap.oppgave.unleash.IUnleashService
 import no.nav.aap.oppgave.unleash.UnleashServiceProvider
 import no.nav.aap.oppgave.verdityper.Behandlingstype
@@ -52,6 +57,7 @@ class OppdaterOppgaveService(
     private val unleashService: IUnleashService = UnleashServiceProvider.provideUnleashService(),
     private val veilarbarboppfolgingKlient: IVeilarbarboppfolgingGateway = VeilarbarboppfolgingGateway,
     private val sykefravarsoppfolgingKlient: ISykefravarsoppfolgingGateway = SykefravarsoppfolgingGateway,
+    private val dokumentinnhentingGateway: DokumentinnhentingGateway = DokumentinnhentingGatewayImpl.withClientCredentialsRestClient(),
     private val enhetService: IEnhetService,
     private val oppgaveRepository: OppgaveRepository,
     private val flytJobbRepository: FlytJobbRepository,
@@ -501,21 +507,37 @@ class OppdaterOppgaveService(
     }
 
     private fun utledForespørselSendtTilBehandler(oppgaveOppdatering: OppgaveOppdatering): ForespørselSendtTilBehandler? {
-        if (oppgaveOppdatering.forespørselSendtTilBehandler == null) {
-            // hva enn som er lagret skal cleares
+        if (!oppgaveOppdatering.skalViseForespørselSendt) {
             return null
         }
 
+
+        // klarer ikke å skille på om vi ikke får data fra dokumentinnhenting fordi det ikke er backfilled, eller fordi det er snakk om en L8. Inntil videre antar vi det er fordi det ikke er backfilled.
+        if (unleashService.isEnabled(FeatureToggles.PaaminnelseInfoFraDokumentinnhenting)) {
+            val påminnelseInfoFraDokumentinnhenting = hentForespørselTilBehandlerInfo(oppgaveOppdatering.referanse)
+            // hvis vi har data fra dokumentinnhenting, bruk den
+            if (påminnelseInfoFraDokumentinnhenting != null) {
+                return ForespørselSendtTilBehandler(
+                    påminnelseDato = påminnelseInfoFraDokumentinnhenting.påminnelseDato,
+                    påminnelseStatus = påminnelseInfoFraDokumentinnhenting.status
+                )
+            }
+        }
+
+        // hvis vi ikke har data fra dokumentinnhenting, utled selv
         val forrigeForespørselSendtTilBehandler = oppgaveRepository.hentOppgaver(oppgaveOppdatering.referanse)
             .sortedBy { it.endretTidspunkt }
             .mapNotNull { it.forespørselSendtTilBehandler }.lastOrNull()
 
 
         // hvis påminnelseDatoene er forskjellige (eller den gamle er null og den nye ikke er det) så antar vi endring og lagrer den nye.
-        return if (forrigeForespørselSendtTilBehandler?.påminnelseDato == oppgaveOppdatering.forespørselSendtTilBehandler.påminnelseDato) {
+        return if (forrigeForespørselSendtTilBehandler?.påminnelseDato == oppgaveOppdatering.utledetPåminnelseDato) {
             forrigeForespørselSendtTilBehandler
         } else {
-            oppgaveOppdatering.forespørselSendtTilBehandler
+            ForespørselSendtTilBehandler(
+                påminnelseDato = oppgaveOppdatering.utledetPåminnelseDato,
+                påminnelseStatus = oppgaveOppdatering.utledetPåminnelseDato?.let { if (it <= LocalDate.now()) PåminnelseStatus.SENDT else PåminnelseStatus.PLANLAGT }
+            )
         }
     }
 
@@ -524,6 +546,11 @@ class OppdaterOppgaveService(
 
     private fun hentVeilederArbeidsoppfølging(personIdent: String): String? =
         veilarbarboppfolgingKlient.hentVeileder(personIdent)
+
+    private fun hentForespørselTilBehandlerInfo(behandlingsreferanse: UUID): PåminnelseInfo? {
+        return dokumentinnhentingGateway.hentPåminnelserForBehandling(behandlingsreferanse)
+            .maxByOrNull { it.opprettetTidspunkt }
+    }
 
     private fun harUlesteDokumenter(oppgaveOppdatering: OppgaveOppdatering): Boolean {
         mottattDokumentRepository.lagreDokumenter(oppgaveOppdatering.mottattDokumenter)

@@ -15,8 +15,8 @@ import no.nav.aap.oppgave.liste.OppgavelisteTagsResponse
 import no.nav.aap.oppgave.liste.PersonOgEnhetResponse
 import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.prometheus
-import org.flywaydb.core.api.logging.LogFactory
 import no.nav.aap.oppgave.uføreVedtak.tilUføreVedtakRespsons
+import org.flywaydb.core.api.logging.LogFactory
 import java.time.Duration
 import kotlin.time.measureTimedValue
 
