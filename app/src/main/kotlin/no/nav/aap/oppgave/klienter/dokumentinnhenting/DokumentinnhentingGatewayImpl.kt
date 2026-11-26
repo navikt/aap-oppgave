@@ -23,9 +23,11 @@ private constructor(
 
     override fun hentPåminnelserForBehandling(behandlingsreferanse: UUID): List<PåminnelseInfo> {
         val url = baseUrl.resolve("/dialogmelding/paaminnelse/$behandlingsreferanse/hent")
-        val respons =
+        val respons = requireNotNull(
             httpClient.get<PåminnelseInfoResponse>(url, GetRequest())
-                ?: throw DokumentinnhentingException("Feil ved henting av påminnelseinfo for behandling $behandlingsreferanse")
+        ) {
+            "Feil ved henting av påminnelseinfo for behandling $behandlingsreferanse"
+        }
 
         return respons.påminnelser.map {
             PåminnelseInfo(
