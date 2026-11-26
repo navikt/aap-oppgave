@@ -19,6 +19,7 @@ const val TILBAKEKREVING = "Tilbakekreving"
 /**
  * @param reserverTilPerAvklaringsbehov Oppgaver på avklaringsbehov (key) skal reserveres til saksbehandler (value)
  * @param relevanteIdenter Identer på barn lagret på behandlingen, som påvirker enhetsutledning
+ * @param saksbehandlereSomIkkeKanBeslutte Identer som ikke kan beslutte vedtaket. null betyr ukjent, tom liste betyr at ingen er utelukket
  */
 data class OppgaveOppdatering(
     val personIdent: String,
@@ -43,6 +44,7 @@ data class OppgaveOppdatering(
     val forespørselSendtTilBehandler: ForespørselSendtTilBehandler? = null,
     val aktivtAvklaringsbehov: AvklaringsbehovKode? = null,
     val gjenståendeSykedager: GjenståendeSykedager? = null,
+    val saksbehandlereSomIkkeKanBeslutte: List<String>? = null,
 ) {
     init {
         require(reserverTilPerAvklaringsbehov.values.none { it == KELVIN }) { "kan ikke reservere oppgave til KELVIN" }

@@ -27,6 +27,7 @@ import no.nav.aap.tilgang.SaksbehandlerOppfolging
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 
 fun NormalOpenAPIRoute.tildelOppgaveApi(
@@ -89,6 +90,7 @@ fun NormalOpenAPIRoute.tildelOppgaveApi(
                 MarkeringRepository(connection),
                 UføreVedtakRepository(connection),
                 GjenståendeSykedagerRepository(connection),
+                IkkeBeslutterRepository(connection),
                 MottattDokumentRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)

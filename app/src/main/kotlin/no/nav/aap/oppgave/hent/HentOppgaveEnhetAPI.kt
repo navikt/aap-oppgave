@@ -17,6 +17,7 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.tilgang.AuthorizationParamPathConfig
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 
 fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
@@ -36,6 +37,7 @@ fun NormalOpenAPIRoute.hentOppgaveEnhetApi(
             MarkeringRepository(connection),
             UføreVedtakRepository(connection),
             GjenståendeSykedagerRepository(connection),
+            IkkeBeslutterRepository(connection),
             MottattDokumentRepository(connection),
             enhetService,
         ).hentOppgaveEnhetListe(behandlingReferanse)

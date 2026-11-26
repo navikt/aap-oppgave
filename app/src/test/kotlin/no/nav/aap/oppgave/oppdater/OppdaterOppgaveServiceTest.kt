@@ -46,6 +46,8 @@ import no.nav.aap.oppgave.prosessering.StatistikkHendelseJobb
 import no.nav.aap.oppgave.prosessering.bufretStatistikk
 import no.nav.aap.oppgave.statistikk.HendelseType
 import no.nav.aap.oppgave.tilbakekreving.TilbakekrevingRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
+import no.nav.aap.oppgave.oppdater.hendelse.OppgaveOppdatering
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
 import no.nav.aap.oppgave.unleash.UnleashService
@@ -1765,8 +1767,45 @@ class OppdaterOppgaveServiceTest {
         assertThat(bistandOppgave.reservertAv).isEqualTo("Veileder2")
     }
 
+    @Test
+    fun `lagrer identer som ikke kan beslutte fra hendelsen, og null overskriver ikke tidligere verdi`() {
+        val behandlingsref = BehandlingReferanse(UUID.randomUUID())
+        val nå = LocalDateTime.now()
+        fun hendelse(identer: List<String>?) = behandlingFlytHendelse(
+            saksnummer = Saksnummer("123"),
+            referanse = behandlingsref,
+            hendelsesTidspunkt = nå,
+            aktivtAvklaringsbehov = Definisjon.AVKLAR_SYKDOM,
+            saksbehandlereSomIkkeKanBeslutte = identer,
+        ) {
+            avklaringsbehov(definisjon = Definisjon.AVKLAR_SYKDOM, AvklaringsbehovStatus.OPPRETTET) {
+                endring(AvklaringsbehovStatus.OPPRETTET, "Kelvin", nå)
+            }
+        }
+
+        sendBehandlingFlytStoppetHendelse(hendelse(listOf("Z123456", "Z654321")))
+        assertThat(hentIkkeBesluttere(behandlingsref)).containsExactlyInAnyOrder("Z123456", "Z654321")
+
+        sendBehandlingFlytStoppetHendelse(hendelse(null))
+        assertThat(hentIkkeBesluttere(behandlingsref)).containsExactlyInAnyOrder("Z123456", "Z654321")
+
+        sendBehandlingFlytStoppetHendelse(hendelse(emptyList()))
+        assertThat(hentIkkeBesluttere(behandlingsref)).isEmpty()
+    }
+
+    private fun hentIkkeBesluttere(behandlingsref: BehandlingReferanse): List<String>? =
+        dataSource.transaction(readOnly = true) { connection ->
+            IkkeBeslutterRepository(connection).hentForBehandlinger(listOf(behandlingsref.referanse))[behandlingsref.referanse]
+        }
+
     private fun sendBehandlingFlytStoppetHendelse(
         hendelse: BehandlingFlytStoppetHendelse
+    ) {
+        sendOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+    }
+
+    private fun sendOppgaveOppdatering(
+        oppgaveOppdatering: OppgaveOppdatering
     ) {
         val unleash = UnleashService(FakeUnleash().apply {
             enableAll()
@@ -1787,8 +1826,9 @@ class OppdaterOppgaveServiceTest {
                     ),
                     UføreVedtakRepository(connection),
                     GjenståendeSykedagerRepository(connection),
+                    IkkeBeslutterRepository(connection),
                     NomApiGateway.withClientCredentialsRestClient(),
-                ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())
+                ).håndterNyOppgaveOppdatering(oppgaveOppdatering)
             }
         }
     }
@@ -1811,6 +1851,7 @@ class OppdaterOppgaveServiceTest {
                     MarkeringService(MarkeringRepository(connection)),
                     UføreVedtakRepository(connection),
                     GjenståendeSykedagerRepository(connection),
+                    IkkeBeslutterRepository(connection),
                     NomApiGateway.withClientCredentialsRestClient(),
 
                     ).håndterNyOppgaveOppdatering(hendelse.tilOppgaveOppdatering())

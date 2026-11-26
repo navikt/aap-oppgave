@@ -54,6 +54,7 @@ import no.nav.aap.oppgave.hent.VenteInformasjonResponse
 import no.nav.aap.oppgave.klienter.pdl.PdlGraphqlGateway
 import no.nav.aap.oppgave.liste.OppgavelisteRequest
 import no.nav.aap.oppgave.liste.OppgavelisteRespons
+import no.nav.aap.oppgave.liste.OppgavelisteTagsResponse
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.markering.MarkeringDto
 import no.nav.aap.oppgave.oppdater.hendelse.DAGER_TIL_PÅMINNELSE
@@ -664,6 +665,63 @@ class OppgaveApiTest {
         }
         assertThat(tagsPerSak["1001"]).isEqualTo(forventet)
         assertThat(tagsPerSak["1002"]).isNull()
+    }
+
+    @Test
+    fun `harBeslutterbegrensning er false når oppgaven ikke er en beslutteroppgave`() {
+        val behandlingRef = UUID.randomUUID()
+        val hendelse = sykedagerHendelse("1005", behandlingRef, Definisjon.AVKLAR_SYKDOM, null)
+        oppdaterOppgaver(hendelse)
+        val innloggetIdent = identTilInnloggetBruker(behandlingRef)
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf(innloggetIdent)))
+
+        val tags = oppgavelisteTagsPåOppgavelisten(behandlingRef)
+        assertThat(tags.harBeslutterbegrensning).isFalse()
+    }
+
+    @Test
+    fun `harBeslutterbegrensning er false når innlogget bruker kan beslutte beslutteroppgaven`() {
+        val behandlingRef = UUID.randomUUID()
+        val hendelse = sykedagerHendelse("1004", behandlingRef, Definisjon.FATTE_VEDTAK, null)
+        oppdaterOppgaver(hendelse)
+        identTilInnloggetBruker(behandlingRef)
+
+        // Ukjent: eldre hendelse uten feltet
+        assertThat(oppgavelisteTagsPåOppgavelisten(behandlingRef).harBeslutterbegrensning).isFalse()
+
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = emptyList()))
+        assertThat(oppgavelisteTagsPåOppgavelisten(behandlingRef).harBeslutterbegrensning).isFalse()
+
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf("Z999999")))
+        assertThat(oppgavelisteTagsPåOppgavelisten(behandlingRef).harBeslutterbegrensning).isFalse()
+    }
+
+    @Test
+    fun `harBeslutterbegrensning er true når innlogget bruker er forhindret fra å beslutte beslutteroppgaven uten å filtrere bort oppgaven`() {
+        val behandlingRef = UUID.randomUUID()
+        val hendelse = sykedagerHendelse("1006", behandlingRef, Definisjon.FATTE_VEDTAK, null)
+        oppdaterOppgaver(hendelse)
+        val innloggetIdent = identTilInnloggetBruker(behandlingRef)
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf(innloggetIdent, "Z999999")))
+
+        // Oppgaven er fortsatt med i listen
+        assertThat(oppgavelisteTagsPåOppgavelisten(behandlingRef).harBeslutterbegrensning).isTrue()
+    }
+
+    @Test
+    fun `mine oppgaver viser beslutterbegrensning for innlogget bruker`() {
+        val behandlingRef = UUID.randomUUID()
+        val hendelse = sykedagerHendelse("1007", behandlingRef, Definisjon.FATTE_VEDTAK, null)
+        oppdaterOppgaver(hendelse)
+        val innloggetIdent = identTilInnloggetBruker(behandlingRef)
+        oppdaterOppgaver(hendelse.copy(saksbehandlereSomIkkeKanBeslutte = listOf(innloggetIdent)))
+        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
+
+        val oppgave = hentMineOppgaver().oppgaver.single {
+            it.behandlingskontekst.behandlingsreferanse == behandlingRef
+        }
+
+        assertThat(oppgave.oppgavelisteTags.harBeslutterbegrensning).isTrue()
     }
 
     @Test
@@ -1935,6 +1993,21 @@ class OppgaveApiTest {
                 currentToken = getOboToken()
             )
         )
+    }
+
+    // Plukker oppgaven for å finne innlogget ident, og avreserverer den siden oppgavelisten kun viser ledige oppgaver
+    private fun identTilInnloggetBruker(behandlingRef: UUID): String {
+        plukkOppgave(hentOppgaveVisningsinfo(behandlingRef)!!.oppgaveId())
+        val visningsinfo = hentOppgaveVisningsinfo(behandlingRef)!!
+        avreserverOppgaver(listOf(visningsinfo.id))
+        return visningsinfo.reservertAvIdent!!
+    }
+
+    private fun oppgavelisteTagsPåOppgavelisten(behandlingRef: UUID): OppgavelisteTagsResponse {
+        val oppgaver = hentOppgaveliste(
+            OppgavelisteRequest(filterId = testFilterId, enheter = setOf("superNav!", Enhet.NAY.kode), paging = Paging())
+        )!!.oppgaver
+        return oppgaver.single { it.behandlingskontekst.behandlingsreferanse == behandlingRef }.oppgavelisteTags
     }
 
     private fun hentOppgaveliste(request: OppgavelisteRequest): OppgavelisteRespons? {

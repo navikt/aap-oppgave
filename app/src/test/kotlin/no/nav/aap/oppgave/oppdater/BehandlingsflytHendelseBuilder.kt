@@ -37,6 +37,7 @@ fun behandlingFlytHendelse(
     behandlingMetadata: BehandlingMetadata? = null,
     aktivtAvklaringsbehov: Definisjon? = null,
     gjenståendeSykedager: GjenståendeSykedagerDto? = null,
+    saksbehandlereSomIkkeKanBeslutte: List<String>? = null,
     block: BehandlingFlytHendelseBuilder.() -> Unit = {}
 ): BehandlingFlytStoppetHendelse {
     val builder = BehandlingFlytHendelseBuilder().apply(block)
@@ -61,7 +62,8 @@ fun behandlingFlytHendelse(
         behandlingMetadata = behandlingMetadata,
         reserverTilPerAvklaringsbehov = reserverTilPerAvklaringsbehov ?: emptyMap(),
         aktivtAvklaringsbehov = aktivtAvklaringsbehov,
-        gjenståendeSykedager = gjenståendeSykedager
+        gjenståendeSykedager = gjenståendeSykedager,
+        saksbehandlereSomIkkeKanBeslutte = saksbehandlereSomIkkeKanBeslutte
     )
 }
 

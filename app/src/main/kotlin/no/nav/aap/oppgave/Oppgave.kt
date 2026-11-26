@@ -87,6 +87,7 @@ data class Oppgave(
     val uføreVedtak: UføreVedtak? = null,
     val forespørselSendtTilBehandler: ForespørselSendtTilBehandler? = null,
     val gjenståendeSykedager: GjenståendeSykedager? = null,
+    val saksbehandlereSomIkkeKanBeslutte: List<String>? = null,
 ) {
     /**
      * Oppfølgingsenhet skal alltid prioriteres dersom den er satt.
@@ -100,6 +101,13 @@ data class Oppgave(
     val erÅpen: Boolean = status == Status.OPPRETTET
 
     val harStrengtFortroligAdresse: Boolean = enhet == Enhet.NAV_VIKAFOSSEN.kode
+
+    private fun erBeslutterOppgave(): Boolean = AvklaringsbehovKode(avklaringsbehovKode) in AVKLARINGSBEHOV_FOR_BESLUTTER
+
+    fun harBeslutterbegrensning(ident: String): Boolean {
+        val erUtelukketSomBeslutter = saksbehandlereSomIkkeKanBeslutte?.contains(ident) == true
+        return erBeslutterOppgave() && erUtelukketSomBeslutter
+    }
 
     init {
         if (journalpostId == null) {

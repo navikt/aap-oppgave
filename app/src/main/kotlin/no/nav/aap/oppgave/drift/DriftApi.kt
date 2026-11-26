@@ -37,6 +37,7 @@ import no.nav.aap.tilgang.RollerConfig
 import no.nav.aap.tilgang.authorizedGet
 import no.nav.aap.tilgang.authorizedPost
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.tilgang.DriftLes
 
@@ -73,6 +74,7 @@ fun NormalOpenAPIRoute.driftApi(
                         MarkeringRepository(connection),
                         UføreVedtakRepository(connection),
                         GjenståendeSykedagerRepository(connection),
+                        IkkeBeslutterRepository(connection),
                         MottattDokumentRepository(connection),
                         enhetService,
                     )

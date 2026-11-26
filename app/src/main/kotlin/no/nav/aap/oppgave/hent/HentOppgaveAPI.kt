@@ -20,6 +20,7 @@ import no.nav.aap.oppgave.markering.tilDto
 import no.nav.aap.oppgave.metrikker.httpCallCounter
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteService
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import no.nav.aap.oppgave.uføreVedtak.tilUføreVedtakRespsons
 import javax.sql.DataSource
@@ -72,6 +73,7 @@ fun NormalOpenAPIRoute.hentOppgaveVisningsinformasjonApi(
                 MarkeringRepository(connection),
                 UføreVedtakRepository(connection),
                 GjenståendeSykedagerRepository(connection),
+                IkkeBeslutterRepository(connection),
                 MottattDokumentRepository(connection),
                 enhetService,
             ).hentAktivOppgave(request)
