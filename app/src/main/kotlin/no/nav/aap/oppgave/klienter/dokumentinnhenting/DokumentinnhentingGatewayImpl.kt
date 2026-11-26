@@ -11,21 +11,15 @@ import no.nav.aap.komponenter.httpklient.httpclient.tokenprovider.azurecc.AzureM
 import no.nav.aap.oppgave.metrikker.prometheus
 import no.nav.aap.oppgave.påminnelse.PåminnelseInfo
 import no.nav.aap.oppgave.påminnelse.PåminnelseStatus
+import java.io.InputStream
 import java.net.URI
 import java.util.UUID
 
-class DokumentinnhentingGatewayImpl : DokumentinnhentingGateway {
+class DokumentinnhentingGatewayImpl
+private constructor(
+    private val httpClient: RestClient<InputStream>,
+) : DokumentinnhentingGateway {
     private val baseUrl = URI.create(requiredConfigForKey("INTEGRASJON_DOKUMENTINNHENTING_URL"))
-    private val clientConfig =
-        ClientConfig(
-            scope = requiredConfigForKey("INTEGRASJON_DOKUMENTINNHENTING_SCOPE")
-        )
-    private val httpClient =
-        RestClient.withDefaultResponseHandler(
-            config = clientConfig,
-            tokenProvider = AzureM2MTokenProvider,
-            prometheus = prometheus
-        )
 
     override fun hentPåminnelserForBehandling(behandlingsreferanse: UUID): List<PåminnelseInfo> {
         val url = baseUrl.resolve("/dialogmelding/paaminnelse/$behandlingsreferanse/hent")
@@ -40,6 +34,22 @@ class DokumentinnhentingGatewayImpl : DokumentinnhentingGateway {
                 opprettetTidspunkt = it.opprettetTidspunkt,
             )
         }
+    }
+
+    companion object {
+        private fun getClientConfig() = ClientConfig(
+            scope = requiredConfigForKey("INTEGRASJON_DOKUMENTINNHENTING_SCOPE")
+        )
+
+        fun withClientCredentialsRestClient() =
+            DokumentinnhentingGatewayImpl(
+                RestClient.withDefaultResponseHandler(
+                    config = getClientConfig(),
+                    tokenProvider = AzureM2MTokenProvider,
+                    prometheus = prometheus
+                )
+            )
+
     }
 }
 
