@@ -17,12 +17,11 @@ import no.nav.aap.oppgave.liste.OppgaveSorteringFelt
 import no.nav.aap.oppgave.liste.OppgaveSorteringRekkefølge
 import no.nav.aap.oppgave.liste.Paging
 import no.nav.aap.oppgave.liste.UtvidetOppgavelisteFilter
-import no.nav.aap.oppgave.markering.Markering
 import no.nav.aap.oppgave.markering.MarkeringRepository
 import no.nav.aap.oppgave.mottattdokument.MottattDokumentRepository
 import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.hentPersonNavn
-import no.nav.aap.oppgave.uføreVedtak.UføreVedtak
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.verdityper.Behandlingstype
 import java.util.UUID
 
 const val maksOppgaver = 50
@@ -43,19 +42,13 @@ class OppgavelisteService(
             oppgaveRepository.finnOppgaverGittSaksnummer(søketekst)
         }
 
-        return oppgaver.map { oppgave ->
-            val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(oppgave.behandlingRef)
-            val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(oppgave.behandlingRef)
-            oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uførevedtak)
-        }.leggPåMottattDokument()
+        return oppgaver.berikOppgaver()
     }
 
     fun hentAktivOppgave(behandlingReferanse: BehandlingReferanse): Oppgave? {
         val oppgave = oppgaveRepository.hentAktivOppgave(behandlingReferanse)
         if (oppgave != null && oppgave.erÅpen) {
-            val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingReferanse.referanse)
-            val uførevedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingReferanse.referanse)
-            return oppgave.leggPåUføreVedtak(uførevedtak).leggPåMarkeringer(markeringer).leggPåMottattDokument()
+            return listOf(oppgave).berikOppgaver().single()
         }
         return oppgave
     }
@@ -70,7 +63,7 @@ class OppgavelisteService(
             )
         }
     }
-    
+
     fun hentOppgaverMedTilgang(
         utvidetFilter: UtvidetOppgavelisteFilter?,
         enheter: Set<String>,
@@ -118,13 +111,8 @@ class OppgavelisteService(
             hastemarkeringerFørst = hastemarkeringerFørst
         )
 
-        val oppgaver =
-            finnOppgaverDto.oppgaver.map { oppgave ->
-                val behandlingRef = oppgave.behandlingRef
-                val markeringer = markeringRepository.hentGjeldendeMarkeringerForBehandling(behandlingRef)
-                val uføreVedtak = uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(behandlingRef)
-                oppgave.leggPåMarkeringer(markeringer).leggPåUføreVedtak(uføreVedtak)
-            }.leggPåMottattDokument().leggPåGjenståendeSykedager().leggPåIkkeBesluttere()
+        val oppgaver = finnOppgaverDto.oppgaver
+            .berikOppgaver(forOppgaveliste = true)
 
         return FinnOppgaverDto(
             oppgaver = oppgaver.filtrerPåTilgang(token, ident),
@@ -145,14 +133,7 @@ class OppgavelisteService(
             kunPåVent = kunPaaVent == true,
             sortBy = sortBy,
             sortOrder = sortOrder
-        ).map {
-            it.leggPåMarkeringer(
-                markeringRepository.hentGjeldendeMarkeringerForBehandling(it.behandlingRef)
-            ).leggPåUføreVedtak(
-                uføreVedtakRepository.hentAktiveUføreVedtakForBehandling(it.behandlingRef)
-            )
-
-        }.hentPersonNavn().leggPåMottattDokument().leggPåGjenståendeSykedager().leggPåIkkeBesluttere()
+        ).berikOppgaver(forOppgaveliste = true).hentPersonNavn()
 
         val (medMarkering, utenMarkering) = oppgaver.partition { it.markeringer.isNotEmpty() }
         return medMarkering + utenMarkering
@@ -181,14 +162,49 @@ class OppgavelisteService(
         )
     }
 
-    private fun Oppgave.leggPåMarkeringer(markeringer: List<Markering>): Oppgave =
-        this.copy(markeringer = markeringer)
+    private fun List<Oppgave>.berikOppgaver(forOppgaveliste: Boolean = false): List<Oppgave> {
+        return when (forOppgaveliste) {
+            true -> this
+                .leggPåMarkeringer()
+                .leggPåUføreVedtak()
+                .leggPåMottattDokument()
+                .leggPåGjenståendeSykedager()
+                .leggPåIkkeBesluttere()
+            false -> this
+                .leggPåMarkeringer()
+                .leggPåUføreVedtak()
+                .leggPåMottattDokument()
+        }
+    }
 
-    private fun Oppgave.leggPåUføreVedtak(uførevedtak: UføreVedtak?): Oppgave =
-        this.copy(uføreVedtak = uførevedtak)
+    private fun List<Oppgave>.leggPåMarkeringer(): List<Oppgave> {
+        if (isEmpty()) {
+            return this
+        }
+        val markeringerPerBehandling =
+            markeringRepository.hentGjeldendeMarkeringerForBehandlinger(map { it.behandlingRef })
+        return map { oppgave ->
+            oppgave.copy(markeringer = markeringerPerBehandling[oppgave.behandlingRef].orEmpty())
+        }
+    }
 
-    private fun Oppgave.leggPåMottattDokument(): Oppgave =
-        listOf(this).leggPåMottattDokument().single()
+    private fun List<Oppgave>.leggPåUføreVedtak(): List<Oppgave> {
+        val behandlingstyperMedUføreVedtak =
+            setOf(Behandlingstype.FØRSTEGANGSBEHANDLING, Behandlingstype.REVURDERING)
+
+        val behandlingRefs = filter { it.behandlingstype in behandlingstyperMedUføreVedtak }.map { it.behandlingRef }
+        if (behandlingRefs.isEmpty()) {
+            return this
+        }
+        val uføreVedtakPerBehandling = uføreVedtakRepository.hentAktiveUføreVedtakForBehandlinger(behandlingRefs)
+        return map { oppgave ->
+            if (oppgave.behandlingstype in behandlingstyperMedUføreVedtak) {
+                oppgave.copy(uføreVedtak = uføreVedtakPerBehandling[oppgave.behandlingRef])
+            } else {
+                oppgave
+            }
+        }
+    }
 
     private fun List<Oppgave>.leggPåMottattDokument(): List<Oppgave> {
         if (isEmpty()) {

@@ -62,25 +62,31 @@ class MarkeringRepository(
         return markeringer
     }
 
-    fun hentGjeldendeMarkeringerForBehandling(referanse: UUID): List<Markering> {
+    fun hentGjeldendeMarkeringerForBehandling(referanse: UUID): List<Markering> =
+        hentGjeldendeMarkeringerForBehandlinger(listOf(referanse))[referanse].orEmpty()
+
+    fun hentGjeldendeMarkeringerForBehandlinger(referanser: Collection<UUID>): Map<UUID, List<Markering>> {
+        if (referanser.isEmpty()) {
+            return emptyMap()
+        }
         val query =
             """
-            SELECT DISTINCT ON (markering_type) *
+            SELECT DISTINCT ON (behandling_ref, markering_type) *
             FROM MARKERING
-            WHERE behandling_ref = ?
-            ORDER BY markering_type, opprettet_tid DESC
+            WHERE behandling_ref = ANY(?::uuid[])
+            ORDER BY behandling_ref, markering_type, opprettet_tid DESC
             """.trimIndent()
 
-        val markeringer =
-            connection.queryList(query) {
-                setParams {
-                    setUUID(1, referanse)
-                }
-                setRowMapper {
-                    markeringMapper(it)
-                }
+        return connection.queryList(query) {
+            setParams {
+                setArray(1, referanser.distinct().map { it.toString() })
             }
-        return markeringer.filter { it.hendelseType != MarkeringHendelseType.FJERNET}
+            setRowMapper {
+                it.getUUID("behandling_ref") to markeringMapper(it)
+            }
+        }
+            .filter { (_, markering) -> markering.hendelseType != MarkeringHendelseType.FJERNET }
+            .groupBy({ it.first }, { it.second })
     }
 
     private fun markeringMapper(row: Row): Markering =

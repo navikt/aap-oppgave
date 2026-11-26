@@ -178,6 +178,47 @@ class MarkeringRepositoryTest {
     }
 
     @Test
+    fun `hentGjeldendeMarkeringerForBehandlinger grupperer per behandling og utelater fjernede`() {
+        val behandlingRef1 = UUID.randomUUID()
+        val behandlingRef2 = UUID.randomUUID()
+        val behandlingUtenMarkering = UUID.randomUUID()
+
+        dataSource.transaction { connection ->
+            val markeringRepository = MarkeringRepository(connection)
+            fun markering(type: MarkeringForBehandling, hendelse: MarkeringHendelseType, timerSiden: Long) = Markering(
+                markeringType = type,
+                begrunnelse = null,
+                opprettetAv = "saksbehandler",
+                opprettetTidspunkt = LocalDateTime.now().minusHours(timerSiden),
+                hendelseType = hendelse,
+            )
+
+            markeringRepository.lagreMarkeringHendelse(
+                behandlingRef1, markering(MarkeringForBehandling.HASTER, MarkeringHendelseType.OPPRETTET, 3)
+            )
+            markeringRepository.lagreMarkeringHendelse(
+                behandlingRef1, markering(MarkeringForBehandling.HASTER, MarkeringHendelseType.FJERNET, 2)
+            )
+            markeringRepository.lagreMarkeringHendelse(
+                behandlingRef1, markering(MarkeringForBehandling.AVSLAG_11_5, MarkeringHendelseType.OPPRETTET, 1)
+            )
+            markeringRepository.lagreMarkeringHendelse(
+                behandlingRef2, markering(MarkeringForBehandling.HASTER, MarkeringHendelseType.OPPRETTET, 1)
+            )
+
+            val resultat = markeringRepository.hentGjeldendeMarkeringerForBehandlinger(
+                listOf(behandlingRef1, behandlingRef2, behandlingUtenMarkering)
+            )
+
+            assertThat(resultat.keys).containsExactlyInAnyOrder(behandlingRef1, behandlingRef2)
+            assertThat(resultat.getValue(behandlingRef1).map { it.markeringType })
+                .containsExactly(MarkeringForBehandling.AVSLAG_11_5)
+            assertThat(resultat.getValue(behandlingRef2).map { it.markeringType })
+                .containsExactly(MarkeringForBehandling.HASTER)
+        }
+    }
+
+    @Test
     fun `hentMarkeringerOgHistorikk returnerer tom liste når saksnummer ikke finnes`() {
         dataSource.transaction { connection ->
             val markeringRepository = MarkeringRepository(connection)
