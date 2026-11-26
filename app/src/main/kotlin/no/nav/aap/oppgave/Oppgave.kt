@@ -104,10 +104,9 @@ data class Oppgave(
 
     private fun erBeslutterOppgave(): Boolean = AvklaringsbehovKode(avklaringsbehovKode) in AVKLARINGSBEHOV_FOR_BESLUTTER
 
-
-    fun kanBesluttesAvInnloggetBruker(ident: String): Boolean {
+    fun harBeslutterbegrensning(ident: String): Boolean {
         val erUtelukketSomBeslutter = saksbehandlereSomIkkeKanBeslutte?.contains(ident) == true
-        return !(erBeslutterOppgave() && erUtelukketSomBeslutter)
+        return erBeslutterOppgave() && erUtelukketSomBeslutter
     }
 
     init {

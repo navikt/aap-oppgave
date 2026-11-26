@@ -156,7 +156,7 @@ object OppgavelisteUtils {
                 },
                 uføreVedtak = uføreVedtak?.tilUføreVedtakRespsons(),
                 forespørselSendtTilBehandler = forespørselSendtTilBehandler?.tilDto(),
-                kanInnloggetBrukerBeslutteBehandlingen = innloggetIdent?.let { kanBesluttesAvInnloggetBruker(it) } ?: true
+                harBeslutterbegrensning = innloggetIdent?.let { harBeslutterbegrensning(it) } ?: false,
             ),
             veilederArbeid = veilederArbeid,
             veilederSykdom = veilederSykdom,
