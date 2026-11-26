@@ -84,7 +84,7 @@ spec:
         - application: paw-patrol
         - application: api-intern
         - application: saksbehandling
-        - application: saksbehandling-lokal # For lokal utvikling. IKKE kopier denne til prod.yaml
+        - application: localauth # For lokal utvikling. IKKE kopier denne til prod.yaml
         - application: azure-token-generator # Ikke i prod :)
           namespace: nais
           cluster: dev-gcp
