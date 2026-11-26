@@ -160,6 +160,7 @@ private fun TypeBehandling.tilBehandlingstype() =
         TypeBehandling.OppfølgingsBehandling -> Behandlingstype.OPPFØLGINGSBEHANDLING
         TypeBehandling.Aktivitetsplikt -> Behandlingstype.AKTIVITETSPLIKT
         TypeBehandling.Aktivitetsplikt11_9 -> Behandlingstype.AKTIVITETSPLIKT_11_9
+        TypeBehandling.Utenlandsopphold -> Behandlingstype.UTENLANDSOPPHOLD
     }
 
 private fun BehandlingsflytMetadata?.tilBehandlingMetadata(): BehandlingMetadata? =

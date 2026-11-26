@@ -10,6 +10,7 @@ enum class Behandlingstype(val fraBehandlingsflyt: Boolean) {
     OPPFØLGINGSBEHANDLING(true),
     AKTIVITETSPLIKT(true),
     AKTIVITETSPLIKT_11_9(true),
+    UTENLANDSOPPHOLD(true),
 
     // Fra postmottak
     FORDELING(false),
