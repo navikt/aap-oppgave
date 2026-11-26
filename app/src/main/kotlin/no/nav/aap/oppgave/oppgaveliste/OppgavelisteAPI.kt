@@ -21,6 +21,7 @@ import no.nav.aap.oppgave.oppgaveliste.OppgavelisteUtils.tilListeOppgaveResponse
 import no.nav.aap.oppgave.server.authenticate.ident
 import org.slf4j.LoggerFactory
 import no.nav.aap.oppgave.uføreVedtak.UføreVedtakRepository
+import no.nav.aap.oppgave.beslutter.IkkeBeslutterRepository
 import no.nav.aap.oppgave.gjenståendesykedager.GjenståendeSykedagerRepository
 import javax.sql.DataSource
 
@@ -55,6 +56,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
                         markeringRepository = MarkeringRepository(connection),
                         uføreVedtakRepository = UføreVedtakRepository(connection),
                         gjenståendeSykedagerRepository = GjenståendeSykedagerRepository(connection),
+                        ikkeBeslutterRepository = IkkeBeslutterRepository(connection),
                         mottattDokumentRepository = MottattDokumentRepository(connection),
                         enhetService = enhetService,
                     ).hentOppgaverMedTilgang(
@@ -76,7 +78,7 @@ fun NormalOpenAPIRoute.oppgavelisteApi(
         respond(
             OppgavelisteRespons(
                 antallTotalt = data.antallTotalt,
-                oppgaver = data.oppgaver.hentPersonNavn().map { it.tilListeOppgaveResponse() },
+                oppgaver = data.oppgaver.hentPersonNavn().map { it.tilListeOppgaveResponse(ident()) },
                 antallGjenstaaende = data.antallGjenstaaende,
                 sattFilterBehandlingstyper = bruktBehanlingstyperIFilter
             )

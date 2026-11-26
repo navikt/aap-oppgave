@@ -67,4 +67,5 @@ data class OppgavelisteTagsResponse(
     val forrigeKvalitetssikrerInfo: ForrigeKvalitetssikrerDto?,
     val uføreVedtak: UførevedtakRespons?,
     val forespørselSendtTilBehandler: ForespørselSendtTilBehandlerDto?,
+    val harBeslutterbegrensning: Boolean,
 )
