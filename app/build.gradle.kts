@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.motorApi)
     implementation(libs.ktorOpenapiGenerator)
     implementation(libs.tilgangKontrakt)
+    implementation(libs.dokumentinnhentingKontrakt)
     implementation(libs.tilgangPlugin)
     implementation(libs.behandlingsflytKontrakt)
     implementation(libs.postmottakKontrakt)

@@ -3,6 +3,7 @@ komponenter = "3.0.3"
 tilgang = "1.0.244"
 behandlingsflytVersjon = "0.0.684"
 postmottakVersjon = "6.0.14"
+dokumentinnhenting = "0.0.13"
 
 [libraries]
 json = { module = "no.nav.aap.kelvin:json", version.ref = "komponenter" }
@@ -20,3 +21,4 @@ behandlingsflytKontrakt = { module = "no.nav.aap.behandlingsflyt:kontrakt", vers
 postmottakKontrakt = { module = "no.nav.aap.postmottak:kontrakt", version.ref = "postmottakVersjon" }
 tilgangKontrakt = { module = "no.nav.aap.tilgang:api-kontrakt", version.ref = "tilgang" }
 tilgangPlugin = { module = "no.nav.aap.tilgang:plugin", version.ref = "tilgang" }
+dokumentinnhentingKontrakt = { module = "no.nav.aap.dokumentinnhenting:kontrakt", version.ref = "dokumentinnhenting" }
